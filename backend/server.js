@@ -73,7 +73,7 @@ fastify.addHook("onRequest", async (request, reply) => {
 
 // 0. ROOT (Health Check)
 fastify.get("/", async (request, reply) => {
-  return { status: "ok", message: "Mindstore API is running!" };
+  return { status: "✔", message: "Mindstore API is running!" };
 });
 
 // 1. AUTHENTICATION (Firebase)

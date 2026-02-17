@@ -21,11 +21,7 @@
             </v-btn>
           </v-col>
           <v-col cols="12" md="6">
-            <img
-              alt="Hero product"
-              class="hero-image"
-              :src="heroImage"
-            >
+            <img alt="Hero product" class="hero-image" :src="heroImage">
           </v-col>
         </v-row>
       </v-container>
@@ -55,28 +51,16 @@
             md="4"
             sm="6"
           >
-            <v-card
-              class="product-card"
-              @click="goToProduct(product.product_id)"
-            >
+            <v-card class="product-card" @click="goToProduct(product.product_id)">
               <div class="product-image-wrapper">
-                <img
-                  :alt="product.name"
-                  class="product-image"
-                  :src="product.image_url"
-                >
+                <img :alt="product.name" class="product-image" :src="product.image_url">
               </div>
               <v-card-text>
                 <h3 class="product-name">{{ product.name }}</h3>
                 <p class="product-category">{{ product.category }}</p>
                 <div class="d-flex align-center justify-space-between mt-4">
                   <span class="product-price">${{ product.price.toFixed(2) }}</span>
-                  <v-btn
-                    color="primary"
-                    icon
-                    size="small"
-                    @click.stop="quickAddToCart(product.product_id)"
-                  >
+                  <v-btn color="primary" icon size="small" @click.stop="quickAddToCart(product.product_id)">
                     <v-icon>mdi-cart-plus</v-icon>
                   </v-btn>
                 </div>
@@ -119,7 +103,7 @@
       const heroImage = 'https://images.unsplash.com/photo-1731705715985-f5a6c8f459e9?crop=entropy&cs=srgb&fm=jpg&q=85&w=800'
 
       // REFIX: Vite compatible env var
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
       const fetchProducts = async () => {
         loading.value = true
