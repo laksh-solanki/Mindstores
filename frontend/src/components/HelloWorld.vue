@@ -1,5 +1,8 @@
 <template>
-  <v-container class="fill-height d-flex align-center" max-width="900">
+  <v-container
+    class="fill-height d-flex align-center"
+    max-width="900"
+  >
     <div>
       <v-img
         class="mb-4"
@@ -8,8 +11,12 @@
       />
 
       <div class="mb-8 text-center">
-        <div class="text-body-2 font-weight-light mb-n1">Welcome to</div>
-        <h1 class="text-h2 my-0 font-weight-bold">Vuetify</h1>
+        <div class="text-body-2 font-weight-light mb-n1">
+          Welcome to
+        </div>
+        <h1 class="text-h2 my-0 font-weight-bold">
+          Vuetify
+        </h1>
       </div>
 
       <v-row>
@@ -40,7 +47,11 @@
           </v-card>
         </v-col>
 
-        <v-col v-for="link in links" :key="link.href" cols="6">
+        <v-col
+          v-for="link in links"
+          :key="link.href"
+          cols="6"
+        >
           <v-card
             append-icon="mdi-open-in-new"
             class="py-4"

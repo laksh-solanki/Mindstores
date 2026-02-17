@@ -4,68 +4,59 @@ import Vue from "@vitejs/plugin-vue";
 import AutoImport from "unplugin-auto-import/vite";
 import Fonts from "unplugin-fonts/vite";
 import Components from "unplugin-vue-components/vite";
-import { VueRouterAutoImports } from "unplugin-vue-router";
-import VueRouter from "unplugin-vue-router/vite";
 // Utilities
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 
-import Layouts from "vite-plugin-vue-layouts-next";
 import Vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
 
 // https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [
-    VueRouter(),
-    Layouts(),
-    Vue({
-      template: { transformAssetUrls },
-    }),
-    // https://github.com/vuetifyjs/vuetify-loader/tree/master/packages/vite-plugin#readme
-    Vuetify({
-      autoImport: true,
-    }),
-    Components(),
-    Fonts({
-      google: {
-        families: [
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "");
+  return {
+    plugins: [
+      Vue({
+        template: { transformAssetUrls },
+      }),
+      Vuetify({
+        autoImport: true,
+      }),
+      Components(),
+      Fonts({
+        google: {
+          families: [
+            {
+              name: "Roboto",
+              styles: "wght@100;300;400;500;700;900",
+            },
+          ],
+        },
+      }),
+      AutoImport({
+        imports: [
+          "vue",
+          "vue-router",
+          "pinia",
           {
-            name: "Roboto",
-            styles: "wght@100;300;400;500;700;900",
+            pinia: ["defineStore", "storeToRefs"],
           },
         ],
-      },
-    }),
-    AutoImport({
-      imports: [
-        "vue",
-        VueRouterAutoImports,
-        {
-          pinia: ["defineStore", "storeToRefs"],
+        eslintrc: {
+          enabled: true,
         },
-      ],
-      eslintrc: {
-        enabled: true,
-      },
-      vueTemplate: true,
-    }),
-  ],
-  optimizeDeps: {
-    exclude: [
-      "vuetify",
-      "vue-router",
-      "unplugin-vue-router/runtime",
-      "unplugin-vue-router/data-loaders",
-      "unplugin-vue-router/data-loaders/basic",
+        vueTemplate: true,
+      }),
     ],
-  },
-  define: { "process.env": {} },
-  resolve: {
-    alias: {
-      "@": fileURLToPath(new URL("src", import.meta.url)),
+    define: {
+      "process.env.APP_VERSION": JSON.stringify(env.APP_VERSION),
     },
-    extensions: [".js", ".json", ".jsx", ".mjs", ".ts", ".tsx", ".vue"],
-  },
-  server: {
-    port: 3000,
-  },
+    resolve: {
+      alias: {
+        "@": fileURLToPath(new URL("src", import.meta.url)),
+      },
+      extensions: [".js", ".json", ".jsx", ".mjs", ".vue"],
+    },
+    server: {
+      port: Number.parseInt(env.VITE_PORT) || 3000,
+    },
+  };
 });
