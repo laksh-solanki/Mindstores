@@ -1,11 +1,8 @@
-import router from '@/router'
-import pinia from '@/stores'
+import router from "@/router";
+import pinia from "@/stores";
 // Plugins
-import vuetify from './vuetify'
+import vuetify from "./vuetify";
 
-export function registerPlugins (app) {
-  app
-    .use(vuetify)
-    .use(router)
-    .use(pinia)
+export function registerPlugins(app) {
+  app.use(vuetify).use(router).use(pinia);
 }
