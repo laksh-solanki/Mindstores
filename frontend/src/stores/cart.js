@@ -22,9 +22,31 @@ export const useCartStore = defineStore('cart', {
   },
 
   actions: {
+    async withAuthRetry(requestFn) {
+      const appStore = useAppStore()
+      const hasSession = await appStore.ensureBackendSession()
+      if (!hasSession) {
+        throw new Error('User not authenticated')
+      }
+
+      try {
+        return await requestFn()
+      } catch (error) {
+        if (error?.response?.status === 401) {
+          const refreshed = await appStore.ensureBackendSession()
+          if (refreshed) {
+            return await requestFn()
+          }
+        }
+        throw error
+      }
+    },
+
     async fetchCart() {
       try {
-        const response = await axios.get(`${API_URL}/api/cart`, { withCredentials: true })
+        const response = await this.withAuthRetry(() =>
+          axios.get(`${API_URL}/api/cart`, { withCredentials: true })
+        )
         this.items = response.data.items || []
 
         // Fetch product details for items in cart if we don't have them
@@ -48,14 +70,13 @@ export const useCartStore = defineStore('cart', {
     },
 
     async addToCart(productId, quantity = 1) {
-      const appStore = useAppStore()
-      if (!appStore.isAuthenticated) {throw new Error('User not authenticated')}
-
       try {
-        await axios.post(
-          `${API_URL}/api/cart/add`,
-          { product_id: productId, quantity },
-          { withCredentials: true }
+        await this.withAuthRetry(() =>
+          axios.post(
+            `${API_URL}/api/cart/add`,
+            { product_id: productId, quantity },
+            { withCredentials: true }
+          )
         )
         await this.fetchCart() // Refresh cart
       } catch (error) {
@@ -66,10 +87,12 @@ export const useCartStore = defineStore('cart', {
 
     async removeFromCart(productId) {
       try {
-        await axios.post(
-          `${API_URL}/api/cart/remove`,
-          { product_id: productId },
-          { withCredentials: true }
+        await this.withAuthRetry(() =>
+          axios.post(
+            `${API_URL}/api/cart/remove`,
+            { product_id: productId },
+            { withCredentials: true }
+          )
         )
         await this.fetchCart()
       } catch (error) {

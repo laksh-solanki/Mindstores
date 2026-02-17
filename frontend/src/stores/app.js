@@ -25,29 +25,41 @@ export const useAppStore = defineStore("app", {
   }),
 
   actions: {
+    async ensureBackendSession(firebaseUser = auth.currentUser) {
+      if (!firebaseUser) {
+        this.user = null;
+        this.isAuthenticated = false;
+        return false;
+      }
+
+      try {
+        const idToken = await firebaseUser.getIdToken();
+        const response = await axios.post(
+          `${API_URL}/api/auth/firebase-login`,
+          { idToken },
+          { withCredentials: true },
+        );
+
+        // Validate that cookie-based backend session is active.
+        await axios.get(`${API_URL}/api/auth/me`, { withCredentials: true });
+
+        this.user = response.data;
+        this.isAuthenticated = true;
+        return true;
+      } catch (error) {
+        console.error("Backend authentication failed:", error);
+        this.user = null;
+        this.isAuthenticated = false;
+        return false;
+      }
+    },
+
     initAuthListener() {
       onAuthStateChanged(auth, async (firebaseUser) => {
         if (firebaseUser) {
-          try {
-            const idToken = await firebaseUser.getIdToken();
-
-            // REFIX: Use full API_URL
-            const response = await axios.post(
-              `${API_URL}/api/auth/firebase-login`,
-              { idToken },
-              { withCredentials: true },
-            );
-
-            // Verify that the backend session cookie is actually set and usable.
-            await axios.get(`${API_URL}/api/auth/me`, { withCredentials: true });
-
-            this.user = response.data;
-            this.isAuthenticated = true;
-          } catch (error) {
-            console.error("Backend authentication failed:", error);
+          const isReady = await this.ensureBackendSession(firebaseUser);
+          if (!isReady) {
             await signOut(auth);
-            this.user = null;
-            this.isAuthenticated = false;
           }
         } else {
           this.user = null;
@@ -61,9 +73,11 @@ export const useAppStore = defineStore("app", {
       this.loading = true;
       const provider = new GoogleAuthProvider();
       try {
-        await signInWithPopup(auth, provider);
+        const credential = await signInWithPopup(auth, provider);
+        await this.ensureBackendSession(credential.user);
       } catch (error) {
         console.error("Google login failed:", error);
+      } finally {
         this.loading = false;
       }
     },
