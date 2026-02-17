@@ -1,4 +1,3 @@
-// backend/server.js
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import cookie from "@fastify/cookie";
@@ -71,6 +70,11 @@ fastify.addHook("onRequest", async (request, reply) => {
 });
 
 // --- API ROUTES ---
+
+// 0. ROOT (Health Check)
+fastify.get("/", async (request, reply) => {
+  return { status: "ok", message: "Mindstore API is running!" };
+});
 
 // 1. AUTHENTICATION (Firebase)
 fastify.post("/api/auth/firebase-login", async (request, reply) => {
@@ -146,31 +150,49 @@ fastify.post("/api/auth/logout", async (request, reply) => {
   return { message: "Logged out successfully" };
 });
 
-// 2. PRODUCTS
+// 2. PRODUCTS (Public + Admin)
+
+// GET All Products (Public)
+fastify.get("/api/products", async (request, reply) => {
+  const { category } = request.query;
+  const query = category ? { category } : {};
+  return await fastify.mongo.db
+    .collection("products")
+    .find(query, { projection: { _id: 0 } })
+    .toArray();
+});
+
+// GET One Product (Public)
+fastify.get("/api/products/:id", async (request, reply) => {
+  const product = await fastify.mongo.db
+    .collection("products")
+    .findOne({ product_id: request.params.id }, { projection: { _id: 0 } });
+  if (!product) return reply.code(404).send({ message: "Product not found" });
+  return product;
+});
+
+// POST Create Product (Admin Only - Requires Login)
 fastify.post("/api/products", async (request, reply) => {
   if (!request.user)
     return reply.code(401).send({ message: "Not authenticated" });
 
   const product = request.body;
-
-  // Basic validation
   if (!product.name || !product.price) {
     return reply.code(400).send({ message: "Name and Price are required" });
   }
 
   // Generate ID if missing
   if (!product.product_id) {
-    product.product_id = `prod_${Math.random().toString(36).substring(2, 14)}`;
+    product.product_id = `prod_${uuidv4().substring(0, 12)}`;
   }
 
-  // Set creation date
   product.created_at = new Date();
 
   await fastify.mongo.db.collection("products").insertOne(product);
   return product;
 });
 
-// Update Product
+// PUT Update Product (Admin Only)
 fastify.put("/api/products/:id", async (request, reply) => {
   if (!request.user)
     return reply.code(401).send({ message: "Not authenticated" });
@@ -184,14 +206,14 @@ fastify.put("/api/products/:id", async (request, reply) => {
     .findOneAndUpdate(
       { product_id: id },
       { $set: updates },
-      { returnDocument: "after" },
+      { returnDocument: "after", projection: { _id: 0 } },
     );
 
   if (!result) return reply.code(404).send({ message: "Product not found" });
-  return result;
+  return result; // result is the document in newer mongo drivers, or result.value in older ones
 });
 
-// Delete Product
+// DELETE Product (Admin Only)
 fastify.delete("/api/products/:id", async (request, reply) => {
   if (!request.user)
     return reply.code(401).send({ message: "Not authenticated" });
@@ -319,7 +341,7 @@ fastify.post("/api/checkout/place-order", async (request, reply) => {
     user_id: request.user.user_id,
     items: order_items,
     total_amount,
-    status: "completed", // Automatically completed since no payment
+    status: "completed",
     created_at: new Date(),
   });
 
