@@ -37,7 +37,12 @@ try {
 const fastify = Fastify({ logger: true });
 
 // Plugins
-const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000,http://localhost:5173")
+const configuredCorsOrigins =
+  process.env.CORS_ORIGIN ||
+  process.env.CORS_ORIGINS ||
+  "http://localhost:3000,http://localhost:5173,https://mindstores.onrender.com";
+
+const allowedOrigins = configuredCorsOrigins
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
@@ -46,11 +51,11 @@ fastify.register(cors, {
   credentials: true,
   allowedHeaders: ["Content-Type", "X-Session-Token", "Authorization"],
   origin: (origin, cb) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
       cb(null, true);
       return;
     }
-    cb(new Error("Not allowed by CORS"), false);
+    cb(null, false);
   },
 });
 
