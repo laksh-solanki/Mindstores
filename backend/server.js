@@ -5,7 +5,6 @@ import cookie from '@fastify/cookie';
 import mongodb from '@fastify/mongodb';
 import dotenv from 'dotenv';
 import admin from 'firebase-admin';
-import Stripe from 'stripe';
 import { v4 as uuidv4 } from 'uuid';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -16,8 +15,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '.env') });
 
 // Initialize Firebase Admin
-// ⚠️ You must download your Service Account JSON from Firebase Console -> Project Settings -> Service Accounts
-// and save it as 'service-account.json' in the backend folder.
 try {
   const serviceAccount = JSON.parse(
     await readFile(new URL('./service-account.json', import.meta.url))
@@ -31,7 +28,6 @@ try {
 }
 
 const fastify = Fastify({ logger: true });
-const stripe = new Stripe(process.env.STRIPE_API_KEY);
 
 // Plugins
 fastify.register(cors, {
@@ -47,7 +43,7 @@ fastify.register(mongodb, {
   database: process.env.DB_NAME
 });
 
-// Helper: Get Current User Middleware
+// Middleware: Get Current User
 const getCurrentUser = async (request, reply) => {
   const token = request.cookies.session_token;
   if (!token) return null;
@@ -70,19 +66,17 @@ fastify.addHook('onRequest', async (request, reply) => {
 
 // --- API ROUTES ---
 
-// 1. AUTHENTICATION (Adapted for Firebase)
+// 1. AUTHENTICATION (Firebase)
 fastify.post('/api/auth/firebase-login', async (request, reply) => {
   const { idToken } = request.body;
-  
   if (!idToken) return reply.code(400).send({ message: "ID Token required" });
 
   try {
-    // Verify Firebase Token
     const decodedToken = await admin.auth().verifyIdToken(idToken);
     const { email, name, picture, uid } = decodedToken;
 
     const db = fastify.mongo.db;
-    const userId = `user_${uid}`; // Use Firebase UID or generate one
+    const userId = `user_${uid}`;
 
     // Upsert User
     const existingUser = await db.collection('users').findOne({ email });
@@ -113,13 +107,12 @@ fastify.post('/api/auth/firebase-login', async (request, reply) => {
       created_at: new Date()
     });
 
-    // Set Cookie
     reply.setCookie('session_token', sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax', // Use 'none' if backend/frontend are on different domains in prod
+      sameSite: 'lax',
       path: '/',
-      maxAge: 7 * 24 * 60 * 60 // 7 days in seconds
+      maxAge: 7 * 24 * 60 * 60
     });
 
     return await db.collection('users').findOne({ user_id: userId }, { projection: { _id: 0 } });
@@ -219,11 +212,9 @@ fastify.post('/api/cart/remove', async (request, reply) => {
   return { message: "Item removed" };
 });
 
-// 4. CHECKOUT (Stripe)
-fastify.post('/api/checkout/create-session', async (request, reply) => {
+// 4. CHECKOUT (Simplified - No Payment)
+fastify.post('/api/checkout/place-order', async (request, reply) => {
   if (!request.user) return reply.code(401).send({ message: "Not authenticated" });
-  // Note: Frontend sends { origin_url } but we often use headers.origin or env vars
-  const { origin_url } = request.body || { origin_url: 'http://localhost:3000' };
   
   const db = fastify.mongo.db;
   const cart = await db.collection('carts').findOne({ user_id: request.user.user_id });
@@ -232,10 +223,10 @@ fastify.post('/api/checkout/create-session', async (request, reply) => {
     return reply.code(400).send({ message: "Cart is empty" });
   }
 
-  const line_items = [];
   let total_amount = 0;
   const order_items = [];
 
+  // Calculate totals
   for (const item of cart.items) {
     const product = await db.collection('products').findOne({ product_id: item.product_id });
     if (product) {
@@ -246,55 +237,38 @@ fastify.post('/api/checkout/create-session', async (request, reply) => {
         price: product.price,
         quantity: item.quantity
       });
-      line_items.push({
-        price_data: {
-          currency: 'usd',
-          product_data: { name: product.name },
-          unit_amount: Math.round(product.price * 100), // Stripe expects cents
-        },
-        quantity: item.quantity,
-      });
     }
   }
 
   const order_id = `order_${uuidv4().substring(0, 12)}`;
-  
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ['card'],
-    line_items,
-    mode: 'payment',
-    success_url: `${origin_url}/order-success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${origin_url}/cart`,
-    metadata: {
-      user_id: request.user.user_id,
-      order_id: order_id
-    }
-  });
 
-  // Create Pending Order
+  // Create Order Record
   await db.collection('orders').insertOne({
     order_id,
     user_id: request.user.user_id,
     items: order_items,
     total_amount,
-    status: 'pending',
-    stripe_session_id: session.id,
+    status: 'completed', // Automatically completed since no payment
     created_at: new Date()
   });
 
-  // Create Transaction
-  await db.collection('payment_transactions').insertOne({
-    transaction_id: `txn_${uuidv4().substring(0, 12)}`,
-    session_id: session.id,
-    user_id: request.user.user_id,
-    order_id,
-    amount: total_amount,
-    currency: 'usd',
-    payment_status: 'pending',
-    created_at: new Date()
-  });
+  // Clear Cart
+  await db.collection('carts').updateOne(
+    { user_id: request.user.user_id },
+    { $set: { items: [], updated_at: new Date() } }
+  );
 
-  return { url: session.url, session_id: session.id };
+  return { success: true, order_id, message: "Order placed successfully" };
+});
+
+// 5. ORDERS (View History)
+fastify.get('/api/orders', async (request, reply) => {
+  if (!request.user) return reply.code(401).send({ message: "Not authenticated" });
+  
+  return await fastify.mongo.db.collection('orders')
+    .find({ user_id: request.user.user_id }, { projection: { _id: 0 } })
+    .sort({ created_at: -1 })
+    .toArray();
 });
 
 // Start Server

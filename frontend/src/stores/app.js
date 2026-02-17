@@ -3,8 +3,8 @@ import axios from "axios";
 import {
   getAuth,
   GoogleAuthProvider,
-  isSignInWithEmailLink,
   onAuthStateChanged,
+  signInWithPopup,
   signOut,
 } from "firebase/auth";
 // frontend/src/stores/app.js
@@ -67,7 +67,7 @@ export const useAppStore = defineStore("app", {
       this.loading = true;
       const provider = new GoogleAuthProvider();
       try {
-        await isSignInWithEmailLink(auth, provider);
+        await signInWithPopup(auth, provider);
       } catch (error) {
         console.error("Google login failed:", error);
         this.loading = false;

@@ -26,9 +26,9 @@ importers:
       firebase-admin:
         specifier: ^13.6.1
         version: 13.6.1
-      stripe:
-        specifier: ^20.3.1
-        version: 20.3.1(@types/node@22.19.11)
+      mongodb:
+        specifier: ^7.1.0
+        version: 7.1.0
       uuid:
         specifier: ^13.0.0
         version: 13.0.0
@@ -759,15 +759,6 @@ packages:
   strip-ansi@6.0.1:
     resolution: {integrity: sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==}
     engines: {node: '>=8'}
-
-  stripe@20.3.1:
-    resolution: {integrity: sha512-k990yOT5G5rhX3XluRPw5Y8RLdJDW4dzQ29wWT66piHrbnM2KyamJ1dKgPsw4HzGHRWjDiSSdcI2WdxQUPV3aQ==}
-    engines: {node: '>=16'}
-    peerDependencies:
-      '@types/node': '>=16'
-    peerDependenciesMeta:
-      '@types/node':
-        optional: true
 
   strnum@2.1.2:
     resolution: {integrity: sha512-l63NF9y/cLROq/yqKXSLtcMeeyOfnSQlfMSlzFt/K73oIaD8DGaQWd7Z34X9GPiKqP5rbSh84Hl4bOlLcjiSrQ==}
@@ -1764,10 +1755,6 @@ snapshots:
     dependencies:
       ansi-regex: 5.0.1
     optional: true
-
-  stripe@20.3.1(@types/node@22.19.11):
-    optionalDependencies:
-      '@types/node': 22.19.11
 
   strnum@2.1.2:
     optional: true
