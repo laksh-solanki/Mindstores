@@ -38,6 +38,9 @@ export const useAppStore = defineStore("app", {
               { withCredentials: true },
             );
 
+            // Verify that the backend session cookie is actually set and usable.
+            await axios.get(`${API_URL}/api/auth/me`, { withCredentials: true });
+
             this.user = response.data;
             this.isAuthenticated = true;
           } catch (error) {

@@ -13,6 +13,14 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, ".env") });
 
+const isHostedEnv = Boolean(process.env.RENDER || process.env.RAILWAY_ENVIRONMENT || process.env.VERCEL);
+const useSecureCookies =
+  process.env.COOKIE_SECURE != null
+    ? process.env.COOKIE_SECURE === "true"
+    : process.env.NODE_ENV === "production" || isHostedEnv;
+const cookieSameSite =
+  process.env.COOKIE_SAMESITE || (useSecureCookies ? "none" : "lax");
+
 // Initialize Firebase Admin
 try {
   const serviceAccount = JSON.parse(
@@ -145,8 +153,8 @@ fastify.post("/api/auth/firebase-login", async (request, reply) => {
 
     reply.setCookie("session_token", sessionToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: useSecureCookies,
+      sameSite: cookieSameSite,
       path: "/",
       maxAge: 7 * 24 * 60 * 60,
     });
@@ -172,7 +180,11 @@ fastify.post("/api/auth/logout", async (request, reply) => {
       .collection("user_sessions")
       .deleteOne({ session_token: token });
   }
-  reply.clearCookie("session_token", { path: "/" });
+  reply.clearCookie("session_token", {
+    path: "/",
+    secure: useSecureCookies,
+    sameSite: cookieSameSite,
+  });
   return { message: "Logged out successfully" };
 });
 
