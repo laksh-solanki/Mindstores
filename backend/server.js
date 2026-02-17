@@ -32,7 +32,7 @@ const fastify = Fastify({ logger: true });
 fastify.register(cors, {
   origin: process.env.CORS_ORIGINS
     ? process.env.CORS_ORIGINS.split(",")
-    : "http://localhost:3000",
+    : ["http://localhost:3000", "http://127.0.0.1:3000"],
   credentials: true,
 });
 
@@ -119,7 +119,7 @@ fastify.post("/api/auth/firebase-login", async (request, reply) => {
     reply.setCookie("session_token", sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       path: "/",
       maxAge: 7 * 24 * 60 * 60,
     });
