@@ -16,20 +16,34 @@ dotenv.config({ path: path.join(__dirname, ".env") });
 // Initialize Firebase Admin
 try {
   const serviceAccount = JSON.parse(
-    await readFile(new URL("./service-account.json", import.meta.url)),
+    await readFile(new URL("./service-account.json", import.meta.url), "utf-8"),
   );
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
   console.log("Firebase Admin Initialized");
 } catch (error) {
-  console.warn("⚠️ Warning: 'service-account.json' not found. Auth will fail.");
+  console.warn("Warning: service-account.json not found. Firebase auth will fail.");
 }
 
 const fastify = Fastify({ logger: true });
 
 // Plugins
-fastify.register(cors);
+const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000,http://localhost:5173")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+fastify.register(cors, {
+  credentials: true,
+  origin: (origin, cb) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      cb(null, true);
+      return;
+    }
+    cb(new Error("Not allowed by CORS"), false);
+  },
+});
 
 fastify.register(cookie);
 
@@ -40,7 +54,7 @@ fastify.register(mongodb, {
 });
 
 // Middleware: Get Current User
-const getCurrentUser = async (request, reply) => {
+const getCurrentUser = async (request) => {
   const token = request.cookies.session_token;
   if (!token) return null;
 
@@ -58,17 +72,34 @@ const getCurrentUser = async (request, reply) => {
     .findOne({ user_id: session.user_id }, { projection: { _id: 0 } });
 };
 
+const requireAuth = async (request, reply) => {
+  if (!request.user) {
+    await reply.code(401).send({ message: "Not authenticated" });
+    return false;
+  }
+  return true;
+};
+
+const requireAdmin = async (request, reply) => {
+  if (!(await requireAuth(request, reply))) return false;
+  if (!request.user.is_admin) {
+    await reply.code(403).send({ message: "Admin access required" });
+    return false;
+  }
+  return true;
+};
+
 // Hook: Attach User to Request
 fastify.decorateRequest("user", null);
-fastify.addHook("onRequest", async (request, reply) => {
-  request.user = await getCurrentUser(request, reply);
+fastify.addHook("onRequest", async (request) => {
+  request.user = await getCurrentUser(request);
 });
 
 // --- API ROUTES ---
 
 // 0. ROOT (Health Check)
-fastify.get("/", async (request, reply) => {
-  return { status: "✔", message: "Mindstore API is running!" };
+fastify.get("/", async () => {
+  return { status: "ok", message: "Mindstore API is running!" };
 });
 
 // 1. AUTHENTICATION (Firebase)
@@ -91,6 +122,7 @@ fastify.post("/api/auth/firebase-login", async (request, reply) => {
         email,
         name: name || "User",
         picture,
+        is_admin: false,
         created_at: new Date(),
       });
     } else {
@@ -129,8 +161,7 @@ fastify.post("/api/auth/firebase-login", async (request, reply) => {
 });
 
 fastify.get("/api/auth/me", async (request, reply) => {
-  if (!request.user)
-    return reply.code(401).send({ message: "Not authenticated" });
+  if (!(await requireAuth(request, reply))) return;
   return request.user;
 });
 
@@ -148,7 +179,7 @@ fastify.post("/api/auth/logout", async (request, reply) => {
 // 2. PRODUCTS (Public + Admin)
 
 // GET All Products (Public)
-fastify.get("/api/products", async (request, reply) => {
+fastify.get("/api/products", async (request) => {
   const { category } = request.query;
   const query = category ? { category } : {};
   return await fastify.mongo.db
@@ -166,14 +197,16 @@ fastify.get("/api/products/:id", async (request, reply) => {
   return product;
 });
 
-// POST Create Product (Admin Only - Requires Login)
+// POST Create Product (Admin Only)
 fastify.post("/api/products", async (request, reply) => {
-  if (!request.user)
-    return reply.code(401).send({ message: "Not authenticated" });
+  if (!(await requireAdmin(request, reply))) return;
 
   const product = request.body;
-  if (!product.name || !product.price) {
+  if (!product.name || product.price == null) {
     return reply.code(400).send({ message: "Name and Price are required" });
+  }
+  if (typeof product.price !== "number" || product.price < 0) {
+    return reply.code(400).send({ message: "Invalid price" });
   }
 
   // Generate ID if missing
@@ -189,8 +222,7 @@ fastify.post("/api/products", async (request, reply) => {
 
 // PUT Update Product (Admin Only)
 fastify.put("/api/products/:id", async (request, reply) => {
-  if (!request.user)
-    return reply.code(401).send({ message: "Not authenticated" });
+  if (!(await requireAdmin(request, reply))) return;
 
   const { id } = request.params;
   const updates = request.body;
@@ -205,13 +237,12 @@ fastify.put("/api/products/:id", async (request, reply) => {
     );
 
   if (!result) return reply.code(404).send({ message: "Product not found" });
-  return result; // result is the document in newer mongo drivers, or result.value in older ones
+  return result;
 });
 
 // DELETE Product (Admin Only)
 fastify.delete("/api/products/:id", async (request, reply) => {
-  if (!request.user)
-    return reply.code(401).send({ message: "Not authenticated" });
+  if (!(await requireAdmin(request, reply))) return;
 
   const result = await fastify.mongo.db
     .collection("products")
@@ -225,8 +256,7 @@ fastify.delete("/api/products/:id", async (request, reply) => {
 
 // 3. CART
 fastify.get("/api/cart", async (request, reply) => {
-  if (!request.user)
-    return reply.code(401).send({ message: "Not authenticated" });
+  if (!(await requireAuth(request, reply))) return;
 
   const cart = await fastify.mongo.db
     .collection("carts")
@@ -242,10 +272,19 @@ fastify.get("/api/cart", async (request, reply) => {
 });
 
 fastify.post("/api/cart/add", async (request, reply) => {
-  if (!request.user)
-    return reply.code(401).send({ message: "Not authenticated" });
+  if (!(await requireAuth(request, reply))) return;
   const { product_id, quantity } = request.body;
   const db = fastify.mongo.db;
+  const parsedQuantity = Number(quantity);
+
+  if (!product_id || !Number.isInteger(parsedQuantity) || parsedQuantity <= 0) {
+    return reply.code(400).send({ message: "Valid product_id and quantity are required" });
+  }
+
+  const product = await db.collection("products").findOne({ product_id });
+  if (!product) {
+    return reply.code(404).send({ message: "Product not found" });
+  }
 
   let cart = await db
     .collection("carts")
@@ -263,11 +302,17 @@ fastify.post("/api/cart/add", async (request, reply) => {
 
   const items = cart.items || [];
   const existingItemIndex = items.findIndex((i) => i.product_id === product_id);
+  const existingQuantity = existingItemIndex > -1 ? items[existingItemIndex].quantity : 0;
+  const requestedQuantity = existingQuantity + parsedQuantity;
+
+  if (requestedQuantity > (product.stock ?? 0)) {
+    return reply.code(400).send({ message: "Insufficient stock" });
+  }
 
   if (existingItemIndex > -1) {
-    items[existingItemIndex].quantity += quantity;
+    items[existingItemIndex].quantity = requestedQuantity;
   } else {
-    items.push({ product_id, quantity });
+    items.push({ product_id, quantity: parsedQuantity });
   }
 
   await db
@@ -281,8 +326,7 @@ fastify.post("/api/cart/add", async (request, reply) => {
 });
 
 fastify.post("/api/cart/remove", async (request, reply) => {
-  if (!request.user)
-    return reply.code(401).send({ message: "Not authenticated" });
+  if (!(await requireAuth(request, reply))) return;
   const { product_id } = request.body;
 
   await fastify.mongo.db.collection("carts").updateOne(
@@ -297,8 +341,7 @@ fastify.post("/api/cart/remove", async (request, reply) => {
 
 // 4. CHECKOUT (Simplified - No Payment)
 fastify.post("/api/checkout/place-order", async (request, reply) => {
-  if (!request.user)
-    return reply.code(401).send({ message: "Not authenticated" });
+  if (!(await requireAuth(request, reply))) return;
 
   const db = fastify.mongo.db;
   const cart = await db
@@ -312,20 +355,27 @@ fastify.post("/api/checkout/place-order", async (request, reply) => {
   let total_amount = 0;
   const order_items = [];
 
-  // Calculate totals
+  // Validate stock and calculate totals
   for (const item of cart.items) {
     const product = await db
       .collection("products")
       .findOne({ product_id: item.product_id });
-    if (product) {
-      total_amount += product.price * item.quantity;
-      order_items.push({
-        product_id: product.product_id,
-        name: product.name,
-        price: product.price,
-        quantity: item.quantity,
-      });
+
+    if (!product) {
+      return reply.code(400).send({ message: `Product not found: ${item.product_id}` });
     }
+
+    if ((product.stock ?? 0) < item.quantity) {
+      return reply.code(400).send({ message: `Insufficient stock for ${product.name}` });
+    }
+
+    total_amount += product.price * item.quantity;
+    order_items.push({
+      product_id: product.product_id,
+      name: product.name,
+      price: product.price,
+      quantity: item.quantity,
+    });
   }
 
   const order_id = `order_${uuidv4().substring(0, 12)}`;
@@ -340,6 +390,14 @@ fastify.post("/api/checkout/place-order", async (request, reply) => {
     created_at: new Date(),
   });
 
+  // Decrement product stock
+  for (const item of cart.items) {
+    await db.collection("products").updateOne(
+      { product_id: item.product_id },
+      { $inc: { stock: -item.quantity } },
+    );
+  }
+
   // Clear Cart
   await db
     .collection("carts")
@@ -353,8 +411,7 @@ fastify.post("/api/checkout/place-order", async (request, reply) => {
 
 // 5. ORDERS (View History)
 fastify.get("/api/orders", async (request, reply) => {
-  if (!request.user)
-    return reply.code(401).send({ message: "Not authenticated" });
+  if (!(await requireAuth(request, reply))) return;
 
   return await fastify.mongo.db
     .collection("orders")

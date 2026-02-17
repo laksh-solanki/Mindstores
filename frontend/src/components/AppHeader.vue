@@ -70,8 +70,6 @@
 
       onMounted(() => {
         window.addEventListener('scroll', handleScroll)
-        // REFIX: Call the correct init method from app.js
-        appStore.initAuthListener()
       })
 
       onUnmounted(() => {
