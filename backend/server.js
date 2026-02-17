@@ -347,16 +347,34 @@ fastify.post("/api/checkout/place-order", async (request, reply) => {
   const cart = await db
     .collection("carts")
     .findOne({ user_id: request.user.user_id });
+  const { selected_product_ids } = request.body || {};
 
   if (!cart || !cart.items || cart.items.length === 0) {
     return reply.code(400).send({ message: "Cart is empty" });
+  }
+
+  let itemsToCheckout = cart.items;
+  if (selected_product_ids !== undefined) {
+    if (
+      !Array.isArray(selected_product_ids) ||
+      selected_product_ids.length === 0 ||
+      selected_product_ids.some((id) => typeof id !== "string")
+    ) {
+      return reply.code(400).send({ message: "selected_product_ids must be a non-empty string array" });
+    }
+
+    const selectedIds = new Set(selected_product_ids);
+    itemsToCheckout = cart.items.filter((item) => selectedIds.has(item.product_id));
+    if (itemsToCheckout.length === 0) {
+      return reply.code(400).send({ message: "No selected items found in cart" });
+    }
   }
 
   let total_amount = 0;
   const order_items = [];
 
   // Validate stock and calculate totals
-  for (const item of cart.items) {
+  for (const item of itemsToCheckout) {
     const product = await db
       .collection("products")
       .findOne({ product_id: item.product_id });
@@ -391,19 +409,21 @@ fastify.post("/api/checkout/place-order", async (request, reply) => {
   });
 
   // Decrement product stock
-  for (const item of cart.items) {
+  for (const item of itemsToCheckout) {
     await db.collection("products").updateOne(
       { product_id: item.product_id },
       { $inc: { stock: -item.quantity } },
     );
   }
 
-  // Clear Cart
+  // Remove purchased items from cart (or clear all if all were purchased)
+  const purchasedIds = new Set(itemsToCheckout.map((item) => item.product_id));
+  const remainingItems = cart.items.filter((item) => !purchasedIds.has(item.product_id));
   await db
     .collection("carts")
     .updateOne(
       { user_id: request.user.user_id },
-      { $set: { items: [], updated_at: new Date() } },
+      { $set: { items: remainingItems, updated_at: new Date() } },
     );
 
   return { success: true, order_id, message: "Order placed successfully" };

@@ -38,16 +38,26 @@
               <v-col cols="8" sm="9">
                 <v-card-text>
                   <div class="d-flex justify-space-between">
-                    <div>
-                      <h3 class="cart-item-name">
-                        {{ cartStore.products[item.product_id]?.name }}
-                      </h3>
-                      <p class="cart-item-price">
-                        ${{ cartStore.products[item.product_id]?.price.toFixed(2) }}
-                      </p>
-                      <p class="cart-item-quantity">
-                        Quantity: {{ item.quantity }}
-                      </p>
+                    <div class="d-flex align-start">
+                      <v-checkbox
+                        v-model="selectedProductIds"
+                        class="mt-0 mr-3"
+                        color="primary"
+                        density="compact"
+                        hide-details
+                        :value="item.product_id"
+                      />
+                      <div>
+                        <h3 class="cart-item-name">
+                          {{ cartStore.products[item.product_id]?.name }}
+                        </h3>
+                        <p class="cart-item-price">
+                          ${{ cartStore.products[item.product_id]?.price.toFixed(2) }}
+                        </p>
+                        <p class="cart-item-quantity">
+                          Quantity: {{ item.quantity }}
+                        </p>
+                      </div>
                     </div>
                     <v-btn
                       icon
@@ -69,8 +79,21 @@
             <v-card-title class="summary-title">Order Summary</v-card-title>
             <v-card-text>
               <div class="summary-row">
+                <span>Selected Items</span>
+                <span>{{ selectedProductIds.length }} / {{ cartStore.items.length }}</span>
+              </div>
+              <div class="summary-row">
+                <v-checkbox
+                  v-model="selectAllChecked"
+                  color="primary"
+                  density="compact"
+                  hide-details
+                  label="Select all"
+                />
+              </div>
+              <div class="summary-row">
                 <span>Subtotal</span>
-                <span>${{ cartStore.totalAmount.toFixed(2) }}</span>
+                <span>${{ selectedTotalAmount.toFixed(2) }}</span>
               </div>
               <div class="summary-row">
                 <span>Shipping</span>
@@ -79,13 +102,14 @@
               <v-divider class="my-4" />
               <div class="summary-row summary-total">
                 <span>Total</span>
-                <span>${{ cartStore.totalAmount.toFixed(2) }}</span>
+                <span>${{ selectedTotalAmount.toFixed(2) }}</span>
               </div>
             </v-card-text>
             <v-card-actions>
               <v-btn
                 block
                 color="primary"
+                :disabled="selectedProductIds.length === 0"
                 :loading="checkoutLoading"
                 rounded="lg"
                 size="large"
@@ -107,7 +131,7 @@
 
 <script>
   import axios from 'axios'
-  import { onMounted, ref } from 'vue'
+  import { computed, onMounted, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import { useCartStore } from '@/stores/cart' // Updated import path
 
@@ -120,13 +144,36 @@
       const snackbar = ref(false)
       const snackbarText = ref('')
       const snackbarColor = ref('success')
+      const selectedProductIds = ref([])
 
       // REFIX: Vite compatible env var
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
+      const selectedTotalAmount = computed(() => {
+        return cartStore.items.reduce((total, item) => {
+          if (!selectedProductIds.value.includes(item.product_id)) {
+            return total
+          }
+          const product = cartStore.products[item.product_id]
+          return total + (product ? product.price * item.quantity : 0)
+        }, 0)
+      })
+
+      const selectAllChecked = computed({
+        get: () => cartStore.items.length > 0 && selectedProductIds.value.length === cartStore.items.length,
+        set: (checked) => {
+          if (checked) {
+            selectedProductIds.value = cartStore.items.map((item) => item.product_id)
+            return
+          }
+          selectedProductIds.value = []
+        }
+      })
+
       const removeItem = async (productId) => {
         try {
           await cartStore.removeFromCart(productId)
+          selectedProductIds.value = selectedProductIds.value.filter((id) => id !== productId)
           snackbarText.value = 'Item removed from cart'
           snackbarColor.value = 'success'
           snackbar.value = true
@@ -143,13 +190,13 @@
           // REFIX: Call place-order instead of create-session
           const response = await axios.post(
             `${API_URL}/api/checkout/place-order`,
-            {},
+            { selected_product_ids: selectedProductIds.value },
             { withCredentials: true }
           )
 
           if (response.data.success) {
-            // Manually clear cart since backend cleared it
-            cartStore.items = []
+            await cartStore.fetchCart()
+            selectedProductIds.value = cartStore.items.map((item) => item.product_id)
             // Redirect to success page
             router.push(`/order-success?order_id=${response.data.order_id}`)
           }
@@ -163,8 +210,21 @@
         }
       }
 
-      onMounted(() => {
-        cartStore.fetchCart()
+      watch(
+        () => cartStore.items.map((item) => item.product_id),
+        (productIds) => {
+          const productIdSet = new Set(productIds)
+          selectedProductIds.value = selectedProductIds.value.filter((id) => productIdSet.has(id))
+          if (selectedProductIds.value.length === 0 && productIds.length > 0) {
+            selectedProductIds.value = [...productIds]
+          }
+        },
+        { immediate: true }
+      )
+
+      onMounted(async () => {
+        await cartStore.fetchCart()
+        selectedProductIds.value = cartStore.items.map((item) => item.product_id)
       })
 
       return {
@@ -172,6 +232,9 @@
         removeItem,
         checkout,
         checkoutLoading,
+        selectedProductIds,
+        selectedTotalAmount,
+        selectAllChecked,
         snackbar,
         snackbarText,
         snackbarColor
