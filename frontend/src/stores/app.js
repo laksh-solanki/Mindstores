@@ -13,6 +13,14 @@ import { defineStore } from "pinia";
 import { app as firebaseApp } from "@/plugins/firebase";
 
 const auth = getAuth(firebaseApp);
+const SESSION_TOKEN_KEY = "mindstore_session_token";
+const savedSessionToken =
+  typeof window === "undefined"
+    ? null
+    : window.localStorage.getItem(SESSION_TOKEN_KEY);
+if (savedSessionToken) {
+  axios.defaults.headers.common["X-Session-Token"] = savedSessionToken;
+}
 
 // REFIX: Define API_URL to connect to Fastify Backend (Port 8000)
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -22,13 +30,30 @@ export const useAppStore = defineStore("app", {
     user: null,
     isAuthenticated: false,
     loading: true,
+    sessionToken: savedSessionToken,
   }),
 
   actions: {
+    setSessionToken(token) {
+      this.sessionToken = token || null;
+      if (token) {
+        axios.defaults.headers.common["X-Session-Token"] = token;
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(SESSION_TOKEN_KEY, token);
+        }
+      } else {
+        delete axios.defaults.headers.common["X-Session-Token"];
+        if (typeof window !== "undefined") {
+          window.localStorage.removeItem(SESSION_TOKEN_KEY);
+        }
+      }
+    },
+
     async ensureBackendSession(firebaseUser = auth.currentUser) {
       if (!firebaseUser) {
         this.user = null;
         this.isAuthenticated = false;
+        this.setSessionToken(null);
         return false;
       }
 
@@ -39,17 +64,19 @@ export const useAppStore = defineStore("app", {
           { idToken },
           { withCredentials: true },
         );
+        this.setSessionToken(response.data?.session_token || null);
 
         // Validate that cookie-based backend session is active.
         await axios.get(`${API_URL}/api/auth/me`, { withCredentials: true });
 
-        this.user = response.data;
+        this.user = response.data?.user || response.data || null;
         this.isAuthenticated = true;
         return true;
       } catch (error) {
         console.error("Backend authentication failed:", error);
         this.user = null;
         this.isAuthenticated = false;
+        this.setSessionToken(null);
         return false;
       }
     },
@@ -64,6 +91,7 @@ export const useAppStore = defineStore("app", {
         } else {
           this.user = null;
           this.isAuthenticated = false;
+          this.setSessionToken(null);
         }
         this.loading = false;
       });
@@ -91,6 +119,7 @@ export const useAppStore = defineStore("app", {
           .catch((error) => {
             console.warn("Backend logout failed, proceeding with Firebase logout.", error);
           });
+        this.setSessionToken(null);
         await signOut(auth);
       } catch (error) {
         console.error("Firebase logout failed:", error);

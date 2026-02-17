@@ -44,6 +44,7 @@ const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000,http:/
 
 fastify.register(cors, {
   credentials: true,
+  allowedHeaders: ["Content-Type", "X-Session-Token", "Authorization"],
   origin: (origin, cb) => {
     if (!origin || allowedOrigins.includes(origin)) {
       cb(null, true);
@@ -62,8 +63,11 @@ fastify.register(mongodb, {
 });
 
 // Middleware: Get Current User
+const getSessionTokenFromRequest = (request) =>
+  request.cookies.session_token || request.headers["x-session-token"] || null;
+
 const getCurrentUser = async (request) => {
-  const token = request.cookies.session_token;
+  const token = getSessionTokenFromRequest(request);
   if (!token) return null;
 
   const db = fastify.mongo.db;
@@ -159,9 +163,10 @@ fastify.post("/api/auth/firebase-login", async (request, reply) => {
       maxAge: 7 * 24 * 60 * 60,
     });
 
-    return await db
+    const user = await db
       .collection("users")
       .findOne({ user_id: userId }, { projection: { _id: 0 } });
+    return { user, session_token: sessionToken };
   } catch (error) {
     fastify.log.error(error);
     return reply.code(401).send({ message: "Invalid Token" });
@@ -174,7 +179,7 @@ fastify.get("/api/auth/me", async (request, reply) => {
 });
 
 fastify.post("/api/auth/logout", async (request, reply) => {
-  const token = request.cookies.session_token;
+  const token = getSessionTokenFromRequest(request);
   if (token) {
     await fastify.mongo.db
       .collection("user_sessions")
