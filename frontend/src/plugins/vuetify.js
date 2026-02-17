@@ -1,7 +1,3 @@
-// Composables
-import { createVuetify } from 'vuetify'
-import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
-import { defineComponent, h } from 'vue'
 import {
   mdiAccount,
   mdiAccountCircle,
@@ -22,6 +18,10 @@ import {
   mdiReddit,
   mdiShieldStarOutline,
 } from '@mdi/js'
+import { defineComponent, h } from 'vue'
+// Composables
+import { createVuetify } from 'vuetify'
+import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
 // Styles
 import 'vuetify/styles'
 
@@ -46,18 +46,18 @@ const mdiPathByName = {
   'mdi-shield-star-outline': mdiShieldStarOutline,
 }
 
-const resolveMdiPath = (icon) => {
-  if (Array.isArray(icon)) return icon
-  if (typeof icon !== 'string') return icon
+function resolveMdiPath (icon) {
+  if (Array.isArray(icon)) {return icon}
+  if (typeof icon !== 'string') {return icon}
 
   const name = icon.trim()
 
-  if (name.startsWith('svg:')) return name.slice(4)
-  if (name.startsWith('M')) return name
+  if (name.startsWith('svg:')) {return name.slice(4)}
+  if (name.startsWith('M')) {return name}
 
   if (name.startsWith('mdi-')) {
     const path = mdiPathByName[name]
-    if (path) return path
+    if (path) {return path}
   }
 
   return name
