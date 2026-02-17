@@ -101,8 +101,7 @@
   import axios from 'axios'
   import { onMounted, ref } from 'vue'
   import { useRouter } from 'vue-router'
-  import { useAppStore } from '@/stores/app' // Switched to AppStore based on previous merge
-  // REFIX: Using @ alias
+  import { useAppStore } from '@/stores/app'
   import { useCartStore } from '@/stores/cart'
 
   export default {
@@ -110,7 +109,7 @@
     setup() {
       const router = useRouter()
       const cartStore = useCartStore()
-      const appStore = useAppStore() // Use appStore for auth
+      const appStore = useAppStore()
       const products = ref([])
       const loading = ref(false)
       const snackbar = ref(false)
