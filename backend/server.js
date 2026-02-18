@@ -56,6 +56,7 @@ const ADMIN_EMAILS = new Set(["lakshsolanki848@gmail.com"]);
 fastify.register(cors, {
   credentials: true,
   allowedHeaders: ["Content-Type", "X-Session-Token", "Authorization"],
+  methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   origin: (origin, cb) => {
     if (!origin || allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
       cb(null, true);
@@ -146,4 +147,3 @@ const start = async () => {
   }
 };
 start();
-

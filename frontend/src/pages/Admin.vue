@@ -36,7 +36,7 @@
             </template>
 
             <template #item.price="{ item }">
-              <span>${{ item.price.toFixed(2) }}</span>
+              <span>${{ Number((resolveProductRecord(item) || {}).price || 0).toFixed(2) }}</span>
             </template>
 
             <template #item.actions="{ item }">
@@ -152,6 +152,7 @@
 
       const currentProductId = ref(null)
       const isAdmin = computed(() => Boolean(appStore.user?.is_admin))
+      const resolveProductRecord = (item) => item?.raw || item?.item?.raw || item?.item || item || null
 
       const headers = [
         { title: 'Image', key: 'image_url', sortable: false },
@@ -206,15 +207,23 @@
           return
         }
 
+        const selectedProduct = resolveProductRecord(product)
+        if (!selectedProduct?.product_id) {
+          snackbarText.value = 'Unable to update: product id not found'
+          snackbarColor.value = 'error'
+          snackbar.value = true
+          return
+        }
+
         editMode.value = true
-        currentProductId.value = product.product_id
+        currentProductId.value = selectedProduct.product_id
         formData.value = {
-          name: product.name,
-          description: product.description,
-          price: product.price,
-          category: product.category,
-          stock: product.stock,
-          image_url: product.image_url
+          name: selectedProduct.name,
+          description: selectedProduct.description,
+          price: selectedProduct.price,
+          category: selectedProduct.category,
+          stock: selectedProduct.stock,
+          image_url: selectedProduct.image_url
         }
         dialog.value = true
       }
@@ -255,11 +264,18 @@
           return
         }
 
+        if (editMode.value && !currentProductId.value) {
+          snackbarText.value = 'Unable to update: missing product id'
+          snackbarColor.value = 'error'
+          snackbar.value = true
+          return
+        }
+
         saving.value = true
         try {
           if (editMode.value) {
             await axios.put(
-              `${API_URL}/api/products/${currentProductId.value}`,
+              `${API_URL}/api/products/${encodeURIComponent(currentProductId.value)}`,
               payload,
               { withCredentials: true }
             )
@@ -295,13 +311,21 @@
           return
         }
 
-        if (!confirm(`Are you sure you want to delete ${product.name}?`)) {
+        const selectedProduct = resolveProductRecord(product)
+        if (!selectedProduct?.product_id) {
+          snackbarText.value = 'Unable to delete: product id not found'
+          snackbarColor.value = 'error'
+          snackbar.value = true
+          return
+        }
+
+        if (!confirm(`Are you sure you want to delete ${selectedProduct.name}?`)) {
           return
         }
 
         try {
           await axios.delete(
-            `${API_URL}/api/products/${product.product_id}`,
+            `${API_URL}/api/products/${encodeURIComponent(selectedProduct.product_id)}`,
             { withCredentials: true }
           )
           snackbarText.value = 'Product deleted successfully'
@@ -332,6 +356,7 @@
         isAdmin,
         formData,
         headers,
+        resolveProductRecord,
         openAddDialog,
         editProduct,
         saveProduct,
