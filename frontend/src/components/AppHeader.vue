@@ -52,7 +52,7 @@
           <v-icon v-else>mdi-account-circle</v-icon>
         </v-btn>
 
-        <v-btn v-if="appStore.isAuthenticated && appStore.user" class="admin-btn" to="/admin" variant="flat">
+        <v-btn v-if="appStore.isAuthenticated && canAccessAdmin" class="admin-btn" to="/admin" variant="flat">
           <v-icon start>mdi-shield-star-outline</v-icon>
           Admin
         </v-btn>
@@ -80,6 +80,7 @@
       const profileImage = computed(() =>
         appStore.user?.picture || appStore.user?.photoURL || appStore.user?.photo_url || null,
       )
+      const canAccessAdmin = computed(() => Boolean(appStore.user?.is_admin))
 
       const handleScroll = () => {
         isScrolled.value = window.scrollY > 20
@@ -97,6 +98,7 @@
         route,
         isScrolled,
         profileImage,
+        canAccessAdmin,
         appStore,
         cartStore
       }
