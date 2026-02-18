@@ -1,0 +1,88 @@
+export default async function registerCartRoutes(fastify, deps) {
+  const { uuidv4, requireAuth } = deps;
+
+  fastify.get("/api/cart", async (request, reply) => {
+    if (!(await requireAuth(request, reply))) return;
+
+    const cart = await fastify.mongo.db
+      .collection("carts")
+      .findOne({ user_id: request.user.user_id }, { projection: { _id: 0 } });
+    if (!cart) {
+      return {
+        cart_id: `cart_${uuidv4().substring(0, 12)}`,
+        user_id: request.user.user_id,
+        items: [],
+      };
+    }
+    return cart;
+  });
+
+  fastify.post("/api/cart/add", async (request, reply) => {
+    if (!(await requireAuth(request, reply))) return;
+    const { product_id, quantity } = request.body;
+    const db = fastify.mongo.db;
+    const parsedQuantity = Number(quantity);
+
+    if (!product_id || !Number.isInteger(parsedQuantity) || parsedQuantity <= 0) {
+      return reply.code(400).send({ message: "Valid product_id and quantity are required" });
+    }
+
+    const product = await db.collection("products").findOne({ product_id });
+    if (!product) {
+      return reply.code(404).send({ message: "Product not found" });
+    }
+
+    let cart = await db
+      .collection("carts")
+      .findOne({ user_id: request.user.user_id });
+
+    if (!cart) {
+      cart = {
+        cart_id: `cart_${uuidv4().substring(0, 12)}`,
+        user_id: request.user.user_id,
+        items: [],
+        updated_at: new Date(),
+      };
+      await db.collection("carts").insertOne(cart);
+    }
+
+    const items = cart.items || [];
+    const existingItemIndex = items.findIndex((i) => i.product_id === product_id);
+    const existingQuantity = existingItemIndex > -1 ? items[existingItemIndex].quantity : 0;
+    const requestedQuantity = existingQuantity + parsedQuantity;
+
+    if (requestedQuantity > (product.stock ?? 0)) {
+      return reply.code(400).send({ message: "Insufficient stock" });
+    }
+
+    if (existingItemIndex > -1) {
+      items[existingItemIndex].quantity = requestedQuantity;
+    } else {
+      items.push({ product_id, quantity: parsedQuantity });
+    }
+
+    await db
+      .collection("carts")
+      .updateOne(
+        { user_id: request.user.user_id },
+        { $set: { items, updated_at: new Date() } },
+      );
+
+    return { message: "Item added to cart" };
+  });
+
+  fastify.post("/api/cart/remove", async (request, reply) => {
+    if (!(await requireAuth(request, reply))) return;
+    const { product_id } = request.body;
+
+    await fastify.mongo.db.collection("carts").updateOne(
+      { user_id: request.user.user_id },
+      {
+        $pull: { items: { product_id } },
+        $set: { updated_at: new Date() },
+      },
+    );
+    return { message: "Item removed" };
+  });
+}
+
