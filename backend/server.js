@@ -47,6 +47,8 @@ const allowedOrigins = configuredCorsOrigins
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+const ADMIN_EMAILS = new Set(["lakshsolanki848@gmail.com"]);
+
 fastify.register(cors, {
   credentials: true,
   allowedHeaders: ["Content-Type", "X-Session-Token", "Authorization"],
@@ -99,7 +101,8 @@ const requireAuth = async (request, reply) => {
 
 const requireAdmin = async (request, reply) => {
   if (!(await requireAuth(request, reply))) return false;
-  if (!request.user.is_admin) {
+  const normalizedEmail = (request.user.email || "").toLowerCase().trim();
+  if (!ADMIN_EMAILS.has(normalizedEmail)) {
     await reply.code(403).send({ message: "Admin access required" });
     return false;
   }
@@ -127,6 +130,8 @@ fastify.post("/api/auth/firebase-login", async (request, reply) => {
   try {
     const decodedToken = await admin.auth().verifyIdToken(idToken);
     const { email, name, picture, uid } = decodedToken;
+    const normalizedEmail = (email || "").toLowerCase().trim();
+    const isAdminUser = ADMIN_EMAILS.has(normalizedEmail);
 
     const db = fastify.mongo.db;
     const userId = `user_${uid}`;
@@ -139,13 +144,13 @@ fastify.post("/api/auth/firebase-login", async (request, reply) => {
         email,
         name: name || "User",
         picture,
-        is_admin: false,
+        is_admin: isAdminUser,
         created_at: new Date(),
       });
     } else {
       await db
         .collection("users")
-        .updateOne({ user_id: userId }, { $set: { name, picture } });
+        .updateOne({ user_id: userId }, { $set: { name, picture, is_admin: isAdminUser } });
     }
 
     // Create Session

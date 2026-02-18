@@ -4,10 +4,10 @@
     app
     class="app-bar"
     :color="isScrolled ? 'surface' : 'transparent'"
-    :elevation="isScrolled ? 1 : 0"
+    :elevation="isScrolled ? 2 : 0"
     flat
   >
-    <v-container class="d-flex align-center px-8">
+    <v-container class="d-flex align-center header-shell px-4 px-md-8">
       <router-link class="logo-link" to="/">
         <h1 class="logo-text">MINDSTORE</h1>
       </router-link>
@@ -35,7 +35,7 @@
 
       <v-btn
         v-if="appStore.isAuthenticated && appStore.user"
-        class="ml-2"
+        class="ml-2 admin-btn"
         color="primary"
         to="/admin"
         variant="flat"
@@ -43,7 +43,13 @@
         Admin
       </v-btn>
 
-      <v-btn v-if="!appStore.isAuthenticated" color="primary" to="/login" variant="flat">
+      <v-btn
+        v-if="!appStore.isAuthenticated"
+        class="login-btn"
+        color="primary"
+        to="/login"
+        variant="flat"
+      >
         Login
       </v-btn>
     </v-container>
@@ -92,20 +98,30 @@
 
 .logo-text {
   font-family: 'Playfair Display', serif;
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   font-weight: 700;
-  color: #2F4F4F;
-  letter-spacing: 2px;
+  color: #1a2426;
+  letter-spacing: 1.4px;
 }
 
 .app-bar {
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(10px);
+}
+
+.header-shell {
+  border-bottom: 1px solid transparent;
+}
+
+.app-bar.v-toolbar--elevated .header-shell {
+  border-bottom-color: var(--ms-border);
 }
 
 .nav-btn {
   font-family: 'Manrope', sans-serif;
   text-transform: none;
-  font-weight: 500;
+  font-weight: 600;
+  color: #243036;
   position: relative;
 }
 
@@ -113,5 +129,24 @@
   position: absolute;
   top: 8px;
   right: 8px;
+}
+
+.admin-btn,
+.login-btn {
+  text-transform: none;
+  font-weight: 700;
+  border-radius: 999px;
+}
+
+@media (max-width: 600px) {
+  .logo-text {
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+  }
+
+  .nav-btn {
+    min-width: 38px;
+    padding: 0 6px;
+  }
 }
 </style>

@@ -3,11 +3,21 @@
     <v-container class="py-12">
       <div class="d-flex justify-space-between align-center mb-8">
         <h1 class="page-title">Admin Dashboard</h1>
-        <v-btn color="primary" @click="openAddDialog">
+        <v-btn color="primary" :disabled="!isAdmin" @click="openAddDialog">
           <v-icon left>mdi-plus</v-icon>
           Add Product
         </v-btn>
       </div>
+
+      <v-alert
+        v-if="!isAdmin"
+        class="mb-6"
+        density="comfortable"
+        type="warning"
+        variant="tonal"
+      >
+        Admin access is required to add, update, or delete products.
+      </v-alert>
 
       <v-card class="admin-card">
         <v-card-text>
@@ -31,6 +41,7 @@
 
             <template #item.actions="{ item }">
               <v-btn
+                :disabled="!isAdmin"
                 icon
                 size="small"
                 variant="text"
@@ -40,6 +51,7 @@
               </v-btn>
               <v-btn
                 color="error"
+                :disabled="!isAdmin"
                 icon
                 size="small"
                 variant="text"
@@ -73,7 +85,7 @@
               label="Price"
               prefix="$"
               required
-              step="0.01"
+              step="0"
               type="number"
             />
 
@@ -98,7 +110,7 @@
           <v-btn variant="text" @click="dialog = false">
             Cancel
           </v-btn>
-          <v-btn color="primary" :loading="saving" @click="saveProduct">
+          <v-btn color="primary" :disabled="!isAdmin" :loading="saving" @click="saveProduct">
             {{ editMode ? 'Update' : 'Add' }}
           </v-btn>
         </v-card-actions>
@@ -113,11 +125,13 @@
 
 <script>
   import axios from 'axios'
-  import { onMounted, ref } from 'vue'
+  import { computed, onMounted, ref } from 'vue'
+  import { useAppStore } from '@/stores/app'
 
   export default {
     name: 'Admin',
     setup() {
+      const appStore = useAppStore()
       const products = ref([])
       const loading = ref(false)
       const dialog = ref(false)
@@ -137,6 +151,7 @@
       })
 
       const currentProductId = ref(null)
+      const isAdmin = computed(() => Boolean(appStore.user?.is_admin))
 
       const headers = [
         { title: 'Image', key: 'image_url', sortable: false },
@@ -163,6 +178,13 @@
       }
 
       const openAddDialog = () => {
+        if (!isAdmin.value) {
+          snackbarText.value = 'Admin access required'
+          snackbarColor.value = 'warning'
+          snackbar.value = true
+          return
+        }
+
         editMode.value = false
         currentProductId.value = null
         formData.value = {
@@ -177,6 +199,13 @@
       }
 
       const editProduct = (product) => {
+        if (!isAdmin.value) {
+          snackbarText.value = 'Admin access required'
+          snackbarColor.value = 'warning'
+          snackbar.value = true
+          return
+        }
+
         editMode.value = true
         currentProductId.value = product.product_id
         formData.value = {
@@ -190,20 +219,55 @@
         dialog.value = true
       }
 
+      const normalizeText = (value) => (value == null ? '' : String(value).trim())
+
+      const buildProductPayload = () => {
+        const payload = {
+          name: normalizeText(formData.value.name),
+          description: normalizeText(formData.value.description),
+          category: normalizeText(formData.value.category),
+          image_url: normalizeText(formData.value.image_url),
+          price: Number(formData.value.price),
+          stock: Math.max(0, Math.trunc(Number(formData.value.stock)))
+        }
+
+        if (!payload.name) return { error: 'Product name is required' }
+        if (!Number.isFinite(payload.price) || payload.price < 0) return { error: 'Price must be a valid number' }
+        if (!payload.category) return { error: 'Category is required' }
+        if (!payload.image_url) return { error: 'Image URL is required' }
+
+        return { payload }
+      }
+
       const saveProduct = async () => {
+        if (!isAdmin.value) {
+          snackbarText.value = 'Admin access required'
+          snackbarColor.value = 'warning'
+          snackbar.value = true
+          return
+        }
+
+        const { payload, error: validationError } = buildProductPayload()
+        if (validationError) {
+          snackbarText.value = validationError
+          snackbarColor.value = 'warning'
+          snackbar.value = true
+          return
+        }
+
         saving.value = true
         try {
           if (editMode.value) {
             await axios.put(
               `${API_URL}/api/products/${currentProductId.value}`,
-              formData.value,
+              payload,
               { withCredentials: true }
             )
             snackbarText.value = 'Product updated successfully'
           } else {
             await axios.post(
               `${API_URL}/api/products`,
-              formData.value,
+              payload,
               { withCredentials: true }
             )
             snackbarText.value = 'Product added successfully'
@@ -215,7 +279,7 @@
           await fetchProducts()
         } catch (error) {
           console.error('Failed to save product:', error)
-          snackbarText.value = 'Failed to save product'
+          snackbarText.value = error.response?.data?.message || 'Failed to save product'
           snackbarColor.value = 'error'
           snackbar.value = true
         } finally {
@@ -224,6 +288,13 @@
       }
 
       const deleteProduct = async (product) => {
+        if (!isAdmin.value) {
+          snackbarText.value = 'Admin access required'
+          snackbarColor.value = 'warning'
+          snackbar.value = true
+          return
+        }
+
         if (!confirm(`Are you sure you want to delete ${product.name}?`)) {
           return
         }
@@ -239,7 +310,7 @@
           await fetchProducts()
         } catch (error) {
           console.error('Failed to delete product:', error)
-          snackbarText.value = 'Failed to delete product'
+          snackbarText.value = error.response?.data?.message || 'Failed to delete product'
           snackbarColor.value = 'error'
           snackbar.value = true
         }
@@ -258,6 +329,7 @@
         snackbar,
         snackbarText,
         snackbarColor,
+        isAdmin,
         formData,
         headers,
         openAddDialog,
