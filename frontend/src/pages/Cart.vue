@@ -42,7 +42,7 @@
             variant="flat"
           >
             <v-row no-gutters>
-              <v-col cols="4" sm="3">
+              <v-col cols="12" sm="4" md="3">
                 <div class="cart-item-image-wrapper">
                   <img
                     v-if="cartStore.products[item.product_id]"
@@ -52,7 +52,7 @@
                   >
                 </div>
               </v-col>
-              <v-col cols="8" sm="9">
+              <v-col cols="12" sm="8" md="9">
                 <v-card-text class="item-content">
                   <div class="item-main-row">
                     <div class="item-check-wrap">
@@ -149,7 +149,6 @@
 </template>
 
 <script>
-  import axios from 'axios'
   import { computed, onMounted, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import { useCartStore } from '@/stores/cart'
@@ -166,8 +165,6 @@
       const snackbarColor = ref('success')
       const selectedProductIds = ref([])
       const userSettings = ref(loadUserSettings())
-
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
       const selectedTotalAmount = computed(() => {
         return cartStore.items.reduce((total, item) => {
@@ -217,27 +214,14 @@
       }
 
       const checkout = async () => {
-        checkoutLoading.value = true
-        try {
-          const response = await axios.post(
-            `${API_URL}/api/checkout/place-order`,
-            { selected_product_ids: selectedProductIds.value },
-            { withCredentials: true }
-          )
-
-          if (response.data.success) {
-            await cartStore.fetchCart()
-            selectedProductIds.value = cartStore.items.map((item) => item.product_id)
-            router.push(`/order-success?order_id=${response.data.order_id}`)
-          }
-        } catch (error) {
-          console.error('Checkout failed:', error)
-          snackbarText.value = 'Order failed. Please try again.'
-          snackbarColor.value = 'error'
-          snackbar.value = true
-        } finally {
-          checkoutLoading.value = false
+        if (selectedProductIds.value.length === 0) {
+          return
         }
+
+        checkoutLoading.value = true
+        const selectedParam = selectedProductIds.value.map(encodeURIComponent).join(',')
+        await router.push(`/payment?selected=${selectedParam}`)
+        checkoutLoading.value = false
       }
 
       watch(
@@ -322,6 +306,10 @@
   margin-top: 36px;
 }
 
+.content-row {
+  row-gap: 12px;
+}
+
 .empty-state {
   border: 1px solid #dbe4df;
   border-radius: 26px;
@@ -368,6 +356,7 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 14px;
+  gap: 10px;
 }
 
 .cart-list-head p {
@@ -419,9 +408,10 @@
 }
 
 .item-main-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
 }
 
 .item-check-wrap {
@@ -460,6 +450,7 @@
 
 .remove-btn {
   color: #6f8086;
+  margin-top: -4px;
 }
 
 .order-summary-card {
@@ -529,12 +520,67 @@
     padding-bottom: 44px;
   }
 
+  .cart-list-head {
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
+  .cart-list-head p {
+    font-size: 1.15rem;
+  }
+
+  .cart-item-card {
+    border-radius: 16px;
+  }
+
   .cart-item-image-wrapper {
-    height: 135px;
+    height: 180px;
+  }
+
+  .item-content {
+    padding: 14px !important;
+  }
+
+  .item-main-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .item-check-wrap {
+    gap: 6px;
+  }
+
+  .item-check {
+    margin-left: -6px;
+    margin-right: -2px;
+  }
+
+  .cart-item-name {
+    font-size: 1rem;
+  }
+
+  .cart-item-price {
+    margin-top: 4px;
+  }
+
+  .cart-item-quantity {
+    margin-top: 4px;
+    font-size: 0.82rem;
+  }
+
+  .remove-btn {
+    justify-self: end;
+    margin-top: 0;
   }
 
   .summary-title {
     font-size: 1.25rem;
+  }
+
+  .summary-body,
+  .summary-actions {
+    padding-left: 16px;
+    padding-right: 16px;
   }
 }
 </style>

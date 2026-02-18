@@ -33,6 +33,18 @@
           Home
         </v-btn>
 
+        <v-btn class="icon-btn mobile-cart-btn d-md-none" icon to="/cart" variant="text">
+          <v-badge
+            v-if="cartStore.itemCount > 0"
+            color="accent"
+            :content="cartStore.itemCount"
+            floating
+          >
+            <v-icon>mdi-cart-outline</v-icon>
+          </v-badge>
+          <v-icon v-else>mdi-cart-outline</v-icon>
+        </v-btn>
+
         <v-btn
           v-if="appStore.isAuthenticated"
           class="icon-btn"
@@ -40,15 +52,7 @@
           to="/profile"
           variant="text"
         >
-          <v-avatar v-if="profileImage" class="header-avatar" size="34">
-            <img
-              alt="Profile"
-              class="rounded-xl"
-              content
-              :src="profileImage"
-              width="32"
-            >
-          </v-avatar>
+          <v-avatar v-if="profileImage" class="header-avatar" :image="profileImage" size="36" />
           <v-icon v-else>mdi-account-circle</v-icon>
         </v-btn>
 
@@ -197,6 +201,10 @@
 
 .icon-btn {
   color: #203034;
+}
+
+.mobile-cart-btn {
+  position: relative;
 }
 
 .header-avatar {
