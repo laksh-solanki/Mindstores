@@ -4,6 +4,7 @@ import { useAppStore } from './app'
 
 // REFIX: Vite compatible env var (Port 8000)
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const pendingProductRequests = new Map()
 
 export const useCartStore = defineStore('cart', {
   state: () => ({
@@ -24,9 +25,13 @@ export const useCartStore = defineStore('cart', {
   actions: {
     async withAuthRetry(requestFn) {
       const appStore = useAppStore()
-      const hasSession = await appStore.ensureBackendSession()
-      if (!hasSession) {
-        throw new Error('User not authenticated')
+      const likelyAuthenticated = appStore.isAuthenticated || !!appStore.sessionToken
+
+      if (!likelyAuthenticated) {
+        const hasSession = await appStore.ensureBackendSession()
+        if (!hasSession) {
+          throw new Error('User not authenticated')
+        }
       }
 
       try {
@@ -49,23 +54,81 @@ export const useCartStore = defineStore('cart', {
         )
         this.items = response.data.items || []
 
-        // Fetch product details for items in cart if we don't have them
-        for (const item of this.items) {
-          if (!this.products[item.product_id]) {
-            await this.fetchProductDetails(item.product_id)
-          }
+        const missingProductIds = [...new Set(
+          this.items
+            .map((item) => item.product_id)
+            .filter((productId) => !this.products[productId]),
+        )]
+
+        if (missingProductIds.length > 0) {
+          await this.fetchMissingProducts(missingProductIds)
         }
       } catch (error) {
         console.error('Failed to fetch cart:', error)
       }
     },
 
+    async fetchMissingProducts(productIds) {
+      const missingProductIds = [...new Set(
+        productIds.filter((productId) => !this.products[productId])
+      )]
+
+      if (missingProductIds.length === 0) {
+        return
+      }
+
+      // For multiple items, a single products request is usually faster than N detail requests.
+      if (missingProductIds.length > 1) {
+        try {
+          const response = await axios.get(`${API_URL}/api/products`, { timeout: 8000 })
+          const allProducts = Array.isArray(response.data) ? response.data : []
+          const productsById = new Map(allProducts.map((product) => [product.product_id, product]))
+
+          for (const productId of missingProductIds) {
+            if (productsById.has(productId)) {
+              this.products[productId] = productsById.get(productId)
+            }
+          }
+        } catch (error) {
+          console.warn('Bulk products fetch failed, falling back to per-product fetch.', error)
+        }
+      }
+
+      const stillMissingIds = missingProductIds.filter((productId) => !this.products[productId])
+      if (stillMissingIds.length > 0) {
+        await Promise.all(stillMissingIds.map((productId) => this.fetchProductDetails(productId)))
+      }
+    },
+
     async fetchProductDetails(productId) {
+      if (this.products[productId]) {
+        return this.products[productId]
+      }
+
+      if (pendingProductRequests.has(productId)) {
+        return pendingProductRequests.get(productId)
+      }
+
+      const request = axios
+        .get(`${API_URL}/api/products/${productId}`)
+        .then((response) => {
+          this.products[productId] = response.data
+          return response.data
+        })
+        .catch((error) => {
+          console.error(`Failed to fetch product ${productId}`, error)
+          return null
+        })
+        .finally(() => {
+          pendingProductRequests.delete(productId)
+        })
+
+      pendingProductRequests.set(productId, request)
+
       try {
-        const response = await axios.get(`${API_URL}/api/products/${productId}`)
-        this.products[productId] = response.data
-      } catch (error) {
-        console.error(`Failed to fetch product ${productId}`, error)
+        return await request
+      } catch {
+        return null
       }
     },
 

@@ -25,6 +25,17 @@ if (savedSessionToken) {
 // REFIX: Define API_URL to connect to Fastify Backend (Port 8000)
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
+function mapFirebaseUser (firebaseUser) {
+  if (!firebaseUser) {return null;}
+  return {
+    uid: firebaseUser.uid || null,
+    name: firebaseUser.displayName || null,
+    email: firebaseUser.email || null,
+    picture: firebaseUser.photoURL || null,
+    photoURL: firebaseUser.photoURL || null,
+  };
+}
+
 export const useAppStore = defineStore("app", {
   state: () => ({
     user: null,
@@ -57,6 +68,11 @@ export const useAppStore = defineStore("app", {
         return false;
       }
 
+      // Show user/avatar immediately while backend session is being validated.
+      const firebaseProfile = mapFirebaseUser(firebaseUser);
+      this.user = { ...this.user, ...firebaseProfile };
+      this.isAuthenticated = true;
+
       try {
         const idToken = await firebaseUser.getIdToken();
         const response = await axios.post(
@@ -69,7 +85,12 @@ export const useAppStore = defineStore("app", {
         // Validate that cookie-based backend session is active.
         await axios.get(`${API_URL}/api/auth/me`, { withCredentials: true });
 
-        this.user = response.data?.user || response.data || null;
+        const backendUser = response.data?.user || response.data || {};
+        this.user = {
+          ...firebaseProfile,
+          ...backendUser,
+          picture: backendUser.picture || backendUser.photo_url || backendUser.photoURL || firebaseProfile.picture || null,
+        };
         this.isAuthenticated = true;
         return true;
       } catch (error) {

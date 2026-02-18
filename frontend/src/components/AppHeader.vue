@@ -2,73 +2,84 @@
   <v-app-bar
     v-if="route.path !== '/login'"
     app
-    class="app-bar"
-    :color="isScrolled ? 'surface' : 'transparent'"
-    :elevation="isScrolled ? 2 : 0"
+    class="app-header"
+    :class="{ 'is-scrolled': isScrolled }"
     flat
+    height="86"
   >
-    <v-container class="d-flex align-center header-shell px-4 px-md-8">
-      <router-link class="logo-link" to="/">
-        <h1 class="logo-text">MINDSTORE</h1>
+    <v-container class="header-shell px-4 px-md-8">
+      <router-link class="brand-link" to="/">
+        <span class="brand-mark">MS</span>
+        <span class="brand-copy">
+          <span class="brand-title">MINDSTORE</span>
+          <span class="brand-subtitle">Curated Essentials</span>
+        </span>
       </router-link>
 
       <v-spacer />
 
-      <v-btn class="nav-btn" to="/" variant="text">
-        Home
-      </v-btn>
+      <div class="nav-pill d-none d-md-flex">
+        <v-btn class="nav-btn" to="/" variant="text">
+          Home
+        </v-btn>
+        <v-btn class="nav-btn" to="/cart" variant="text">
+          Cart
+          <v-badge v-if="cartStore.itemCount > 0" class="cart-badge" color="accent" :content="cartStore.itemCount" />
+        </v-btn>
+      </div>
 
-      <v-btn class="nav-btn" icon to="/cart" variant="text">
-        <v-icon>mdi-cart-outline</v-icon>
-        <v-badge v-if="cartStore.itemCount > 0" class="cart-badge" color="accent" :content="cartStore.itemCount" />
-      </v-btn>
+      <div class="action-cluster">
+        <v-btn class="nav-btn d-md-none" to="/" variant="text">
+          Home
+        </v-btn>
 
-      <v-btn
-        v-if="appStore.isAuthenticated"
-        class="nav-btn"
-        icon
-        to="/profile"
-        variant="text"
-      >
-        <v-icon>mdi-account-circle</v-icon>
-      </v-btn>
+        <v-btn
+          v-if="appStore.isAuthenticated"
+          class="icon-btn"
+          icon
+          to="/profile"
+          variant="text"
+        >
+          <v-avatar v-if="profileImage" class="header-avatar" size="34">
+            <img
+              alt="Profile"
+              class="rounded-xl"
+              content
+              :src="profileImage"
+              width="32"
+            >
+          </v-avatar>
+          <v-icon v-else>mdi-account-circle</v-icon>
+        </v-btn>
 
-      <v-btn
-        v-if="appStore.isAuthenticated && appStore.user"
-        class="ml-2 admin-btn"
-        color="primary"
-        to="/admin"
-        variant="flat"
-      >
-        Admin
-      </v-btn>
+        <v-btn v-if="appStore.isAuthenticated && appStore.user" class="admin-btn" to="/admin" variant="flat">
+          <v-icon start>mdi-shield-star-outline</v-icon>
+          Admin
+        </v-btn>
 
-      <v-btn
-        v-if="!appStore.isAuthenticated"
-        class="login-btn"
-        color="primary"
-        to="/login"
-        variant="flat"
-      >
-        Login
-      </v-btn>
+        <v-btn v-if="!appStore.isAuthenticated" class="login-btn" to="/login" variant="flat">
+          Login
+        </v-btn>
+      </div>
     </v-container>
   </v-app-bar>
 </template>
 <script>
-  import { onMounted, onUnmounted, ref } from 'vue'
+  import { computed, onMounted, onUnmounted, ref } from 'vue'
   import { useRoute } from 'vue-router'
   import { useAppStore } from '@/stores/app'
   import { useCartStore } from '@/stores/cart'
 
   export default {
-    name: 'App',
+    name: 'AppHeader',
     setup() {
       const route = useRoute()
-      // REFIX: Use appStore instead of authStore
       const appStore = useAppStore()
       const cartStore = useCartStore()
       const isScrolled = ref(false)
+      const profileImage = computed(() =>
+        appStore.user?.picture || appStore.user?.photoURL || appStore.user?.photo_url || null,
+      )
 
       const handleScroll = () => {
         isScrolled.value = window.scrollY > 20
@@ -85,6 +96,7 @@
       return {
         route,
         isScrolled,
+        profileImage,
         appStore,
         cartStore
       }
@@ -92,61 +104,149 @@
   }
 </script>
 <style>
-.logo-link {
-  text-decoration: none;
-}
-
-.logo-text {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: #1a2426;
-  letter-spacing: 1.4px;
-}
-
-.app-bar {
-  transition: all 0.25s ease;
-  backdrop-filter: blur(10px);
-}
-
 .header-shell {
-  border-bottom: 1px solid transparent;
+  height: 100%;
+  display: flex;
+  align-items: center;
 }
 
-.app-bar.v-toolbar--elevated .header-shell {
-  border-bottom-color: var(--ms-border);
+.app-header {
+  transition: background-color 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  background: linear-gradient(130deg, rgba(255, 255, 255, 0.9), rgba(246, 249, 247, 0.92));
+  border-bottom: 1px solid rgba(181, 195, 188, 0.36);
+  backdrop-filter: blur(14px);
+}
+
+.app-header.is-scrolled {
+  background: linear-gradient(130deg, rgba(255, 255, 255, 0.96), rgba(243, 248, 245, 0.96));
+  box-shadow: 0 12px 28px rgba(18, 34, 30, 0.08);
+  border-bottom-color: rgba(178, 194, 186, 0.62);
+}
+
+.brand-link {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #1b2b2d, #314547);
+  color: #f4efe7;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  font-size: 0.92rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 8px 20px rgba(25, 44, 46, 0.22);
+}
+
+.brand-copy {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.06rem;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  line-height: 1;
+  color: #162224;
+}
+
+.brand-subtitle {
+  font-size: 0.72rem;
+  color: #64747b;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.nav-pill {
+  background: linear-gradient(140deg, rgba(255, 255, 255, 0.82), rgba(235, 242, 238, 0.9));
+  border: 1px solid rgba(178, 194, 186, 0.6);
+  border-radius: 999px;
+  padding: 4px;
+  gap: 2px;
+  margin-right: 8px;
 }
 
 .nav-btn {
-  font-family: 'Manrope', sans-serif;
   text-transform: none;
-  font-weight: 600;
-  color: #243036;
-  position: relative;
+  font-weight: 700;
+  border-radius: 999px;
+  color: #263338;
+  letter-spacing: 0.1px;
+}
+
+.nav-btn:hover {
+  background: rgba(217, 228, 223, 0.54);
+}
+
+.action-cluster {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-btn {
+  color: #203034;
+}
+
+.header-avatar {
+  border: 1px solid rgba(182, 197, 189, 0.9);
+  box-shadow: 0 4px 12px rgba(25, 44, 46, 0.16);
 }
 
 .cart-badge {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 6px;
+  right: 6px;
 }
 
-.admin-btn,
+.admin-btn {
+  text-transform: none;
+  font-weight: 700;
+  border-radius: 999px;
+  background: #223335;
+  color: #f6fbfa;
+  padding-inline: 14px;
+}
+
 .login-btn {
   text-transform: none;
   font-weight: 700;
   border-radius: 999px;
+  padding-inline: 18px;
+  color: #ffffff;
+  background: linear-gradient(120deg, #cc7a2d, #b45f1e);
+  box-shadow: 0 8px 20px rgba(199, 116, 43, 0.28);
 }
 
 @media (max-width: 600px) {
-  .logo-text {
-    font-size: 1.1rem;
-    letter-spacing: 1px;
+  .brand-copy {
+    display: none;
   }
 
-  .nav-btn {
-    min-width: 38px;
-    padding: 0 6px;
+  .brand-mark {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 0.84rem;
+  }
+
+  .action-cluster {
+    gap: 4px;
+  }
+
+  .admin-btn,
+  .login-btn {
+    min-width: unset;
+    padding-inline: 12px;
   }
 }
 </style>
