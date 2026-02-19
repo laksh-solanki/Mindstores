@@ -39,7 +39,14 @@
           </v-col>
           <v-col cols="12" md="6">
             <div class="hero-image-shell">
-              <img alt="Hero product scene" class="hero-image" :src="heroImage">
+              <img
+                alt="Hero product scene"
+                class="hero-image"
+                decoding="async"
+                fetchpriority="high"
+                loading="eager"
+                :src="heroImage"
+              >
               <div class="floating-card">
                 <p>Editor's Pick</p>
                 <h4>Handcrafted Utility Set</h4>
@@ -111,15 +118,22 @@
               >
                 <v-card class="product-card" @click="goToProduct(product.product_id)">
                   <div class="product-image-wrapper">
-                    <img :alt="product.name" class="product-image" :src="product.image_url">
+                    <img
+                      :alt="product.name"
+                      class="product-image"
+                      decoding="async"
+                      loading="lazy"
+                      :src="product.image_url"
+                    >
                   </div>
                   <v-card-text class="product-content">
                     <p class="product-category">{{ product.category }}</p>
                     <h3 class="product-name">{{ product.name }}</h3>
                     <div class="product-row">
                       <span class="product-price">${{ Number(product.price || 0).toFixed(2) }}</span>
-                      <v-btn color="primary" icon size="small" @click.stop="quickAddToCart(product.product_id)">
-                        <v-icon>mdi-cart-plus</v-icon>
+                      <v-btn class="product-add-btn" size="small" variant="flat" @click.stop="quickAddToCart(product.product_id)">
+                        <v-icon size="16" start>mdi-cart-plus</v-icon>
+                        Add
                       </v-btn>
                     </div>
                   </v-card-text>
@@ -150,9 +164,50 @@
   import { useCartStore } from '@/stores/cart'
 
   const CATEGORY_PRIORITY = ['Electronics', 'Furniture', 'Clothing']
+  const PRODUCTS_CACHE_KEY = 'mindstore_home_products_cache_v1'
   const CACHE_TTL_MS = 60 * 1000
+  const PRODUCT_REQUEST_TIMEOUT_MS = 20_000
+  const PRODUCT_FETCH_RETRIES = 2
   let cachedProducts = null
   let cacheExpiresAt = 0
+
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+  function isRetryableProductsError (error) {
+    const status = error?.response?.status
+    if (status && status < 500 && status !== 429) {
+      return false
+    }
+    return error?.code === 'ECONNABORTED' || !error?.response || status >= 500 || status === 429
+  }
+
+  function readPersistedProductsCache () {
+    if (typeof window === 'undefined') return null
+    try {
+      const rawCache = window.localStorage.getItem(PRODUCTS_CACHE_KEY)
+      if (!rawCache) return null
+      const parsed = JSON.parse(rawCache)
+      if (!Array.isArray(parsed?.products)) return null
+      return {
+        products: parsed.products,
+        expiresAt: Number(parsed.expiresAt) || 0
+      }
+    } catch {
+      return null
+    }
+  }
+
+  function writePersistedProductsCache (products, expiresAt) {
+    if (typeof window === 'undefined') return
+    try {
+      window.localStorage.setItem(
+        PRODUCTS_CACHE_KEY,
+        JSON.stringify({ products, expiresAt })
+      )
+    } catch {
+      // Ignore storage quota/privacy errors and continue with in-memory cache.
+    }
+  }
 
   export default {
     name: 'Home',
@@ -207,15 +262,46 @@
           return
         }
 
-        loading.value = true
+        if (!cachedProducts) {
+          const persistedCache = readPersistedProductsCache()
+          if (persistedCache) {
+            cachedProducts = persistedCache.products
+            cacheExpiresAt = persistedCache.expiresAt
+            products.value = persistedCache.products
+            if (cacheExpiresAt > now) {
+              return
+            }
+          }
+        }
+
+        loading.value = products.value.length === 0
+        let lastError = null
         try {
-          const response = await axios.get(`${API_URL}/api/products`, { timeout: 8000 })
-          products.value = response.data
-          cachedProducts = response.data
-          cacheExpiresAt = now + CACHE_TTL_MS
-        } catch (error) {
-          console.error('Failed to fetch products:', error)
+          for (let attempt = 0; attempt <= PRODUCT_FETCH_RETRIES; attempt++) {
+            try {
+              const response = await axios.get(`${API_URL}/api/products`, { timeout: PRODUCT_REQUEST_TIMEOUT_MS })
+              const fetchedProducts = Array.isArray(response.data) ? response.data : []
+              products.value = fetchedProducts
+              cachedProducts = fetchedProducts
+              cacheExpiresAt = Date.now() + CACHE_TTL_MS
+              writePersistedProductsCache(fetchedProducts, cacheExpiresAt)
+              return
+            } catch (error) {
+              lastError = error
+              const shouldRetry = attempt < PRODUCT_FETCH_RETRIES && isRetryableProductsError(error)
+              if (!shouldRetry) break
+              await wait((attempt + 1) * 600)
+            }
+          }
         } finally {
+          if (lastError) {
+            if (products.value.length > 0) {
+              console.warn('Failed to refresh products. Showing cached products.', lastError)
+            } else {
+              console.error('Failed to fetch products:', lastError)
+            }
+          }
+
           loading.value = false
         }
       }
@@ -514,6 +600,20 @@
   font-size: 1.2rem;
   color: #b8621a;
   font-weight: 700;
+}
+
+.product-add-btn {
+  text-transform: none;
+  font-weight: 700;
+  border-radius: 999px;
+  color: #f9fcfb;
+  background: linear-gradient(120deg, #23383b, #355256);
+  box-shadow: 0 8px 18px rgba(33, 54, 57, 0.22);
+  padding-inline: 14px;
+}
+
+.product-add-btn:hover {
+  filter: brightness(1.05);
 }
 
 @media (max-width: 960px) {

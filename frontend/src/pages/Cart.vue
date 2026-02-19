@@ -42,7 +42,7 @@
             variant="flat"
           >
             <v-row no-gutters>
-              <v-col cols="12" sm="4" md="3">
+              <v-col cols="12" md="3" sm="4">
                 <div class="cart-item-image-wrapper">
                   <img
                     v-if="cartStore.products[item.product_id]"
@@ -52,7 +52,7 @@
                   >
                 </div>
               </v-col>
-              <v-col cols="12" sm="8" md="9">
+              <v-col cols="12" md="9" sm="8">
                 <v-card-text class="item-content">
                   <div class="item-main-row">
                     <div class="item-check-wrap">
@@ -71,9 +71,33 @@
                         <p class="cart-item-price">
                           {{ formatAmount(cartStore.products[item.product_id]?.price) }}
                         </p>
-                        <p class="cart-item-quantity">
-                          Quantity: {{ item.quantity }}
-                        </p>
+                        <div class="cart-item-quantity">
+                          <span class="quantity-label">Quantity</span>
+                          <div class="quantity-controls">
+                            <v-btn
+                              class="quantity-btn"
+                              :disabled="item.quantity <= 1 || isQuantityUpdating(item.product_id)"
+                              icon
+                              size="x-small"
+                              variant="outlined"
+                              @click="changeQuantity(item, -1)"
+                            >
+                              <v-icon size="16">mdi-minus</v-icon>
+                            </v-btn>
+                            <span class="quantity-value">{{ item.quantity }}</span>
+                            <v-btn
+                              class="quantity-btn"
+                              :disabled="item.quantity >= getMaxQuantity(item.product_id) || isQuantityUpdating(item.product_id)"
+                              icon
+                              size="x-small"
+                              variant="outlined"
+                              @click="changeQuantity(item, 1)"
+                            >
+                              <v-icon size="16">mdi-plus</v-icon>
+                            </v-btn>
+                          </div>
+                          <span class="stock-hint">Max {{ getMaxQuantity(item.product_id) }}</span>
+                        </div>
                       </div>
                     </div>
                     <v-btn
@@ -109,9 +133,49 @@
                   label="Select all products"
                 />
               </div>
+              <div class="promo-section">
+                <p class="promo-label">Promo Code</p>
+                <div class="promo-input-row">
+                  <v-text-field
+                    v-model="promoInput"
+                    class="promo-input"
+                    density="comfortable"
+                    hide-details
+                    placeholder="Enter code"
+                    variant="outlined"
+                  />
+                  <v-btn
+                    class="promo-apply-btn"
+                    color="primary"
+                    :disabled="selectedProductIds.length === 0 || !promoInput.trim()"
+                    rounded="pill"
+                    @click="applyPromoCode"
+                  >
+                    Apply
+                  </v-btn>
+                </div>
+                <div class="promo-chip-row">
+                  <v-chip
+                    v-for="promo in PROMO_CODES"
+                    :key="promo.code"
+                    class="promo-chip"
+                    :color="appliedPromoCode === promo.code ? 'primary' : undefined"
+                    size="small"
+                    :variant="appliedPromoCode === promo.code ? 'flat' : 'outlined'"
+                    @click="selectPromoCode(promo.code)"
+                  >
+                    {{ promo.code }}
+                  </v-chip>
+                </div>
+                <p class="promo-note">{{ promoHelperText }}</p>
+              </div>
               <div class="summary-row">
                 <span>Subtotal</span>
                 <span>{{ formatAmount(selectedTotalAmount) }}</span>
+              </div>
+              <div v-if="promoDiscount > 0" class="summary-row promo-row">
+                <span>Promo ({{ appliedPromoCode }})</span>
+                <span>-{{ formatAmount(promoDiscount) }}</span>
               </div>
               <div class="summary-row">
                 <span>Shipping</span>
@@ -120,7 +184,7 @@
               <v-divider class="my-4" />
               <div class="summary-row summary-total">
                 <span>Total</span>
-                <span>{{ formatAmount(selectedTotalAmount) }}</span>
+                <span>{{ formatAmount(finalTotalAmount) }}</span>
               </div>
             </v-card-text>
             <v-card-actions class="summary-actions">
@@ -154,6 +218,30 @@
   import { useCartStore } from '@/stores/cart'
   import { loadUserSettings } from '@/utils/userSettings'
 
+  const PROMO_CODES = [
+    {
+      code: 'SAVE10',
+      type: 'percent',
+      value: 10,
+      minSubtotal: 60,
+      description: '10% off selected items above $60'
+    },
+    {
+      code: 'FLAT20',
+      type: 'flat',
+      value: 20,
+      minSubtotal: 120,
+      description: '$20 off selected items above $120'
+    },
+    {
+      code: 'SAVE20',
+      type: 'percent',
+      value: 20,
+      minSubtotal: 180,
+      description: '20% off selected items above $180'
+    }
+  ]
+
   export default {
     name: 'Cart',
     setup() {
@@ -165,6 +253,9 @@
       const snackbarColor = ref('success')
       const selectedProductIds = ref([])
       const userSettings = ref(loadUserSettings())
+      const quantityUpdatingById = ref({})
+      const promoInput = ref('')
+      const appliedPromoCode = ref('')
 
       const selectedTotalAmount = computed(() => {
         return cartStore.items.reduce((total, item) => {
@@ -174,6 +265,35 @@
           const product = cartStore.products[item.product_id]
           return total + (product ? product.price * item.quantity : 0)
         }, 0)
+      })
+
+      const activePromo = computed(() => {
+        return PROMO_CODES.find((promo) => promo.code === appliedPromoCode.value) || null
+      })
+
+      const promoDiscount = computed(() => {
+        const promo = activePromo.value
+        const subtotal = selectedTotalAmount.value
+        if (!promo || subtotal <= 0 || subtotal < promo.minSubtotal) {
+          return 0
+        }
+
+        if (promo.type === 'percent') {
+          return Number(((subtotal * promo.value) / 100).toFixed(2))
+        }
+
+        return Math.min(subtotal, promo.value)
+      })
+
+      const finalTotalAmount = computed(() => {
+        return Math.max(0, selectedTotalAmount.value - promoDiscount.value)
+      })
+
+      const promoHelperText = computed(() => {
+        if (appliedPromoCode.value && activePromo.value && promoDiscount.value > 0) {
+          return `Applied ${appliedPromoCode.value}: ${activePromo.value.description}`
+        }
+        return `Valid codes: ${PROMO_CODES.map((promo) => promo.code).join(', ')}`
       })
 
       const selectAllChecked = computed({
@@ -201,6 +321,99 @@
         }
       }
 
+      const getMaxQuantity = (productId) => {
+        const product = cartStore.products[productId]
+        const stock = Number(product?.stock)
+
+        if (!Number.isFinite(stock) || stock <= 0) {
+          const fallbackItem = cartStore.items.find((item) => item.product_id === productId)
+          return Math.max(1, Number(fallbackItem?.quantity || 1))
+        }
+
+        return Math.max(1, Math.floor(stock))
+      }
+
+      const isQuantityUpdating = (productId) => Boolean(quantityUpdatingById.value[productId])
+
+      const changeQuantity = async (item, step) => {
+        const currentQuantity = Number(item.quantity || 0)
+        const nextQuantity = currentQuantity + step
+        const maxQuantity = getMaxQuantity(item.product_id)
+
+        if (nextQuantity < 1) {
+          return
+        }
+
+        if (nextQuantity > maxQuantity) {
+          snackbarText.value = `Only ${maxQuantity} items available for this product`
+          snackbarColor.value = 'warning'
+          snackbar.value = true
+          return
+        }
+
+        if (isQuantityUpdating(item.product_id)) {
+          return
+        }
+
+        quantityUpdatingById.value = {
+          ...quantityUpdatingById.value,
+          [item.product_id]: true
+        }
+
+        try {
+          await cartStore.updateCartQuantity(item.product_id, nextQuantity)
+        } catch (error) {
+          snackbarText.value = error?.response?.data?.message || 'Failed to update quantity'
+          snackbarColor.value = 'error'
+          snackbar.value = true
+        } finally {
+          const nextState = { ...quantityUpdatingById.value }
+          delete nextState[item.product_id]
+          quantityUpdatingById.value = nextState
+        }
+      }
+
+      const normalizePromoCode = (value) => String(value || '').trim().toUpperCase()
+
+      const applyPromoCode = () => {
+        if (selectedProductIds.value.length === 0) {
+          snackbarText.value = 'Select products before applying promo code'
+          snackbarColor.value = 'warning'
+          snackbar.value = true
+          return
+        }
+
+        const normalizedCode = normalizePromoCode(promoInput.value)
+        const promo = PROMO_CODES.find((item) => item.code === normalizedCode)
+
+        if (!promo) {
+          appliedPromoCode.value = ''
+          snackbarText.value = 'Invalid promo code. Please use a valid code.'
+          snackbarColor.value = 'error'
+          snackbar.value = true
+          return
+        }
+
+        if (selectedTotalAmount.value < promo.minSubtotal) {
+          appliedPromoCode.value = ''
+          snackbarText.value = `Promo ${promo.code} requires at least ${formatAmount(promo.minSubtotal)} selected subtotal`
+          snackbarColor.value = 'warning'
+          snackbar.value = true
+          return
+        }
+
+        appliedPromoCode.value = promo.code
+        promoInput.value = promo.code
+        snackbarText.value = `Promo ${promo.code} applied successfully`
+        snackbarColor.value = 'success'
+        snackbar.value = true
+      }
+
+      const selectPromoCode = (code) => {
+        promoInput.value = code
+        applyPromoCode()
+      }
+
       const formatAmount = (amount) => {
         try {
           return new Intl.NumberFormat('en-US', {
@@ -219,9 +432,18 @@
         }
 
         checkoutLoading.value = true
-        const selectedParam = selectedProductIds.value.map(encodeURIComponent).join(',')
-        await router.push(`/payment?selected=${selectedParam}`)
-        checkoutLoading.value = false
+        try {
+          const selectedParam = selectedProductIds.value
+            .map((productId) => encodeURIComponent(productId))
+            .join(',')
+          const queryParts = [`selected=${selectedParam}`]
+          if (appliedPromoCode.value && promoDiscount.value > 0) {
+            queryParts.push(`promo=${encodeURIComponent(appliedPromoCode.value)}`)
+          }
+          await router.push(`/payment?${queryParts.join('&')}`)
+        } finally {
+          checkoutLoading.value = false
+        }
       }
 
       watch(
@@ -234,6 +456,17 @@
           }
         },
         { immediate: true }
+      )
+
+      watch(
+        () => `${selectedProductIds.value.join(',')}|${selectedTotalAmount.value}`,
+        () => {
+          if (!activePromo.value) return
+
+          if (selectedProductIds.value.length === 0 || selectedTotalAmount.value < activePromo.value.minSubtotal) {
+            appliedPromoCode.value = ''
+          }
+        }
       )
 
       onMounted(async () => {
@@ -249,6 +482,17 @@
         removeItem,
         checkout,
         checkoutLoading,
+        changeQuantity,
+        getMaxQuantity,
+        isQuantityUpdating,
+        applyPromoCode,
+        selectPromoCode,
+        PROMO_CODES,
+        promoInput,
+        appliedPromoCode,
+        promoDiscount,
+        finalTotalAmount,
+        promoHelperText,
         selectedProductIds,
         selectedTotalAmount,
         selectAllChecked,
@@ -442,10 +686,46 @@
 
 .cart-item-quantity {
   margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.quantity-label {
   font-family: 'Manrope', sans-serif;
-  font-size: 0.86rem;
+  font-size: 0.84rem;
   color: #6c7f86;
   letter-spacing: 0.2px;
+}
+
+.quantity-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #d8e2dd;
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: rgba(249, 252, 250, 0.9);
+}
+
+.quantity-btn {
+  color: #2c3e42;
+}
+
+.quantity-value {
+  min-width: 22px;
+  text-align: center;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #243437;
+}
+
+.stock-hint {
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.78rem;
+  color: #72848b;
 }
 
 .remove-btn {
@@ -480,6 +760,61 @@
   margin-bottom: 12px;
   font-family: 'Manrope', sans-serif;
   color: #55696f;
+}
+
+.promo-section {
+  border: 1px solid #d8e2dd;
+  border-radius: 14px;
+  background: #f9fcfa;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.promo-label {
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: #35494f;
+}
+
+.promo-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.promo-input {
+  flex: 1;
+}
+
+.promo-apply-btn {
+  text-transform: none;
+  font-weight: 700;
+}
+
+.promo-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.promo-chip {
+  cursor: pointer;
+}
+
+.promo-note {
+  margin-top: 8px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.78rem;
+  color: #6a7d84;
+}
+
+.promo-row {
+  color: #246a57;
+  font-weight: 700;
 }
 
 .select-all-row {
@@ -565,7 +900,12 @@
 
   .cart-item-quantity {
     margin-top: 4px;
-    font-size: 0.82rem;
+    gap: 6px;
+  }
+
+  .promo-input-row {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .remove-btn {

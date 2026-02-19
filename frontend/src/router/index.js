@@ -1,24 +1,16 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import Admin from '@/pages/Admin.vue'
-import Cart from '@/pages/Cart.vue'
-// Import all pages manually
 import Home from '@/pages/Home.vue'
-import Login from '@/pages/Login.vue'
-import Payment from '@/pages/Payment.vue'
-import OrderSuccess from '@/pages/OrderSuccess.vue'
-import ProductDetail from '@/pages/ProductDetail.vue'
-import Profile from '@/pages/Profile.vue'
 
 const routes = [
   { path: '/', component: Home, name: 'Home' },
-  { path: '/login', component: Login, name: 'Login' },
-  { path: '/product/:id', component: ProductDetail, name: 'ProductDetail' },
-  { path: '/cart', component: Cart, name: 'Cart' },
-  { path: '/payment', component: Payment, name: 'Payment' },
-  { path: '/order-success', component: OrderSuccess, name: 'OrderSuccess' },
-  { path: '/profile', component: Profile, name: 'Profile' },
-  { path: '/admin', component: Admin, name: 'Admin' },
+  { path: '/login', component: () => import('@/pages/Login.vue'), name: 'Login' },
+  { path: '/product/:id', component: () => import('@/pages/ProductDetail.vue'), name: 'ProductDetail' },
+  { path: '/cart', component: () => import('@/pages/Cart.vue'), name: 'Cart' },
+  { path: '/payment', component: () => import('@/pages/Payment.vue'), name: 'Payment' },
+  { path: '/order-success', component: () => import('@/pages/OrderSuccess.vue'), name: 'OrderSuccess' },
+  { path: '/profile', component: () => import('@/pages/Profile.vue'), name: 'Profile' },
+  { path: '/admin', component: () => import('@/pages/Admin.vue'), name: 'Admin' },
 ]
 
 const router = createRouter({

@@ -24,13 +24,14 @@ export default async function registerProductRoutes(fastify, deps) {
     return { product_id: normalizedId };
   };
 
-  fastify.get("/api/products", async (request) => {
+  fastify.get("/api/products", async (request, reply) => {
     const { category } = request.query;
     const query = category ? { category } : {};
     const products = await fastify.mongo.db
       .collection("products")
       .find(query)
       .toArray();
+    reply.header("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
     return products.map(serializeProduct);
   });
 
@@ -42,6 +43,7 @@ export default async function registerProductRoutes(fastify, deps) {
       .collection("products")
       .findOne(filter);
     if (!product) return reply.code(404).send({ message: "Product not found" });
+    reply.header("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
     return serializeProduct(product);
   });
 

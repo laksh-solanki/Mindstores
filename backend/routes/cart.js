@@ -84,5 +84,51 @@ export default async function registerCartRoutes(fastify, deps) {
     );
     return { message: "Item removed" };
   });
-}
 
+  fastify.post("/api/cart/update", async (request, reply) => {
+    if (!(await requireAuth(request, reply))) return;
+
+    const { product_id, quantity } = request.body;
+    const db = fastify.mongo.db;
+    const parsedQuantity = Number(quantity);
+
+    if (!product_id || !Number.isInteger(parsedQuantity) || parsedQuantity <= 0) {
+      return reply.code(400).send({ message: "Valid product_id and quantity are required" });
+    }
+
+    const product = await db.collection("products").findOne({ product_id });
+    if (!product) {
+      return reply.code(404).send({ message: "Product not found" });
+    }
+
+    if (parsedQuantity > (product.stock ?? 0)) {
+      return reply.code(400).send({ message: "Insufficient stock" });
+    }
+
+    const cart = await db
+      .collection("carts")
+      .findOne({ user_id: request.user.user_id });
+
+    if (!cart) {
+      return reply.code(404).send({ message: "Cart not found" });
+    }
+
+    const items = cart.items || [];
+    const existingItemIndex = items.findIndex((item) => item.product_id === product_id);
+
+    if (existingItemIndex === -1) {
+      return reply.code(404).send({ message: "Item not found in cart" });
+    }
+
+    items[existingItemIndex].quantity = parsedQuantity;
+
+    await db
+      .collection("carts")
+      .updateOne(
+        { user_id: request.user.user_id },
+        { $set: { items, updated_at: new Date() } },
+      );
+
+    return { message: "Cart item quantity updated", product_id, quantity: parsedQuantity };
+  });
+}

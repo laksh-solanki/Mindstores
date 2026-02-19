@@ -162,6 +162,26 @@ export const useCartStore = defineStore('cart', {
         console.error('Failed to remove item:', error)
         throw error
       }
+    },
+
+    async updateCartQuantity(productId, quantity) {
+      try {
+        await this.withAuthRetry(() =>
+          axios.post(
+            `${API_URL}/api/cart/update`,
+            { product_id: productId, quantity },
+            { withCredentials: true }
+          )
+        )
+
+        const item = this.items.find((cartItem) => cartItem.product_id === productId)
+        if (item) {
+          item.quantity = quantity
+        }
+      } catch (error) {
+        console.error('Failed to update cart quantity:', error)
+        throw error
+      }
     }
   }
 })

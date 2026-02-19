@@ -14,6 +14,10 @@ import { app as firebaseApp } from "@/plugins/firebase";
 
 const auth = getAuth(firebaseApp);
 const SESSION_TOKEN_KEY = "mindstore_session_token";
+const AUTH_REQUEST_TIMEOUT_MS = 20_000;
+const AUTH_REQUEST_RETRIES = 1;
+let backendSessionPromise = null;
+let backendSessionUid = null;
 const savedSessionToken =
   typeof window === "undefined"
     ? null
@@ -36,12 +40,23 @@ function mapFirebaseUser (firebaseUser) {
   };
 }
 
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function isRetryableAuthError(error) {
+  const status = error?.response?.status;
+  if (status && status < 500 && status !== 429) {
+    return false;
+  }
+  return error?.code === "ECONNABORTED" || !error?.response || status >= 500 || status === 429;
+}
+
 export const useAppStore = defineStore("app", {
   state: () => ({
     user: null,
     isAuthenticated: false,
     loading: true,
     sessionToken: savedSessionToken,
+    authListenerInitialized: false,
   }),
 
   actions: {
@@ -65,6 +80,8 @@ export const useAppStore = defineStore("app", {
         this.user = null;
         this.isAuthenticated = false;
         this.setSessionToken(null);
+        backendSessionPromise = null;
+        backendSessionUid = null;
         return false;
       }
 
@@ -73,36 +90,72 @@ export const useAppStore = defineStore("app", {
       this.user = { ...this.user, ...firebaseProfile };
       this.isAuthenticated = true;
 
-      try {
-        const idToken = await firebaseUser.getIdToken();
-        const response = await axios.post(
-          `${API_URL}/api/auth/firebase-login`,
-          { idToken },
-          { withCredentials: true },
-        );
-        this.setSessionToken(response.data?.session_token || null);
-
-        // Validate that cookie-based backend session is active.
-        await axios.get(`${API_URL}/api/auth/me`, { withCredentials: true });
-
-        const backendUser = response.data?.user || response.data || {};
-        this.user = {
-          ...firebaseProfile,
-          ...backendUser,
-          picture: backendUser.picture || backendUser.photo_url || backendUser.photoURL || firebaseProfile.picture || null,
-        };
-        this.isAuthenticated = true;
-        return true;
-      } catch (error) {
-        console.error("Backend authentication failed:", error);
-        this.user = null;
-        this.isAuthenticated = false;
-        this.setSessionToken(null);
-        return false;
+      if (backendSessionPromise && backendSessionUid === firebaseUser.uid) {
+        return await backendSessionPromise;
       }
+
+      backendSessionUid = firebaseUser.uid;
+      const sessionRequest = (async () => {
+        try {
+          const idToken = await firebaseUser.getIdToken();
+          let response = null;
+
+          for (let attempt = 0; attempt <= AUTH_REQUEST_RETRIES; attempt++) {
+            try {
+              response = await axios.post(
+                `${API_URL}/api/auth/firebase-login`,
+                { idToken },
+                { withCredentials: true, timeout: AUTH_REQUEST_TIMEOUT_MS },
+              );
+              break;
+            } catch (error) {
+              const shouldRetry =
+                attempt < AUTH_REQUEST_RETRIES && isRetryableAuthError(error);
+              if (!shouldRetry) {
+                throw error;
+              }
+              await wait((attempt + 1) * 600);
+            }
+          }
+
+          this.setSessionToken(response.data?.session_token || null);
+
+          const backendUser = response.data?.user || response.data || {};
+          this.user = {
+            ...firebaseProfile,
+            ...backendUser,
+            picture:
+              backendUser.picture ||
+              backendUser.photo_url ||
+              backendUser.photoURL ||
+              firebaseProfile.picture ||
+              null,
+          };
+          this.isAuthenticated = true;
+          return true;
+        } catch (error) {
+          console.error("Backend authentication failed:", error);
+          this.user = null;
+          this.isAuthenticated = false;
+          this.setSessionToken(null);
+          return false;
+        }
+      })();
+
+      backendSessionPromise = sessionRequest;
+
+      return await sessionRequest.finally(() => {
+        if (backendSessionPromise === sessionRequest) {
+          backendSessionPromise = null;
+          backendSessionUid = null;
+        }
+      });
     },
 
     initAuthListener() {
+      if (this.authListenerInitialized) {return;}
+      this.authListenerInitialized = true;
+
       onAuthStateChanged(auth, async (firebaseUser) => {
         if (firebaseUser) {
           const isReady = await this.ensureBackendSession(firebaseUser);

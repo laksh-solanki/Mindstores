@@ -144,13 +144,17 @@
                 <span>Subtotal</span>
                 <strong>{{ formatAmount(totalAmount) }}</strong>
               </div>
+              <div v-if="promoDiscount > 0" class="summary-row promo-row">
+                <span>Promo ({{ selectedPromoCode }})</span>
+                <strong>-{{ formatAmount(promoDiscount) }}</strong>
+              </div>
               <div class="summary-row">
                 <span>Shipping</span>
                 <strong>Free</strong>
               </div>
               <div class="summary-row total-row">
                 <span>Total</span>
-                <strong>{{ formatAmount(totalAmount) }}</strong>
+                <strong>{{ formatAmount(payableAmount) }}</strong>
               </div>
             </v-card-text>
 
@@ -164,7 +168,7 @@
                 size="large"
                 @click="submitPayment"
               >
-                Pay {{ formatAmount(totalAmount) }}
+                Pay {{ formatAmount(payableAmount) }}
               </v-btn>
             </v-card-actions>
           </v-card>
@@ -198,6 +202,27 @@
   import { useCartStore } from '@/stores/cart'
   import { loadUserSettings } from '@/utils/userSettings'
 
+  const PROMO_CODES = [
+    {
+      code: 'SAVE10',
+      type: 'percent',
+      value: 10,
+      minSubtotal: 60
+    },
+    {
+      code: 'FLAT20',
+      type: 'flat',
+      value: 20,
+      minSubtotal: 120
+    },
+    {
+      code: 'SAVE20',
+      type: 'percent',
+      value: 20,
+      minSubtotal: 180
+    }
+  ]
+
   export default {
     name: 'Payment',
     setup() {
@@ -210,6 +235,7 @@
       const snackbarColor = ref('success')
       const userSettings = ref(loadUserSettings())
       const selectedProductIds = ref([])
+      const selectedPromoCode = ref('')
       const paymentMode = ref('card')
 
       const form = ref({
@@ -246,6 +272,27 @@
 
       const totalAmount = computed(() => selectedItems.value.reduce((sum, item) => sum + item.price * item.quantity, 0))
 
+      const activePromo = computed(() => {
+        return PROMO_CODES.find((promo) => promo.code === selectedPromoCode.value) || null
+      })
+
+      const promoDiscount = computed(() => {
+        const promo = activePromo.value
+        if (!promo || totalAmount.value < promo.minSubtotal) {
+          return 0
+        }
+
+        if (promo.type === 'percent') {
+          return Number(((totalAmount.value * promo.value) / 100).toFixed(2))
+        }
+
+        return Math.min(totalAmount.value, promo.value)
+      })
+
+      const payableAmount = computed(() => {
+        return Math.max(0, totalAmount.value - promoDiscount.value)
+      })
+
       const maskedCardNumber = computed(() => {
         const digits = String(form.value.cardNumber || '').replace(/\D/g, '')
         const padded = digits.padEnd(16, '*').slice(0, 16)
@@ -258,6 +305,9 @@
           .map((id) => id.trim())
           .filter(Boolean)
         selectedProductIds.value = [...new Set(rawIds)]
+
+        const rawPromo = String(route.query.promo || '').trim().toUpperCase()
+        selectedPromoCode.value = PROMO_CODES.some((promo) => promo.code === rawPromo) ? rawPromo : ''
       }
 
       const formatAmount = (amount) => {
@@ -312,7 +362,10 @@
         try {
           const response = await axios.post(
             `${API_URL}/api/checkout/place-order`,
-            { selected_product_ids: selectedProductIds.value },
+            {
+              selected_product_ids: selectedProductIds.value,
+              promo_code: selectedPromoCode.value && promoDiscount.value > 0 ? selectedPromoCode.value : undefined
+            },
             { withCredentials: true }
           )
 
@@ -345,6 +398,9 @@
         submitting,
         selectedItems,
         totalAmount,
+        selectedPromoCode,
+        promoDiscount,
+        payableAmount,
         maskedCardNumber,
         formatAmount,
         submitPayment,
@@ -544,6 +600,10 @@
   justify-content: space-between;
   margin-bottom: 10px;
   color: #566b71;
+}
+
+.promo-row {
+  color: #246a57;
 }
 
 .total-row {
