@@ -6,7 +6,10 @@
         <div class="admin-head-row">
           <div>
             <h1 class="page-title">Admin Dashboard</h1>
-            <p class="admin-subtitle">Manage product catalog, pricing, inventory, and storefront content.</p>
+            <p class="admin-subtitle">
+              Manage product catalog, pricing, inventory, and storefront
+              content.
+            </p>
           </div>
           <v-btn
             class="add-btn"
@@ -32,7 +35,7 @@
         Admin access is required to add, update, or delete products.
       </v-alert>
 
-      <v-card class="admin-surface" variant="flat">
+      <v-card v-if="isAdmin" class="admin-surface" variant="flat">
         <v-card-text class="surface-content">
           <v-data-table
             v-if="!isMobile"
@@ -42,15 +45,19 @@
             :loading="loading"
           >
             <template #item.image_url="{ item }">
-              <img
-                alt="Product"
-                class="product-thumb"
-                :src="item.image_url"
-              >
+              <img alt="Product" class="product-thumb" :src="item.image_url">
             </template>
 
             <template #item.price="{ item }">
-              <span>${{ Number((resolveProductRecord(item) || {}).price || 0).toFixed(2) }}</span>
+              <span>${{
+                Number((resolveProductRecord(item) || {}).price || 0).toFixed(
+                  2,
+                )
+              }}</span>
+            </template>
+
+            <template #item.category_display="{ item }">
+              <span>{{ formatCategory(resolveProductRecord(item)) }}</span>
             </template>
 
             <template #item.actions="{ item }">
@@ -91,10 +98,13 @@
                 >
                 <div class="mobile-item-copy">
                   <h3>{{ product.name }}</h3>
-                  <p>{{ product.category }}</p>
+                  <p>{{ formatCategory(product) }}</p>
                   <div class="mobile-meta">
                     <span class="mobile-price">${{ Number(product.price || 0).toFixed(2) }}</span>
-                    <v-chip size="small" variant="tonal">Stock: {{ product.stock }}</v-chip>
+                    <v-chip
+                      size="small"
+                      variant="tonal"
+                    >Stock: {{ product.stock }}</v-chip>
                   </div>
                 </div>
               </div>
@@ -131,11 +141,16 @@
     <v-dialog v-model="dialog" max-width="640">
       <v-card class="admin-dialog-card">
         <v-card-title class="dialog-title">
-          {{ editMode ? 'Edit Product' : 'Add Product' }}
+          {{ editMode ? "Edit Product" : "Add Product" }}
         </v-card-title>
         <v-card-text>
           <v-form ref="form" class="dialog-form">
-            <v-text-field v-model="formData.name" label="Product Name" required variant="outlined" />
+            <v-text-field
+              v-model="formData.name"
+              label="Product Name"
+              required
+              variant="outlined"
+            />
 
             <v-textarea
               v-model="formData.description"
@@ -154,7 +169,28 @@
               variant="outlined"
             />
 
-            <v-text-field v-model="formData.category" label="Category" required variant="outlined" />
+            <v-select
+              v-model="formData.category"
+              :items="categoryOptions"
+              label="Category"
+              required
+              variant="outlined"
+            />
+
+            <v-select
+              v-model="formData.subcategory"
+              :disabled="availableSubcategories.length === 0"
+              :hint="
+                availableSubcategories.length === 0
+                  ? 'No subcategory required for this category'
+                  : ''
+              "
+              :items="availableSubcategories"
+              label="Subcategory"
+              persistent-hint
+              :required="availableSubcategories.length > 0"
+              variant="outlined"
+            />
 
             <v-text-field
               v-model.number="formData.stock"
@@ -184,7 +220,7 @@
             rounded="pill"
             @click="saveProduct"
           >
-            {{ editMode ? 'Update' : 'Add' }}
+            {{ editMode ? "Update" : "Add" }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -197,227 +233,351 @@
 </template>
 
 <script>
-  import axios from 'axios'
-  import { computed, onMounted, ref } from 'vue'
-  import { useDisplay } from 'vuetify'
-  import { useAppStore } from '@/stores/app'
+  import axios from "axios";
+  import { computed, onMounted, ref, watch } from "vue";
+  import { useDisplay } from "vuetify";
+  import { useAppStore } from "@/stores/app";
+
+  const CATEGORY_OPTIONS_BASE = ["Electronics", "Furniture", "Clothing"];
+  const SUBCATEGORY_OPTIONS_BY_CATEGORY = {
+    Electronics: ["Mobiles", "Laptops", "Accessories", "Audio", "Gaming"],
+    Furniture: ["Living Room", "Bedroom", "Kitchen", "Dining", "Office"],
+    Clothing: ["Men", "Women", "Kids", "Unisex"],
+  };
+  const CATEGORY_NAME_BY_KEY = CATEGORY_OPTIONS_BASE.reduce((acc, category) => {
+    acc[category.toLowerCase()] = category;
+    return acc;
+  }, {});
 
   export default {
-    name: 'Admin',
+    name: "Admin",
     setup() {
-      const appStore = useAppStore()
-      const { smAndDown } = useDisplay()
-      const products = ref([])
-      const loading = ref(false)
-      const dialog = ref(false)
-      const editMode = ref(false)
-      const saving = ref(false)
-      const snackbar = ref(false)
-      const snackbarText = ref('')
-      const snackbarColor = ref('success')
+      const appStore = useAppStore();
+      const { smAndDown } = useDisplay();
+      const products = ref([]);
+      const loading = ref(false);
+      const dialog = ref(false);
+      const editMode = ref(false);
+      const saving = ref(false);
+      const snackbar = ref(false);
+      const snackbarText = ref("");
+      const snackbarColor = ref("success");
 
       const formData = ref({
-        name: '',
-        description: '',
+        name: "",
+        description: "",
         price: 0,
-        category: '',
+        category: "",
+        subcategory: "",
         stock: 0,
-        image_url: ''
-      })
+        image_url: "",
+      });
 
-      const currentProductId = ref(null)
-      const isAdmin = computed(() => Boolean(appStore.user?.is_admin))
-      const isMobile = computed(() => smAndDown.value)
-      const resolveProductRecord = (item) => item?.raw || item?.item?.raw || item?.item || item || null
+      const currentProductId = ref(null);
+      const isAdmin = computed(() => Boolean(appStore.user?.is_admin));
+      const isMobile = computed(() => smAndDown.value);
+      const resolveProductRecord = (item) =>
+        item?.raw || item?.item?.raw || item?.item || item || null;
 
       const headers = [
-        { title: 'Image', key: 'image_url', sortable: false },
-        { title: 'Name', key: 'name' },
-        { title: 'Category', key: 'category' },
-        { title: 'Price', key: 'price' },
-        { title: 'Stock', key: 'stock' },
-        { title: 'Actions', key: 'actions', sortable: false }
-      ]
+        { title: "Image", key: "image_url", sortable: false },
+        { title: "Name", key: "name" },
+        { title: "Category", key: "category_display" },
+        { title: "Price", key: "price" },
+        { title: "Stock", key: "stock" },
+        { title: "Actions", key: "actions", sortable: false },
+      ];
 
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+      const normalizeText = (value) =>
+        value == null ? "" : String(value).trim();
+      const normalizeCategoryName = (value) => {
+        const normalizedValue = normalizeText(value);
+        const lowerCasedValue = normalizedValue.toLowerCase();
+        return CATEGORY_NAME_BY_KEY[lowerCasedValue] || normalizedValue;
+      };
+      const getSubcategoryOptions = (category) => {
+        const normalizedCategory = normalizeCategoryName(category);
+        return SUBCATEGORY_OPTIONS_BY_CATEGORY[normalizedCategory] || [];
+      };
+      const normalizeSubcategoryName = (category, subcategory) => {
+        const normalizedSubcategory = normalizeText(subcategory);
+        if (!normalizedSubcategory) return "";
+        const matchingSubcategory = getSubcategoryOptions(category).find(
+          (option) =>
+            option.toLowerCase() === normalizedSubcategory.toLowerCase(),
+        );
+        return matchingSubcategory || normalizedSubcategory;
+      };
+      const categoryOptions = computed(() => {
+        const currentCategory = normalizeCategoryName(formData.value.category);
+        if (!currentCategory) return CATEGORY_OPTIONS_BASE;
+        if (
+          CATEGORY_OPTIONS_BASE.some(
+            (category) =>
+              category.toLowerCase() === currentCategory.toLowerCase(),
+          )
+        ) {
+          return CATEGORY_OPTIONS_BASE;
+        }
+        return [...CATEGORY_OPTIONS_BASE, currentCategory];
+      });
+      const availableSubcategories = computed(() => {
+        const matchedSubcategories = getSubcategoryOptions(
+          formData.value.category,
+        );
+        const selectedSubcategory = normalizeSubcategoryName(
+          formData.value.category,
+          formData.value.subcategory,
+        );
+        if (!selectedSubcategory) return matchedSubcategories;
+        if (
+          matchedSubcategories.some(
+            (subcategory) =>
+              subcategory.toLowerCase() === selectedSubcategory.toLowerCase(),
+          )
+        ) {
+          return matchedSubcategories;
+        }
+        return [...matchedSubcategories, selectedSubcategory];
+      });
+      const formatCategory = (product) => {
+        const mainCategory = normalizeCategoryName(product?.category) || "Other";
+        const subcategory = normalizeSubcategoryName(
+          mainCategory,
+          product?.subcategory,
+        );
+        return subcategory ? `${mainCategory} / ${subcategory}` : mainCategory;
+      };
+
+      watch(
+        () => formData.value.category,
+        (nextCategory) => {
+          const normalizedCategory = normalizeCategoryName(nextCategory);
+          if (normalizedCategory !== formData.value.category) {
+            formData.value.category = normalizedCategory;
+            return;
+          }
+
+          const categorySubcategories = getSubcategoryOptions(normalizedCategory);
+          if (categorySubcategories.length === 0) {
+            formData.value.subcategory = "";
+            return;
+          }
+
+          const selectedSubcategory = normalizeSubcategoryName(
+            normalizedCategory,
+            formData.value.subcategory,
+          );
+          if (!selectedSubcategory) return;
+          if (
+            categorySubcategories.some(
+              (subcategory) =>
+                subcategory.toLowerCase() === selectedSubcategory.toLowerCase(),
+            )
+          ) {
+            if (selectedSubcategory !== formData.value.subcategory) {
+              formData.value.subcategory = selectedSubcategory;
+            }
+            return;
+          }
+          formData.value.subcategory = "";
+        },
+      );
 
       const fetchProducts = async () => {
-        loading.value = true
+        loading.value = true;
         try {
-          const response = await axios.get(`${API_URL}/api/products`)
-          products.value = response.data
+          const response = await axios.get(`${API_URL}/api/products`);
+          products.value = response.data;
         } catch (error) {
-          console.error('Failed to fetch products:', error)
+          console.error("Failed to fetch products:", error);
         } finally {
-          loading.value = false
+          loading.value = false;
         }
-      }
+      };
 
       const openAddDialog = () => {
         if (!isAdmin.value) {
-          snackbarText.value = 'Admin access required'
-          snackbarColor.value = 'warning'
-          snackbar.value = true
-          return
+          snackbarText.value = "Admin access required";
+          snackbarColor.value = "warning";
+          snackbar.value = true;
+          return;
         }
 
-        editMode.value = false
-        currentProductId.value = null
+        editMode.value = false;
+        currentProductId.value = null;
         formData.value = {
-          name: '',
-          description: '',
+          name: "",
+          description: "",
           price: 0,
-          category: '',
+          category: "",
+          subcategory: "",
           stock: 0,
-          image_url: ''
-        }
-        dialog.value = true
-      }
+          image_url: "",
+        };
+        dialog.value = true;
+      };
 
       const editProduct = (product) => {
         if (!isAdmin.value) {
-          snackbarText.value = 'Admin access required'
-          snackbarColor.value = 'warning'
-          snackbar.value = true
-          return
+          snackbarText.value = "Admin access required";
+          snackbarColor.value = "warning";
+          snackbar.value = true;
+          return;
         }
 
-        const selectedProduct = resolveProductRecord(product)
+        const selectedProduct = resolveProductRecord(product);
         if (!selectedProduct?.product_id) {
-          snackbarText.value = 'Unable to update: product id not found'
-          snackbarColor.value = 'error'
-          snackbar.value = true
-          return
+          snackbarText.value = "Unable to update: product id not found";
+          snackbarColor.value = "error";
+          snackbar.value = true;
+          return;
         }
 
-        editMode.value = true
-        currentProductId.value = selectedProduct.product_id
+        editMode.value = true;
+        currentProductId.value = selectedProduct.product_id;
         formData.value = {
           name: selectedProduct.name,
           description: selectedProduct.description,
           price: selectedProduct.price,
-          category: selectedProduct.category,
+          category: normalizeCategoryName(selectedProduct.category),
+          subcategory: normalizeSubcategoryName(
+            selectedProduct.category,
+            selectedProduct.subcategory,
+          ),
           stock: selectedProduct.stock,
-          image_url: selectedProduct.image_url
-        }
-        dialog.value = true
-      }
-
-      const normalizeText = (value) => (value == null ? '' : String(value).trim())
+          image_url: selectedProduct.image_url,
+        };
+        dialog.value = true;
+      };
 
       const buildProductPayload = () => {
         const payload = {
           name: normalizeText(formData.value.name),
           description: normalizeText(formData.value.description),
-          category: normalizeText(formData.value.category),
+          category: normalizeCategoryName(formData.value.category),
+          subcategory: normalizeSubcategoryName(
+            formData.value.category,
+            formData.value.subcategory,
+          ),
           image_url: normalizeText(formData.value.image_url),
           price: Number(formData.value.price),
-          stock: Math.max(0, Math.trunc(Number(formData.value.stock)))
+          stock: Math.max(0, Math.trunc(Number(formData.value.stock))),
+        };
+
+        if (!payload.name) return { error: "Product name is required" };
+        if (!Number.isFinite(payload.price) || payload.price < 0)
+          return { error: "Price must be a valid number" };
+        if (!payload.category) return { error: "Category is required" };
+        if (
+          getSubcategoryOptions(payload.category).length > 0 &&
+          !payload.subcategory
+        ) {
+          return { error: "Subcategory is required for the selected category" };
         }
+        if (!payload.image_url) return { error: "Image URL is required" };
 
-        if (!payload.name) return { error: 'Product name is required' }
-        if (!Number.isFinite(payload.price) || payload.price < 0) return { error: 'Price must be a valid number' }
-        if (!payload.category) return { error: 'Category is required' }
-        if (!payload.image_url) return { error: 'Image URL is required' }
-
-        return { payload }
-      }
+        return { payload };
+      };
 
       const saveProduct = async () => {
         if (!isAdmin.value) {
-          snackbarText.value = 'Admin access required'
-          snackbarColor.value = 'warning'
-          snackbar.value = true
-          return
+          snackbarText.value = "Admin access required";
+          snackbarColor.value = "warning";
+          snackbar.value = true;
+          return;
         }
 
-        const { payload, error: validationError } = buildProductPayload()
+        const { payload, error: validationError } = buildProductPayload();
         if (validationError) {
-          snackbarText.value = validationError
-          snackbarColor.value = 'warning'
-          snackbar.value = true
-          return
+          snackbarText.value = validationError;
+          snackbarColor.value = "warning";
+          snackbar.value = true;
+          return;
         }
 
         if (editMode.value && !currentProductId.value) {
-          snackbarText.value = 'Unable to update: missing product id'
-          snackbarColor.value = 'error'
-          snackbar.value = true
-          return
+          snackbarText.value = "Unable to update: missing product id";
+          snackbarColor.value = "error";
+          snackbar.value = true;
+          return;
         }
 
-        saving.value = true
+        saving.value = true;
         try {
           if (editMode.value) {
             await axios.put(
               `${API_URL}/api/products/${encodeURIComponent(currentProductId.value)}`,
               payload,
-              { withCredentials: true }
-            )
-            snackbarText.value = 'Product updated successfully'
+              { withCredentials: true },
+            );
+            snackbarText.value = "Product updated successfully";
           } else {
-            await axios.post(
-              `${API_URL}/api/products`,
-              payload,
-              { withCredentials: true }
-            )
-            snackbarText.value = 'Product added successfully'
+            await axios.post(`${API_URL}/api/products`, payload, {
+              withCredentials: true,
+            });
+            snackbarText.value = "Product added successfully";
           }
 
-          snackbarColor.value = 'success'
-          snackbar.value = true
-          dialog.value = false
-          await fetchProducts()
+          snackbarColor.value = "success";
+          snackbar.value = true;
+          dialog.value = false;
+          await fetchProducts();
         } catch (error) {
-          console.error('Failed to save product:', error)
-          snackbarText.value = error.response?.data?.message || 'Failed to save product'
-          snackbarColor.value = 'error'
-          snackbar.value = true
+          console.error("Failed to save product:", error);
+          snackbarText.value =
+            error.response?.data?.message || "Failed to save product";
+          snackbarColor.value = "error";
+          snackbar.value = true;
         } finally {
-          saving.value = false
+          saving.value = false;
         }
-      }
+      };
 
       const deleteProduct = async (product) => {
         if (!isAdmin.value) {
-          snackbarText.value = 'Admin access required'
-          snackbarColor.value = 'warning'
-          snackbar.value = true
-          return
+          snackbarText.value = "Admin access required";
+          snackbarColor.value = "warning";
+          snackbar.value = true;
+          return;
         }
 
-        const selectedProduct = resolveProductRecord(product)
+        const selectedProduct = resolveProductRecord(product);
         if (!selectedProduct?.product_id) {
-          snackbarText.value = 'Unable to delete: product id not found'
-          snackbarColor.value = 'error'
-          snackbar.value = true
-          return
+          snackbarText.value = "Unable to delete: product id not found";
+          snackbarColor.value = "error";
+          snackbar.value = true;
+          return;
         }
 
-        if (!confirm(`Are you sure you want to delete ${selectedProduct.name}?`)) {
-          return
+        if (
+          !confirm(`Are you sure you want to delete ${selectedProduct.name}?`)
+        ) {
+          return;
         }
 
         try {
           await axios.delete(
             `${API_URL}/api/products/${encodeURIComponent(selectedProduct.product_id)}`,
-            { withCredentials: true }
-          )
-          snackbarText.value = 'Product deleted successfully'
-          snackbarColor.value = 'success'
-          snackbar.value = true
-          await fetchProducts()
+            { withCredentials: true },
+          );
+          snackbarText.value = "Product deleted successfully";
+          snackbarColor.value = "success";
+          snackbar.value = true;
+          await fetchProducts();
         } catch (error) {
-          console.error('Failed to delete product:', error)
-          snackbarText.value = error.response?.data?.message || 'Failed to delete product'
-          snackbarColor.value = 'error'
-          snackbar.value = true
+          console.error("Failed to delete product:", error);
+          snackbarText.value =
+            error.response?.data?.message || "Failed to delete product";
+          snackbarColor.value = "error";
+          snackbar.value = true;
         }
-      }
+      };
 
       onMounted(() => {
-        fetchProducts()
-      })
+        fetchProducts();
+      });
 
       return {
         products,
@@ -432,22 +592,33 @@
         isMobile,
         formData,
         headers,
+        categoryOptions,
+        availableSubcategories,
         resolveProductRecord,
+        formatCategory,
         openAddDialog,
         editProduct,
         saveProduct,
-        deleteProduct
-      }
-    }
-  }
+        deleteProduct,
+      };
+    },
+  };
 </script>
 
 <style scoped>
 .admin-page {
   min-height: 100vh;
   background:
-    radial-gradient(circle at 10% 14%, rgba(206, 124, 43, 0.2) 0%, rgba(206, 124, 43, 0) 36%),
-    radial-gradient(circle at 88% 78%, rgba(35, 62, 60, 0.14) 0%, rgba(35, 62, 60, 0) 40%),
+    radial-gradient(
+      circle at 10% 14%,
+      rgba(206, 124, 43, 0.2) 0%,
+      rgba(206, 124, 43, 0) 36%
+    ),
+    radial-gradient(
+      circle at 88% 78%,
+      rgba(35, 62, 60, 0.14) 0%,
+      rgba(35, 62, 60, 0) 40%
+    ),
     linear-gradient(160deg, #f2f6f3 0%, #ecf2ee 45%, #eef3f0 100%);
 }
 
@@ -474,7 +645,7 @@
 }
 
 .page-title {
-  font-family: 'Playfair Display', serif;
+  font-family: "Playfair Display", serif;
   font-size: clamp(2rem, 4vw, 3.1rem);
   color: #1c2d30;
 }
@@ -596,7 +767,7 @@
 }
 
 .dialog-title {
-  font-family: 'Playfair Display', serif;
+  font-family: "Playfair Display", serif;
   font-size: 1.55rem;
   font-weight: 700;
   color: #1f2f33;
