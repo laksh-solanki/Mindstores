@@ -30,7 +30,7 @@
         <v-col class="form-col" cols="12" lg="5">
           <div class="auth-card">
             <div class="brand-pill">
-              <span class="brand-mark">MS</span>
+              <v-img alt="logo" class="brand-mark" src="../assets/logo.svg" />
               <span class="brand-text">MINDSTORE</span>
             </div>
 
@@ -47,7 +47,7 @@
               variant="flat"
               @click="loginWithGoogle"
             >
-              <v-icon start>mdi-google</v-icon>
+              <v-img class="pr-2" src="../assets/Google-logo.png" width="35 " />
               Continue with Google
             </v-btn>
 
@@ -234,7 +234,7 @@
 .brand-mark {
   width: 30px;
   height: 30px;
-  border-radius: 999px;
+  border-radius: 11px;
   background: #203235;
   color: #f4efe7;
   display: grid;
