@@ -9,7 +9,7 @@
   >
     <v-container class="header-shell px-4 px-md-8">
       <router-link class="brand-link" to="/">
-        <span class="brand-mark">MS</span>
+        <v-img alt="logo" class="brand-mark" src="../assets/logo.svg" width="49" />
         <span class="brand-copy">
           <span class="brand-title">MINDSTORE</span>
           <span class="brand-subtitle">Curated Essentials</span>
@@ -34,12 +34,7 @@
         </v-btn>
 
         <v-btn class="icon-btn mobile-cart-btn d-md-none" icon to="/cart" variant="text">
-          <v-badge
-            v-if="cartStore.itemCount > 0"
-            color="accent"
-            :content="cartStore.itemCount"
-            floating
-          >
+          <v-badge v-if="cartStore.itemCount > 0" color="accent" :content="cartStore.itemCount" floating>
             <v-icon>mdi-cart-outline</v-icon>
           </v-badge>
           <v-icon v-else>mdi-cart-outline</v-icon>
@@ -137,17 +132,9 @@
 }
 
 .brand-mark {
-  width: 40px;
-  height: 40px;
   border-radius: 12px;
-  background: linear-gradient(145deg, #1b2b2d, #314547);
-  color: #f4efe7;
   display: grid;
   place-items: center;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  font-size: 0.92rem;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 8px 20px rgba(25, 44, 46, 0.22);
 }
 
 .brand-copy {

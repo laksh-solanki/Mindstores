@@ -102,11 +102,7 @@
         </v-row>
 
         <div v-else class="mt-8">
-          <div
-            v-for="group in categorizedProducts"
-            :key="group.name"
-            class="category-group"
-          >
+          <div v-for="group in categorizedProducts" :key="group.name" class="category-group">
             <h3 class="category-title">{{ group.name }}</h3>
             <v-row v-if="group.items.length > 0">
               <v-col
@@ -131,7 +127,12 @@
                     <h3 class="product-name">{{ product.name }}</h3>
                     <div class="product-row">
                       <span class="product-price">${{ Number(product.price || 0).toFixed(2) }}</span>
-                      <v-btn class="product-add-btn" size="small" variant="flat" @click.stop="quickAddToCart(product.product_id)">
+                      <v-btn
+                        class="product-add-btn"
+                        size="small"
+                        variant="flat"
+                        @click.stop="quickAddToCart(product.product_id)"
+                      >
                         <v-icon size="16" start>mdi-cart-plus</v-icon>
                         Add
                       </v-btn>
@@ -173,7 +174,7 @@
 
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
-  function isRetryableProductsError (error) {
+  function isRetryableProductsError(error) {
     const status = error?.response?.status
     if (status && status < 500 && status !== 429) {
       return false
@@ -181,7 +182,7 @@
     return error?.code === 'ECONNABORTED' || !error?.response || status >= 500 || status === 429
   }
 
-  function readPersistedProductsCache () {
+  function readPersistedProductsCache() {
     if (typeof window === 'undefined') return null
     try {
       const rawCache = window.localStorage.getItem(PRODUCTS_CACHE_KEY)
@@ -197,7 +198,7 @@
     }
   }
 
-  function writePersistedProductsCache (products, expiresAt) {
+  function writePersistedProductsCache(products, expiresAt) {
     if (typeof window === 'undefined') return
     try {
       window.localStorage.setItem(
@@ -205,7 +206,7 @@
         JSON.stringify({ products, expiresAt })
       )
     } catch {
-      // Ignore storage quota/privacy errors and continue with in-memory cache.
+    // Ignore storage quota/privacy errors and continue with in-memory cache.
     }
   }
 
@@ -221,7 +222,7 @@
       const snackbarText = ref('')
       const productsSection = ref(null)
 
-      const heroImage = 'https://images.unsplash.com/photo-1631679706909-1844bbd07221?crop=entropy&cs=srgb&fm=jpg&q=85&w=1000'
+      const heroImage = 'src/assets/DeskImg.jpg'
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
       const normalizeCategory = (category) => {
@@ -509,7 +510,7 @@
   padding: 48px 0 70px;
 }
 
-.category-group + .category-group {
+.category-group+.category-group {
   margin-top: 30px;
 }
 
