@@ -1,7 +1,7 @@
 <template>
   <div class="admin-page">
     <v-container class="admin-shell">
-      <section class="admin-hero">
+      <section v-if="isAdmin" class="admin-hero">
         <p class="admin-kicker">Management</p>
         <div class="admin-head-row">
           <div>

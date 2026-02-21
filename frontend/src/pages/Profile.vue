@@ -11,10 +11,14 @@
         <v-col cols="12" lg="4">
           <v-card class="profile-card" variant="flat">
             <v-card-text class="profile-card-body">
-              <v-avatar class="profile-avatar" color="primary" size="104">
-                <img v-if="profileImage" alt="Profile" :src="profileImage">
-                <v-icon v-else color="white" size="56">mdi-account</v-icon>
-              </v-avatar>
+              <v-avatar
+                v-if="profileImage"
+                class="profile-avatar"
+                color="primary"
+                :image="profileImage"
+                size="104"
+              />
+              <v-icon v-else color="white" size="56">mdi-account</v-icon>
 
               <h2 class="profile-name">{{ appStore.user?.name || 'Mindstore User' }}</h2>
               <p class="profile-email">{{ appStore.user?.email || 'No email available' }}</p>
@@ -117,12 +121,7 @@
               </div>
 
               <div v-else class="orders-list">
-                <v-card
-                  v-for="order in orders"
-                  :key="order.order_id"
-                  class="order-item"
-                  variant="flat"
-                >
+                <v-card v-for="order in orders" :key="order.order_id" class="order-item" variant="flat">
                   <div class="order-item-head">
                     <div>
                       <p class="order-id">Order #{{ order.order_id }}</p>
@@ -131,11 +130,7 @@
 
                     <div class="order-meta">
                       <p class="order-amount">{{ formatAmount(order.total_amount) }}</p>
-                      <v-chip
-                        :color="order.status === 'completed' ? 'success' : 'warning'"
-                        size="small"
-                        variant="flat"
-                      >
+                      <v-chip :color="order.status === 'completed' ? 'success' : 'warning'" size="small" variant="flat">
                         {{ order.status }}
                       </v-chip>
                     </div>
