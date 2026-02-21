@@ -19,7 +19,6 @@
   background: #0f181a;
   color: #e8efec;
   border-top: 1px solid #1f2a2d;
-  margin-top: 48px;
 }
 
 .footer-shell {
