@@ -45,7 +45,7 @@
                 decoding="async"
                 fetchpriority="high"
                 loading="eager"
-                :src="heroImage"
+                src="../assets/DeskImg.jpg"
               >
               <div class="floating-card">
                 <p>Editor's Pick</p>
@@ -221,8 +221,6 @@
       const snackbar = ref(false)
       const snackbarText = ref('')
       const productsSection = ref(null)
-
-      const heroImage = 'src/assets/DeskImg.jpg'
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
       const normalizeCategory = (category) => {
@@ -339,7 +337,6 @@
         products,
         categorizedProducts,
         loading,
-        heroImage,
         goToProduct,
         quickAddToCart,
         snackbar,
