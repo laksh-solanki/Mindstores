@@ -107,7 +107,7 @@
 /* ===== Gradient Heading ===== */
 .gradient-text {
   background: linear-gradient(90deg, #5b7cfa, #7f53ff, #9c6bff);
-  -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 

@@ -11,6 +11,7 @@ const routes = [
   { path: '/order-success', component: () => import('@/pages/OrderSuccess.vue'), name: 'OrderSuccess' },
   { path: '/profile', component: () => import('@/pages/Profile.vue'), name: 'Profile' },
   { path: '/privacy', component: () => import('@/pages/Privacy.vue'), name: 'Privacy'},
+  { path: '/terms', component: () => import('@/pages/Terms-or-Service.vue'), name: 'Terms-or-Service'},
   { path: '/admin', component: () => import('@/pages/Admin.vue'), name: 'Admin' },
 ]
 
