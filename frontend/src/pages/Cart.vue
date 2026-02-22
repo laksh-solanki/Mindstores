@@ -142,13 +142,15 @@
                     density="comfortable"
                     hide-details
                     placeholder="Enter code"
+                    rounded="lg"
                     variant="outlined"
                   />
                   <v-btn
                     class="promo-apply-btn"
                     color="primary"
                     :disabled="selectedProductIds.length === 0 || !promoInput.trim()"
-                    rounded="pill"
+                    height="48"
+                    rounded="lg"
                     @click="applyPromoCode"
                   >
                     Apply
@@ -190,7 +192,7 @@
             <v-card-actions class="summary-actions">
               <v-btn
                 block
-                class="checkout-btn"
+                class="checkout-btn border"
                 color="primary"
                 :disabled="selectedProductIds.length === 0"
                 :loading="checkoutLoading"
