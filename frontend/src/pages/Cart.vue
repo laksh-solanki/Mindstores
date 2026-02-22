@@ -38,7 +38,8 @@
           <v-card
             v-for="item in cartStore.items"
             :key="item.product_id"
-            class="cart-item-card"
+            class="cart-item-card border"
+            :to="'/product/' + item.product_id"
             variant="flat"
           >
             <v-row no-gutters>
@@ -117,7 +118,7 @@
         </v-col>
 
         <v-col cols="12" md="4">
-          <v-card class="order-summary-card" variant="flat">
+          <v-card class="order-summary-card border" variant="flat">
             <v-card-title class="summary-title">Order Summary</v-card-title>
             <v-card-text class="summary-body">
               <div class="summary-row">

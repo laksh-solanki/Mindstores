@@ -3,7 +3,7 @@
     <v-container class="success-shell">
       <v-row class="justify-center">
         <v-col cols="12" lg="8" md="9">
-          <v-card class="success-card" variant="flat">
+          <v-card class="success-card border" variant="flat">
             <div class="orb orb-left" />
             <div class="orb orb-right" />
             <v-card-text class="success-body">
@@ -113,7 +113,6 @@
   position: relative;
   overflow: hidden;
   border-radius: 24px;
-  border: 1px solid #d8e2dd;
   background: linear-gradient(165deg, rgba(255, 255, 255, 0.93), rgba(246, 250, 247, 0.91));
   box-shadow: 0 26px 56px rgba(18, 33, 31, 0.1);
 }

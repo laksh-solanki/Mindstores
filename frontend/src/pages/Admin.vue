@@ -35,11 +35,11 @@
         Admin access is required to add, update, or delete products.
       </v-alert>
 
-      <v-card v-if="isAdmin" class="admin-surface" variant="flat">
+      <v-card v-if="isAdmin" class="admin-surface border" variant="flat">
         <v-card-text class="surface-content">
           <v-data-table
             v-if="!isMobile"
-            class="admin-table elevation-0"
+            class="admin-table elevation-0 border"
             :headers="headers"
             :items="products"
             :loading="loading"

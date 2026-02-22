@@ -2,7 +2,7 @@
   <v-container class="py-16" max-width="1100">
 
     <!-- Premium Glass Card -->
-    <v-card class="pa-10 pa-md-14 rounded-3xl premium-wrapper" elevation="0">
+    <v-card class="pa-10 pa-md-14 rounded-3xl premium-wrapper border" elevation="0">
 
       <!-- Title Block -->
       <div class="text-center mb-10">
@@ -100,7 +100,6 @@
 .premium-wrapper {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 255, 0.9));
   backdrop-filter: blur(14px);
-  border: 1px solid rgba(120, 120, 255, 0.12);
   box-shadow: 0 30px 80px rgba(30, 40, 120, 0.12);
 }
 

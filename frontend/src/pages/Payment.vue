@@ -9,129 +9,145 @@
 
       <v-row v-if="selectedItems.length > 0" class="payment-row">
         <v-col cols="12" md="8">
-          <v-card class="payment-card" variant="flat">
+          <v-card class="payment-card border" variant="flat">
             <v-card-title class="section-title">Contact & Billing</v-card-title>
             <v-card-text class="section-body">
               <v-row>
                 <v-col cols="12" sm="6">
-                  <v-text-field v-model="form.firstName" label="First Name" variant="outlined" />
+                  <v-text-field v-model="form.firstName" label="First Name" rounded="lg" variant="outlined" />
                 </v-col>
                 <v-col cols="12" sm="6">
-                  <v-text-field v-model="form.lastName" label="Last Name" variant="outlined" />
+                  <v-text-field v-model="form.lastName" label="Last Name" rounded="lg" variant="outlined" />
                 </v-col>
                 <v-col cols="12" sm="6">
-                  <v-text-field v-model="form.email" label="Email" type="email" variant="outlined" />
+                  <v-text-field
+                    v-model="form.email"
+                    label="Email"
+                    rounded="lg"
+                    type="email"
+                    variant="outlined"
+                  />
                 </v-col>
                 <v-col cols="12" sm="6">
-                  <v-text-field v-model="form.phone" label="Phone Number" variant="outlined" />
+                  <v-text-field v-model="form.phone" label="Phone Number" rounded="lg" variant="outlined" />
                 </v-col>
                 <v-col cols="12">
-                  <v-text-field v-model="form.address" label="Street Address" variant="outlined" />
+                  <v-text-field v-model="form.address" label="Street Address" rounded="lg" variant="outlined" />
                 </v-col>
                 <v-col cols="12" sm="6">
-                  <v-text-field v-model="form.city" label="City" variant="outlined" />
+                  <v-text-field v-model="form.city" label="City" rounded="lg" variant="outlined" />
                 </v-col>
                 <v-col cols="12" sm="3">
-                  <v-text-field v-model="form.state" label="State" variant="outlined" />
+                  <v-text-field v-model="form.state" label="State" rounded="lg" variant="outlined" />
                 </v-col>
                 <v-col cols="12" sm="3">
-                  <v-text-field v-model="form.zip" label="ZIP" variant="outlined" />
+                  <v-text-field v-model="form.zip" label="ZIP" rounded="lg" variant="outlined" />
                 </v-col>
               </v-row>
             </v-card-text>
           </v-card>
 
-          <v-card class="payment-card mt-4" variant="flat">
+          <v-card class="payment-card mt-4 border" variant="flat">
             <v-card-title class="section-title">Payment Method</v-card-title>
+
             <v-card-text class="section-body">
-              <div class="payment-mode-switch">
-                <v-btn-toggle
-                  v-model="paymentMode"
-                  class="mode-toggle"
+              <v-sheet class="pa-1">
+                <v-tabs
+                  v-model="tab"
+                  bg-color="indigo-lighten-1"
+                  class="mb-2"
                   color="primary"
-                  density="comfortable"
-                  divided
+                  density="compact"
+                  inset
+                  inset-radius="7"
                   mandatory
+                  slider-color="indigo-lighten-4"
                 >
-                  <v-btn value="upi">UPI ID</v-btn>
-                  <v-btn value="card">Card</v-btn>
-                </v-btn-toggle>
-              </div>
+                  <v-tab value="upi">UPI ID</v-tab>
+                  <v-tab value="card">Card</v-tab>
+                </v-tabs>
 
-              <div v-if="paymentMode === 'upi'" class="upi-panel">
-                <div class="upi-visual">
-                  <p class="upi-badge">Instant UPI</p>
-                  <h3>Pay by UPI ID</h3>
-                  <p>Use any UPI app linked to your bank account.</p>
-                </div>
+                <v-tabs-window v-model="tab">
+                  <v-tabs-window-item value="upi">
+                    <v-sheet>
+                      <div class="upi-visual">
+                        <p class="upi-badge">Instant UPI</p>
+                        <h3>Pay by UPI ID</h3>
+                        <p>Use any UPI app linked to your bank account.</p>
+                      </div>
 
-                <v-row class="mt-1">
-                  <v-col cols="12">
-                    <v-text-field
-                      v-model="form.upiId"
-                      hint="Example: name@okaxis"
-                      label="UPI ID"
-                      persistent-hint
-                      variant="outlined"
-                    />
-                  </v-col>
-                </v-row>
-              </div>
+                      <v-row class="mt-1">
+                        <v-col cols="12">
+                          <v-text-field
+                            v-model="form.upiId"
+                            hint="Example: name@okaxis"
+                            label="UPI ID"
+                            persistent-hint
+                            rounded="lg"
+                            variant="outlined"
+                          />
+                        </v-col>
+                      </v-row>
+                    </v-sheet>
+                  </v-tabs-window-item>
+                  <v-tabs-window-item value="card">
+                    <v-sheet>
+                      <div class="card-visual">
+                        <p class="card-label">Mindstore Black</p>
+                        <p class="card-number">{{ maskedCardNumber }}</p>
+                        <div class="card-meta">
+                          <span>{{ form.cardHolder || 'CARD HOLDER' }}</span>
+                          <span>{{ form.expiry || 'MM/YY' }}</span>
+                        </div>
+                      </div>
 
-              <div v-else>
-                <div class="card-visual">
-                  <p class="card-label">Mindstore Black</p>
-                  <p class="card-number">{{ maskedCardNumber }}</p>
-                  <div class="card-meta">
-                    <span>{{ form.cardHolder || 'CARD HOLDER' }}</span>
-                    <span>{{ form.expiry || 'MM/YY' }}</span>
-                  </div>
-                </div>
-
-                <v-row class="mt-1">
-                  <v-col cols="12">
-                    <v-text-field
-                      v-model="form.cardHolder"
-                      label="Card Holder Name"
-                      variant="outlined"
-                    />
-                  </v-col>
-                  <v-col cols="12">
-                    <v-text-field
-                      v-model="form.cardNumber"
-                      label="Card Number"
-                      maxlength="19"
-                      variant="outlined"
-                    />
-                  </v-col>
-                  <v-col cols="6" sm="4">
-                    <v-text-field v-model="form.expiry" label="Expiry (MM/YY)" maxlength="5" variant="outlined" />
-                  </v-col>
-                  <v-col cols="6" sm="4">
-                    <v-text-field
-                      v-model="form.cvv"
-                      label="CVV"
-                      maxlength="4"
-                      type="password"
-                      variant="outlined"
-                    />
-                  </v-col>
-                </v-row>
-              </div>
+                      <v-row class="mt-1">
+                        <v-col cols="12">
+                          <v-text-field v-model="form.cardHolder" label="Card Holder Name" rounded="lg" variant="outlined" />
+                        </v-col>
+                        <v-col cols="12">
+                          <v-text-field
+                            v-model="form.cardNumber"
+                            label="Card Number"
+                            maxlength="19"
+                            rounded="lg"
+                            variant="outlined"
+                          />
+                        </v-col>
+                        <v-col cols="6" sm="4">
+                          <v-text-field
+                            v-model="form.expiry"
+                            label="Expiry (MM/YY)"
+                            maxlength="5"
+                            rounded="lg"
+                            variant="outlined"
+                          />
+                        </v-col>
+                        <v-col cols="6" sm="4">
+                          <v-text-field
+                            v-model="form.cvv"
+                            label="CVV"
+                            maxlength="4"
+                            rounded="lg"
+                            type="password"
+                            variant="outlined"
+                          />
+                        </v-col>
+                      </v-row>
+                    </v-sheet>
+                  </v-tabs-window-item>
+                </v-tabs-window>
+              </v-sheet>
             </v-card-text>
           </v-card>
         </v-col>
 
         <v-col cols="12" md="4">
-          <v-card class="summary-card" variant="flat">
+          <v-card class="summary-card border" variant="flat">
             <v-card-title class="summary-title">Order Summary</v-card-title>
             <v-card-text class="summary-body">
               <div class="summary-list">
-                <div
-                  v-for="item in selectedItems"
-                  :key="item.product_id"
-                  class="summary-item"
-                >
+                <div v-for="item in selectedItems" :key="item.product_id" class="summary-item">
                   <p class="item-name">{{ item.name }}</p>
                   <p class="item-meta">Qty {{ item.quantity }}</p>
                   <p class="item-price">{{ formatAmount(item.price * item.quantity) }}</p>
@@ -161,7 +177,7 @@
             <v-card-actions class="summary-actions">
               <v-btn
                 block
-                class="pay-btn"
+                class="pay-btn border"
                 color="primary"
                 :loading="submitting"
                 rounded="pill"
@@ -177,7 +193,7 @@
 
       <v-row v-else class="empty-row">
         <v-col cols="12">
-          <v-card class="empty-card" variant="flat">
+          <v-card class="empty-card border" variant="flat">
             <v-card-text class="text-center py-10">
               <v-icon size="52">mdi-cart-outline</v-icon>
               <h2 class="empty-title">No Selected Items</h2>
@@ -201,7 +217,6 @@
   import { useRoute, useRouter } from 'vue-router'
   import { useCartStore } from '@/stores/cart'
   import { loadUserSettings } from '@/utils/userSettings'
-
   const PROMO_CODES = [
     {
       code: 'SAVE10',
@@ -236,7 +251,7 @@
       const userSettings = ref(loadUserSettings())
       const selectedProductIds = ref([])
       const selectedPromoCode = ref('')
-      const paymentMode = ref('card')
+      const tab = ref('upi')
 
       const form = ref({
         firstName: '',
@@ -329,7 +344,7 @@
         if (!form.value.email || !form.value.address || !form.value.city || !form.value.state || !form.value.zip) {
           return 'Fill all billing address fields'
         }
-        if (paymentMode.value === 'upi') {
+        if (tab.value === 'upi') {
           const upiPattern = /^[a-zA-Z0-9._-]{2,}@[a-zA-Z]{2,}$/
           if (!upiPattern.test(String(form.value.upiId || '').trim())) {
             return 'Enter a valid UPI ID'
@@ -394,7 +409,7 @@
 
       return {
         form,
-        paymentMode,
+        tab,
         submitting,
         selectedItems,
         totalAmount,
@@ -472,24 +487,6 @@
   font-family: 'Playfair Display', serif;
   font-size: 1.35rem;
   color: #1f3034;
-}
-
-.section-body {
-  padding: 12px 20px 18px;
-}
-
-.payment-mode-switch {
-  margin-bottom: 14px;
-}
-
-.mode-toggle {
-  width: 100%;
-}
-
-.mode-toggle :deep(.v-btn) {
-  flex: 1 1 0;
-  text-transform: none;
-  font-weight: 700;
 }
 
 .upi-panel {

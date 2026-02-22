@@ -9,7 +9,7 @@
 
       <v-row align="stretch" class="profile-content">
         <v-col cols="12" lg="4">
-          <v-card class="profile-card" variant="flat">
+          <v-card class="profile-card border" variant="flat">
             <v-card-text class="profile-card-body">
               <v-avatar
                 v-if="profileImage"
@@ -50,13 +50,14 @@
             </v-card-text>
           </v-card>
 
-          <v-card class="settings-card mt-4" variant="flat">
+          <v-card class="settings-card mt-4 border" variant="flat">
             <v-card-title class="section-title">Preferences</v-card-title>
             <v-card-text class="settings-body">
               <v-text-field
                 v-model="settings.displayName"
                 density="comfortable"
                 label="Display Name"
+                rounded="lg"
                 variant="outlined"
               />
 
@@ -65,6 +66,7 @@
                 density="comfortable"
                 :items="currencyOptions"
                 label="Preferred Currency"
+                rounded="lg"
                 variant="outlined"
               />
 
@@ -107,7 +109,7 @@
         </v-col>
 
         <v-col cols="12" lg="8">
-          <v-card class="orders-card" variant="flat">
+          <v-card class="orders-card border" variant="flat">
             <v-card-title class="orders-title">Order History</v-card-title>
             <v-card-text>
               <v-progress-linear v-if="loading" indeterminate />
@@ -338,7 +340,6 @@
 .profile-card,
 .settings-card,
 .orders-card {
-  border: 1px solid #d8e2dd;
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(8px);
