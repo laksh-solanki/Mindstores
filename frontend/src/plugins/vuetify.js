@@ -6,8 +6,10 @@ import {
   mdiCartPlus,
   mdiCheckCircle,
   mdiCircle,
+  mdiCircleSmall,
   mdiClose,
   mdiDelete,
+  mdiEmailArrowRightOutline,
   mdiGithub,
   mdiGoogle,
   mdiLogout,
@@ -16,6 +18,7 @@ import {
   mdiPencil,
   mdiPlus,
   mdiReddit,
+  mdiShieldCheck,
   mdiShieldStarOutline,
 } from '@mdi/js'
 import { defineComponent, h } from 'vue'
@@ -40,6 +43,9 @@ const mdiPathByName = {
   'mdi-logout': mdiLogout,
   'mdi-minus': mdiMinus,
   'mdi-package-variant': mdiPackageVariant,
+  'mdi-shield-check': mdiShieldCheck,
+  'mdi-email-arrow-right-outline': mdiEmailArrowRightOutline,
+  'mdi-circle-small': mdiCircleSmall,
   'mdi-pencil': mdiPencil,
   'mdi-plus': mdiPlus,
   'mdi-reddit': mdiReddit,
