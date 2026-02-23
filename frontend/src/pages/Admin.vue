@@ -45,7 +45,7 @@
             :loading="loading"
           >
             <template #item.image_url="{ item }">
-              <img alt="Product" class="product-thumb" :src="item.image_url">
+              <img alt="Product" class="product-thumb d-flex my-2" :src="item.image_url">
             </template>
 
             <template #item.price="{ item }">
