@@ -35,22 +35,16 @@
             <span>{{ cartStore.items.length }} items</span>
           </div>
 
-          <v-card
-            v-for="item in cartStore.items"
-            :key="item.product_id"
-            class="cart-item-card border"
-            :to="'/product/' + item.product_id"
-            variant="flat"
-          >
+          <v-card v-for="item in cartStore.items" :key="item.product_id" class="cart-item-card border" variant="flat">
             <v-row no-gutters>
               <v-col cols="12" md="3" sm="4">
                 <div class="cart-item-image-wrapper">
-                  <img
+                  <v-img
                     v-if="cartStore.products[item.product_id]"
                     :alt="cartStore.products[item.product_id].name"
                     class="cart-item-image"
                     :src="cartStore.products[item.product_id].image_url"
-                  >
+                  />
                 </div>
               </v-col>
               <v-col cols="12" md="9" sm="8">
@@ -628,7 +622,7 @@
   box-shadow: 0 16px 34px rgba(20, 36, 34, 0.06);
 }
 
-.cart-item-card + .cart-item-card {
+.cart-item-card+.cart-item-card {
   margin-top: 12px;
 }
 
