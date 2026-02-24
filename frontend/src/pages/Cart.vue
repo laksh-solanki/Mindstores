@@ -38,7 +38,13 @@
           <v-card v-for="item in cartStore.items" :key="item.product_id" class="cart-item-card border" variant="flat">
             <v-row no-gutters>
               <v-col cols="12" md="3" sm="4">
-                <div class="cart-item-image-wrapper">
+                <div
+                  class="cart-item-image-wrapper is-clickable"
+                  role="button"
+                  tabindex="0"
+                  @click="goToProduct(item.product_id)"
+                  @keyup.enter="goToProduct(item.product_id)"
+                >
                   <v-img
                     v-if="cartStore.products[item.product_id]"
                     :alt="cartStore.products[item.product_id].name"
@@ -60,7 +66,13 @@
                         :value="item.product_id"
                       />
                       <div>
-                        <h3 class="cart-item-name">
+                        <h3
+                          class="cart-item-name is-clickable"
+                          role="button"
+                          tabindex="0"
+                          @click="goToProduct(item.product_id)"
+                          @keyup.enter="goToProduct(item.product_id)"
+                        >
                           {{ cartStore.products[item.product_id]?.name }}
                         </h3>
                         <p class="cart-item-price">
@@ -213,29 +225,26 @@
   import { computed, onMounted, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import { useCartStore } from '@/stores/cart'
-  import { loadUserSettings } from '@/utils/userSettings'
+  import { useCurrency } from '@/utils/currency'
 
   const PROMO_CODES = [
     {
       code: 'SAVE10',
       type: 'percent',
       value: 10,
-      minSubtotal: 60,
-      description: '10% off selected items above $60'
+      minSubtotal: 60
     },
     {
       code: 'FLAT20',
       type: 'flat',
       value: 20,
-      minSubtotal: 120,
-      description: '$20 off selected items above $120'
+      minSubtotal: 120
     },
     {
       code: 'SAVE20',
       type: 'percent',
       value: 20,
-      minSubtotal: 180,
-      description: '20% off selected items above $180'
+      minSubtotal: 180
     }
   ]
 
@@ -249,7 +258,7 @@
       const snackbarText = ref('')
       const snackbarColor = ref('success')
       const selectedProductIds = ref([])
-      const userSettings = ref(loadUserSettings())
+      const { formatAmount, userSettings } = useCurrency()
       const quantityUpdatingById = ref({})
       const promoInput = ref('')
       const appliedPromoCode = ref('')
@@ -286,9 +295,19 @@
         return Math.max(0, selectedTotalAmount.value - promoDiscount.value)
       })
 
+      const describePromo = (promo) => {
+        if (!promo) {
+          return ''
+        }
+        if (promo.type === 'percent') {
+          return `${promo.value}% off selected items above ${formatAmount(promo.minSubtotal)}`
+        }
+        return `${formatAmount(promo.value)} off selected items above ${formatAmount(promo.minSubtotal)}`
+      }
+
       const promoHelperText = computed(() => {
         if (appliedPromoCode.value && activePromo.value && promoDiscount.value > 0) {
-          return `Applied ${appliedPromoCode.value}: ${activePromo.value.description}`
+          return `Applied ${appliedPromoCode.value}: ${describePromo(activePromo.value)}`
         }
         return `Valid codes: ${PROMO_CODES.map((promo) => promo.code).join(', ')}`
       })
@@ -411,16 +430,11 @@
         applyPromoCode()
       }
 
-      const formatAmount = (amount) => {
-        try {
-          return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: userSettings.value.currency || 'USD',
-            maximumFractionDigits: 2
-          }).format(Number(amount || 0))
-        } catch {
-          return `$${Number(amount || 0).toFixed(2)}`
+      const goToProduct = async (productId) => {
+        if (!productId) {
+          return
         }
+        await router.push(`/product/${productId}`)
       }
 
       const checkout = async () => {
@@ -468,7 +482,6 @@
 
       onMounted(async () => {
         await cartStore.fetchCart()
-        userSettings.value = loadUserSettings()
         selectedProductIds.value = userSettings.value.quickCheckout
           ? cartStore.items.map((item) => item.product_id)
           : []
@@ -477,6 +490,7 @@
       return {
         cartStore,
         removeItem,
+        goToProduct,
         checkout,
         checkoutLoading,
         changeQuantity,
@@ -631,6 +645,10 @@
   height: 170px;
   background: #eef3ef;
   overflow: hidden;
+}
+
+.is-clickable {
+  cursor: pointer;
 }
 
 .cart-item-image {

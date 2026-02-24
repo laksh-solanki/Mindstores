@@ -1,5 +1,12 @@
 export default async function registerCartRoutes(fastify, deps) {
-  const { uuidv4, requireAuth } = deps;
+  const { uuidv4, requireAuth, createRateLimitGuard } = deps;
+  const cartMutationRateLimit = createRateLimitGuard({
+    keyPrefix: "cart:mutation",
+    windowMs: 60_000,
+    maxRequests: 60,
+  });
+  const normalizeProductId = (value) => (typeof value === "string" ? value.trim() : "");
+  const parseQuantity = (value) => Number(value);
 
   fastify.get("/api/cart", async (request, reply) => {
     if (!(await requireAuth(request, reply))) return;
@@ -17,13 +24,20 @@ export default async function registerCartRoutes(fastify, deps) {
     return cart;
   });
 
-  fastify.post("/api/cart/add", async (request, reply) => {
+  fastify.post("/api/cart/add", { preHandler: [cartMutationRateLimit] }, async (request, reply) => {
     if (!(await requireAuth(request, reply))) return;
-    const { product_id, quantity } = request.body;
+    const product_id = normalizeProductId(request.body?.product_id);
+    const { quantity } = request.body || {};
     const db = fastify.mongo.db;
-    const parsedQuantity = Number(quantity);
+    const parsedQuantity = parseQuantity(quantity);
 
-    if (!product_id || !Number.isInteger(parsedQuantity) || parsedQuantity <= 0) {
+    if (
+      !product_id ||
+      product_id.length > 80 ||
+      !Number.isInteger(parsedQuantity) ||
+      parsedQuantity <= 0 ||
+      parsedQuantity > 99
+    ) {
       return reply.code(400).send({ message: "Valid product_id and quantity are required" });
     }
 
@@ -71,9 +85,12 @@ export default async function registerCartRoutes(fastify, deps) {
     return { message: "Item added to cart" };
   });
 
-  fastify.post("/api/cart/remove", async (request, reply) => {
+  fastify.post("/api/cart/remove", { preHandler: [cartMutationRateLimit] }, async (request, reply) => {
     if (!(await requireAuth(request, reply))) return;
-    const { product_id } = request.body;
+    const product_id = normalizeProductId(request.body?.product_id);
+    if (!product_id || product_id.length > 80) {
+      return reply.code(400).send({ message: "Valid product_id is required" });
+    }
 
     await fastify.mongo.db.collection("carts").updateOne(
       { user_id: request.user.user_id },
@@ -85,14 +102,21 @@ export default async function registerCartRoutes(fastify, deps) {
     return { message: "Item removed" };
   });
 
-  fastify.post("/api/cart/update", async (request, reply) => {
+  fastify.post("/api/cart/update", { preHandler: [cartMutationRateLimit] }, async (request, reply) => {
     if (!(await requireAuth(request, reply))) return;
 
-    const { product_id, quantity } = request.body;
+    const product_id = normalizeProductId(request.body?.product_id);
+    const { quantity } = request.body || {};
     const db = fastify.mongo.db;
-    const parsedQuantity = Number(quantity);
+    const parsedQuantity = parseQuantity(quantity);
 
-    if (!product_id || !Number.isInteger(parsedQuantity) || parsedQuantity <= 0) {
+    if (
+      !product_id ||
+      product_id.length > 80 ||
+      !Number.isInteger(parsedQuantity) ||
+      parsedQuantity <= 0 ||
+      parsedQuantity > 99
+    ) {
       return reply.code(400).send({ message: "Valid product_id and quantity are required" });
     }
 

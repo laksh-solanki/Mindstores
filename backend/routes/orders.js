@@ -1,8 +1,14 @@
 export default async function registerOrderRoutes(fastify, deps) {
-  const { requireAuth } = deps;
+  const { requireAuth, createRateLimitGuard } = deps;
+  const ordersReadRateLimit = createRateLimitGuard({
+    keyPrefix: "orders:read",
+    windowMs: 60_000,
+    maxRequests: 80,
+  });
 
-  fastify.get("/api/orders", async (request, reply) => {
+  fastify.get("/api/orders", { preHandler: [ordersReadRateLimit] }, async (request, reply) => {
     if (!(await requireAuth(request, reply))) return;
+    reply.header("Cache-Control", "no-store");
 
     return await fastify.mongo.db
       .collection("orders")

@@ -153,10 +153,17 @@
 
 <script>
   import axios from 'axios'
-  import { computed, onMounted, ref } from 'vue'
+  import { computed, onMounted, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import { useAppStore } from '@/stores/app'
-  import { ALLOWED_CURRENCIES, loadUserSettings, saveUserSettings } from '@/utils/userSettings'
+  import { fetchExchangeRates, formatCurrencyAmount } from '@/utils/currency'
+  import {
+    ALLOWED_CURRENCIES,
+    hasSavedCurrencyPreference,
+    loadUserSettings,
+    resolveCurrencyFromUserCountry,
+    saveUserSettings
+  } from '@/utils/userSettings'
 
   export default {
     name: 'Profile',
@@ -188,9 +195,11 @@
 
       const loadSettings = () => {
         const loaded = loadUserSettings()
+        const hasCurrencyPreference = hasSavedCurrencyPreference()
+        const countryCurrency = resolveCurrencyFromUserCountry(appStore.user)
         settings.value = {
           displayName: loaded.displayName || appStore.user?.name || '',
-          currency: loaded.currency,
+          currency: hasCurrencyPreference ? loaded.currency : countryCurrency,
           orderUpdates: loaded.orderUpdates,
           promotionalEmails: loaded.promotionalEmails,
           quickCheckout: loaded.quickCheckout
@@ -256,19 +265,19 @@
       }
 
       const formatAmount = (amount) => {
-        try {
-          return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: settings.value.currency || 'USD',
-            maximumFractionDigits: 2
-          }).format(Number(amount || 0))
-        } catch {
-          return `$${Number(amount || 0).toFixed(2)}`
-        }
+        return formatCurrencyAmount(amount, settings.value.currency || 'USD')
       }
 
+      watch(
+        () => appStore.user,
+        () => {
+          loadSettings()
+        },
+        { immediate: true }
+      )
+
       onMounted(() => {
-        loadSettings()
+        void fetchExchangeRates()
         fetchOrders()
       })
 

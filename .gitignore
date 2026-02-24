@@ -1,0 +1,13 @@
+# Dependency/build outputs
+**/node_modules/
+frontend/dist/
+
+# Local env and secrets
+backend/.env
+backend/.env.*
+!backend/.env.example
+backend/service-account.json
+
+frontend/.env
+frontend/.env.*
+!frontend/.env.example

@@ -20,7 +20,7 @@
               >
                 Shop Collection
               </v-btn>
-              <span class="secondary-note">Free shipping over $60</span>
+              <span class="secondary-note">Free shipping over {{ formatAmount(60) }}</span>
             </div>
             <div class="metrics">
               <div class="metric">
@@ -126,7 +126,7 @@
                     <p class="product-category">{{ product.category }}</p>
                     <h3 class="product-name">{{ product.name }}</h3>
                     <div class="product-row">
-                      <span class="product-price">${{ Number(product.price || 0).toFixed(2) }}</span>
+                      <span class="product-price">{{ formatAmount(product.price) }}</span>
                       <v-btn
                         class="product-add-btn"
                         size="small"
@@ -163,6 +163,7 @@
   import { useRouter } from 'vue-router'
   import { useAppStore } from '@/stores/app'
   import { useCartStore } from '@/stores/cart'
+  import { useCurrency } from '@/utils/currency'
 
   const CATEGORY_PRIORITY = ['Electronics', 'Furniture', 'Clothing']
   const PRODUCTS_CACHE_KEY = 'mindstore_home_products_cache_v1'
@@ -216,6 +217,7 @@
       const router = useRouter()
       const cartStore = useCartStore()
       const appStore = useAppStore()
+      const { formatAmount } = useCurrency()
       const products = ref([])
       const loading = ref(false)
       const snackbar = ref(false)
@@ -341,6 +343,7 @@
         quickAddToCart,
         snackbar,
         snackbarText,
+        formatAmount,
         productsSection,
         scrollToProducts
       }

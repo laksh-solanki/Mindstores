@@ -2,9 +2,11 @@ import axios from "axios";
 // Firebase imports
 import {
   getAuth,
+  getRedirectResult,
   GoogleAuthProvider,
   onAuthStateChanged,
   signInWithPopup,
+  signInWithRedirect,
   signOut,
 } from "firebase/auth";
 import { defineStore } from "pinia";
@@ -13,18 +15,11 @@ import { defineStore } from "pinia";
 import { app as firebaseApp } from "@/plugins/firebase";
 
 const auth = getAuth(firebaseApp);
-const SESSION_TOKEN_KEY = "mindstore_session_token";
 const AUTH_REQUEST_TIMEOUT_MS = 20_000;
 const AUTH_REQUEST_RETRIES = 1;
 let backendSessionPromise = null;
 let backendSessionUid = null;
-const savedSessionToken =
-  typeof window === "undefined"
-    ? null
-    : window.localStorage.getItem(SESSION_TOKEN_KEY);
-if (savedSessionToken) {
-  axios.defaults.headers.common["X-Session-Token"] = savedSessionToken;
-}
+axios.defaults.withCredentials = true;
 
 // REFIX: Define API_URL to connect to Fastify Backend (Port 8000)
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -55,31 +50,14 @@ export const useAppStore = defineStore("app", {
     user: null,
     isAuthenticated: false,
     loading: true,
-    sessionToken: savedSessionToken,
     authListenerInitialized: false,
   }),
 
   actions: {
-    setSessionToken(token) {
-      this.sessionToken = token || null;
-      if (token) {
-        axios.defaults.headers.common["X-Session-Token"] = token;
-        if (typeof window !== "undefined") {
-          window.localStorage.setItem(SESSION_TOKEN_KEY, token);
-        }
-      } else {
-        delete axios.defaults.headers.common["X-Session-Token"];
-        if (typeof window !== "undefined") {
-          window.localStorage.removeItem(SESSION_TOKEN_KEY);
-        }
-      }
-    },
-
     async ensureBackendSession(firebaseUser = auth.currentUser) {
       if (!firebaseUser) {
         this.user = null;
         this.isAuthenticated = false;
-        this.setSessionToken(null);
         backendSessionPromise = null;
         backendSessionUid = null;
         return false;
@@ -105,7 +83,7 @@ export const useAppStore = defineStore("app", {
               response = await axios.post(
                 `${API_URL}/api/auth/firebase-login`,
                 { idToken },
-                { withCredentials: true, timeout: AUTH_REQUEST_TIMEOUT_MS },
+                { timeout: AUTH_REQUEST_TIMEOUT_MS },
               );
               break;
             } catch (error) {
@@ -117,8 +95,6 @@ export const useAppStore = defineStore("app", {
               await wait((attempt + 1) * 600);
             }
           }
-
-          this.setSessionToken(response.data?.session_token || null);
 
           const backendUser = response.data?.user || response.data || {};
           this.user = {
@@ -137,7 +113,6 @@ export const useAppStore = defineStore("app", {
           console.error("Backend authentication failed:", error);
           this.user = null;
           this.isAuthenticated = false;
-          this.setSessionToken(null);
           return false;
         }
       })();
@@ -156,6 +131,10 @@ export const useAppStore = defineStore("app", {
       if (this.authListenerInitialized) {return;}
       this.authListenerInitialized = true;
 
+      void getRedirectResult(auth).catch((error) => {
+        console.error("Google redirect result failed:", error);
+      });
+
       onAuthStateChanged(auth, async (firebaseUser) => {
         if (firebaseUser) {
           const isReady = await this.ensureBackendSession(firebaseUser);
@@ -165,7 +144,6 @@ export const useAppStore = defineStore("app", {
         } else {
           this.user = null;
           this.isAuthenticated = false;
-          this.setSessionToken(null);
         }
         this.loading = false;
       });
@@ -174,26 +152,42 @@ export const useAppStore = defineStore("app", {
     async loginWithGoogle() {
       this.loading = true;
       const provider = new GoogleAuthProvider();
+      let redirectTriggered = false;
       try {
         const credential = await signInWithPopup(auth, provider);
-        await this.ensureBackendSession(credential.user);
+        const isReady = await this.ensureBackendSession(credential.user);
+        if (!isReady) {
+          await signOut(auth);
+        }
       } catch (error) {
+        const errorCode = String(error?.code || "");
+        const shouldFallbackToRedirect =
+          errorCode === "auth/popup-blocked" ||
+          errorCode === "auth/cancelled-popup-request" ||
+          errorCode === "auth/operation-not-supported-in-this-environment";
+
+        if (shouldFallbackToRedirect) {
+          redirectTriggered = true;
+          await signInWithRedirect(auth, provider);
+          return;
+        }
+
         console.error("Google login failed:", error);
       } finally {
-        this.loading = false;
+        if (!redirectTriggered) {
+          this.loading = false;
+        }
       }
     },
 
     async logout() {
       this.loading = true;
       try {
-        // REFIX: Use full API_URL
         await axios
-          .post(`${API_URL}/api/auth/logout`, {}, { withCredentials: true })
+          .post(`${API_URL}/api/auth/logout`, {})
           .catch((error) => {
             console.warn("Backend logout failed, proceeding with Firebase logout.", error);
           });
-        this.setSessionToken(null);
         await signOut(auth);
       } catch (error) {
         console.error("Firebase logout failed:", error);

@@ -15,6 +15,16 @@ const CATEGORY_NAME_BY_KEY = Object.keys(CATEGORY_SUBCATEGORY_OPTIONS).reduce(
 );
 
 const normalizeText = (value) => (value == null ? "" : String(value).trim());
+const isSafeImageUrl = (value) => {
+  const normalized = normalizeText(value);
+  if (!normalized || normalized.length > 2048) return false;
+  try {
+    const parsedUrl = new URL(normalized);
+    return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
 
 const normalizeCategoryName = (category) => {
   const normalizedCategory = normalizeText(category);
@@ -35,7 +45,12 @@ const normalizeSubcategoryName = (category, subcategory) => {
 };
 
 export default async function registerProductRoutes(fastify, deps) {
-  const { uuidv4, requireAdmin } = deps;
+  const { uuidv4, requireAdmin, createRateLimitGuard } = deps;
+  const adminMutationRateLimit = createRateLimitGuard({
+    keyPrefix: "products:admin-mutation",
+    windowMs: 60_000,
+    maxRequests: 40,
+  });
 
   const serializeProduct = (product) => {
     if (!product) return null;
@@ -72,6 +87,8 @@ export default async function registerProductRoutes(fastify, deps) {
     };
 
     if (!payload.name) return { error: "Product name is required" };
+    if (payload.name.length > 120) return { error: "Product name is too long" };
+    if (payload.description.length > 5000) return { error: "Description is too long" };
     if (!Number.isFinite(payload.price) || payload.price < 0) {
       return { error: "Price must be a valid number" };
     }
@@ -80,6 +97,7 @@ export default async function registerProductRoutes(fastify, deps) {
       return { error: "Stock must be a non-negative integer" };
     }
     if (!payload.image_url) return { error: "Image URL is required" };
+    if (!isSafeImageUrl(payload.image_url)) return { error: "Image URL must be a valid http/https URL" };
 
     const requiredSubcategories = getSubcategoryOptions(payload.category);
     if (requiredSubcategories.length > 0 && !payload.subcategory) {
@@ -106,10 +124,13 @@ export default async function registerProductRoutes(fastify, deps) {
     if (hasOwn(updatesInput, "name")) {
       const normalizedName = normalizeText(updatesInput.name);
       if (!normalizedName) return { error: "Product name is required" };
+      if (normalizedName.length > 120) return { error: "Product name is too long" };
       updates.name = normalizedName;
     }
     if (hasOwn(updatesInput, "description")) {
-      updates.description = normalizeText(updatesInput.description);
+      const normalizedDescription = normalizeText(updatesInput.description);
+      if (normalizedDescription.length > 5000) return { error: "Description is too long" };
+      updates.description = normalizedDescription;
     }
     if (hasOwn(updatesInput, "category")) {
       if (!nextCategory) return { error: "Category is required" };
@@ -121,6 +142,7 @@ export default async function registerProductRoutes(fastify, deps) {
     if (hasOwn(updatesInput, "image_url")) {
       const normalizedImageUrl = normalizeText(updatesInput.image_url);
       if (!normalizedImageUrl) return { error: "Image URL is required" };
+      if (!isSafeImageUrl(normalizedImageUrl)) return { error: "Image URL must be a valid http/https URL" };
       updates.image_url = normalizedImageUrl;
     }
     if (hasOwn(updatesInput, "price")) {
@@ -175,7 +197,7 @@ export default async function registerProductRoutes(fastify, deps) {
     return serializeProduct(product);
   });
 
-  fastify.post("/api/products", async (request, reply) => {
+  fastify.post("/api/products", { preHandler: [adminMutationRateLimit] }, async (request, reply) => {
     if (!(await requireAdmin(request, reply))) return;
 
     const { payload, error: validationError } = buildCreateProductPayload(request.body);
@@ -193,6 +215,9 @@ export default async function registerProductRoutes(fastify, deps) {
     if (!product.product_id) {
       product.product_id = `prod_${uuidv4().substring(0, 12)}`;
     }
+    if (!/^[a-zA-Z0-9_-]{4,80}$/.test(product.product_id)) {
+      return reply.code(400).send({ message: "product_id format is invalid" });
+    }
 
     const existingWithProductId = await fastify.mongo.db
       .collection("products")
@@ -205,7 +230,7 @@ export default async function registerProductRoutes(fastify, deps) {
     return product;
   });
 
-  fastify.put("/api/products/:id", async (request, reply) => {
+  fastify.put("/api/products/:id", { preHandler: [adminMutationRateLimit] }, async (request, reply) => {
     if (!(await requireAdmin(request, reply))) return;
 
     const { id } = request.params;
@@ -239,7 +264,7 @@ export default async function registerProductRoutes(fastify, deps) {
     return serializeProduct(updatedProduct);
   });
 
-  fastify.delete("/api/products/:id", async (request, reply) => {
+  fastify.delete("/api/products/:id", { preHandler: [adminMutationRateLimit] }, async (request, reply) => {
     if (!(await requireAdmin(request, reply))) return;
 
     const filter = buildProductFilter(request.params.id);

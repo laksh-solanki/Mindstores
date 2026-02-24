@@ -39,7 +39,7 @@
                   <span class="section-number mr-4">{{ section.num }}</span>
                   {{ section.title }}
                 </h2>
-                <div class="text-body-1 text-secondary-dark lh-lg" v-html="section.content" />
+                <p class="text-body-1 text-secondary-dark lh-lg">{{ section.content }}</p>
               </section>
 
               <v-divider class="my-10" />
@@ -85,7 +85,7 @@
       id: 'acceptance',
       num: '01',
       title: 'Acceptance of Terms',
-      content: 'By accessing <strong>PremiumApp</strong>, you agree to be bound by these terms. If you disagree with any part of the terms, you may not access the service. We reserve the right to modify these terms at any time.'
+      content: 'By accessing Mindstores, you agree to be bound by these terms. If you disagree with any part of the terms, you may not access the service. We reserve the right to modify these terms at any time.'
     },
     {
       id: 'accounts',

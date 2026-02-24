@@ -73,7 +73,7 @@
 </template>
 
 <script>
-  import { onMounted } from 'vue'
+  import { onMounted, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import { useAppStore } from '@/stores/app'
 
@@ -89,13 +89,17 @@
         }
       })
 
+      watch(
+        () => appStore.isAuthenticated,
+        (isAuthenticated) => {
+          if (isAuthenticated) {
+            router.replace('/')
+          }
+        },
+      )
+
       const loginWithGoogle = async () => {
         await appStore.loginWithGoogle()
-        if (appStore.isAuthenticated) {
-          router.push('/')
-        } else {
-          router.push('/')
-        }
       }
 
       return {

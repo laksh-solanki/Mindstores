@@ -25,7 +25,7 @@ export const useCartStore = defineStore('cart', {
   actions: {
     async withAuthRetry(requestFn) {
       const appStore = useAppStore()
-      const likelyAuthenticated = appStore.isAuthenticated || !!appStore.sessionToken
+      const likelyAuthenticated = appStore.isAuthenticated
 
       if (!likelyAuthenticated) {
         const hasSession = await appStore.ensureBackendSession()

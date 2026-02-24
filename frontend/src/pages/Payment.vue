@@ -216,7 +216,7 @@
   import { computed, onMounted, ref } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useCartStore } from '@/stores/cart'
-  import { loadUserSettings } from '@/utils/userSettings'
+  import { useCurrency } from '@/utils/currency'
   const PROMO_CODES = [
     {
       code: 'SAVE10',
@@ -248,7 +248,7 @@
       const snackbar = ref(false)
       const snackbarText = ref('')
       const snackbarColor = ref('success')
-      const userSettings = ref(loadUserSettings())
+      const { formatAmount } = useCurrency()
       const selectedProductIds = ref([])
       const selectedPromoCode = ref('')
       const tab = ref('upi')
@@ -325,18 +325,6 @@
         selectedPromoCode.value = PROMO_CODES.some((promo) => promo.code === rawPromo) ? rawPromo : ''
       }
 
-      const formatAmount = (amount) => {
-        try {
-          return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: userSettings.value.currency || 'USD',
-            maximumFractionDigits: 2
-          }).format(Number(amount || 0))
-        } catch {
-          return `$${Number(amount || 0).toFixed(2)}`
-        }
-      }
-
       const validateForm = () => {
         if (!form.value.firstName || !form.value.lastName) {
           return 'Enter your full name'
@@ -403,7 +391,6 @@
 
       onMounted(async () => {
         await cartStore.fetchCart()
-        userSettings.value = loadUserSettings()
         parseSelectedProductIds()
       })
 

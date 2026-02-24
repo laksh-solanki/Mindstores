@@ -1,14 +1,17 @@
 import {
   mdiAccount,
   mdiAccountCircle,
+  mdiArrowLeft,
   mdiCart,
   mdiCartOutline,
   mdiCartPlus,
   mdiCheckCircle,
   mdiCircle,
   mdiCircleSmall,
+  mdiClockFast,
   mdiClockOutline,
   mdiClose,
+  mdiCreditCardCheckOutline,
   mdiDelete,
   mdiEmailArrowRightOutline,
   mdiGithub,
@@ -20,8 +23,12 @@ import {
   mdiPlus,
   mdiPrinterOutline,
   mdiReddit,
+  mdiRefresh,
   mdiShieldCheck,
   mdiShieldStarOutline,
+  mdiStar,
+  mdiStarOutline,
+  mdiTruckFastOutline,
 } from '@mdi/js'
 import { defineComponent, h } from 'vue'
 // Composables
@@ -48,12 +55,19 @@ const mdiPathByName = {
   'mdi-package-variant': mdiPackageVariant,
   'mdi-shield-check': mdiShieldCheck,
   'mdi-email-arrow-right-outline': mdiEmailArrowRightOutline,
+  'mdi-clock-fast': mdiClockFast,
   'mdi-circle-small': mdiCircleSmall,
+  'mdi-arrow-left': mdiArrowLeft,
   'mdi-pencil': mdiPencil,
   'mdi-plus': mdiPlus,
   'mdi-printer-outline': mdiPrinterOutline,
   'mdi-reddit': mdiReddit,
+  'mdi-refresh': mdiRefresh,
+  'mdi-star': mdiStar,
+  'mdi-star-outline': mdiStarOutline,
   'mdi-shield-star-outline': mdiShieldStarOutline,
+  'mdi-credit-card-check-outline': mdiCreditCardCheckOutline,
+  'mdi-truck-fast-outline': mdiTruckFastOutline,
 }
 
 function resolveMdiPath (icon) {
