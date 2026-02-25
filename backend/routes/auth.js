@@ -7,6 +7,75 @@ function extractCountryCodeFromLocale(locale = "") {
   return match ? match[1].toUpperCase() : null;
 }
 
+function normalizeCountryCode(value) {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const normalized = value.trim();
+  if (!normalized) {
+    return null;
+  }
+  if (!/^[a-z]{2}$/i.test(normalized)) {
+    return null;
+  }
+  return normalized.toUpperCase();
+}
+
+function normalizeLocale(value) {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const normalized = value.trim();
+  if (!normalized || normalized.length > 48) {
+    return null;
+  }
+  return normalized;
+}
+
+function normalizeProfileName(value) {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const normalized = value.trim();
+  if (!normalized) {
+    return null;
+  }
+  return normalized.slice(0, 120);
+}
+
+function normalizeImageUrl(value) {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const normalized = value.trim();
+  if (!normalized) {
+    return null;
+  }
+
+  const isDataImage = /^data:image\/(png|jpeg|jpg|webp|gif);base64,[a-zA-Z0-9+/=]+$/i.test(normalized);
+  if (isDataImage) {
+    if (normalized.length > 700_000) {
+      return null;
+    }
+    return normalized;
+  }
+
+  if (normalized.length > 2048) {
+    return null;
+  }
+
+  try {
+    const parsedUrl = new URL(normalized);
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      return null;
+    }
+  } catch {
+    return null;
+  }
+
+  return normalized;
+}
+
 export default async function registerAuthRoutes(fastify, deps) {
   const {
     admin,
@@ -52,20 +121,48 @@ export default async function registerAuthRoutes(fastify, deps) {
         return reply.code(401).send({ message: "Invalid Token" });
       }
 
-      const locale = typeof decodedToken.locale === "string" ? decodedToken.locale.trim() : "";
-      const countryCode = extractCountryCodeFromLocale(locale);
       const normalizedEmail = (email || "").toLowerCase().trim();
       const isAdminUser = ADMIN_EMAILS.has(normalizedEmail);
 
       const db = fastify.mongo.db;
       const userId = `user_${uid}`;
+      const existingUser = await db
+        .collection("users")
+        .findOne({ user_id: userId }, { projection: { _id: 0 } });
+
+      const tokenLocale = normalizeLocale(decodedToken.locale);
+      const requestLocale = normalizeLocale(request.body?.locale);
+      const locale = tokenLocale || requestLocale || normalizeLocale(existingUser?.locale) || null;
+
+      const tokenCountryCode =
+        normalizeCountryCode(decodedToken.country_code) ||
+        normalizeCountryCode(decodedToken.country);
+      const requestCountryCode =
+        normalizeCountryCode(request.body?.country_code) ||
+        normalizeCountryCode(request.body?.countryCode);
+      const localeCountryCode = extractCountryCodeFromLocale(locale || "");
+      const countryCode =
+        tokenCountryCode ||
+        normalizeCountryCode(localeCountryCode) ||
+        requestCountryCode ||
+        normalizeCountryCode(existingUser?.country_code) ||
+        null;
+
+      const normalizedName =
+        normalizeProfileName(name) ||
+        normalizeProfileName(existingUser?.name) ||
+        "User";
+      const normalizedPicture =
+        normalizeImageUrl(picture) ||
+        normalizeImageUrl(existingUser?.picture) ||
+        null;
 
       const userPatch = {
         email: normalizedEmail,
-        name: name || "User",
-        picture: picture || null,
-        locale: locale || null,
-        country_code: countryCode || null,
+        name: normalizedName,
+        picture: normalizedPicture,
+        locale,
+        country_code: countryCode,
         is_admin: isAdminUser,
         updated_at: new Date(),
       };
@@ -128,6 +225,63 @@ export default async function registerAuthRoutes(fastify, deps) {
     reply.header("Cache-Control", "no-store");
     if (!(await requireAuth(request, reply))) return;
     return request.user;
+  });
+
+  fastify.put("/api/auth/profile", { preHandler: [authWriteRateLimit] }, async (request, reply) => {
+    reply.header("Cache-Control", "no-store");
+    if (!(await requireAuth(request, reply))) return;
+
+    const updates = {};
+    const hasOwn = (field) => Object.prototype.hasOwnProperty.call(request.body || {}, field);
+
+    if (hasOwn("name")) {
+      const normalizedName = normalizeProfileName(request.body?.name);
+      if (!normalizedName) {
+        return reply.code(400).send({ message: "Valid name is required" });
+      }
+      updates.name = normalizedName;
+    }
+
+    if (hasOwn("picture")) {
+      const rawPicture = request.body?.picture;
+      if (rawPicture == null || (typeof rawPicture === "string" && !rawPicture.trim())) {
+        updates.picture = null;
+      } else {
+        const normalizedPicture = normalizeImageUrl(rawPicture);
+        if (!normalizedPicture) {
+          return reply.code(400).send({ message: "Profile image must be a valid http/https URL" });
+        }
+        updates.picture = normalizedPicture;
+      }
+    }
+
+    if (hasOwn("country_code")) {
+      const rawCountryCode = request.body?.country_code;
+      if (rawCountryCode == null || (typeof rawCountryCode === "string" && !rawCountryCode.trim())) {
+        updates.country_code = null;
+      } else {
+        const normalizedCountryCode = normalizeCountryCode(rawCountryCode);
+        if (!normalizedCountryCode) {
+          return reply.code(400).send({ message: "country_code must be a 2-letter code" });
+        }
+        updates.country_code = normalizedCountryCode;
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return request.user;
+    }
+
+    updates.updated_at = new Date();
+
+    await fastify.mongo.db
+      .collection("users")
+      .updateOne({ user_id: request.user.user_id }, { $set: updates });
+
+    const user = await fastify.mongo.db
+      .collection("users")
+      .findOne({ user_id: request.user.user_id }, { projection: { _id: 0 } });
+    return user;
   });
 
   fastify.post("/api/auth/logout", { preHandler: [authWriteRateLimit] }, async (request, reply) => {

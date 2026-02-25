@@ -1,70 +1,109 @@
 <template>
-  <div class="login-page">
-    <v-container class="login-shell">
-      <v-row class="login-row" no-gutters>
-        <v-col class="hero-col" cols="12" lg="7">
-          <div class="hero-panel">
-            <p class="hero-kicker">Members Access</p>
-            <h1 class="hero-title">Bring calm to your home, one intentional piece at a time.</h1>
-            <p class="hero-copy">
-              Sign in to save your cart, track orders, and get early access to limited seasonal drops.
-            </p>
+  <div class="auth-page">
+    <div class="bg-orb orb-a" />
+    <div class="bg-orb orb-b" />
 
-            <div class="hero-stats">
-              <div class="stat-chip">
-                <span class="stat-value">300+</span>
-                <span class="stat-label">Products</span>
-              </div>
-              <div class="stat-chip">
-                <span class="stat-value">24h</span>
-                <span class="stat-label">Dispatch</span>
-              </div>
-              <div class="stat-chip">
-                <span class="stat-value">4.8/5</span>
-                <span class="stat-label">Ratings</span>
-              </div>
+    <v-container class="auth-shell">
+      <v-row class="auth-frame" no-gutters>
+        <v-col class="auth-aside" cols="12" lg="6">
+          <div class="aside-overlay" />
+          <div class="aside-content">
+            <div class="brand-pill">
+              <v-img alt="logo" class="brand-mark" src="../assets/logo.svg" />
+              <span class="brand-text">Mindstore</span>
+            </div>
+
+            <p class="aside-kicker">Member Space</p>
+            <h1 class="aside-title">Curated essentials. Seamless account access.</h1>
+            <p class="aside-copy">Sign in to keep your cart, profile, and orders perfectly synced.</p>
+
+            <div class="feature-list">
+              <article class="feature-item">
+                <v-icon size="18">mdi-check-circle</v-icon>
+                <div>
+                  <h3>Protected Session</h3>
+                  <p>Secure login with verified account context.</p>
+                </div>
+              </article>
+              <article class="feature-item">
+                <v-icon size="18">mdi-clock-fast</v-icon>
+                <div>
+                  <h3>Faster Checkout</h3>
+                  <p>Saved profile details for quicker payments.</p>
+                </div>
+              </article>
+              <article class="feature-item">
+                <v-icon size="18">mdi-shield-check</v-icon>
+                <div>
+                  <h3>Reliable History</h3>
+                  <p>Track every order and status update easily.</p>
+                </div>
+              </article>
             </div>
           </div>
         </v-col>
 
-        <v-col class="form-col" cols="12" lg="5">
-          <div class="auth-card">
-            <div class="brand-pill">
-              <v-img alt="logo" class="brand-mark" src="../assets/logo.svg" />
-              <span class="brand-text">MINDSTORE</span>
-            </div>
+        <v-col class="auth-main" cols="12" lg="6">
+          <div class="form-card">
+            <p class="form-kicker">Welcome Back</p>
+            <h2 class="form-title">Log In</h2>
+            <p class="form-subtitle">Continue with your email account.</p>
 
-            <h2 class="auth-title">Welcome Back</h2>
-            <p class="auth-subtitle">Continue with Google to access your account securely.</p>
-
-            <v-btn
-              block
-              class="google-btn"
-              :disabled="appStore.loading"
-              :loading="appStore.loading"
-              rounded="pill"
-              size="x-large"
-              variant="flat"
-              @click="loginWithGoogle"
+            <v-alert
+              v-if="errorMessage"
+              class="mt-3"
+              density="comfortable"
+              type="error"
+              variant="tonal"
             >
-              <v-img class="pr-2" src="../assets/Google-logo.png" width="35 " />
-              Continue with Google
-            </v-btn>
+              {{ errorMessage }}
+            </v-alert>
 
-            <div class="trust-list">
-              <div class="trust-item">
-                <v-icon size="18">mdi-check-circle</v-icon>
-                <span>Secure sign-in powered by Firebase</span>
-              </div>
-              <div class="trust-item">
-                <v-icon size="18">mdi-check-circle</v-icon>
-                <span>Saved cart and faster checkout</span>
-              </div>
-              <div class="trust-item">
-                <v-icon size="18">mdi-check-circle</v-icon>
-                <span>Order history and status tracking</span>
-              </div>
-            </div>
+            <v-form class="mt-4" @submit.prevent="submitLogin">
+              <v-text-field
+                v-model="email"
+                autocomplete="email"
+                density="comfortable"
+                label="Email"
+                prepend-inner-icon="mdi-email"
+                rounded="lg"
+                type="email"
+                variant="outlined"
+              />
+
+              <v-text-field
+                v-model="password"
+                :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+                autocomplete="current-password"
+                class="mt-1"
+                density="comfortable"
+                label="Password"
+                prepend-inner-icon="mdi-lock-outline"
+                rounded="lg"
+                :type="showPassword ? 'text' : 'password'"
+                variant="outlined"
+                @click:append-inner="showPassword = !showPassword"
+              />
+
+              <v-btn
+                block
+                class="submit-btn mt-3"
+                :disabled="appStore.loading || !email.trim() || !password"
+                :loading="appStore.loading"
+                rounded="pill"
+                size="large"
+                type="submit"
+                variant="flat"
+              >
+                Continue
+              </v-btn>
+            </v-form>
+
+            <div class="divider" />
+            <p class="switch-copy">
+              New to Mindstore?
+              <router-link class="switch-link" to="/create-account">Create account</router-link>
+            </p>
           </div>
         </v-col>
       </v-row>
@@ -73,254 +112,323 @@
 </template>
 
 <script>
-  import { onMounted, watch } from 'vue'
+  import { onMounted, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import { useAppStore } from '@/stores/app'
+  import { getAuthErrorMessage } from '@/utils/authErrors'
 
   export default {
     name: 'Login',
     setup() {
       const appStore = useAppStore()
       const router = useRouter()
+      const email = ref('')
+      const password = ref('')
+      const showPassword = ref(false)
+      const errorMessage = ref('')
 
-      onMounted(() => {
+      const redirectIfAuthenticated = () => {
         if (appStore.isAuthenticated) {
           router.replace('/')
         }
+      }
+
+      onMounted(() => {
+        redirectIfAuthenticated()
       })
 
       watch(
         () => appStore.isAuthenticated,
-        (isAuthenticated) => {
-          if (isAuthenticated) {
-            router.replace('/')
-          }
+        () => {
+          redirectIfAuthenticated()
         },
       )
 
-      const loginWithGoogle = async () => {
-        await appStore.loginWithGoogle()
+      const submitLogin = async () => {
+        errorMessage.value = ''
+        try {
+          await appStore.loginWithEmail(email.value, password.value)
+          router.replace('/')
+        } catch (error) {
+          errorMessage.value = getAuthErrorMessage(error)
+        }
       }
 
       return {
         appStore,
-        loginWithGoogle
+        email,
+        password,
+        showPassword,
+        errorMessage,
+        submitLogin
       }
     }
   }
 </script>
 
 <style scoped>
-.login-page {
+.auth-page {
   min-height: 100vh;
+  position: relative;
+  overflow: hidden;
   background:
-    radial-gradient(circle at 12% 18%, rgba(205, 122, 41, 0.24) 0%, rgba(205, 122, 41, 0) 36%),
-    radial-gradient(circle at 88% 76%, rgba(58, 87, 79, 0.16) 0%, rgba(58, 87, 79, 0) 40%),
-    linear-gradient(160deg, #f3f7f4 0%, #eef3ef 48%, #edf1ee 100%);
+    linear-gradient(154deg, #f4f8f5 0%, #edf3ef 44%, #e8efe9 100%);
 }
 
-.login-shell {
+.bg-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(2px);
+  pointer-events: none;
+}
+
+.orb-a {
+  width: 420px;
+  height: 420px;
+  top: -140px;
+  left: -120px;
+  background: radial-gradient(circle, rgba(198, 114, 36, 0.24) 0%, rgba(198, 114, 36, 0) 68%);
+}
+
+.orb-b {
+  width: 520px;
+  height: 520px;
+  right: -180px;
+  bottom: -220px;
+  background: radial-gradient(circle, rgba(29, 79, 79, 0.2) 0%, rgba(29, 79, 79, 0) 68%);
+}
+
+.auth-shell {
   min-height: 100vh;
   display: flex;
   align-items: center;
-  padding-top: 20px;
-  padding-bottom: 20px;
+  position: relative;
+  z-index: 1;
+  padding-top: 22px;
+  padding-bottom: 22px;
 }
 
-.login-row {
+.auth-frame {
   width: 100%;
-  border: 1px solid #dbe4df;
-  border-radius: 28px;
+  border: 1px solid #d5dfda;
+  border-radius: 24px;
   overflow: hidden;
-  box-shadow: 0 24px 60px rgba(24, 36, 34, 0.1);
-  background: #f4f8f5;
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: 0 24px 56px rgba(20, 35, 33, 0.11);
+  backdrop-filter: blur(10px);
 }
 
-.hero-col {
+.auth-aside {
+  position: relative;
+  color: #f5f0e8;
   background:
-    linear-gradient(138deg, rgba(19, 34, 37, 0.97), rgba(34, 55, 58, 0.94)),
-    url('https://images.unsplash.com/photo-1486946255434-2466348c2166?crop=entropy&cs=srgb&fm=jpg&q=85&w=1400');
+    linear-gradient(148deg, rgba(18, 36, 39, 0.92), rgba(35, 58, 62, 0.9)),
+    url('https://images.unsplash.com/photo-1486946255434-2466348c2166?crop=entropy&cs=srgb&fm=jpg&q=80&w=1400');
   background-size: cover;
   background-position: center;
-  color: #f4efe7;
 }
 
-.hero-panel {
-  min-height: 620px;
+.aside-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 84% 12%, rgba(212, 154, 95, 0.3), rgba(212, 154, 95, 0));
+}
+
+.aside-content {
+  position: relative;
+  z-index: 1;
+  min-height: 100%;
+  padding: clamp(24px, 4vw, 42px);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 64px clamp(24px, 5vw, 58px);
-}
-
-.hero-kicker {
-  text-transform: uppercase;
-  letter-spacing: 1.8px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #d9bc95;
-}
-
-.hero-title {
-  margin-top: 18px;
-  font-family: 'Playfair Display', serif;
-  font-size: clamp(2rem, 4vw, 3.4rem);
-  line-height: 1.08;
-}
-
-.hero-copy {
-  margin-top: 18px;
-  max-width: 560px;
-  font-size: 1rem;
-  line-height: 1.75;
-  color: rgba(243, 236, 228, 0.86);
-}
-
-.hero-stats {
-  margin-top: 30px;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.stat-chip {
-  border: 1px solid rgba(233, 218, 197, 0.28);
-  border-radius: 14px;
-  background: rgba(245, 239, 230, 0.08);
-  padding: 12px 14px;
-  min-width: 112px;
-  display: flex;
-  flex-direction: column;
-}
-
-.stat-value {
-  font-size: 1.08rem;
-  font-weight: 700;
-  color: #f6ede1;
-}
-
-.stat-label {
-  margin-top: 2px;
-  font-size: 0.76rem;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  color: rgba(232, 219, 200, 0.72);
-}
-
-.form-col {
-  background: linear-gradient(160deg, #f9fbfa 0%, #f1f5f2 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: clamp(22px, 4vw, 34px);
-}
-
-.auth-card {
-  width: 100%;
-  max-width: 430px;
-  border: 1px solid #dbe4df;
-  border-radius: 22px;
-  background: #ffffff;
-  padding: clamp(22px, 4vw, 32px);
-  box-shadow: 0 16px 38px rgba(24, 36, 34, 0.08);
 }
 
 .brand-pill {
   width: fit-content;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  border: 1px solid #d8e1dc;
+  gap: 9px;
+  border: 1px solid rgba(241, 230, 214, 0.38);
   border-radius: 999px;
   padding: 6px 12px 6px 6px;
 }
 
 .brand-mark {
-  width: 30px;
-  height: 30px;
-  border-radius: 11px;
-  background: #203235;
-  color: #f4efe7;
-  display: grid;
-  place-items: center;
-  font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.3px;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
 }
 
 .brand-text {
-  font-size: 0.78rem;
-  letter-spacing: 1.1px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1.05px;
   text-transform: uppercase;
-  color: #2f4247;
+}
+
+.aside-kicker {
+  margin-top: 22px;
+  font-size: 0.73rem;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: #ddc29f;
   font-weight: 700;
 }
 
-.auth-title {
-  margin-top: 24px;
-  font-family: 'Playfair Display', serif;
-  font-size: clamp(2rem, 4vw, 2.6rem);
-  color: #1a292d;
-  line-height: 1.1;
-}
-
-.auth-subtitle {
+.aside-title {
   margin-top: 10px;
-  font-family: 'Manrope', sans-serif;
-  color: #586a71;
-  line-height: 1.7;
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.5rem, 2.3vw, 2.15rem);
+  line-height: 1.18;
 }
 
-.google-btn {
-  margin-top: 24px;
-  text-transform: none;
-  font-weight: 700;
-  letter-spacing: 0.1px;
-  color: #ffffff;
-  background: linear-gradient(120deg, #cb782b, #b35e1e);
-  box-shadow: 0 12px 28px rgba(198, 113, 38, 0.26);
+.aside-copy {
+  margin-top: 12px;
+  font-size: 0.93rem;
+  line-height: 1.68;
+  color: rgba(245, 240, 230, 0.9);
 }
 
-.trust-list {
-  margin-top: 20px;
+.feature-list {
+  margin-top: 18px;
   display: grid;
   gap: 10px;
 }
 
-.trust-item {
-  display: flex;
-  align-items: center;
+.feature-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
   gap: 10px;
-  color: #475a61;
-  font-size: 0.92rem;
+  border: 1px solid rgba(226, 214, 198, 0.26);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(247, 240, 230, 0.08);
 }
 
-.trust-item :deep(.v-icon) {
-  color: #2f6f62;
+.feature-item :deep(.v-icon) {
+  color: #e1c9a8;
+  margin-top: 1px;
+}
+
+.feature-item h3 {
+  font-size: 0.87rem;
+  color: #f2eadf;
+}
+
+.feature-item p {
+  margin-top: 2px;
+  font-size: 0.8rem;
+  color: rgba(245, 240, 230, 0.74);
+}
+
+.auth-main {
+  padding: clamp(20px, 3.4vw, 36px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(162deg, rgba(252, 253, 252, 0.94), rgba(244, 248, 245, 0.92));
+}
+
+.form-card {
+  width: 100%;
+  max-width: 430px;
+  border: 1px solid #d8e2dd;
+  border-radius: 18px;
+  background: #ffffff;
+  padding: clamp(20px, 3vw, 28px);
+  box-shadow: 0 14px 34px rgba(20, 35, 32, 0.08);
+}
+
+.form-kicker {
+  font-size: 0.73rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #b06925;
+  font-weight: 700;
+}
+
+.form-title {
+  margin-top: 8px;
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.55rem, 2vw, 1.95rem);
+  color: #1b2b30;
+}
+
+.form-subtitle {
+  margin-top: 6px;
+  color: #607178;
+  font-size: 0.9rem;
+}
+
+.submit-btn {
+  text-transform: none;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(122deg, #c7742c, #b25d1d);
+  box-shadow: 0 12px 22px rgba(188, 106, 35, 0.26);
+}
+
+.divider {
+  margin-top: 14px;
+  height: 1px;
+  background: linear-gradient(to right, transparent, #d5dfda, transparent);
+}
+
+.switch-copy {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #617279;
+}
+
+.switch-link {
+  text-decoration: none;
+  color: #27515b;
+  font-weight: 700;
+}
+
+.switch-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 1264px) {
+  .aside-content {
+    min-height: 360px;
+  }
 }
 
 @media (max-width: 960px) {
-  .login-shell {
+  .auth-shell {
     padding-top: 14px;
     padding-bottom: 14px;
   }
 
-  .hero-panel {
-    min-height: 420px;
+  .auth-frame {
+    border-radius: 20px;
+  }
+
+  .aside-content {
+    min-height: 300px;
   }
 }
 
 @media (max-width: 600px) {
-  .login-row {
-    border-radius: 20px;
+  .aside-content {
+    min-height: 240px;
+    padding: 18px;
   }
 
-  .hero-panel {
-    min-height: 340px;
+  .feature-list {
+    gap: 8px;
   }
 
-  .auth-card {
-    border-radius: 18px;
+  .form-card {
+    border-radius: 14px;
+  }
+
+  .auth-main {
+    padding: 16px;
   }
 }
 </style>

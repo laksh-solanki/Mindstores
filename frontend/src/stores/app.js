@@ -1,13 +1,12 @@
 import axios from "axios";
 // Firebase imports
 import {
+  createUserWithEmailAndPassword,
   getAuth,
-  getRedirectResult,
-  GoogleAuthProvider,
   onAuthStateChanged,
-  signInWithPopup,
-  signInWithRedirect,
+  signInWithEmailAndPassword,
   signOut,
+  updateProfile,
 } from "firebase/auth";
 import { defineStore } from "pinia";
 
@@ -19,10 +18,72 @@ const AUTH_REQUEST_TIMEOUT_MS = 20_000;
 const AUTH_REQUEST_RETRIES = 1;
 let backendSessionPromise = null;
 let backendSessionUid = null;
-axios.defaults.withCredentials = true;
 
 // REFIX: Define API_URL to connect to Fastify Backend (Port 8000)
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+function extractCountryCodeFromLocale(locale = "") {
+  if (typeof locale !== "string") {
+    return "";
+  }
+
+  const match = locale.trim().match(/^[a-z]{2,3}[-_]([a-z]{2})(?:[-_].*)?$/i);
+  return match ? match[1].toUpperCase() : "";
+}
+
+function getClientLocale() {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  const primaryLocale = window.navigator?.language;
+  if (typeof primaryLocale === "string" && primaryLocale.trim()) {
+    return primaryLocale.trim();
+  }
+
+  if (Array.isArray(window.navigator?.languages)) {
+    const firstLocale = window.navigator.languages.find(
+      (locale) => typeof locale === "string" && locale.trim(),
+    );
+    return firstLocale ? firstLocale.trim() : "";
+  }
+
+  return "";
+}
+
+function normalizeCountryCode(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+  const normalized = value.trim().toUpperCase();
+  return /^[A-Z]{2}$/.test(normalized) ? normalized : "";
+}
+
+function canSyncPictureToFirebase(picture) {
+  if (typeof picture !== "string") {
+    return false;
+  }
+  const normalized = picture.trim();
+  if (!normalized) {
+    return true;
+  }
+
+  // Firebase Auth photoURL is intended for regular URLs and rejects long data URLs.
+  if (normalized.startsWith("data:image/")) {
+    return false;
+  }
+
+  if (normalized.length > 2000) {
+    return false;
+  }
+
+  try {
+    const parsedUrl = new URL(normalized);
+    return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
 
 function mapFirebaseUser (firebaseUser) {
   if (!firebaseUser) {return null;}
@@ -82,8 +143,12 @@ export const useAppStore = defineStore("app", {
             try {
               response = await axios.post(
                 `${API_URL}/api/auth/firebase-login`,
-                { idToken },
-                { timeout: AUTH_REQUEST_TIMEOUT_MS },
+                {
+                  idToken,
+                  locale: getClientLocale(),
+                  country_code: extractCountryCodeFromLocale(getClientLocale()),
+                },
+                { timeout: AUTH_REQUEST_TIMEOUT_MS, withCredentials: true },
               );
               break;
             } catch (error) {
@@ -131,10 +196,6 @@ export const useAppStore = defineStore("app", {
       if (this.authListenerInitialized) {return;}
       this.authListenerInitialized = true;
 
-      void getRedirectResult(auth).catch((error) => {
-        console.error("Google redirect result failed:", error);
-      });
-
       onAuthStateChanged(auth, async (firebaseUser) => {
         if (firebaseUser) {
           const isReady = await this.ensureBackendSession(firebaseUser);
@@ -149,34 +210,62 @@ export const useAppStore = defineStore("app", {
       });
     },
 
-    async loginWithGoogle() {
+    async loginWithEmail(email, password) {
       this.loading = true;
-      const provider = new GoogleAuthProvider();
-      let redirectTriggered = false;
       try {
-        const credential = await signInWithPopup(auth, provider);
+        const normalizedEmail = String(email || "").trim();
+        const normalizedPassword = String(password || "");
+        const credential = await signInWithEmailAndPassword(auth, normalizedEmail, normalizedPassword);
         const isReady = await this.ensureBackendSession(credential.user);
         if (!isReady) {
           await signOut(auth);
+          throw new Error("Unable to establish backend session");
         }
       } catch (error) {
-        const errorCode = String(error?.code || "");
-        const shouldFallbackToRedirect =
-          errorCode === "auth/popup-blocked" ||
-          errorCode === "auth/cancelled-popup-request" ||
-          errorCode === "auth/operation-not-supported-in-this-environment";
-
-        if (shouldFallbackToRedirect) {
-          redirectTriggered = true;
-          await signInWithRedirect(auth, provider);
-          return;
-        }
-
-        console.error("Google login failed:", error);
+        console.error("Email login failed:", error);
+        throw error;
       } finally {
-        if (!redirectTriggered) {
-          this.loading = false;
+        this.loading = false;
+      }
+    },
+
+    async createAccountWithEmail({ name, email, password }) {
+      this.loading = true;
+      try {
+        const normalizedName = String(name || "").trim();
+        const normalizedEmail = String(email || "").trim();
+        const normalizedPassword = String(password || "");
+
+        const credential = await createUserWithEmailAndPassword(
+          auth,
+          normalizedEmail,
+          normalizedPassword,
+        );
+
+        if (normalizedName) {
+          await updateProfile(credential.user, { displayName: normalizedName });
+          await credential.user.reload();
         }
+
+        await credential.user.getIdToken(true);
+        const activeUser = auth.currentUser || credential.user;
+        const isReady = await this.ensureBackendSession(activeUser);
+        if (!isReady) {
+          await signOut(auth);
+          throw new Error("Unable to establish backend session");
+        }
+
+        if (normalizedName) {
+          this.user = {
+            ...this.user,
+            name: normalizedName,
+          };
+        }
+      } catch (error) {
+        console.error("Email signup failed:", error);
+        throw error;
+      } finally {
+        this.loading = false;
       }
     },
 
@@ -184,13 +273,104 @@ export const useAppStore = defineStore("app", {
       this.loading = true;
       try {
         await axios
-          .post(`${API_URL}/api/auth/logout`, {})
+          .post(`${API_URL}/api/auth/logout`, {}, { withCredentials: true })
           .catch((error) => {
             console.warn("Backend logout failed, proceeding with Firebase logout.", error);
           });
         await signOut(auth);
       } catch (error) {
         console.error("Firebase logout failed:", error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async refreshCurrentUser() {
+      if (!this.isAuthenticated) {
+        return null;
+      }
+
+      try {
+        const response = await axios.get(`${API_URL}/api/auth/me`, {
+          withCredentials: true,
+          timeout: AUTH_REQUEST_TIMEOUT_MS,
+        });
+        const backendUser = response.data || {};
+        this.user = {
+          ...this.user,
+          ...backendUser,
+          picture:
+            backendUser.picture ||
+            backendUser.photo_url ||
+            backendUser.photoURL ||
+            this.user?.picture ||
+            null,
+        };
+        this.isAuthenticated = true;
+        return this.user;
+      } catch (error) {
+        console.error("Failed to refresh user profile:", error);
+        throw error;
+      }
+    },
+
+    async updateAccountProfile({ name, picture, countryCode }) {
+      const payload = {};
+      const normalizedName = typeof name === "string" ? name.trim() : "";
+      const normalizedCountryCode = normalizeCountryCode(countryCode);
+      const normalizedPicture = typeof picture === "string" ? picture.trim() : "";
+
+      if (normalizedName) {
+        payload.name = normalizedName;
+      }
+
+      if (typeof picture === "string") {
+        payload.picture = normalizedPicture || null;
+      }
+
+      if (typeof countryCode === "string") {
+        payload.country_code = normalizedCountryCode || null;
+      }
+
+      this.loading = true;
+      try {
+        if (auth.currentUser) {
+          const firebaseUpdates = {};
+          if (normalizedName) {
+            firebaseUpdates.displayName = normalizedName;
+          }
+          if (typeof picture === "string" && canSyncPictureToFirebase(normalizedPicture)) {
+            firebaseUpdates.photoURL = normalizedPicture || null;
+          }
+
+          if (Object.keys(firebaseUpdates).length > 0) {
+            await updateProfile(auth.currentUser, firebaseUpdates);
+            await auth.currentUser.getIdToken(true);
+          }
+        }
+
+        const response = await axios.put(`${API_URL}/api/auth/profile`, payload, {
+          withCredentials: true,
+          timeout: AUTH_REQUEST_TIMEOUT_MS,
+        });
+
+        const backendUser = response.data?.user || response.data || {};
+        this.user = {
+          ...this.user,
+          ...backendUser,
+          picture:
+            backendUser.picture ||
+            backendUser.photo_url ||
+            backendUser.photoURL ||
+            normalizedPicture ||
+            null,
+        };
+        this.isAuthenticated = true;
+        return this.user;
+      } catch (error) {
+        console.error("Failed to update profile:", error);
+        throw error;
+      } finally {
         this.loading = false;
       }
     },

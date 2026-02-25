@@ -1,6 +1,6 @@
 <template>
   <v-app-bar
-    v-if="route.path !== '/login'"
+    v-if="!isAuthPage"
     app
     class="app-header"
     :class="{ 'is-scrolled': isScrolled }"
@@ -76,6 +76,7 @@
       const appStore = useAppStore()
       const cartStore = useCartStore()
       const isScrolled = ref(false)
+      const isAuthPage = computed(() => ['/login', '/create-account'].includes(route.path))
       const profileImage = computed(() =>
         appStore.user?.picture || appStore.user?.photoURL || appStore.user?.photo_url || null,
       )
@@ -95,6 +96,7 @@
 
       return {
         route,
+        isAuthPage,
         isScrolled,
         profileImage,
         canAccessAdmin,

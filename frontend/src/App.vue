@@ -6,7 +6,7 @@
       <router-view />
     </v-main>
 
-    <AppFooter v-if="route.path !== '/login'" />
+    <AppFooter v-if="!isAuthPage" />
     <FullScreenLoader :model-value="showFullscreenLoader" />
   </v-app>
 </template>
@@ -25,6 +25,7 @@
   const routeLoading = ref(false)
   const pageBooting = ref(document.readyState !== 'complete')
 
+  const isAuthPage = computed(() => ['/login', '/create-account'].includes(route.path))
   const showFullscreenLoader = computed(() => {
     return appStore.loading || routeLoading.value || pageBooting.value
   })

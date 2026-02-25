@@ -90,7 +90,9 @@ function writeCachedExchangeRates(rates, updatedAt) {
         updatedAt
       })
     )
-  } catch {}
+  } catch {
+    // Ignore storage errors; rates can still be served from memory/fallback.
+  }
 }
 
 function hydrateExchangeRatesFromCache() {
@@ -123,7 +125,10 @@ async function fetchExchangeRates(force = false) {
 
   ratesFetchPromise = (async () => {
     try {
-      const response = await axios.get(EXCHANGE_RATE_URL, { timeout: 8000 })
+      const response = await axios.get(EXCHANGE_RATE_URL, {
+        timeout: 8000,
+        withCredentials: false
+      })
       const apiRates = response?.data?.rates || {}
       const normalizedRates = normalizeExchangeRates(apiRates)
       exchangeRates.value = normalizedRates

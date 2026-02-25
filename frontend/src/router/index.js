@@ -5,6 +5,7 @@ import Home from '@/pages/Home.vue'
 const routes = [
   { path: '/', component: Home, name: 'Home' },
   { path: '/login', component: () => import('@/pages/Login.vue'), name: 'Login' },
+  { path: '/create-account', component: () => import('@/pages/CreateAccount.vue'), name: 'CreateAccount' },
   { path: '/product/:id', component: () => import('@/pages/ProductDetail.vue'), name: 'ProductDetail' },
   { path: '/cart', component: () => import('@/pages/Cart.vue'), name: 'Cart' },
   { path: '/payment', component: () => import('@/pages/Payment.vue'), name: 'Payment' },
