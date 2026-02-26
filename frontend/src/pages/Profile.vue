@@ -23,7 +23,6 @@
 
               <h2 class="profile-name">{{ appStore.user?.name || 'Mindstore User' }}</h2>
               <p class="profile-email">{{ appStore.user?.email || 'No email available' }}</p>
-              <p class="profile-country">Country: {{ countryDisplayName }}</p>
 
               <div class="avatar-actions">
                 <v-btn class="avatar-btn" rounded="pill" variant="tonal" @click="openPhotoPicker">

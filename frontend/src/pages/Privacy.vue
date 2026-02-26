@@ -2,7 +2,7 @@
   <v-container class="py-16" max-width="1100">
 
     <!-- Premium Glass Card -->
-    <v-card class="pa-10 pa-md-14 rounded-3xl premium-wrapper border" elevation="0">
+    <v-card class="pa-10 pa-md-14 premium-wrapper border" elevation="1" rounded="xl">
 
       <!-- Title Block -->
       <div class="text-center mb-10">
@@ -10,6 +10,7 @@
           append-icon="mdi-circle-small"
           class="mb-4"
           color="#7f53ff"
+          elevation="1"
           prepend-icon="mdi-circle-small"
           text="LEGAL"
           variant="flat"

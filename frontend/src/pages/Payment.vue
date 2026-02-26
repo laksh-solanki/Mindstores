@@ -54,14 +54,11 @@
               <v-sheet class="pa-1">
                 <v-tabs
                   v-model="tab"
-                  bg-color="indigo-lighten-1"
-                  class="mb-2"
-                  color="primary"
-                  density="compact"
-                  inset
-                  inset-radius="7"
+                  class="mb-4"
+                  density="comfortable"
+                  grow
                   mandatory
-                  slider-color="indigo-lighten-4"
+                  slider-color="blue-accent-4"
                 >
                   <v-tab value="upi">UPI ID</v-tab>
                   <v-tab value="card">Card</v-tab>
@@ -103,7 +100,12 @@
 
                       <v-row class="mt-1">
                         <v-col cols="12">
-                          <v-text-field v-model="form.cardHolder" label="Card Holder Name" rounded="lg" variant="outlined" />
+                          <v-text-field
+                            v-model="form.cardHolder"
+                            label="Card Holder Name"
+                            rounded="lg"
+                            variant="outlined"
+                          />
                         </v-col>
                         <v-col cols="12">
                           <v-text-field

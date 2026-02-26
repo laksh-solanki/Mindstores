@@ -6,21 +6,33 @@
       <v-container class="py-12 px-6">
         <v-row justify="center">
           <v-col class="d-none d-md-block" cols="12" lg="2" md="3">
-            <nav class="sticky-nav">
-              <div class="text-overline mb-6 text-primary font-weight-bold">Contents</div>
-              <div
-                v-for="item in menuItems"
-                :key="item.id"
-                :class="['nav-item', { active: activeSection === item.id }]"
-                @click="scrollTo(item.id)"
-              >
-                {{ item.title }}
-              </div>
-            </nav>
+            <div class="sticky-tabs">
+              <v-card class="pa-2" elevation="0" rounded="lg" variant="text">
+                <div class="text-overline mb-6 text-primary font-weight-bold">Contents</div>
+                <v-tabs
+                  v-model="activeSection"
+                  align-tabs="start"
+                  bg-color="transparent"
+                  color="primary"
+                  direction="vertical"
+                  mandatory
+                >
+                  <v-tab
+                    v-for="item in menuItems"
+                    :key="item.id"
+                    class="tos-tab text-none justify-start"
+                    :value="item.id"
+                    @click="scrollTo(item.id)"
+                  >
+                    {{ item.title }}
+                  </v-tab>
+                </v-tabs>
+              </v-card>
+            </div>
           </v-col>
 
           <v-col cols="12" lg="7" md="8">
-            <v-card class="glass-card pa-6 pa-sm-12 border" variant="flat">
+            <v-card class="glass-card pa-6 pa-sm-12 border" elevation="1" rounded="xl" variant="flat">
               <header class="mb-12">
                 <v-avatar class="mb-6" color="primary" size="56" variant="tonal">
                   <v-icon icon="mdi-shield-check" size="32" />
@@ -109,12 +121,14 @@
 
   function scrollTo (id) {
     const el = document.querySelector(`#${id}`);
-    window.scrollTo({ top: el.offsetTop - 40, behavior: 'smooth' });
+    if (!el) return;
+    activeSection.value = id;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function handleScroll () {
     // Update progress bar
-    const winScroll = document.documentElement.scrollTop;
+    const winScroll = window.scrollY || document.documentElement.scrollTop;
     const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
     scrollProgress.value = (winScroll / height) * 100;
 
@@ -127,7 +141,10 @@
     }
   }
 
-  onMounted(() => window.addEventListener('scroll', handleScroll));
+  onMounted(() => {
+    handleScroll();
+    window.addEventListener('scroll', handleScroll);
+  });
   onUnmounted(() => window.removeEventListener('scroll', handleScroll));
 </script>
 
@@ -137,15 +154,13 @@
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   background: radial-gradient(circle at top right, #f0f4ff, #ffffff);
-  z-index: -1;
+  z-index: 0;
 }
 
 /* Glassmorphism Card */
 .glass-card {
   background: rgba(255, 255, 255, 0.8) !important;
   backdrop-filter: blur(12px);
-  box-shadow: 0 20px 50px rgba(0,0,0,0.04) !important;
-  border-radius: 24px !important;
 }
 
 /* Typography Customization */
@@ -158,6 +173,7 @@
 
 .lh-lg { line-height: 1.8; }
 .text-secondary-dark { color: #374151; }
+.content-section { scroll-margin-top: 90px; }
 
 .section-number {
   font-size: 0.7rem;
@@ -168,28 +184,22 @@
   vertical-align: middle;
 }
 
-/* Sticky Nav */
-.sticky-nav {
+/* Sticky Tabs */
+.sticky-tabs {
   position: sticky;
-  top: 60px;
+  top: 90px;
+  align-self: flex-start;
 }
 
-.nav-item {
+.tos-tab {
   font-size: 0.9rem;
-  padding: 10px 0;
   color: #9ca3af;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border-left: 2px solid transparent;
-  padding-left: 16px;
+  min-height: 42px;
 }
 
-.nav-item:hover { color: #111827; }
-
-.nav-item.active {
-  color: #111827;
+.tos-tab.v-tab--selected {
+  color: #111827 !important;
   font-weight: 600;
-  border-left: 2px solid #1867C0; /* Primary color */
 }
 
 /* Spacing Helpers */
