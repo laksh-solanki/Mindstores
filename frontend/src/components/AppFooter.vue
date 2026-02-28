@@ -14,7 +14,7 @@
           </div>
         </section>
 
-        <nav class="footer-column" aria-label="Primary">
+        <nav aria-label="Primary" class="footer-column">
           <p class="column-title">Navigate</p>
           <router-link class="footer-link" to="/">Home</router-link>
           <router-link class="footer-link" to="/cart">Cart</router-link>
@@ -22,7 +22,7 @@
           <router-link class="footer-link" to="/profile">Profile</router-link>
         </nav>
 
-        <nav class="footer-column" aria-label="Legal">
+        <nav aria-label="Legal" class="footer-column">
           <p class="column-title">Policy</p>
           <router-link class="footer-link" to="/privacy">Privacy</router-link>
           <router-link class="footer-link" to="/terms">Terms</router-link>

@@ -5,6 +5,7 @@ import { useAppStore } from './app'
 // REFIX: Vite compatible env var (Port 8000)
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const pendingProductRequests = new Map()
+const NOT_AUTHENTICATED_ERROR_MESSAGE = 'User not authenticated'
 
 export const useCartStore = defineStore('cart', {
   state: () => ({
@@ -30,7 +31,7 @@ export const useCartStore = defineStore('cart', {
       if (!likelyAuthenticated) {
         const hasSession = await appStore.ensureBackendSession()
         if (!hasSession) {
-          throw new Error('User not authenticated')
+          throw new Error(NOT_AUTHENTICATED_ERROR_MESSAGE)
         }
       }
 
@@ -64,6 +65,16 @@ export const useCartStore = defineStore('cart', {
           await this.fetchMissingProducts(missingProductIds)
         }
       } catch (error) {
+        const isNotAuthenticated =
+          error?.message === NOT_AUTHENTICATED_ERROR_MESSAGE ||
+          error?.response?.status === 401
+
+        if (isNotAuthenticated) {
+          // Logged-out users should see an empty cart without console errors.
+          this.items = []
+          return
+        }
+
         console.error('Failed to fetch cart:', error)
       }
     },

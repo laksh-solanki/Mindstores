@@ -49,15 +49,12 @@
             <h2 class="form-title">Log In</h2>
             <p class="form-subtitle">Continue with your email account.</p>
 
-            <v-alert
+            <BaseAlert
               v-if="errorMessage"
               class="mt-3"
-              density="comfortable"
+              :message="errorMessage"
               type="error"
-              variant="tonal"
-            >
-              {{ errorMessage }}
-            </v-alert>
+            />
 
             <v-form class="mt-4" @submit.prevent="submitLogin">
               <v-text-field
@@ -114,11 +111,15 @@
 <script>
   import { onMounted, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
+  import BaseAlert from '@/components/BaseAlert.vue'
   import { useAppStore } from '@/stores/app'
   import { getAuthErrorMessage } from '@/utils/authErrors'
 
   export default {
     name: 'Login',
+    components: {
+      BaseAlert
+    },
     setup() {
       const appStore = useAppStore()
       const router = useRouter()

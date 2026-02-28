@@ -5,6 +5,7 @@
         <p class="payment-kicker">Secure Checkout</p>
         <h1 class="payment-title">Personal Payment</h1>
         <p class="payment-subtitle">Finalize your order with encrypted payment and curated delivery details.</p>
+
       </section>
 
       <v-row v-if="selectedItems.length > 0" class="payment-row">
@@ -188,6 +189,17 @@
               >
                 Pay {{ formatAmount(payableAmount) }}
               </v-btn>
+
+              <v-btn
+                class="payment-cancel-btn border"
+                color="error"
+                rounded="xl"
+                size="large"
+                variant="outlined"
+                @click="cancelPayment"
+              >
+                Cancel Payment
+              </v-btn>
             </v-card-actions>
           </v-card>
         </v-col>
@@ -200,16 +212,19 @@
               <v-icon size="52">mdi-cart-outline</v-icon>
               <h2 class="empty-title">No Selected Items</h2>
               <p class="empty-copy">Go back to your cart and select products before payment.</p>
-              <v-btn class="mt-4" rounded="pill" @click="$router.push('/cart')">Back to Cart</v-btn>
             </v-card-text>
           </v-card>
         </v-col>
       </v-row>
     </v-container>
 
-    <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="3000">
-      {{ snackbarText }}
-    </v-snackbar>
+    <BaseAlert
+      v-model="snackbar"
+      floating
+      :message="snackbarText"
+      :timeout="3000"
+      :type="snackbarColor"
+    />
   </div>
 </template>
 
@@ -217,6 +232,7 @@
   import axios from 'axios'
   import { computed, onMounted, ref } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
+  import BaseAlert from '@/components/BaseAlert.vue'
   import { useCartStore } from '@/stores/cart'
   import { useCurrency } from '@/utils/currency'
   const PROMO_CODES = [
@@ -242,6 +258,9 @@
 
   export default {
     name: 'Payment',
+    components: {
+      BaseAlert
+    },
     setup() {
       const route = useRoute()
       const router = useRouter()
@@ -391,6 +410,10 @@
         }
       }
 
+      const cancelPayment = () => {
+        router.push('/cart')
+      }
+
       onMounted(async () => {
         await cartStore.fetchCart()
         parseSelectedProductIds()
@@ -408,6 +431,7 @@
         maskedCardNumber,
         formatAmount,
         submitPayment,
+        cancelPayment,
         snackbar,
         snackbarText,
         snackbarColor,
@@ -454,6 +478,16 @@
   max-width: 620px;
   color: #61737a;
   line-height: 1.7;
+}
+
+.payment-hero-actions {
+  margin-top: 10px;
+}
+
+.payment-cancel-btn {
+  text-transform: none;
+  color: #50656d;
+  border-color: #c7b3b3;
 }
 
 .payment-row {
@@ -600,6 +634,8 @@
 
 .summary-actions {
   padding: 12px 20px 22px;
+  display: flex;
+  flex-direction: column;
 }
 
 .pay-btn {

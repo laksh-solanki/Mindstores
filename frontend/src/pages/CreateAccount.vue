@@ -49,15 +49,12 @@
             <h2 class="form-title">Create Account</h2>
             <p class="form-subtitle">Use your email to join Mindstore.</p>
 
-            <v-alert
+            <BaseAlert
               v-if="errorMessage"
               class="mt-3"
-              density="comfortable"
+              :message="errorMessage"
               type="error"
-              variant="tonal"
-            >
-              {{ errorMessage }}
-            </v-alert>
+            />
 
             <v-form class="mt-4" @submit.prevent="submitSignup">
               <v-text-field
@@ -139,11 +136,15 @@
 <script>
   import { computed, onMounted, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
+  import BaseAlert from '@/components/BaseAlert.vue'
   import { useAppStore } from '@/stores/app'
   import { getAuthErrorMessage } from '@/utils/authErrors'
 
   export default {
     name: 'CreateAccount',
+    components: {
+      BaseAlert
+    },
     setup() {
       const appStore = useAppStore()
       const router = useRouter()

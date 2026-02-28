@@ -25,15 +25,12 @@
         </div>
       </section>
 
-      <v-alert
+      <BaseAlert
         v-if="!isAdmin"
         class="admin-warning"
-        density="comfortable"
+        message="Admin access is required to add, update, or delete products."
         type="warning"
-        variant="tonal"
-      >
-        Admin access is required to add, update, or delete products.
-      </v-alert>
+      />
 
       <v-card v-if="isAdmin" class="admin-surface border" variant="flat">
         <v-card-text class="surface-content">
@@ -226,9 +223,13 @@
       </v-card>
     </v-dialog>
 
-    <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="3000">
-      {{ snackbarText }}
-    </v-snackbar>
+    <BaseAlert
+      v-model="snackbar"
+      floating
+      :message="snackbarText"
+      :timeout="3000"
+      :type="snackbarColor"
+    />
   </div>
 </template>
 
@@ -236,6 +237,7 @@
   import axios from "axios";
   import { computed, onMounted, ref, watch } from "vue";
   import { useDisplay } from "vuetify";
+  import BaseAlert from "@/components/BaseAlert.vue";
   import { useAppStore } from "@/stores/app";
 
   const CATEGORY_OPTIONS_BASE = ["Electronics", "Furniture", "Clothing"];
@@ -251,6 +253,9 @@
 
   export default {
     name: "Admin",
+    components: {
+      BaseAlert,
+    },
     setup() {
       const appStore = useAppStore();
       const { smAndDown } = useDisplay();

@@ -1,55 +1,62 @@
 <template>
-  <div class="home">
-    <section class="hero-section">
-      <v-container>
-        <v-row class="align-center hero-row" no-gutters>
-          <v-col class="hero-copy" cols="12" md="6">
-            <p class="kicker">Limited drop: Spring 2026</p>
-            <h1>Design-led pieces for grounded, modern homes.</h1>
-            <p class="subtitle">
-              Build a space that feels calm, useful, and distinctly yours with small-batch picks across decor,
-              storage, and daily tools.
-            </p>
-            <div class="hero-actions">
-              <v-btn
-                class="cta-btn"
-                color="primary"
-                rounded="pill"
-                size="x-large"
-                @click="scrollToProducts"
-              >
-                Shop Collection
-              </v-btn>
-              <span class="secondary-note">Free shipping over {{ formatAmount(60) }}</span>
-            </div>
-            <div class="metrics">
-              <div class="metric">
-                <h3>300+</h3>
-                <p>Products curated</p>
+  <div class="home-premium">
+    <section class="hero-shell">
+      <div class="hero-glow hero-glow--one" />
+      <div class="hero-glow hero-glow--two" />
+      <v-container class="hero-container">
+        <v-row class="hero-row" no-gutters>
+          <v-col cols="12" lg="6" md="6">
+            <div class="hero-copy reveal reveal--one">
+              <p class="hero-kicker">Spring 2026 Atelier Edit</p>
+              <h1>Premium essentials for homes built with intention.</h1>
+              <p class="hero-subtitle">
+                Discover limited-batch products across decor, furniture, and tech.
+                Every piece is selected for longevity, utility, and visual calm.
+              </p>
+              <div class="hero-actions">
+                <v-btn class="hero-btn hero-btn--primary" rounded="pill" size="x-large" @click="scrollToProducts">
+                  Shop Collection
+                </v-btn>
+                <v-btn
+                  class="hero-btn hero-btn--ghost"
+                  rounded="pill"
+                  size="x-large"
+                  variant="outlined"
+                  @click="scrollToStories"
+                >
+                  View Stories
+                </v-btn>
               </div>
-              <div class="metric">
-                <h3>4.8/5</h3>
-                <p>Average rating</p>
-              </div>
-              <div class="metric">
-                <h3>24h</h3>
-                <p>Order dispatch</p>
+              <div class="hero-signals">
+                <v-chip
+                  v-for="signal in trustSignals"
+                  :key="signal"
+                  class="signal-chip"
+                  size="small"
+                  variant="outlined"
+                >
+                  {{ signal }}
+                </v-chip>
               </div>
             </div>
           </v-col>
-          <v-col cols="12" md="6">
-            <div class="hero-image-shell">
+          <v-col cols="12" lg="6" md="6">
+            <div class="hero-stage reveal reveal--two">
               <img
-                alt="Hero product scene"
+                :alt="curatedProduct?.name || 'Mindstore curated collection'"
                 class="hero-image"
                 decoding="async"
                 fetchpriority="high"
                 loading="eager"
-                src="../assets/DeskImg.jpg"
+                :src="heroImageUrl"
               >
-              <div class="floating-card">
-                <p>Editor's Pick</p>
-                <h4>Handcrafted Utility Set</h4>
+              <div class="hero-badge hero-badge--top">
+                <p>Signature Pick</p>
+                <h3>{{ curatedProduct?.name || 'Handcrafted Utility Set' }}</h3>
+              </div>
+              <div class="hero-badge hero-badge--bottom">
+                <p>Starting at</p>
+                <h4>{{ curatedProduct ? formatAmount(curatedProduct.price) : formatAmount(149) }}</h4>
               </div>
             </div>
           </v-col>
@@ -57,36 +64,50 @@
       </v-container>
     </section>
 
-    <section class="featured-strip">
+    <section class="value-section">
       <v-container>
         <v-row>
-          <v-col cols="12" md="4">
-            <div class="feature-box">
-              <h3>Intentional Curation</h3>
-              <p>Every item is selected for function-first design and long-term use.</p>
-            </div>
-          </v-col>
-          <v-col cols="12" md="4">
-            <div class="feature-box">
-              <h3>Independent Makers</h3>
-              <p>We partner with small studios and trusted producers around the world.</p>
-            </div>
-          </v-col>
-          <v-col cols="12" md="4">
-            <div class="feature-box">
-              <h3>Transparent Quality</h3>
-              <p>Material details, durability data, and fair pricing on every listing.</p>
-            </div>
+          <v-col
+            v-for="(feature, index) in valueCards"
+            :key="feature.title"
+            cols="12"
+            md="4"
+          >
+            <v-card
+              class="value-card reveal"
+              elevation="0"
+              :style="{ animationDelay: `${index * 120}ms` }"
+            >
+              <div class="value-icon">
+                <v-icon size="20">{{ feature.icon }}</v-icon>
+              </div>
+              <h3>{{ feature.title }}</h3>
+              <p>{{ feature.copy }}</p>
+            </v-card>
           </v-col>
         </v-row>
       </v-container>
     </section>
 
-    <section ref="productsSection" class="products-section">
+    <section ref="productsSection" class="collection-section">
       <v-container>
         <div class="section-head">
-          <h2>Shop the collection</h2>
-          <p>Fresh arrivals and everyday staples, ready to ship.</p>
+          <p class="section-kicker">Curated Collection</p>
+          <h2>Browse by category</h2>
+          <p>Filter our premium catalog and add pieces to your cart instantly.</p>
+        </div>
+
+        <div class="category-filter">
+          <v-chip
+            v-for="category in categoryOptions"
+            :key="category"
+            class="category-chip"
+            :class="{ 'is-active': selectedCategory === category }"
+            :variant="selectedCategory === category ? 'flat' : 'outlined'"
+            @click="selectedCategory = category"
+          >
+            {{ category }}
+          </v-chip>
         </div>
 
         <v-row v-if="loading" class="mt-8">
@@ -101,66 +122,118 @@
           </v-col>
         </v-row>
 
-        <div v-else class="mt-8">
-          <div v-for="group in categorizedProducts" :key="group.name" class="category-group">
-            <h3 class="category-title">{{ group.name }}</h3>
-            <v-row v-if="group.items.length > 0">
-              <v-col
-                v-for="product in group.items"
-                :key="product.product_id"
-                cols="12"
-                md="4"
-                sm="6"
-              >
-                <v-card class="product-card" @click="goToProduct(product.product_id)">
-                  <div class="product-image-wrapper">
-                    <img
-                      :alt="product.name"
-                      class="product-image"
-                      decoding="async"
-                      loading="lazy"
-                      :src="product.image_url"
-                    >
-                  </div>
-                  <v-card-text class="product-content">
-                    <p class="product-category">{{ product.category }}</p>
-                    <h3 class="product-name">{{ product.name }}</h3>
-                    <div class="product-row">
-                      <span class="product-price">{{ formatAmount(product.price) }}</span>
-                      <v-btn
-                        class="product-add-btn"
-                        size="small"
-                        variant="flat"
-                        @click.stop="quickAddToCart(product.product_id)"
-                      >
-                        <v-icon size="16" start>mdi-cart-plus</v-icon>
-                        Add
-                      </v-btn>
-                    </div>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-            </v-row>
-            <p v-else class="empty-category">No items available in this category right now.</p>
-          </div>
-        </div>
+        <v-row v-else-if="filteredProducts.length > 0" class="mt-6">
+          <v-col
+            v-for="(product, index) in filteredProducts"
+            :key="product.product_id"
+            cols="12"
+            md="4"
+            sm="6"
+          >
+            <v-card
+              class="collection-card reveal"
+              :style="{ animationDelay: `${index * 90}ms` }"
+              @click="goToProduct(product.product_id)"
+            >
+              <div class="collection-media">
+                <img
+                  :alt="product.name"
+                  class="collection-image"
+                  decoding="async"
+                  loading="lazy"
+                  :src="product.image_url"
+                >
+              </div>
+              <v-card-text class="collection-content">
+                <p class="collection-category">{{ normalizeCategory(product.category) }}</p>
+                <h3>{{ product.name }}</h3>
+                <div class="collection-meta">
+                  <span class="collection-price">{{ formatAmount(product.price) }}</span>
+                  <v-btn
+                    class="collection-add"
+                    rounded="pill"
+                    size="small"
+                    @click.stop="quickAddToCart(product.product_id)"
+                  >
+                    <v-icon size="16" start>mdi-cart-plus</v-icon>
+                    Add
+                  </v-btn>
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
 
-        <div v-if="!loading && products.length === 0" class="text-center mt-12">
-          <p class="text-h6">No products available right now.</p>
+        <div v-else class="collection-empty">
+          <h3>No products in this category right now.</h3>
+          <p>Try another category or check back shortly for new arrivals.</p>
         </div>
       </v-container>
     </section>
 
-    <v-snackbar v-model="snackbar" color="success" :timeout="2200">
-      {{ snackbarText }}
-    </v-snackbar>
+    <section ref="storiesSection" class="stories-section">
+      <v-container>
+        <div class="section-head section-head--left">
+          <p class="section-kicker">Design Journal</p>
+          <h2>Editorial moments from the collection</h2>
+          <p>Inspiration cards that blend practical use with premium design language.</p>
+        </div>
+
+        <v-row class="mt-4">
+          <v-col v-for="(story, index) in storyCards" :key="story.title" cols="12" md="4">
+            <v-card class="story-card reveal" elevation="0" :style="{ animationDelay: `${index * 130}ms` }">
+              <img :alt="story.title" class="story-image" loading="lazy" :src="story.image">
+              <div class="story-overlay" />
+              <div class="story-content">
+                <p>{{ story.tag }}</p>
+                <h3>{{ story.title }}</h3>
+                <span>{{ story.copy }}</span>
+              </div>
+            </v-card>
+          </v-col>
+        </v-row>
+      </v-container>
+    </section>
+
+    <section class="membership-section">
+      <v-container>
+        <v-card class="membership-card reveal" elevation="0">
+          <p>Member Concierge</p>
+          <h2>Unlock early drops, curated bundles, and priority support.</h2>
+          <div class="membership-actions">
+            <v-btn class="membership-btn membership-btn--primary" rounded="pill" size="large" to="/create-account">
+              Create Account
+            </v-btn>
+            <v-btn
+              class="membership-btn membership-btn--ghost"
+              rounded="pill"
+              size="large"
+              to="/cart"
+              variant="outlined"
+            >
+              Review Cart
+            </v-btn>
+          </div>
+        </v-card>
+      </v-container>
+    </section>
+
+    <BaseAlert
+      v-model="snackbar"
+      floating
+      :message="snackbarText"
+      :timeout="2200"
+      :type="snackbarColor"
+    />
   </div>
 </template>
 
 <script>
   import axios from 'axios'
-  import { computed, onMounted, ref } from 'vue'
+  import { computed, onMounted, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
+  import heroFallbackImage from '@/assets/DeskImg.jpg'
+  import BaseAlert from '@/components/BaseAlert.vue'
   import { useAppStore } from '@/stores/app'
   import { useCartStore } from '@/stores/cart'
   import { useCurrency } from '@/utils/currency'
@@ -170,6 +243,45 @@
   const CACHE_TTL_MS = 60 * 1000
   const PRODUCT_REQUEST_TIMEOUT_MS = 20_000
   const PRODUCT_FETCH_RETRIES = 2
+  const VALUE_CARDS = [
+    {
+      icon: 'mdi-diamond-stone',
+      title: 'Premium Curation',
+      copy: 'Only high-quality pieces with timeless design and verified build standards.'
+    },
+    {
+      icon: 'mdi-truck-fast-outline',
+      title: 'Fast Dispatch',
+      copy: 'Reliable shipping pipeline with order visibility and protected packaging.'
+    },
+    {
+      icon: 'mdi-shield-check-outline',
+      title: 'Trusted Checkout',
+      copy: 'Secure purchase flow with transparent pricing, returns, and support.'
+    }
+  ]
+  const TRUST_SIGNALS = ['Secure checkout', '24h dispatch', 'Independent makers', 'Curated premium']
+  const DEFAULT_STORIES = [
+    {
+      tag: 'Living',
+      title: 'Layered textures with functional accents',
+      copy: 'Create calm spaces with warm tones and practical utility pieces.',
+      image: heroFallbackImage
+    },
+    {
+      tag: 'Workspace',
+      title: 'Work zones that feel refined and focused',
+      copy: 'Combine ergonomic utility and crafted finishes for daily performance.',
+      image: heroFallbackImage
+    },
+    {
+      tag: 'Everyday',
+      title: 'Small objects, elevated routines',
+      copy: 'Signature essentials that improve flow without visual noise.',
+      image: heroFallbackImage
+    }
+  ]
+
   let cachedProducts = null
   let cacheExpiresAt = 0
 
@@ -207,12 +319,15 @@
         JSON.stringify({ products, expiresAt })
       )
     } catch {
-    // Ignore storage quota/privacy errors and continue with in-memory cache.
+      // Ignore storage quota/privacy errors and continue with in-memory cache.
     }
   }
 
   export default {
     name: 'Home',
+    components: {
+      BaseAlert
+    },
     setup() {
       const router = useRouter()
       const cartStore = useCartStore()
@@ -222,7 +337,10 @@
       const loading = ref(false)
       const snackbar = ref(false)
       const snackbarText = ref('')
+      const snackbarColor = ref('success')
+      const selectedCategory = ref('All')
       const productsSection = ref(null)
+      const storiesSection = ref(null)
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
       const normalizeCategory = (category) => {
@@ -231,20 +349,9 @@
         return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
       }
 
-      const categorizedProducts = computed(() => {
-        const grouped = products.value.reduce((acc, product) => {
-          const categoryName = normalizeCategory(product.category)
-          if (!acc[categoryName]) acc[categoryName] = []
-          acc[categoryName].push(product)
-          return acc
-        }, {})
-
-        for (const category of CATEGORY_PRIORITY) {
-          if (!grouped[category]) grouped[category] = []
-        }
-
-        const categories = Object.keys(grouped)
-        categories.sort((a, b) => {
+      const categoryOptions = computed(() => {
+        const dynamicCategories = new Set(products.value.map((item) => normalizeCategory(item.category)))
+        const sorted = Array.from(dynamicCategories).toSorted((a, b) => {
           const aPriority = CATEGORY_PRIORITY.indexOf(a)
           const bPriority = CATEGORY_PRIORITY.indexOf(b)
           if (aPriority !== -1 && bPriority !== -1) return aPriority - bPriority
@@ -252,8 +359,38 @@
           if (bPriority !== -1) return 1
           return a.localeCompare(b)
         })
+        return ['All', ...sorted]
+      })
 
-        return categories.map((name) => ({ name, items: grouped[name] }))
+      const filteredProducts = computed(() => {
+        const targetCategory = selectedCategory.value
+        const sourceProducts = targetCategory === 'All'
+          ? products.value
+          : products.value.filter((item) => normalizeCategory(item.category) === targetCategory)
+        return sourceProducts.slice(0, 9)
+      })
+
+      const curatedProduct = computed(() => filteredProducts.value[0] || products.value[0] || null)
+      const heroImageUrl = computed(() => curatedProduct.value?.image_url || heroFallbackImage)
+
+      const storyCards = computed(() => {
+        if (products.value.length === 0) return DEFAULT_STORIES
+        const selected = products.value.slice(0, 3)
+        return selected.map((item, index) => {
+          const fallback = DEFAULT_STORIES[index] || DEFAULT_STORIES[0]
+          return {
+            tag: normalizeCategory(item.category),
+            title: item.name,
+            copy: fallback.copy,
+            image: item.image_url || fallback.image
+          }
+        })
+      })
+
+      watch(categoryOptions, (options) => {
+        if (!options.includes(selectedCategory.value)) {
+          selectedCategory.value = 'All'
+        }
       })
 
       const fetchProducts = async () => {
@@ -277,6 +414,7 @@
 
         loading.value = products.value.length === 0
         let lastError = null
+
         try {
           for (let attempt = 0; attempt <= PRODUCT_FETCH_RETRIES; attempt++) {
             try {
@@ -302,7 +440,6 @@
               console.error('Failed to fetch products:', lastError)
             }
           }
-
           loading.value = false
         }
       }
@@ -320,9 +457,11 @@
         try {
           await cartStore.addToCart(productId, 1)
           snackbarText.value = 'Added to cart'
+          snackbarColor.value = 'success'
           snackbar.value = true
         } catch {
           snackbarText.value = 'Please login to add items'
+          snackbarColor.value = 'warning'
           snackbar.value = true
         }
       }
@@ -331,319 +470,587 @@
         productsSection.value?.scrollIntoView({ behavior: 'smooth' })
       }
 
+      const scrollToStories = () => {
+        storiesSection.value?.scrollIntoView({ behavior: 'smooth' })
+      }
+
       onMounted(() => {
         fetchProducts()
       })
 
       return {
-        products,
-        categorizedProducts,
-        loading,
-        goToProduct,
-        quickAddToCart,
-        snackbar,
-        snackbarText,
+        categoryOptions,
+        curatedProduct,
+        filteredProducts,
         formatAmount,
+        goToProduct,
+        heroImageUrl,
+        loading,
+        normalizeCategory,
         productsSection,
-        scrollToProducts
+        quickAddToCart,
+        scrollToProducts,
+        scrollToStories,
+        selectedCategory,
+        snackbar,
+        snackbarColor,
+        snackbarText,
+        storiesSection,
+        storyCards,
+        trustSignals: TRUST_SIGNALS,
+        valueCards: VALUE_CARDS
       }
     }
   }
 </script>
 
 <style scoped>
-.home {
-  position: relative;
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Sora:wght@300;400;500;600;700&display=swap');
+
+.home-premium {
+  --premium-bg: #f5f2ee;
+  --premium-surface: #ffffff;
+  --premium-ink: #142127;
+  --premium-muted: #5f6d75;
+  --premium-accent: #c2732f;
+  --premium-accent-deep: #995318;
+  --premium-border: #d8d4cf;
+  background: linear-gradient(180deg, #f9f5f1 0%, #f2f0ed 52%, #f7f4ef 100%);
+  color: var(--premium-ink);
 }
 
-.hero-section {
-  padding: 30px 0 54px;
+.hero-shell {
   position: relative;
   overflow: hidden;
+  padding: 32px 0 48px;
 }
 
-.hero-section::before {
-  content: '';
+.hero-glow {
   position: absolute;
-  width: 600px;
-  height: 600px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(210, 122, 45, 0.18) 0%, rgba(210, 122, 45, 0) 70%);
-  top: -280px;
-  left: -220px;
+  filter: blur(8px);
+}
+
+.hero-glow--one {
+  width: 520px;
+  height: 520px;
+  top: -270px;
+  left: -190px;
+  background: radial-gradient(circle, rgba(194, 115, 47, 0.24) 0%, rgba(194, 115, 47, 0) 72%);
+}
+
+.hero-glow--two {
+  width: 560px;
+  height: 560px;
+  right: -220px;
+  bottom: -320px;
+  background: radial-gradient(circle, rgba(28, 59, 70, 0.16) 0%, rgba(28, 59, 70, 0) 72%);
+}
+
+.hero-container {
+  position: relative;
+  z-index: 2;
 }
 
 .hero-row {
-  min-height: 620px;
+  min-height: 640px;
+  align-items: center;
 }
 
 .hero-copy h1 {
-  font-family: 'Playfair Display', serif;
-  font-size: clamp(2.2rem, 5vw, 4rem);
-  line-height: 1.08;
-  color: #132024;
-  max-width: 620px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  line-height: 1.05;
+  letter-spacing: 0.2px;
+  max-width: 650px;
 }
 
-.kicker {
-  color: #b7671f;
-  letter-spacing: 1.4px;
+.hero-kicker {
+  font-family: 'Sora', sans-serif;
   text-transform: uppercase;
-  font-size: 0.78rem;
+  letter-spacing: 1.6px;
+  font-size: 0.72rem;
   font-weight: 700;
-  margin-bottom: 18px;
+  color: var(--premium-accent);
+  margin-bottom: 14px;
 }
 
-.subtitle {
-  margin-top: 20px;
+.hero-subtitle {
+  margin-top: 18px;
   max-width: 560px;
-  color: #4f5f66;
+  font-family: 'Sora', sans-serif;
+  color: var(--premium-muted);
   line-height: 1.8;
-  font-size: 1.05rem;
+  font-size: 0.98rem;
 }
 
 .hero-actions {
   margin-top: 28px;
   display: flex;
-  align-items: center;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
-.cta-btn {
+.hero-btn {
   text-transform: none;
-  font-weight: 700;
+  font-family: 'Sora', sans-serif;
+  font-weight: 600;
   letter-spacing: 0.2px;
 }
 
-.secondary-note {
-  color: #607178;
-  font-weight: 600;
+.hero-btn--primary {
+  color: #ffffff;
+  background: linear-gradient(130deg, var(--premium-accent), var(--premium-accent-deep));
+  box-shadow: 0 12px 28px rgba(161, 89, 28, 0.28);
 }
 
-.metrics {
-  margin-top: 30px;
+.hero-btn--ghost {
+  color: #21343d;
+  border-color: #b9c2c8;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.hero-signals {
+  margin-top: 22px;
   display: flex;
-  gap: 16px;
   flex-wrap: wrap;
+  gap: 8px;
 }
 
-.metric {
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid #d9e2de;
-  border-radius: 14px;
-  padding: 14px 16px;
-  min-width: 120px;
+.signal-chip {
+  font-family: 'Sora', sans-serif;
+  color: #33454d;
+  border-color: #c4ccd2;
+  background: rgba(255, 255, 255, 0.65);
 }
 
-.metric h3 {
-  font-size: 1.28rem;
-  color: #152326;
-}
-
-.metric p {
-  font-size: 0.86rem;
-  color: #67797f;
-}
-
-.hero-image-shell {
+.hero-stage {
   position: relative;
-  margin-top: 26px;
+  padding: 14px;
+  border-radius: 26px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(237, 239, 236, 0.82));
+  border: 1px solid #d6d7d4;
+  box-shadow: 0 24px 60px rgba(19, 35, 42, 0.16);
 }
 
 .hero-image {
   width: 100%;
   height: 560px;
-  border-radius: 24px;
   object-fit: cover;
-  box-shadow: 0 20px 60px rgba(21, 35, 38, 0.18);
+  border-radius: 18px;
 }
 
-.floating-card {
+.hero-badge {
   position: absolute;
-  right: 16px;
-  bottom: 18px;
-  background: rgba(16, 26, 28, 0.88);
-  color: #fff;
-  padding: 14px 16px;
-  border-radius: 12px;
   max-width: 240px;
+  border-radius: 14px;
+  padding: 12px 14px;
+  backdrop-filter: blur(8px);
 }
 
-.floating-card p {
-  font-size: 0.78rem;
-  color: #d8c8b7;
-  letter-spacing: 0.8px;
+.hero-badge p {
+  font-family: 'Sora', sans-serif;
   text-transform: uppercase;
+  font-size: 0.65rem;
+  letter-spacing: 1.3px;
 }
 
-.floating-card h4 {
-  font-size: 1rem;
+.hero-badge h3,
+.hero-badge h4 {
   margin-top: 6px;
+  font-family: 'Sora', sans-serif;
+  font-size: 0.92rem;
+  line-height: 1.45;
 }
 
-.featured-strip {
-  padding: 8px 0 24px;
+.hero-badge--top {
+  top: 28px;
+  left: 26px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(218, 220, 223, 0.95);
 }
 
-.feature-box {
-  background: #ffffff;
-  border: 1px solid #d8e0dc;
-  border-radius: 16px;
-  padding: 20px;
+.hero-badge--bottom {
+  right: 26px;
+  bottom: 26px;
+  color: #eef3f6;
+  background: rgba(19, 33, 41, 0.88);
+  border: 1px solid rgba(241, 245, 247, 0.25);
+}
+
+.value-section {
+  padding: 8px 0 28px;
+}
+
+.value-card {
+  border-radius: 18px;
+  border: 1px solid var(--premium-border);
+  padding: 22px;
   height: 100%;
+  background: rgba(255, 255, 255, 0.75);
 }
 
-.feature-box h3 {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.3rem;
-  color: #192528;
+.value-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(140deg, rgba(194, 115, 47, 0.18), rgba(26, 52, 61, 0.16));
+  display: grid;
+  place-items: center;
+  color: #243840;
 }
 
-.feature-box p {
-  margin-top: 10px;
-  color: #5b6b70;
-  line-height: 1.65;
+.value-card h3 {
+  margin-top: 16px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.6rem;
 }
 
-.products-section {
-  padding: 48px 0 70px;
+.value-card p {
+  margin-top: 8px;
+  font-family: 'Sora', sans-serif;
+  color: var(--premium-muted);
+  line-height: 1.7;
+  font-size: 0.9rem;
 }
 
-.category-group+.category-group {
-  margin-top: 30px;
-}
-
-.category-title {
-  font-family: 'Playfair Display', serif;
-  font-size: clamp(1.4rem, 3vw, 1.9rem);
-  color: #192528;
-  margin-bottom: 12px;
-}
-
-.empty-category {
-  color: #607178;
-  margin-bottom: 8px;
+.collection-section {
+  padding: 44px 0 56px;
 }
 
 .section-head {
   text-align: center;
 }
 
+.section-head--left {
+  text-align: left;
+}
+
+.section-kicker {
+  font-family: 'Sora', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 1.6px;
+  font-size: 0.69rem;
+  color: var(--premium-accent);
+  font-weight: 700;
+}
+
 .section-head h2 {
-  font-family: 'Playfair Display', serif;
-  font-size: clamp(1.9rem, 4vw, 3rem);
-  color: #142023;
+  margin-top: 8px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2rem, 4vw, 3.2rem);
 }
 
 .section-head p {
   margin-top: 8px;
-  color: #607178;
+  color: var(--premium-muted);
+  font-family: 'Sora', sans-serif;
+  line-height: 1.7;
 }
 
-.product-card {
-  border: 1px solid #d8e0dc;
+.category-filter {
+  margin-top: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.category-chip {
+  font-family: 'Sora', sans-serif;
+  text-transform: none;
+  color: #33454d;
+  border-color: #c5ccd1;
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.category-chip.is-active {
+  color: #ffffff;
+  background: linear-gradient(120deg, #1f3740, #2e4e5a);
+  box-shadow: 0 10px 24px rgba(23, 40, 47, 0.2);
+}
+
+.collection-card {
+  cursor: pointer;
   border-radius: 18px;
   overflow: hidden;
-  cursor: pointer;
+  border: 1px solid #d4d7da;
+  background: #ffffff;
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
-.product-card:hover {
+.collection-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 14px 32px rgba(21, 35, 38, 0.12);
+  box-shadow: 0 18px 36px rgba(23, 39, 46, 0.15);
 }
 
-.product-image-wrapper {
+.collection-media {
   width: 100%;
-  height: 280px;
-  background: #ecf1ee;
+  height: 270px;
   overflow: hidden;
+  background: #e8ecef;
 }
 
-.product-image {
+.collection-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
+  transition: transform 0.35s ease;
 }
 
-.product-card:hover .product-image {
+.collection-card:hover .collection-image {
   transform: scale(1.06);
 }
 
-.product-content {
+.collection-content {
   padding: 18px !important;
 }
 
-.product-category {
-  font-size: 0.74rem;
-  letter-spacing: 1.2px;
+.collection-category {
+  font-family: 'Sora', sans-serif;
+  font-size: 0.7rem;
   text-transform: uppercase;
-  color: #7c8c92;
+  letter-spacing: 1.2px;
+  color: #75848d;
 }
 
-.product-name {
+.collection-content h3 {
   margin-top: 8px;
-  font-size: 1.08rem;
-  color: #1a272a;
+  font-family: 'Sora', sans-serif;
+  font-size: 1.02rem;
   min-height: 44px;
+  color: #1c2e35;
 }
 
-.product-row {
-  margin-top: 18px;
+.collection-meta {
+  margin-top: 16px;
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
 }
 
-.product-price {
-  font-size: 1.2rem;
-  color: #b8621a;
+.collection-price {
+  font-family: 'Sora', sans-serif;
+  color: var(--premium-accent-deep);
   font-weight: 700;
+  font-size: 1.12rem;
 }
 
-.product-add-btn {
+.collection-add {
   text-transform: none;
-  font-weight: 700;
-  border-radius: 999px;
-  color: #f9fcfb;
-  background: linear-gradient(120deg, #23383b, #355256);
-  box-shadow: 0 8px 18px rgba(33, 54, 57, 0.22);
-  padding-inline: 14px;
+  font-family: 'Sora', sans-serif;
+  font-weight: 600;
+  color: #f4f8fa;
+  background: linear-gradient(120deg, #243f4a, #345866);
 }
 
-.product-add-btn:hover {
-  filter: brightness(1.05);
+.collection-empty {
+  margin-top: 30px;
+  text-align: center;
+  padding: 34px 18px;
+  border: 1px dashed #bec7cd;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.collection-empty h3 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.8rem;
+}
+
+.collection-empty p {
+  margin-top: 6px;
+  font-family: 'Sora', sans-serif;
+  color: var(--premium-muted);
+}
+
+.stories-section {
+  padding: 10px 0 56px;
+}
+
+.story-card {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  min-height: 360px;
+  border: 1px solid #d2d8dd;
+}
+
+.story-image {
+  width: 100%;
+  height: 360px;
+  object-fit: cover;
+}
+
+.story-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(15, 25, 31, 0.1) 0%, rgba(15, 24, 29, 0.82) 100%);
+}
+
+.story-content {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 18px;
+  z-index: 2;
+}
+
+.story-content p {
+  color: #efd7b8;
+  font-family: 'Sora', sans-serif;
+  font-size: 0.66rem;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.story-content h3 {
+  margin-top: 8px;
+  color: #f7fbff;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.8rem;
+  line-height: 1.1;
+}
+
+.story-content span {
+  display: block;
+  margin-top: 8px;
+  color: #d8e2ea;
+  font-family: 'Sora', sans-serif;
+  line-height: 1.6;
+  font-size: 0.85rem;
+}
+
+.membership-section {
+  padding: 10px 0 70px;
+}
+
+.membership-card {
+  border-radius: 24px;
+  padding: clamp(24px, 5vw, 44px);
+  border: 1px solid #cfd5d8;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(194, 115, 47, 0.2) 0%, rgba(194, 115, 47, 0) 42%),
+    linear-gradient(140deg, #182a34, #223948 45%, #294653);
+}
+
+.membership-card p {
+  font-family: 'Sora', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 1.6px;
+  font-size: 0.7rem;
+  color: #efc08d;
+}
+
+.membership-card h2 {
+  margin-top: 10px;
+  max-width: 760px;
+  font-family: 'Cormorant Garamond', serif;
+  color: #f4f9fd;
+  font-size: clamp(2rem, 4.6vw, 3.2rem);
+  line-height: 1.08;
+}
+
+.membership-actions {
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.membership-btn {
+  text-transform: none;
+  font-family: 'Sora', sans-serif;
+  font-weight: 600;
+}
+
+.membership-btn--primary {
+  color: #12232b;
+  background: linear-gradient(120deg, #edc18f, #daa56c);
+}
+
+.membership-btn--ghost {
+  color: #eef4f8;
+  border-color: rgba(239, 246, 250, 0.58);
+}
+
+.reveal {
+  animation: fade-up 0.75s ease both;
+}
+
+.reveal--one {
+  animation-delay: 80ms;
+}
+
+.reveal--two {
+  animation-delay: 180ms;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 960px) {
   .hero-row {
     min-height: auto;
+    gap: 22px;
   }
 
   .hero-image {
-    height: 430px;
+    height: 420px;
+  }
+
+  .hero-badge--top {
+    top: 20px;
+    left: 20px;
+  }
+
+  .hero-badge--bottom {
+    right: 20px;
+    bottom: 20px;
   }
 }
 
 @media (max-width: 600px) {
-  .hero-section {
+  .hero-shell {
     padding-top: 74px;
   }
 
-  .hero-image {
-    height: 340px;
-  }
-
-  .floating-card {
-    left: 12px;
-    right: 12px;
-    max-width: none;
-  }
-
-  .metric {
+  .hero-actions,
+  .membership-actions {
     width: 100%;
   }
+
+  .hero-btn,
+  .membership-btn {
+    flex: 1 1 100%;
+  }
+
+  .hero-image {
+    height: 330px;
+  }
+
+  .hero-badge {
+    max-width: none;
+    left: 14px;
+    right: 14px;
+  }
+
+  .hero-badge--bottom {
+    bottom: 14px;
+  }
+
+  .story-card,
+  .story-image {
+    min-height: 320px;
+    height: 320px;
+    }
 }
 </style>

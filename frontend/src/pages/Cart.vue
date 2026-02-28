@@ -141,21 +141,35 @@
                 />
               </div>
               <div class="promo-section">
-                <p class="promo-label">Promo Code</p>
+                <div class="promo-head">
+                  <p class="promo-label">Promo Code</p>
+                  <v-btn
+                    v-if="appliedPromoCode"
+                    class="promo-clear-btn"
+                    size="x-small"
+                    variant="text"
+                    @click="clearPromoCode"
+                  >
+                    Clear
+                  </v-btn>
+                </div>
+                <p class="promo-subtitle">Select a code below or type one manually, then click Apply.</p>
                 <div class="promo-input-row">
                   <v-text-field
                     v-model="promoInput"
-                    class="promo-input"
+                    :class="['promo-input', { 'promo-input-pending': isPromoPending, 'promo-input-applied': isPromoApplied }]"
                     density="comfortable"
                     hide-details
+                    persistent-placeholder
                     placeholder="Enter code"
                     rounded="lg"
                     variant="outlined"
+                    @keydown.enter.prevent="applyPromoCode"
                   />
                   <v-btn
                     class="promo-apply-btn"
                     color="primary"
-                    :disabled="selectedProductIds.length === 0 || !promoInput.trim()"
+                    :disabled="!normalizedPromoInput"
                     height="48"
                     rounded="lg"
                     @click="applyPromoCode"
@@ -215,15 +229,20 @@
       </v-row>
     </v-container>
 
-    <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="3000">
-      {{ snackbarText }}
-    </v-snackbar>
+    <BaseAlert
+      v-model="snackbar"
+      floating
+      :message="snackbarText"
+      :timeout="3000"
+      :type="snackbarColor"
+    />
   </div>
 </template>
 
 <script>
   import { computed, onMounted, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
+  import BaseAlert from '@/components/BaseAlert.vue'
   import { useCartStore } from '@/stores/cart'
   import { useCurrency } from '@/utils/currency'
 
@@ -250,6 +269,9 @@
 
   export default {
     name: 'Cart',
+    components: {
+      BaseAlert
+    },
     setup() {
       const router = useRouter()
       const cartStore = useCartStore()
@@ -275,6 +297,13 @@
 
       const activePromo = computed(() => {
         return PROMO_CODES.find((promo) => promo.code === appliedPromoCode.value) || null
+      })
+      const normalizedPromoInput = computed(() => normalizePromoCode(promoInput.value))
+      const isPromoApplied = computed(() => {
+        return Boolean(appliedPromoCode.value) && normalizedPromoInput.value === appliedPromoCode.value
+      })
+      const isPromoPending = computed(() => {
+        return Boolean(normalizedPromoInput.value) && normalizedPromoInput.value !== appliedPromoCode.value
       })
 
       const promoDiscount = computed(() => {
@@ -308,6 +337,9 @@
       const promoHelperText = computed(() => {
         if (appliedPromoCode.value && activePromo.value && promoDiscount.value > 0) {
           return `Applied ${appliedPromoCode.value}: ${describePromo(activePromo.value)}`
+        }
+        if (isPromoPending.value) {
+          return `Selected ${normalizedPromoInput.value}. Click Apply to activate this promo code.`
         }
         return `Valid codes: ${PROMO_CODES.map((promo) => promo.code).join(', ')}`
       })
@@ -392,6 +424,14 @@
       const normalizePromoCode = (value) => String(value || '').trim().toUpperCase()
 
       const applyPromoCode = () => {
+        const normalizedCode = normalizedPromoInput.value
+        if (!normalizedCode) {
+          snackbarText.value = 'Enter a promo code first'
+          snackbarColor.value = 'warning'
+          snackbar.value = true
+          return
+        }
+
         if (selectedProductIds.value.length === 0) {
           snackbarText.value = 'Select products before applying promo code'
           snackbarColor.value = 'warning'
@@ -399,7 +439,6 @@
           return
         }
 
-        const normalizedCode = normalizePromoCode(promoInput.value)
         const promo = PROMO_CODES.find((item) => item.code === normalizedCode)
 
         if (!promo) {
@@ -426,8 +465,13 @@
       }
 
       const selectPromoCode = (code) => {
-        promoInput.value = code
-        applyPromoCode()
+        const normalizedCode = normalizePromoCode(code)
+        promoInput.value = normalizedCode
+      }
+
+      const clearPromoCode = () => {
+        appliedPromoCode.value = ''
+        promoInput.value = ''
       }
 
       const goToProduct = async (productId) => {
@@ -498,8 +542,12 @@
         isQuantityUpdating,
         applyPromoCode,
         selectPromoCode,
+        clearPromoCode,
         PROMO_CODES,
         promoInput,
+        normalizedPromoInput,
+        isPromoApplied,
+        isPromoPending,
         appliedPromoCode,
         promoDiscount,
         finalTotalAmount,
@@ -779,10 +827,17 @@
 
 .promo-section {
   border: 1px solid #d8e2dd;
-  border-radius: 14px;
-  background: #f9fcfa;
-  padding: 12px;
+  border-radius: 16px;
+  background: linear-gradient(160deg, #f8fbf9 0%, #eef5f1 100%);
+  padding: 14px;
   margin-bottom: 12px;
+}
+
+.promo-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
 }
 
 .promo-label {
@@ -791,6 +846,19 @@
   font-weight: 700;
   letter-spacing: 0.3px;
   color: #35494f;
+}
+
+.promo-clear-btn {
+  text-transform: none;
+  font-weight: 700;
+  color: #537078;
+}
+
+.promo-subtitle {
+  margin-top: 4px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.76rem;
+  color: #6c7f86;
 }
 
 .promo-input-row {
@@ -802,6 +870,20 @@
 
 .promo-input {
   flex: 1;
+}
+
+.promo-input :deep(input) {
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.promo-input-pending :deep(input) {
+  opacity: 0.55;
+}
+
+.promo-input-applied :deep(input) {
+  opacity: 1;
+  font-weight: 700;
 }
 
 .promo-apply-btn {

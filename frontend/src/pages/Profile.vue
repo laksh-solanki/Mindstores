@@ -206,9 +206,13 @@
       </v-row>
     </v-container>
 
-    <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="3000">
-      {{ snackbarText }}
-    </v-snackbar>
+    <BaseAlert
+      v-model="snackbar"
+      floating
+      :message="snackbarText"
+      :timeout="3000"
+      :type="snackbarColor"
+    />
   </div>
 </template>
 
@@ -216,6 +220,7 @@
   import axios from 'axios'
   import { computed, onMounted, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
+  import BaseAlert from '@/components/BaseAlert.vue'
   import { useAppStore } from '@/stores/app'
   import { fetchExchangeRates, formatCurrencyAmount } from '@/utils/currency'
   import {
@@ -223,7 +228,8 @@
     loadUserSettings,
     normalizeCountryCode,
     resolveCurrencyFromUserCountry,
-    saveUserSettings
+    saveUserSettings,
+    DEFAULT_SETTINGS as USER_SETTINGS_DEFAULTS
   } from '@/utils/userSettings'
 
   const COUNTRY_OPTIONS_BASE = [
@@ -244,8 +250,8 @@
     { code: 'MX', label: 'Mexico' }
   ]
 
-  const DEFAULT_COUNTRY_CODE = 'IN'
-  const DEFAULT_CURRENCY = 'INR'
+  const DEFAULT_COUNTRY_CODE = 'US'
+  const DEFAULT_CURRENCY = USER_SETTINGS_DEFAULTS.currency
 
   const DEFAULT_SETTINGS = {
     currency: DEFAULT_CURRENCY,
@@ -267,6 +273,9 @@
 
   export default {
     name: 'Profile',
+    components: {
+      BaseAlert
+    },
     setup() {
       const router = useRouter()
       const appStore = useAppStore()
@@ -466,7 +475,9 @@
           snackbarColor.value = 'success'
           snackbar.value = true
         } catch (error) {
-          snackbarText.value = error?.response?.data?.message || 'Failed to save profile and preferences'
+          const errorMessage = error?.response?.data?.message || error?.message || ''
+          const isNotAuthenticated = error?.response?.status === 401 || errorMessage === 'Not authenticated'
+          snackbarText.value = isNotAuthenticated ? 'Not authenticated' : errorMessage || 'Failed to save profile and preferences'
           snackbarColor.value = 'error'
           snackbar.value = true
         } finally {

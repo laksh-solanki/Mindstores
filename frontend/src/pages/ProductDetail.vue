@@ -176,9 +176,13 @@
       </section>
     </v-container>
 
-    <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="2200">
-      {{ snackbarText }}
-    </v-snackbar>
+    <BaseAlert
+      v-model="snackbar"
+      floating
+      :message="snackbarText"
+      :timeout="2200"
+      :type="snackbarColor"
+    />
   </div>
 </template>
 
@@ -186,6 +190,7 @@
   import axios from 'axios'
   import { computed, onMounted, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
+  import BaseAlert from '@/components/BaseAlert.vue'
   import { useAppStore } from '@/stores/app'
   import { useCartStore } from '@/stores/cart'
   import { useCurrency } from '@/utils/currency'

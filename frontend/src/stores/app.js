@@ -9,9 +9,14 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { defineStore } from "pinia";
-
 // Import initialized firebase app
 import { app as firebaseApp } from "@/plugins/firebase";
+
+import {
+  getCurrencyForCountry,
+  loadUserSettings,
+  saveUserSettings,
+} from "@/utils/userSettings";
 
 const auth = getAuth(firebaseApp);
 const AUTH_REQUEST_TIMEOUT_MS = 20_000;
@@ -106,6 +111,34 @@ function isRetryableAuthError(error) {
   return error?.code === "ECONNABORTED" || !error?.response || status >= 500 || status === 429;
 }
 
+function syncCurrencyPreferenceFromUser(user) {
+  if (typeof window === "undefined" || !user) {
+    return;
+  }
+
+  const countryCandidate =
+    user.country_code ||
+    user.countryCode ||
+    user.country ||
+    user.locale ||
+    user.language ||
+    "";
+  const resolvedCurrency = getCurrencyForCountry(countryCandidate, "");
+  if (!resolvedCurrency) {
+    return;
+  }
+
+  const existingSettings = loadUserSettings();
+  if (existingSettings.currency === resolvedCurrency) {
+    return;
+  }
+
+  saveUserSettings({
+    ...existingSettings,
+    currency: resolvedCurrency,
+  });
+}
+
 export const useAppStore = defineStore("app", {
   state: () => ({
     user: null,
@@ -172,6 +205,7 @@ export const useAppStore = defineStore("app", {
               firebaseProfile.picture ||
               null,
           };
+          syncCurrencyPreferenceFromUser(this.user);
           this.isAuthenticated = true;
           return true;
         } catch (error) {
@@ -306,6 +340,7 @@ export const useAppStore = defineStore("app", {
             this.user?.picture ||
             null,
         };
+        syncCurrencyPreferenceFromUser(this.user);
         this.isAuthenticated = true;
         return this.user;
       } catch (error) {
@@ -365,6 +400,7 @@ export const useAppStore = defineStore("app", {
             normalizedPicture ||
             null,
         };
+        syncCurrencyPreferenceFromUser(this.user);
         this.isAuthenticated = true;
         return this.user;
       } catch (error) {
