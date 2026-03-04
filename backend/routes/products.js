@@ -1,9 +1,9 @@
 import { ObjectId } from "mongodb";
 
 const CATEGORY_SUBCATEGORY_OPTIONS = {
-  Electronics: ["Mobiles", "Laptops", "Accessories", "Audio", "Gaming"],
-  Furniture: ["Living Room", "Bedroom", "Kitchen", "Dining", "Office"],
-  Clothing: ["Men", "Women", "Kids", "Unisex"],
+  Electronics: ["Mobiles", "Cameras", "Headphones", "Laptops", "Accessories", "Audio", "Gaming"],
+  Furniture: ["Sofas", "Tables", "Chairs", "Living Room", "Bedroom", "Kitchen", "Dining", "Office"],
+  Clothing: ["Shirts", "Jeans", "Jackets", "Men", "Women", "Kids", "Unisex"],
 };
 
 const CATEGORY_NAME_BY_KEY = Object.keys(CATEGORY_SUBCATEGORY_OPTIONS).reduce(
@@ -15,6 +15,7 @@ const CATEGORY_NAME_BY_KEY = Object.keys(CATEGORY_SUBCATEGORY_OPTIONS).reduce(
 );
 
 const normalizeText = (value) => (value == null ? "" : String(value).trim());
+const escapeRegex = (value) => normalizeText(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const isSafeImageUrl = (value) => {
   const normalized = normalizeText(value);
   if (!normalized || normalized.length > 2048) return false;
@@ -42,6 +43,28 @@ const normalizeSubcategoryName = (category, subcategory) => {
     (option) => option.toLowerCase() === normalizedSubcategory.toLowerCase(),
   );
   return matchingSubcategory || normalizedSubcategory;
+};
+
+const parseNumberQueryParam = (value) => {
+  const parsedNumber = Number(value);
+  if (!Number.isFinite(parsedNumber)) return null;
+  return parsedNumber;
+};
+
+const parseBooleanQueryParam = (value) => {
+  const normalizedValue = normalizeText(value).toLowerCase();
+  if (normalizedValue === "true" || normalizedValue === "1") return true;
+  if (normalizedValue === "false" || normalizedValue === "0") return false;
+  return null;
+};
+
+const SORT_OPTIONS = {
+  newest: { created_at: -1, _id: -1 },
+  oldest: { created_at: 1, _id: 1 },
+  price_asc: { price: 1, name: 1 },
+  price_desc: { price: -1, name: 1 },
+  name_asc: { name: 1 },
+  name_desc: { name: -1 },
 };
 
 export default async function registerProductRoutes(fastify, deps) {
@@ -78,6 +101,7 @@ export default async function registerProductRoutes(fastify, deps) {
   const buildCreateProductPayload = (productInput) => {
     const payload = {
       name: normalizeText(productInput?.name),
+      company: normalizeText(productInput?.company),
       description: normalizeText(productInput?.description),
       category: normalizeCategoryName(productInput?.category),
       subcategory: normalizeSubcategoryName(productInput?.category, productInput?.subcategory),
@@ -88,6 +112,7 @@ export default async function registerProductRoutes(fastify, deps) {
 
     if (!payload.name) return { error: "Product name is required" };
     if (payload.name.length > 120) return { error: "Product name is too long" };
+    if (payload.company.length > 80) return { error: "Company name is too long" };
     if (payload.description.length > 5000) return { error: "Description is too long" };
     if (!Number.isFinite(payload.price) || payload.price < 0) {
       return { error: "Price must be a valid number" };
@@ -126,6 +151,11 @@ export default async function registerProductRoutes(fastify, deps) {
       if (!normalizedName) return { error: "Product name is required" };
       if (normalizedName.length > 120) return { error: "Product name is too long" };
       updates.name = normalizedName;
+    }
+    if (hasOwn(updatesInput, "company")) {
+      const normalizedCompany = normalizeText(updatesInput.company);
+      if (normalizedCompany.length > 80) return { error: "Company name is too long" };
+      updates.company = normalizedCompany;
     }
     if (hasOwn(updatesInput, "description")) {
       const normalizedDescription = normalizeText(updatesInput.description);
@@ -174,12 +204,54 @@ export default async function registerProductRoutes(fastify, deps) {
   };
 
   fastify.get("/api/products", async (request, reply) => {
-    const { category } = request.query;
+    const { category, subcategory, company, sort } = request.query;
     const normalizedCategory = normalizeCategoryName(category);
-    const query = normalizedCategory ? { category: normalizedCategory } : {};
+    const normalizedSubcategory = normalizeSubcategoryName(normalizedCategory || category, subcategory);
+    const normalizedCompany = normalizeText(company);
+    const query = {};
+
+    if (normalizedCategory) {
+      query.category = normalizedCategory;
+    }
+    if (normalizedSubcategory) {
+      query.subcategory = normalizedSubcategory;
+    }
+    if (normalizedCompany) {
+      const escapedCompany = escapeRegex(normalizedCompany);
+      query.$or = [
+        { company: { $regex: `^${escapedCompany}$`, $options: "i" } },
+        { name: { $regex: `^${escapedCompany}(\\s|\\b)`, $options: "i" } },
+      ];
+    }
+
+    const minPriceInput = request.query?.min_price ?? request.query?.minPrice;
+    const maxPriceInput = request.query?.max_price ?? request.query?.maxPrice;
+    const minPrice = parseNumberQueryParam(minPriceInput);
+    const maxPrice = parseNumberQueryParam(maxPriceInput);
+    if (minPrice != null || maxPrice != null) {
+      query.price = {};
+      if (minPrice != null) query.price.$gte = Math.max(0, minPrice);
+      if (maxPrice != null) query.price.$lte = Math.max(0, maxPrice);
+    }
+
+    const inStockInput = request.query?.in_stock ?? request.query?.inStock;
+    const inStock = parseBooleanQueryParam(inStockInput);
+    if (inStock === true) {
+      query.stock = { $gt: 0 };
+    }
+
+    const normalizedSort = normalizeText(sort).toLowerCase();
+    const sortClause = SORT_OPTIONS[normalizedSort] || SORT_OPTIONS.newest;
+    const requestLimit = Number.parseInt(request.query?.limit, 10);
+    const limit = Number.isFinite(requestLimit)
+      ? Math.min(Math.max(requestLimit, 1), 250)
+      : 150;
+
     const products = await fastify.mongo.db
       .collection("products")
       .find(query)
+      .sort(sortClause)
+      .limit(limit)
       .toArray();
     reply.header("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
     return products.map(serializeProduct);

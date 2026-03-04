@@ -95,6 +95,7 @@
                 >
                 <div class="mobile-item-copy">
                   <h3>{{ product.name }}</h3>
+                  <p v-if="product.company" class="mobile-company">{{ product.company }}</p>
                   <p>{{ formatCategory(product) }}</p>
                   <div class="mobile-meta">
                     <span class="mobile-price">${{ Number(product.price || 0).toFixed(2) }}</span>
@@ -153,6 +154,13 @@
               v-model="formData.description"
               label="Description"
               rows="3"
+              variant="outlined"
+            />
+
+            <v-text-field
+              v-model="formData.company"
+              label="Company / Brand"
+              placeholder="Example: Sony, Apple, Ikea"
               variant="outlined"
             />
 
@@ -242,9 +250,9 @@
 
   const CATEGORY_OPTIONS_BASE = ["Electronics", "Furniture", "Clothing"];
   const SUBCATEGORY_OPTIONS_BY_CATEGORY = {
-    Electronics: ["Mobiles", "Laptops", "Accessories", "Audio", "Gaming"],
-    Furniture: ["Living Room", "Bedroom", "Kitchen", "Dining", "Office"],
-    Clothing: ["Men", "Women", "Kids", "Unisex"],
+    Electronics: ["Mobiles", "Cameras", "Headphones", "Laptops", "Accessories", "Audio", "Gaming"],
+    Furniture: ["Sofas", "Tables", "Chairs", "Living Room", "Bedroom", "Kitchen", "Dining", "Office"],
+    Clothing: ["Shirts", "Jeans", "Jackets", "Men", "Women", "Kids", "Unisex"],
   };
   const CATEGORY_NAME_BY_KEY = CATEGORY_OPTIONS_BASE.reduce((acc, category) => {
     acc[category.toLowerCase()] = category;
@@ -270,6 +278,7 @@
 
       const formData = ref({
         name: "",
+        company: "",
         description: "",
         price: 0,
         category: "",
@@ -287,6 +296,7 @@
       const headers = [
         { title: "Image", key: "image_url", sortable: false },
         { title: "Name", key: "name" },
+        { title: "Company", key: "company" },
         { title: "Category", key: "category_display" },
         { title: "Price", key: "price" },
         { title: "Stock", key: "stock" },
@@ -414,6 +424,7 @@
         currentProductId.value = null;
         formData.value = {
           name: "",
+          company: "",
           description: "",
           price: 0,
           category: "",
@@ -444,6 +455,7 @@
         currentProductId.value = selectedProduct.product_id;
         formData.value = {
           name: selectedProduct.name,
+          company: normalizeText(selectedProduct.company || ""),
           description: selectedProduct.description,
           price: selectedProduct.price,
           category: normalizeCategoryName(selectedProduct.category),
@@ -460,6 +472,7 @@
       const buildProductPayload = () => {
         const payload = {
           name: normalizeText(formData.value.name),
+          company: normalizeText(formData.value.company),
           description: normalizeText(formData.value.description),
           category: normalizeCategoryName(formData.value.category),
           subcategory: normalizeSubcategoryName(
@@ -740,6 +753,11 @@
   margin-top: 4px;
   color: #6b7d84;
   font-size: 0.88rem;
+}
+
+.mobile-company {
+  color: #244047;
+  font-weight: 700;
 }
 
 .mobile-meta {

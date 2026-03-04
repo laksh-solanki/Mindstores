@@ -14,6 +14,7 @@ const routes = [
   { path: '/privacy', component: () => import('@/pages/Privacy.vue'), name: 'Privacy'},
   { path: '/terms', component: () => import('@/pages/Terms-or-Service.vue'), name: 'Terms-or-Service'},
   { path: '/admin', component: () => import('@/pages/Admin.vue'), name: 'Admin' },
+  { path: '/:category/:subcategory', component: () => import('@/pages/Catalog.vue'), name: 'Catalog' },
 ]
 
 const router = createRouter({
