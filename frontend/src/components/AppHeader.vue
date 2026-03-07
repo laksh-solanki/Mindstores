@@ -1,136 +1,195 @@
 <template>
-  <v-app-bar
-    v-if="!isAuthPage"
-    app
-    class="app-header"
-    :class="{ 'is-scrolled': isScrolled }"
-    flat
-    height="86"
-  >
-    <v-container class="header-shell px-4 px-md-8">
-      <router-link class="brand-link header-brand" to="/">
-        <v-img alt="logo" class="brand-mark" src="../assets/logo.svg" width="49" />
-        <span class="brand-copy">
-          <span class="brand-title">MINDSTORE</span>
-          <span class="brand-subtitle">Curated Essentials</span>
-        </span>
-      </router-link>
+  <template v-if="!isAuthPage">
+    <v-app-bar
+      app
+      class="app-header d-flex flex-column justify-center align-items-center"
+      :class="{ 'is-scrolled': isScrolled }"
+      flat
+      height="75"
+    >
+      <v-container class="header-shell px-4 px-md-8">
+        <router-link class="brand-link header-brand" to="/">
+          <v-img alt="logo" class="brand-mark" src="../assets/logo.svg" width="49" />
+          <span class="brand-copy">
+            <span class="brand-title">MINDSTORE</span>
+            <span class="brand-subtitle">Curated Essentials</span>
+          </span>
+        </router-link>
 
-      <div class="nav-pill d-none d-md-flex">
-        <v-btn class="nav-btn" to="/" variant="text">
-          Home
-        </v-btn>
-
-        <div
-          class="nav-dropdown"
-          @focusin="openCategoryDropdown"
-          @focusout="onDropdownFocusOut"
-          @mouseenter="openCategoryDropdown"
-          @mouseleave="closeCategoryDropdown"
-        >
-          <v-btn class="nav-btn nav-btn--dropdown" variant="text">
-            Categories
-            <v-icon end size="16">
-              {{ isCategoryDropdownOpen ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
-            </v-icon>
+        <div class="nav-pill d-none d-md-flex">
+          <v-btn class="nav-btn" to="/" variant="text">
+            Home
           </v-btn>
 
-          <transition name="dropdown-fade">
-            <div v-if="isCategoryDropdownOpen" class="category-dropdown" @keydown.esc="closeCategoryDropdown">
-              <div class="dropdown-list-panel">
-                <div class="dropdown-category-tabs">
-                  <button
-                    v-for="category in categoryDropdown"
-                    :key="category.key"
-                    :class="['dropdown-category-tab', { 'is-active': activeCategory.key === category.key }]"
-                    type="button"
-                    @focus="setActiveCategory(category.key)"
-                    @mouseenter="setActiveCategory(category.key)"
-                  >
-                    {{ category.label }}
-                  </button>
+          <div
+            class="nav-dropdown"
+            @focusin="openCategoryDropdown"
+            @focusout="onDropdownFocusOut"
+            @mouseenter="openCategoryDropdown"
+            @mouseleave="closeCategoryDropdown"
+          >
+            <v-btn class="nav-btn nav-btn--dropdown" variant="text">
+              Categories
+              <v-icon end size="16">
+                {{ isCategoryDropdownOpen ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
+              </v-icon>
+            </v-btn>
+
+            <transition name="dropdown-fade">
+              <div v-if="isCategoryDropdownOpen" class="category-dropdown" @keydown.esc="closeCategoryDropdown">
+                <div class="dropdown-list-panel">
+                  <div class="dropdown-category-tabs">
+                    <button
+                      v-for="category in categoryDropdown"
+                      :key="category.key"
+                      :class="['dropdown-category-tab', { 'is-active': activeCategory.key === category.key }]"
+                      type="button"
+                      @focus="setActiveCategory(category.key)"
+                      @mouseenter="setActiveCategory(category.key)"
+                    >
+                      {{ category.label }}
+                    </button>
+                  </div>
+
+                  <div class="dropdown-items">
+                    <button
+                      v-for="item in activeCategory.items"
+                      :key="item.key"
+                      :class="['dropdown-item', { 'is-active': activeItem.key === item.key }]"
+                      type="button"
+                      @click="openCatalogItem(activeCategory.key, item.key)"
+                      @focus="setActiveItem(item.key)"
+                      @mouseenter="setActiveItem(item.key)"
+                    >
+                      <v-icon class="dropdown-item-icon" size="18">{{ item.icon }}</v-icon>
+                      <span>
+                        <strong>{{ item.name }}</strong>
+                        <small>{{ item.short }}</small>
+                      </span>
+                    </button>
+                  </div>
                 </div>
 
-                <div class="dropdown-items">
-                  <button
-                    v-for="item in activeCategory.items"
-                    :key="item.key"
-                    :class="['dropdown-item', { 'is-active': activeItem.key === item.key }]"
-                    type="button"
-                    @click="openCatalogItem(activeCategory.key, item.key)"
-                    @focus="setActiveItem(item.key)"
-                    @mouseenter="setActiveItem(item.key)"
-                  >
-                    <v-icon class="dropdown-item-icon" size="18">{{ item.icon }}</v-icon>
-                    <span>
-                      <strong>{{ item.name }}</strong>
-                      <small>{{ item.short }}</small>
-                    </span>
-                  </button>
+                <div class="dropdown-preview-panel">
+                  <div class="preview-photo-shell">
+                    <img
+                      :alt="`${activeItem.name} preview`"
+                      class="preview-photo"
+                      :src="activeItemImage"
+                      @error="onPreviewImageError"
+                    >
+                  </div>
+                  <p class="preview-kicker">{{ activeCategory.label }}</p>
+                  <h4>{{ activeItem.name }}</h4>
+                  <p>{{ activeItem.description }}</p>
+                  <div class="preview-meta">
+                    <v-icon size="16">{{ activeItem.icon }}</v-icon>
+                    <span>{{ activeItem.highlight }}</span>
+                  </div>
                 </div>
               </div>
+            </transition>
+          </div>
 
-              <div class="dropdown-preview-panel">
-                <div class="preview-photo-shell">
-                  <img
-                    :alt="`${activeItem.name} preview`"
-                    class="preview-photo"
-                    :src="activeItemImage"
-                    @error="onPreviewImageError"
-                  >
-                </div>
-                <p class="preview-kicker">{{ activeCategory.label }}</p>
-                <h4>{{ activeItem.name }}</h4>
-                <p>{{ activeItem.description }}</p>
-                <div class="preview-meta">
-                  <v-icon size="16">{{ activeItem.icon }}</v-icon>
-                  <span>{{ activeItem.highlight }}</span>
-                </div>
-              </div>
-            </div>
-          </transition>
+          <v-btn class="nav-btn" to="/cart" variant="text">
+            Cart
+            <v-badge v-if="cartStore.itemCount > 0" class="cart-badge" color="accent" :content="cartStore.itemCount" />
+          </v-btn>
         </div>
 
-        <v-btn class="nav-btn" to="/cart" variant="text">
-          Cart
-          <v-badge v-if="cartStore.itemCount > 0" class="cart-badge" color="accent" :content="cartStore.itemCount" />
-        </v-btn>
-      </div>
+        <div class="action-cluster">
+          <v-btn
+            v-if="appStore.isAuthenticated"
+            class="icon-btn"
+            icon
+            to="/profile"
+            variant="text"
+          >
+            <v-avatar v-if="profileImage" class="header-avatar" :image="profileImage" size="36" />
+            <v-icon v-else>mdi-account-circle</v-icon>
+          </v-btn>
 
-      <div class="action-cluster">
-        <v-btn class="nav-btn d-md-none" to="/" variant="text">
-          Home
-        </v-btn>
+          <v-btn v-if="appStore.isAuthenticated && canAccessAdmin" class="admin-btn" to="/admin" variant="flat">
+            <v-icon start>mdi-shield-star-outline</v-icon>
+            Admin
+          </v-btn>
 
-        <v-btn class="icon-btn mobile-cart-btn d-md-none" icon to="/cart" variant="text">
-          <v-badge v-if="cartStore.itemCount > 0" color="accent" :content="cartStore.itemCount" floating>
-            <v-icon>mdi-cart-outline</v-icon>
-          </v-badge>
-          <v-icon v-else>mdi-cart-outline</v-icon>
-        </v-btn>
+          <v-btn v-if="!appStore.isAuthenticated" class="login-btn" to="/login" variant="flat">
+            Login
+          </v-btn>
 
-        <v-btn
-          v-if="appStore.isAuthenticated"
-          class="icon-btn"
-          icon
-          to="/profile"
-          variant="text"
+          <v-btn
+            aria-label="Open menu"
+            class="icon-btn mobile-menu-toggle d-md-none"
+            icon
+            variant="text"
+            @click="toggleMobileMenu"
+          >
+            <v-icon>{{ isMobileMenuOpen ? 'mdi-close' : 'mdi-menu' }}</v-icon>
+          </v-btn>
+        </div>
+      </v-container>
+    </v-app-bar>
+
+    <v-navigation-drawer
+      v-model="isMobileMenuOpen"
+      class="mobile-menu-drawer"
+      location="right"
+      scrim="rgba(8, 12, 14, 0.42)"
+      temporary
+      :width="286"
+    >
+      <v-list class="mobile-menu-list" density="compact" nav>
+        <v-list-item
+          class="mobile-primary-item"
+          prepend-icon="mdi-home-outline"
+          title="Home"
+          to="/"
+          @click="closeMobileMenu"
+        />
+
+        <v-list-group class="mobile-categories-group" value="categories">
+          <template #activator="{ props }">
+            <v-list-item class="mobile-primary-item" v-bind="props" prepend-icon="mdi-shape-outline" title="Categories" />
+          </template>
+
+          <div class="mobile-category-groups">
+            <div v-for="category in categoryDropdown" :key="category.key" class="mobile-category-group">
+              <p class="mobile-category-label">{{ category.label }}</p>
+
+              <button
+                v-for="item in category.items"
+                :key="item.key"
+                class="mobile-category-item"
+                type="button"
+                @click="openCatalogItemFromMobile(category.key, item.key)"
+              >
+                <v-icon size="14">{{ item.icon }}</v-icon>
+                <span>{{ item.name }}</span>
+              </button>
+            </div>
+          </div>
+        </v-list-group>
+
+        <v-list-item
+          class="mobile-primary-item"
+          prepend-icon="mdi-cart-outline"
+          title="Cart"
+          to="/cart"
+          @click="closeMobileMenu"
         >
-          <v-avatar v-if="profileImage" class="header-avatar" :image="profileImage" size="36" />
-          <v-icon v-else>mdi-account-circle</v-icon>
-        </v-btn>
-
-        <v-btn v-if="appStore.isAuthenticated && canAccessAdmin" class="admin-btn" to="/admin" variant="flat">
-          <v-icon start>mdi-shield-star-outline</v-icon>
-          Admin
-        </v-btn>
-
-        <v-btn v-if="!appStore.isAuthenticated" class="login-btn" to="/login" variant="flat">
-          Login
-        </v-btn>
-      </div>
-    </v-container>
-  </v-app-bar>
+          <template #append>
+            <v-badge
+              v-if="cartStore.itemCount > 0"
+              class="mobile-cart-count"
+              color="accent"
+              :content="cartStore.itemCount"
+            />
+          </template>
+        </v-list-item>
+      </v-list>
+    </v-navigation-drawer>
+  </template>
 </template>
 <script>
   import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -150,6 +209,7 @@
       const isScrolled = ref(false)
       const categoryDropdown = CATALOG_MENU
       const isCategoryDropdownOpen = ref(false)
+      const isMobileMenuOpen = ref(false)
       const activeCategoryKey = ref(categoryDropdown[0].key)
       const activeItemKey = ref(categoryDropdown[0].items[0].key)
       const isAuthPage = computed(() => ['/login', '/create-account'].includes(route.path))
@@ -181,6 +241,14 @@
         isCategoryDropdownOpen.value = false
       }
 
+      const toggleMobileMenu = () => {
+        isMobileMenuOpen.value = !isMobileMenuOpen.value
+      }
+
+      const closeMobileMenu = () => {
+        isMobileMenuOpen.value = false
+      }
+
       const setActiveCategory = (categoryKey) => {
         const selectedCategory = categoryDropdown.find((category) => category.key === categoryKey)
         if (!selectedCategory) return
@@ -197,7 +265,12 @@
         const targetItem = targetCategory?.items.find((item) => item.key === itemKey)
         if (!targetCategory || !targetItem) return
         closeCategoryDropdown()
+        closeMobileMenu()
         router.push(`/${targetCategory.key}/${targetItem.key}`)
+      }
+
+      const openCatalogItemFromMobile = (categoryKey, itemKey) => {
+        openCatalogItem(categoryKey, itemKey)
       }
 
       const onDropdownFocusOut = (event) => {
@@ -215,6 +288,14 @@
         previewImageFailed.value = false
       })
 
+      watch(
+        () => route.fullPath,
+        () => {
+          closeCategoryDropdown()
+          closeMobileMenu()
+        },
+      )
+
       onMounted(() => {
         window.addEventListener('scroll', handleScroll)
       })
@@ -230,15 +311,19 @@
         canAccessAdmin,
         categoryDropdown,
         isCategoryDropdownOpen,
+        isMobileMenuOpen,
         activeCategory,
         activeItem,
         activeItemImage,
         onPreviewImageError,
         openCategoryDropdown,
         closeCategoryDropdown,
+        toggleMobileMenu,
+        closeMobileMenu,
         setActiveCategory,
         setActiveItem,
         openCatalogItem,
+        openCatalogItemFromMobile,
         onDropdownFocusOut,
         appStore,
         cartStore
@@ -519,8 +604,94 @@
   color: #203034;
 }
 
-.mobile-cart-btn {
-  position: relative;
+.mobile-menu-toggle {
+  color: #203034;
+}
+
+.mobile-menu-drawer {
+  max-width: 86vw;
+  border-left: 1px solid rgba(182, 196, 190, 0.45);
+  background: linear-gradient(165deg, #fcfdfd 0%, #f4f7f6 100%);
+  font-family: 'Manrope', 'Segoe UI', sans-serif;
+}
+
+.mobile-menu-list {
+  padding: 10px 10px 14px;
+}
+
+.mobile-menu-list .mobile-primary-item {
+  border-radius: 10px;
+  margin-bottom: 2px;
+}
+
+.mobile-menu-list :deep(.v-list-item-title) {
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.16px;
+  color: #1f2f33;
+}
+
+.mobile-menu-list :deep(.v-list-item__prepend .v-icon) {
+  color: #3c4d53;
+  font-size: 0.98rem;
+}
+
+.mobile-menu-list :deep(.v-list-item--active) {
+  background: rgba(224, 233, 229, 0.72);
+}
+
+.mobile-categories-group {
+  margin-top: 2px;
+}
+
+.mobile-category-groups {
+  display: grid;
+  gap: 7px;
+  padding: 0 8px 10px 38px;
+}
+
+.mobile-category-group {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.mobile-category-label {
+  margin: 0 0 4px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #68797f;
+}
+
+.mobile-category-item {
+  width: 100%;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  padding: 6px 8px;
+  color: #2a3b40;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.76rem;
+  font-weight: 500;
+  letter-spacing: 0.15px;
+  line-height: 1.2;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.mobile-category-item:hover {
+  background: rgba(220, 231, 226, 0.62);
+  color: #19292d;
+}
+
+.mobile-cart-count {
+  margin-right: 2px;
 }
 
 .header-avatar {
@@ -589,12 +760,6 @@
     gap: 6px;
   }
 
-  .nav-btn.d-md-none {
-    min-width: unset;
-    padding-inline: 12px;
-    font-size: 0.84rem;
-  }
-
   .icon-btn {
     width: 36px;
     height: 36px;
@@ -627,10 +792,6 @@
     min-width: unset;
     padding-inline: 10px;
     font-size: 0.78rem;
-  }
-
-  .nav-btn.d-md-none {
-    padding-inline: 9px;
   }
 }
 </style>
