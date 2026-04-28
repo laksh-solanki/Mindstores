@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     "allowJs": true,
-    "target": "es5",
+    "target": "es5", // Deprecated, consider updating to a newer target like "es6" or "esnext"
     "module": "esnext",
-    "baseUrl": "./",
+    "baseUrl": "./", // Deprecated, consider removing or updating
     "moduleResolution": "bundler",
     "paths": {
       "@/*": [
@@ -15,7 +15,8 @@
       "dom",
       "dom.iterable",
       "scripthost"
-    ]
+    ],
+    "ignoreDeprecations": "6.0" // Added to silence deprecation warnings
   },
   "include": [
     "src/**/*"

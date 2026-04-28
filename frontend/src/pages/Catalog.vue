@@ -25,6 +25,17 @@
               </v-btn>
             </div>
 
+            <v-text-field
+              v-model="filters.search"
+              class="filter-control"
+              clearable
+              density="comfortable"
+              hide-details
+              label="Search products"
+              prepend-inner-icon="mdi-magnify"
+              variant="outlined"
+            />
+
             <v-select
               v-model="filters.company"
               class="filter-control"
@@ -79,6 +90,14 @@
         <v-col cols="12" md="8" lg="9">
           <div class="results-head">
             <p class="result-label">{{ resultsLabel }}</p>
+            <v-chip
+              v-if="totalPages > 0"
+              class="results-page-chip"
+              size="small"
+              variant="outlined"
+            >
+              Page {{ currentPage }} / {{ totalPages }}
+            </v-chip>
           </div>
 
           <v-row v-if="loading">
@@ -118,6 +137,16 @@
             <h3>No products match your filters.</h3>
             <p>Change company, price, or stock filters to load more results.</p>
           </div>
+
+          <div v-if="!loading && totalPages > 1" class="results-pagination">
+            <v-pagination
+              v-model="currentPage"
+              density="comfortable"
+              :length="totalPages"
+              rounded="circle"
+              :total-visible="6"
+            />
+          </div>
         </v-col>
       </v-row>
     </v-container>
@@ -142,11 +171,17 @@
   const loading = computed(() => loadingSource.value || loadingProducts.value)
   const products = ref([])
   const sourceProducts = ref([])
+  const totalItems = ref(0)
+  const totalPages = ref(1)
+  const currentPage = ref(1)
+  const pageSize = 12
+  const suppressFilterWatch = ref(false)
   const priceBounds = ref({ min: 0, max: 0 })
   const priceRange = ref([0, 0])
   const sourceRequestVersion = ref(0)
   const productsRequestVersion = ref(0)
   const filters = reactive({
+    search: '',
     company: 'All',
     inStock: false,
     sort: 'newest',
@@ -172,7 +207,10 @@
     }
     return ['All', ...Array.from(companies).filter(Boolean).sort((a, b) => a.localeCompare(b))]
   })
-  const resultsLabel = computed(() => `${products.value.length} items`)
+  const resultsLabel = computed(() => {
+    if (totalItems.value <= 0) return '0 items'
+    return `${products.value.length} of ${totalItems.value} items`
+  })
 
   function getCompanyLabel(product) {
     const explicitCompany = String(product?.company || '').trim()
@@ -186,7 +224,6 @@
     return {
       category: catalogEntry.value.category.apiCategory,
       subcategory: catalogEntry.value.item.apiSubcategory,
-      limit: 250,
     }
   }
 
@@ -203,6 +240,7 @@
       const response = await axios.get(`${API_URL}/api/products`, {
         params: {
           ...buildCategoryQuery(),
+          limit: 250,
           sort: 'newest',
         },
       })
@@ -221,15 +259,22 @@
         priceRange.value = [minPrice, maxPrice]
       }
 
+      suppressFilterWatch.value = true
       filters.company = 'All'
       filters.inStock = false
       filters.sort = 'newest'
+      filters.search = ''
+      currentPage.value = 1
+      suppressFilterWatch.value = false
       await fetchProducts()
     } catch (error) {
       if (requestId !== sourceRequestVersion.value) return
       console.error('Failed to fetch source products:', error)
       sourceProducts.value = []
       products.value = []
+      totalItems.value = 0
+      totalPages.value = 1
+      currentPage.value = 1
     } finally {
       if (requestId === sourceRequestVersion.value) {
         loadingSource.value = false
@@ -249,10 +294,17 @@
       const params = {
         ...buildCategoryQuery(),
         sort: filters.sort,
+        include_meta: true,
+        page: currentPage.value,
+        page_size: pageSize,
       }
 
       if (filters.company && filters.company !== 'All') {
         params.company = filters.company
+      }
+      const normalizedSearch = String(filters.search || '').trim()
+      if (normalizedSearch) {
+        params.search = normalizedSearch
       }
       if (filters.inStock) {
         params.in_stock = true
@@ -267,11 +319,24 @@
 
       const response = await axios.get(`${API_URL}/api/products`, { params })
       if (requestId !== productsRequestVersion.value) return
-      products.value = Array.isArray(response.data) ? response.data : []
+      const payload = response.data
+      if (Array.isArray(payload?.items)) {
+        products.value = payload.items
+        totalItems.value = Number(payload?.meta?.total || 0)
+        totalPages.value = Math.max(1, Number(payload?.meta?.total_pages || 1))
+        return
+      }
+
+      const fallbackProducts = Array.isArray(payload) ? payload : []
+      products.value = fallbackProducts
+      totalItems.value = fallbackProducts.length
+      totalPages.value = 1
     } catch (error) {
       if (requestId !== productsRequestVersion.value) return
       console.error('Failed to fetch filtered products:', error)
       products.value = []
+      totalItems.value = 0
+      totalPages.value = 1
     } finally {
       if (requestId === productsRequestVersion.value) {
         loadingProducts.value = false
@@ -285,14 +350,22 @@
     }
     filterFetchTimer = setTimeout(() => {
       fetchProducts()
-    }, 200)
+    }, 260)
   }
 
   function resetFilters() {
+    const wasPageOne = currentPage.value === 1
+    suppressFilterWatch.value = true
+    filters.search = ''
     filters.company = 'All'
     filters.inStock = false
     filters.sort = 'newest'
     priceRange.value = [priceBounds.value.min, priceBounds.value.max]
+    suppressFilterWatch.value = false
+    currentPage.value = 1
+    if (wasPageOne) {
+      scheduleFetchProducts()
+    }
   }
 
   function openProduct(productId) {
@@ -306,6 +379,9 @@
       if (!currentEntry) {
         products.value = []
         sourceProducts.value = []
+        totalItems.value = 0
+        totalPages.value = 1
+        currentPage.value = 1
         return
       }
 
@@ -320,12 +396,22 @@
   )
 
   watch(
-    () => [filters.company, filters.inStock, filters.sort, priceRange.value[0], priceRange.value[1]],
+    () => [filters.search, filters.company, filters.inStock, filters.sort, priceRange.value[0], priceRange.value[1]],
     () => {
       if (!catalogEntry.value) return
+      if (suppressFilterWatch.value) return
+      if (currentPage.value !== 1) {
+        currentPage.value = 1
+        return
+      }
       scheduleFetchProducts()
     },
   )
+
+  watch(currentPage, () => {
+    if (!catalogEntry.value) return
+    fetchProducts()
+  })
 
   onUnmounted(() => {
     if (filterFetchTimer) {
@@ -429,13 +515,21 @@
 
 .results-head {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 8px;
 }
 
 .result-label {
   color: #5a6b72;
   font-size: 0.88rem;
   font-weight: 700;
+}
+
+.results-page-chip {
+  color: #35505a;
+  border-color: #c8d5d9;
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .result-card {
@@ -539,6 +633,12 @@
   color: #66777d;
 }
 
+.results-pagination {
+  margin-top: 18px;
+  display: flex;
+  justify-content: center;
+}
+
 .catalog-missing {
   text-align: center;
   padding: 54px 0;
@@ -556,6 +656,10 @@
 @media (max-width: 960px) {
   .filter-panel {
     position: static;
+  }
+
+  .results-head {
+    justify-content: space-between;
   }
 }
 

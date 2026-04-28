@@ -58,6 +58,12 @@ const parseBooleanQueryParam = (value) => {
   return null;
 };
 
+const parseIntegerQueryParam = (value) => {
+  const parsedValue = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsedValue)) return null;
+  return parsedValue;
+};
+
 const SORT_OPTIONS = {
   newest: { created_at: -1, _id: -1 },
   oldest: { created_at: 1, _id: 1 },
@@ -204,24 +210,39 @@ export default async function registerProductRoutes(fastify, deps) {
   };
 
   fastify.get("/api/products", async (request, reply) => {
-    const { category, subcategory, company, sort } = request.query;
+    const { category, subcategory, company, sort, search } = request.query;
     const normalizedCategory = normalizeCategoryName(category);
     const normalizedSubcategory = normalizeSubcategoryName(normalizedCategory || category, subcategory);
     const normalizedCompany = normalizeText(company);
-    const query = {};
+    const normalizedSearch = normalizeText(search).slice(0, 80);
+    const filters = [];
 
     if (normalizedCategory) {
-      query.category = normalizedCategory;
+      filters.push({ category: normalizedCategory });
     }
     if (normalizedSubcategory) {
-      query.subcategory = normalizedSubcategory;
+      filters.push({ subcategory: normalizedSubcategory });
     }
     if (normalizedCompany) {
       const escapedCompany = escapeRegex(normalizedCompany);
-      query.$or = [
-        { company: { $regex: `^${escapedCompany}$`, $options: "i" } },
-        { name: { $regex: `^${escapedCompany}(\\s|\\b)`, $options: "i" } },
-      ];
+      filters.push({
+        $or: [
+          { company: { $regex: `^${escapedCompany}$`, $options: "i" } },
+          { name: { $regex: `^${escapedCompany}(\\s|\\b)`, $options: "i" } },
+        ],
+      });
+    }
+    if (normalizedSearch) {
+      const escapedSearch = escapeRegex(normalizedSearch);
+      filters.push({
+        $or: [
+          { name: { $regex: escapedSearch, $options: "i" } },
+          { company: { $regex: escapedSearch, $options: "i" } },
+          { category: { $regex: escapedSearch, $options: "i" } },
+          { subcategory: { $regex: escapedSearch, $options: "i" } },
+          { description: { $regex: escapedSearch, $options: "i" } },
+        ],
+      });
     }
 
     const minPriceInput = request.query?.min_price ?? request.query?.minPrice;
@@ -229,32 +250,76 @@ export default async function registerProductRoutes(fastify, deps) {
     const minPrice = parseNumberQueryParam(minPriceInput);
     const maxPrice = parseNumberQueryParam(maxPriceInput);
     if (minPrice != null || maxPrice != null) {
-      query.price = {};
-      if (minPrice != null) query.price.$gte = Math.max(0, minPrice);
-      if (maxPrice != null) query.price.$lte = Math.max(0, maxPrice);
+      const priceQuery = {};
+      if (minPrice != null) priceQuery.$gte = Math.max(0, minPrice);
+      if (maxPrice != null) priceQuery.$lte = Math.max(0, maxPrice);
+      filters.push({ price: priceQuery });
     }
 
     const inStockInput = request.query?.in_stock ?? request.query?.inStock;
     const inStock = parseBooleanQueryParam(inStockInput);
     if (inStock === true) {
-      query.stock = { $gt: 0 };
+      filters.push({ stock: { $gt: 0 } });
     }
 
+    const query =
+      filters.length === 0 ? {} : filters.length === 1 ? filters[0] : { $and: filters };
     const normalizedSort = normalizeText(sort).toLowerCase();
     const sortClause = SORT_OPTIONS[normalizedSort] || SORT_OPTIONS.newest;
-    const requestLimit = Number.parseInt(request.query?.limit, 10);
-    const limit = Number.isFinite(requestLimit)
-      ? Math.min(Math.max(requestLimit, 1), 250)
-      : 150;
 
-    const products = await fastify.mongo.db
-      .collection("products")
-      .find(query)
-      .sort(sortClause)
-      .limit(limit)
-      .toArray();
+    const includeMetaInput = request.query?.include_meta ?? request.query?.includeMeta;
+    const includeMeta = parseBooleanQueryParam(includeMetaInput) === true;
+    const pageInput = parseIntegerQueryParam(request.query?.page);
+    const pageSizeInput = parseIntegerQueryParam(
+      request.query?.page_size ?? request.query?.pageSize,
+    );
+    const limitInput = parseIntegerQueryParam(request.query?.limit);
+    const usePagination = includeMeta || pageInput != null || pageSizeInput != null;
+
     reply.header("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
-    return products.map(serializeProduct);
+
+    if (!usePagination) {
+      const limit = Number.isFinite(limitInput)
+        ? Math.min(Math.max(limitInput, 1), 250)
+        : 150;
+
+      const products = await fastify.mongo.db
+        .collection("products")
+        .find(query)
+        .sort(sortClause)
+        .limit(limit)
+        .toArray();
+      return products.map(serializeProduct);
+    }
+
+    const page = Math.max(1, pageInput || 1);
+    const pageSizeBase = pageSizeInput ?? limitInput ?? 24;
+    const pageSize = Math.min(Math.max(pageSizeBase, 1), 250);
+    const skip = (page - 1) * pageSize;
+
+    const productCollection = fastify.mongo.db.collection("products");
+    const [products, total] = await Promise.all([
+      productCollection
+        .find(query)
+        .sort(sortClause)
+        .skip(skip)
+        .limit(pageSize)
+        .toArray(),
+      productCollection.countDocuments(query),
+    ]);
+
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    return {
+      items: products.map(serializeProduct),
+      meta: {
+        page,
+        page_size: pageSize,
+        total,
+        total_pages: totalPages,
+        has_prev: page > 1,
+        has_next: page < totalPages,
+      },
+    };
   });
 
   fastify.get("/api/products/:id", async (request, reply) => {
