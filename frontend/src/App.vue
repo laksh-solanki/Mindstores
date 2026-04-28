@@ -268,7 +268,6 @@ body {
 
 .hero-btn--primary,
 .membership-btn--primary,
-.collection-add,
 .action-add-to-cart,
 .action-buy-now,
 .checkout-btn,

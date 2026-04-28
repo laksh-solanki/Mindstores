@@ -150,14 +150,13 @@
                 <div class="collection-meta">
                   <span class="collection-price">{{ formatAmount(product.price) }}</span>
                   <v-btn
-                    class="collection-add"
                     rounded="pill"
                     size="small"
+                    variant="outlined"
+                    prepend-icon="mdi-cart-plus"
                     @click.stop="quickAddToCart(product.product_id)"
-                  >
-                    <v-icon size="16" start>mdi-cart-plus</v-icon>
-                    Add
-                  </v-btn>
+                    text="Add"
+                  />
                 </div>
               </v-card-text>
             </v-card>
@@ -168,30 +167,6 @@
           <h3>No products in this category right now.</h3>
           <p>Try another category or check back shortly for new arrivals.</p>
         </div>
-      </v-container>
-    </section>
-
-    <section ref="storiesSection" class="stories-section">
-      <v-container>
-        <div class="section-head section-head--left">
-          <p class="section-kicker">Design Journal</p>
-          <h2>Editorial moments from the collection</h2>
-          <p>Inspiration cards that blend practical use with premium design language.</p>
-        </div>
-
-        <v-row class="mt-4">
-          <v-col v-for="(story, index) in storyCards" :key="story.title" cols="12" md="4">
-            <v-card class="story-card reveal" elevation="0" :style="{ animationDelay: `${index * 130}ms` }">
-              <img :alt="story.title" class="story-image" loading="lazy" :src="story.image">
-              <div class="story-overlay" />
-              <div class="story-content">
-                <p>{{ story.tag }}</p>
-                <h3>{{ story.title }}</h3>
-                <span>{{ story.copy }}</span>
-              </div>
-            </v-card>
-          </v-col>
-        </v-row>
       </v-container>
     </section>
 
@@ -837,11 +812,7 @@
 }
 
 .collection-add {
-  text-transform: none;
-  font-family: 'Sora', sans-serif;
-  font-weight: 600;
   color: #f4f8fa;
-  background: linear-gradient(120deg, #243f4a, #345866);
 }
 
 .collection-empty {
@@ -945,7 +916,6 @@
   margin-top: 10px;
   max-width: 760px;
   font-family: 'Cormorant Garamond', serif;
-  color: #f4f9fd;
   font-size: clamp(2rem, 4.6vw, 3.2rem);
   line-height: 1.08;
 }
