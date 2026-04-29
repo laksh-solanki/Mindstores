@@ -1,5 +1,5 @@
 const BACKEND_BASE_URL = (
-  process.env.BACKEND_API_URL || 'https://mindstores-backloges.onrender.com'
+  process.env.BACKEND_API_URL || 'https://mindstores-backend.audit29122006.workers.dev'
 ).replace(/\/+$/, '')
 
 function getTargetUrl(req) {

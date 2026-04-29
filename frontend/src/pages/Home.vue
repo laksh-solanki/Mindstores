@@ -14,14 +14,21 @@
                 Every piece is selected for longevity, utility, and visual calm.
               </p>
               <div class="hero-actions">
-                <v-btn class="hero-btn hero-btn--primary" rounded="pill" size="x-large" @click="scrollToProducts">
+                <v-btn
+                  class="hero-btn hero-btn--primary"
+                  rounded="lg"
+                  size="x-large"
+                  elevation="2"
+                  @click="scrollToProducts"
+                >
                   Shop Collection
                 </v-btn>
                 <v-btn
                   class="hero-btn hero-btn--ghost"
-                  rounded="pill"
+                  rounded="lg"
                   size="x-large"
                   variant="outlined"
+                  elevation="1"
                   @click="scrollToStories"
                 >
                   View Stories
@@ -32,6 +39,7 @@
                   v-for="signal in trustSignals"
                   :key="signal"
                   class="signal-chip"
+                  closable
                   size="small"
                   variant="outlined"
                 >
@@ -75,7 +83,7 @@
           >
             <v-card
               class="value-card reveal"
-              elevation="0"
+              elevation="1"
               :style="{ animationDelay: `${index * 120}ms` }"
             >
               <div class="value-icon">
@@ -104,6 +112,7 @@
             class="category-chip"
             :class="{ 'is-active': selectedCategory === category }"
             :variant="selectedCategory === category ? 'flat' : 'outlined'"
+            filter
             @click="selectedCategory = category"
           >
             {{ category }}
@@ -133,6 +142,8 @@
             <v-card
               class="collection-card reveal"
               :style="{ animationDelay: `${index * 90}ms` }"
+              elevation="2"
+              hover
               @click="goToProduct(product.product_id)"
             >
               <div class="collection-media">
@@ -154,7 +165,8 @@
                     rounded="pill"
                     size="small"
                     text="Add"
-                    variant="outlined"
+                    variant="tonal"
+                    color="primary"
                     @click.stop="quickAddToCart(product.product_id)"
                   />
                 </div>
@@ -172,11 +184,11 @@
 
     <section class="membership-section">
       <v-container>
-        <v-card class="membership-card reveal" elevation="0">
+        <v-card class="membership-card reveal" elevation="1">
           <p>Member Concierge</p>
           <h2>Unlock early drops, curated bundles, and priority support.</h2>
           <div class="membership-actions">
-            <v-btn class="membership-btn membership-btn--primary" rounded="pill" size="large" to="/create-account">
+            <v-btn class="membership-btn membership-btn--primary" rounded="pill" size="large" to="/create-account" elevation="2">
               Create Account
             </v-btn>
             <v-btn
@@ -185,6 +197,7 @@
               size="large"
               to="/cart"
               variant="outlined"
+              elevation="1"
             >
               Review Cart
             </v-btn>
@@ -662,6 +675,12 @@
   padding: 22px;
   height: 100%;
   background: rgba(255, 255, 255, 0.75);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.value-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(19, 33, 41, 0.12);
 }
 
 .value-icon {
@@ -756,6 +775,22 @@
 .collection-card:hover {
   transform: translateY(-6px);
   box-shadow: 0 18px 36px rgba(23, 39, 46, 0.15);
+}
+
+/* Material UI ripple effect simulation */
+.collection-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  background: radial-gradient(circle at center, rgba(194, 115, 47, 0.15) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.collection-card:hover::after {
+  opacity: 1;
 }
 
 .collection-media {

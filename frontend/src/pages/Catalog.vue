@@ -4,9 +4,6 @@
       <section v-if="catalogEntry" class="catalog-intro">
         <p class="catalog-kicker">Category Collection</p>
         <h1>{{ pageTitle }}</h1>
-        <p class="catalog-subtitle">
-          Explore all {{ catalogEntry.item.name.toLowerCase() }} products in card view and refine results instantly with filters.
-        </p>
       </section>
 
       <section v-else class="catalog-missing">
@@ -127,7 +124,7 @@
                 <v-card-text class="result-content">
                   <p class="result-company">{{ getCompanyLabel(product) }}</p>
                   <h3>{{ product.name }}</h3>
-                  <p class="result-subcategory">{{ product.subcategory || catalogEntry.item.name }}</p>
+                  <p class="result-subcategory">{{ product.subcategory || catalogEntry.category.label }}</p>
                   <div class="result-meta">
                     <span class="result-price">{{ formatAmount(product.price) }}</span>
                     <span class="result-stock" :class="{ 'is-low': Number(product.stock || 0) < 1 }">
@@ -203,6 +200,11 @@
 
   const pageTitle = computed(() => {
     if (!catalogEntry.value) return 'Catalog'
+    // Category-only view
+    if (!catalogEntry.value.item) {
+      return `${catalogEntry.value.category.label}`
+    }
+    // Category + subcategory view
     return `${catalogEntry.value.category.label} / ${catalogEntry.value.item.name}`
   })
   const companyOptions = computed(() => {
@@ -226,6 +228,13 @@
 
   function buildCategoryQuery() {
     if (!catalogEntry.value) return {}
+    // Category-only view - show all products in category
+    if (!catalogEntry.value.item) {
+      return {
+        category: catalogEntry.value.category.apiCategory,
+      }
+    }
+    // Category + subcategory view
     return {
       category: catalogEntry.value.category.apiCategory,
       subcategory: catalogEntry.value.item.apiSubcategory,
@@ -251,7 +260,36 @@
         route.params.subcategory,
       )
 
-      if (!nextCatalogEntry) {
+      // Handle category-only route (no subcategory)
+      const isCategoryOnly = !route.params.subcategory
+      let categoryOnlyEntry = null
+
+      if (isCategoryOnly) {
+        // Find the category without requiring subcategory
+        const normalizedCategorySlug = String(route.params.category || '').toLowerCase()
+        const foundCategory = allProducts.find(p =>
+          String(p.category || '').toLowerCase().replace(/[^a-z0-9]+/g, '-') === normalizedCategorySlug
+        )
+
+        if (foundCategory) {
+          const categoryLabel = foundCategory.category
+          const categoryKey = String(categoryLabel || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')
+          categoryOnlyEntry = {
+            category: {
+              key: categoryKey,
+              label: categoryLabel,
+              apiCategory: categoryLabel,
+            },
+            item: null, // No subcategory filter
+            canonicalPath: `/${categoryKey}`
+          }
+        }
+      }
+
+      // Use category-only entry if that's what we're navigating to
+      const finalCatalogEntry = isCategoryOnly ? categoryOnlyEntry : nextCatalogEntry
+
+      if (!finalCatalogEntry) {
         catalogEntry.value = null
         sourceProducts.value = []
         products.value = []
@@ -261,16 +299,24 @@
         return
       }
 
-      catalogEntry.value = nextCatalogEntry
-      if (route.path !== nextCatalogEntry.canonicalPath) {
-        router.replace(nextCatalogEntry.canonicalPath)
+      catalogEntry.value = finalCatalogEntry
+
+      // Only redirect if we have a subcategory and path doesn't match
+      if (!isCategoryOnly && route.path !== finalCatalogEntry.canonicalPath) {
+        router.replace(finalCatalogEntry.canonicalPath)
         return
       }
 
+      // Filter products based on whether we have a subcategory or not
       sourceProducts.value = allProducts.filter((product) => {
+        // Category-only: show all products in the category
+        if (isCategoryOnly && !nextCatalogEntry?.item) {
+          return product?.category === finalCatalogEntry.category.apiCategory
+        }
+        // Category + subcategory: filter by both
         return (
-          product?.category === nextCatalogEntry.category.apiCategory &&
-          product?.subcategory === nextCatalogEntry.item.apiSubcategory
+          product?.category === finalCatalogEntry.category.apiCategory &&
+          product?.subcategory === finalCatalogEntry.item?.apiSubcategory
         )
       })
 
@@ -530,6 +576,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
+  margin-bottom: 16px;
 }
 
 .result-label {

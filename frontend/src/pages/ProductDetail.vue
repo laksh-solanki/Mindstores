@@ -2,7 +2,7 @@
   <div class="atelier-product-page">
     <div class="texture-layer" />
 
-    <v-container class="atelier-shell">
+    <v-container class="atelier-shell" fluid>
       <v-row v-if="loading" class="main-row">
         <v-col cols="12" md="7">
           <v-skeleton-loader class="skeleton-frame" type="image" />
@@ -25,31 +25,17 @@
 
       <template v-else-if="product">
         <header class="hero-intro reveal-fade">
-          <v-btn
-            class="back-nav-btn"
-            prepend-icon="mdi-arrow-left"
-            rounded="pill"
-            variant="tonal"
-            @click="goBack"
-          >
+          <v-btn class="back-nav-btn" prepend-icon="mdi-arrow-left" rounded="pill" variant="tonal" @click="goBack">
             Back
           </v-btn>
-          <p class="intro-kicker">Atelier Signature</p>
-          <h1 class="intro-title">Premium details built for modern, intentional spaces.</h1>
         </header>
 
-        <v-row class="main-row">
+        <v-row class="main-row" dense>
           <v-col cols="12" md="7">
             <section class="gallery-board reveal-up">
               <div class="hero-frame">
-                <img
-                  :alt="product.name"
-                  class="hero-image"
-                  decoding="async"
-                  fetchpriority="high"
-                  loading="eager"
-                  :src="product.image_url"
-                >
+                <img :alt="product.name" contain class="hero-image" decoding="async" sizes="(max-width: 768px) 100vw, 50vw" fetchpriority="high" loading="eager"
+                  :src="product.image_url">
 
                 <div class="edition-badge">
                   <p>Limited Atelier Drop</p>
@@ -78,21 +64,13 @@
 
               <div class="rating-strip">
                 <div class="stars">
-                  <v-icon
-                    v-for="(filled, index) in ratingStars"
-                    :key="index"
-                    :class="{ filled }"
-                    size="17"
-                  >
+                  <v-icon v-for="(filled, index) in ratingStars" :key="index" :class="{ filled }" size="17">
                     {{ filled ? 'mdi-star' : 'mdi-star-outline' }}
                   </v-icon>
                 </div>
                 <span class="rating-label">{{ ratingLabel }} / 5</span>
                 <span class="reviews-count">{{ reviewCount }} verified reviews</span>
               </div>
-
-              <p class="description">{{ product.description || fallbackDescription }}</p>
-
               <div class="trust-grid">
                 <div v-for="chip in trustChips" :key="chip.label" class="trust-chip">
                   <v-icon size="16">{{ chip.icon }}</v-icon>
@@ -109,66 +87,55 @@
                 <div class="quantity-row">
                   <span class="quantity-label">Quantity</span>
                   <div class="quantity-control">
-                    <v-btn
-                      :disabled="quantity <= 1"
-                      icon
-                      size="small"
-                      variant="outlined"
-                      @click="decreaseQuantity"
-                    >
+                    <v-btn :disabled="quantity <= 1" icon size="small" variant="outlined" @click="decreaseQuantity">
                       <v-icon>mdi-minus</v-icon>
                     </v-btn>
 
                     <span class="quantity-value">{{ quantity }}</span>
 
-                    <v-btn
-                      :disabled="!stockReady || quantity >= product.stock"
-                      icon
-                      size="small"
-                      variant="outlined"
-                      @click="increaseQuantity"
-                    >
+                    <v-btn :disabled="!stockReady || quantity >= product.stock" icon size="small" variant="outlined"
+                      @click="increaseQuantity">
                       <v-icon>mdi-plus</v-icon>
                     </v-btn>
                   </div>
                 </div>
 
-                <v-btn
-                  block
-                  class="action-add-to-cart"
-                  :disabled="!stockReady"
-                  rounded="pill"
-                  size="large"
-                  @click="addToCart"
-                >
+                <v-btn block class="action-add-to-cart" :disabled="!stockReady" rounded="pill" size="large"
+                  @click="addToCart">
                   <v-icon start>mdi-cart</v-icon>
                   {{ stockReady ? 'Add to Cart' : 'Sold Out' }}
                 </v-btn>
 
-                <v-btn
-                  block
-                  class="action-buy-now mt-3"
-                  :disabled="!stockReady"
-                  rounded="pill"
-                  variant="flat"
-                  @click="buyNow"
-                >
+                <v-btn block class="action-buy-now mt-3" :disabled="!stockReady" rounded="pill" variant="flat"
+                  @click="buyNow">
                   <v-icon start>mdi-lightning-bolt</v-icon>
                   Buy Now
                 </v-btn>
               </div>
             </aside>
           </v-col>
+          <v-col cols="12" lg="12">
+            <section class="product-description elevation-0 rounded-lg reveal-up delay-2">
+              <h3>Description</h3>
+              <p class="description">
+                <span v-if="isTruncated" class="description-text">{{ truncatedDescription }}</span>
+                <span v-else class="description-text">{{ fullDescription }}</span>
+                <span v-if="showSeeMore" class="see-more-link" @click="toggleDescription">
+                  {{ isTruncated ? 'See more' : 'See less' }}
+                </span>
+              </p>
+            </section>
+          </v-col>
+          <v-col cols="12" lg="12">
+            <section class="detail-belt reveal-up delay-2 p-0">
+              <article v-for="detail in atelierDetails" :key="detail.title" class="detail-card">
+                <p class="detail-title">{{ detail.title }}</p>
+                <p class="detail-copy">{{ detail.copy }}</p>
+              </article>
+            </section>
+          </v-col>
         </v-row>
-
-        <section class="detail-belt reveal-up delay-2">
-          <article v-for="detail in atelierDetails" :key="detail.title" class="detail-card">
-            <p class="detail-title">{{ detail.title }}</p>
-            <p class="detail-copy">{{ detail.copy }}</p>
-          </article>
-        </section>
       </template>
-
       <section v-else class="empty-state">
         <h2>Product not found</h2>
         <p>This product may have been moved or is temporarily unavailable.</p>
@@ -176,225 +143,243 @@
       </section>
     </v-container>
 
-    <BaseAlert
-      v-model="snackbar"
-      floating
-      :message="snackbarText"
-      :timeout="2200"
-      :type="snackbarColor"
-    />
+    <BaseAlert v-model="snackbar" floating :message="snackbarText" :timeout="2200" :type="snackbarColor" />
   </div>
 </template>
 
 <script setup>
-  import axios from 'axios'
-  import { computed, onMounted, ref, watch } from 'vue'
-  import { useRoute, useRouter } from 'vue-router'
-  import BaseAlert from '@/components/BaseAlert.vue'
-  import { useAppStore } from '@/stores/app'
-  import { useCartStore } from '@/stores/cart'
-  import { API_URL } from '@/utils/api'
-  import { useCurrency } from '@/utils/currency'
+import axios from 'axios'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import BaseAlert from '@/components/BaseAlert.vue'
+import { useAppStore } from '@/stores/app'
+import { useCartStore } from '@/stores/cart'
+import { API_URL } from '@/utils/api'
+import { useCurrency } from '@/utils/currency'
 
-  const route = useRoute()
-  const router = useRouter()
-  const appStore = useAppStore()
-  const cartStore = useCartStore()
-  const { formatAmount } = useCurrency()
+const route = useRoute()
+const router = useRouter()
+const appStore = useAppStore()
+const cartStore = useCartStore()
+const { formatAmount } = useCurrency()
 
-  const loading = ref(false)
-  const product = ref(null)
-  const quantity = ref(1)
-  const snackbar = ref(false)
-  const snackbarText = ref('')
-  const snackbarColor = ref('success')
+const loading = ref(false)
+const product = ref(null)
+const quantity = ref(1)
+const snackbar = ref(false)
+const snackbarText = ref('')
+const snackbarColor = ref('success')
 
-  const fallbackDescription = 'A design-first piece crafted to blend visual calm with daily utility.'
+const fallbackDescription = 'A design-first piece crafted to blend visual calm with daily utility.'
 
-  const formattedPrice = computed(() => {
-    const price = Number(product.value?.price || 0)
-    return formatAmount(price)
-  })
+// Description truncation logic
+const isTruncated = ref(true)
+const LINES_THRESHOLD = 4
+const CHARS_PER_LINE = 120
 
-  const categoryLabel = computed(() => {
-    const value = String(product.value?.category || 'Curated Collection').trim()
-    return value.length > 0 ? value.toUpperCase() : 'CURATED COLLECTION'
-  })
+const fullDescription = computed(() => {
+  return product.value?.description || fallbackDescription
+})
 
-  const ratingScore = computed(() => {
-    const seed = Number(product.value?.product_id || route.params.id || 0)
-    const score = 4.1 + ((seed % 7) / 10)
-    return Math.min(score, 4.9)
-  })
+const truncatedDescription = computed(() => {
+  const text = fullDescription.value
+  const maxChars = LINES_THRESHOLD * CHARS_PER_LINE
+  if (text.length <= maxChars) return text
+  return text.slice(0, maxChars).trim() + '...'
+})
 
-  const ratingLabel = computed(() => ratingScore.value.toFixed(1))
+const showSeeMore = computed(() => {
+  return fullDescription.value.length > (LINES_THRESHOLD * CHARS_PER_LINE)
+})
 
-  const ratingStars = computed(() => {
-    const filledCount = Math.round(ratingScore.value)
-    return Array.from({ length: 5 }, (_, index) => index < filledCount)
-  })
+function toggleDescription() {
+  isTruncated.value = !isTruncated.value
+}
 
-  const reviewCount = computed(() => {
-    const seed = Number(product.value?.product_id || route.params.id || 1)
-    return 148 + (seed % 91)
-  })
+const formattedPrice = computed(() => {
+  const price = Number(product.value?.price || 0)
+  return formatAmount(price)
+})
 
-  const stockReady = computed(() => Number(product.value?.stock || 0) > 0)
+const categoryLabel = computed(() => {
+  const value = String(product.value?.category || 'Curated Collection').trim()
+  return value.length > 0 ? value.toUpperCase() : 'CURATED COLLECTION'
+})
 
-  const stockText = computed(() => {
-    const stock = Number(product.value?.stock || 0)
-    if (stock <= 0) return 'Currently unavailable'
-    if (stock <= 5) return `Only ${stock} pieces left`
-    return `${stock} pieces ready to ship`
-  })
+const ratingScore = computed(() => {
+  const seed = Number(product.value?.product_id || route.params.id || 0)
+  const score = 4.1 + ((seed % 7) / 10)
+  return Math.min(score, 4.9)
+})
 
-  const materialLabel = computed(() => {
-    const category = String(product.value?.category || '').toLowerCase()
-    if (category.includes('furniture')) return 'Premium engineered wood'
-    if (category.includes('electronics')) return 'Precision electronic finish'
-    if (category.includes('clothing')) return 'Soft premium fabric blend'
-    return 'Handpicked premium materials'
-  })
+const ratingLabel = computed(() => ratingScore.value.toFixed(1))
 
-  const visualPanels = computed(() => {
-    return [
-      { title: 'Material', value: materialLabel.value },
-      { title: 'Dispatch', value: stockReady.value ? 'Within 24 hours' : 'Restock in progress' },
-      { title: 'Returns', value: '30-day easy return' },
-    ]
-  })
+const ratingStars = computed(() => {
+  const filledCount = Math.round(ratingScore.value)
+  return Array.from({ length: 5 }, (_, index) => index < filledCount)
+})
 
-  const trustChips = computed(() => {
-    const chips = [
-      { icon: 'mdi-shield-check', label: 'Quality checked' },
-      { icon: 'mdi-truck-fast-outline', label: 'Tracked shipping' },
-      { icon: 'mdi-credit-card-check-outline', label: 'Secure checkout' },
-      { icon: 'mdi-refresh-circle', label: 'Easy returns' },
-    ]
+const reviewCount = computed(() => {
+  const seed = Number(product.value?.product_id || route.params.id || 1)
+  return 148 + (seed % 91)
+})
 
-    if (stockReady.value) {
-      chips.unshift({ icon: 'mdi-clock-fast', label: 'Priority dispatch' })
-    }
+const stockReady = computed(() => Number(product.value?.stock || 0) > 0)
 
-    return chips.slice(0, 4)
-  })
+const stockText = computed(() => {
+  const stock = Number(product.value?.stock || 0)
+  if (stock <= 0) return 'Currently unavailable'
+  if (stock <= 5) return `Only ${stock} pieces left`
+  return `${stock} pieces ready to ship`
+})
 
-  const atelierDetails = computed(() => {
-    const category = String(product.value?.category || 'Collection').trim()
+const materialLabel = computed(() => {
+  const category = String(product.value?.category || '').toLowerCase()
+  if (category.includes('furniture')) return 'Premium engineered wood'
+  if (category.includes('electronics')) return 'Precision electronic finish'
+  if (category.includes('clothing')) return 'Soft premium fabric blend'
+  return 'Handpicked premium materials'
+})
 
-    return [
-      {
-        title: 'Curated Build',
-        copy: `Each ${category.toLowerCase()} item is selected for long-term everyday use and visual harmony.`
-      },
-      {
-        title: 'Refined Experience',
-        copy: 'Protective packaging, quality checks, and smooth post-purchase support are standard with every order.'
-      },
-      {
-        title: 'Mindstore Promise',
-        copy: 'Transparent details, fast fulfillment, and reliable after-sales service with no hidden surprises.'
-      },
-    ]
-  })
+const visualPanels = computed(() => {
+  return [
+    { title: 'Material', value: materialLabel.value },
+    { title: 'Dispatch', value: stockReady.value ? 'Within 24 hours' : 'Restock in progress' },
+    { title: 'Returns', value: '30-day easy return' },
+  ]
+})
 
-  async function fetchProduct (productId = route.params.id) {
-    loading.value = true
-    try {
-      const response = await axios.get(`${API_URL}/api/products/${productId}`)
-      product.value = response.data
-      quantity.value = 1
-    } catch (error) {
-      console.error('Failed to fetch product:', error)
-      product.value = null
-    } finally {
-      loading.value = false
-    }
+const trustChips = computed(() => {
+  const chips = [
+    { icon: 'mdi-shield-check', label: 'Quality checked' },
+    { icon: 'mdi-truck-fast-outline', label: 'Tracked shipping' },
+    { icon: 'mdi-credit-card-check-outline', label: 'Secure checkout' },
+    { icon: 'mdi-refresh-circle', label: 'Easy returns' },
+  ]
+
+  if (stockReady.value) {
+    chips.unshift({ icon: 'mdi-clock-fast', label: 'Priority dispatch' })
   }
 
-  function increaseQuantity () {
-    const stock = Number(product.value?.stock || 0)
-    if (stock > 0 && quantity.value < stock) {
-      quantity.value += 1
-    }
+  return chips.slice(0, 4)
+})
+
+const atelierDetails = computed(() => {
+  const category = String(product.value?.category || 'Collection').trim()
+
+  return [
+    {
+      title: 'Curated Build',
+      copy: `Each ${category.toLowerCase()} item is selected for long-term everyday use and visual harmony.`
+    },
+    {
+      title: 'Refined Experience',
+      copy: 'Protective packaging, quality checks, and smooth post-purchase support are standard with every order.'
+    },
+    {
+      title: 'Mindstore Promise',
+      copy: 'Transparent details, fast fulfillment, and reliable after-sales service with no hidden surprises.'
+    },
+  ]
+})
+
+async function fetchProduct(productId = route.params.id) {
+  loading.value = true
+  try {
+    const response = await axios.get(`${API_URL}/api/products/${productId}`)
+    product.value = response.data
+    quantity.value = 1
+  } catch (error) {
+    console.error('Failed to fetch product:', error)
+    product.value = null
+  } finally {
+    loading.value = false
+  }
+}
+
+function increaseQuantity() {
+  const stock = Number(product.value?.stock || 0)
+  if (stock > 0 && quantity.value < stock) {
+    quantity.value += 1
+  }
+}
+
+function decreaseQuantity() {
+  if (quantity.value > 1) {
+    quantity.value -= 1
+  }
+}
+
+function goBack() {
+  const historyState = window.history.state
+  const hasInAppBack = typeof historyState?.back === 'string' && historyState.back.length > 0
+  if (hasInAppBack) {
+    router.go(-1)
+    return
+  }
+  router.push('/')
+}
+
+async function addToCart() {
+  if (!appStore.isAuthenticated) {
+    router.push('/login')
+    return
   }
 
-  function decreaseQuantity () {
-    if (quantity.value > 1) {
-      quantity.value -= 1
-    }
+  if (!product.value || !stockReady.value) {
+    snackbarText.value = 'This product is currently unavailable.'
+    snackbarColor.value = 'error'
+    snackbar.value = true
+    return
   }
 
-  function goBack () {
-    const historyState = window.history.state
-    const hasInAppBack = typeof historyState?.back === 'string' && historyState.back.length > 0
-    if (hasInAppBack) {
-      router.go(-1)
-      return
-    }
-    router.push('/')
+  try {
+    await cartStore.addToCart(product.value.product_id, quantity.value)
+    snackbarText.value = 'Added to cart successfully'
+    snackbarColor.value = 'success'
+    snackbar.value = true
+  } catch {
+    snackbarText.value = 'Failed to add to cart'
+    snackbarColor.value = 'error'
+    snackbar.value = true
+  }
+}
+
+async function buyNow() {
+  if (!appStore.isAuthenticated) {
+    router.push('/login')
+    return
   }
 
-  async function addToCart () {
-    if (!appStore.isAuthenticated) {
-      router.push('/login')
-      return
-    }
-
-    if (!product.value || !stockReady.value) {
-      snackbarText.value = 'This product is currently unavailable.'
-      snackbarColor.value = 'error'
-      snackbar.value = true
-      return
-    }
-
-    try {
-      await cartStore.addToCart(product.value.product_id, quantity.value)
-      snackbarText.value = 'Added to cart successfully'
-      snackbarColor.value = 'success'
-      snackbar.value = true
-    } catch {
-      snackbarText.value = 'Failed to add to cart'
-      snackbarColor.value = 'error'
-      snackbar.value = true
-    }
+  if (!product.value || !stockReady.value) {
+    snackbarText.value = 'This product is currently unavailable.'
+    snackbarColor.value = 'error'
+    snackbar.value = true
+    return
   }
 
-  async function buyNow () {
-    if (!appStore.isAuthenticated) {
-      router.push('/login')
-      return
-    }
+  try {
+    await cartStore.addToCart(product.value.product_id, quantity.value)
+    router.push('/cart')
+  } catch {
+    snackbarText.value = 'Unable to start checkout right now'
+    snackbarColor.value = 'error'
+    snackbar.value = true
+  }
+}
 
-    if (!product.value || !stockReady.value) {
-      snackbarText.value = 'This product is currently unavailable.'
-      snackbarColor.value = 'error'
-      snackbar.value = true
-      return
-    }
-
-    try {
-      await cartStore.addToCart(product.value.product_id, quantity.value)
-      router.push('/cart')
-    } catch {
-      snackbarText.value = 'Unable to start checkout right now'
-      snackbarColor.value = 'error'
-      snackbar.value = true
+watch(
+  () => route.params.id,
+  (nextId, previousId) => {
+    if (nextId && nextId !== previousId) {
+      fetchProduct(nextId)
     }
   }
+)
 
-  watch(
-    () => route.params.id,
-    (nextId, previousId) => {
-      if (nextId && nextId !== previousId) {
-        fetchProduct(nextId)
-      }
-    }
-  )
-
-  onMounted(() => {
-    fetchProduct()
-  })
+onMounted(() => {
+  fetchProduct()
+})
 </script>
 
 <style scoped>
@@ -406,7 +391,6 @@
   --lux-border: rgba(19, 38, 43, 0.15);
   --lux-panel: rgba(255, 255, 255, 0.82);
   min-height: 100vh;
-  padding: 24px 0 72px;
   position: relative;
   overflow: hidden;
   background:
@@ -464,7 +448,7 @@
   row-gap: 24px;
 }
 
-.gallery-board {
+.gallery-board  {
   border: 1px solid var(--lux-border);
   border-radius: 30px;
   padding: 16px;
@@ -562,7 +546,7 @@
   line-height: 1.35;
 }
 
-.purchase-panel {
+.purchase-panel, .product-description {
   border: 1px solid var(--lux-border);
   border-radius: 30px;
   padding: clamp(22px, 4vw, 34px);
@@ -651,6 +635,25 @@
   margin-top: 16px;
   color: var(--lux-muted);
   line-height: 1.76;
+}
+
+.description-text {
+  display: block;
+}
+
+.see-more-link {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--lux-accent);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.see-more-link:hover {
+  color: var(--lux-accent-strong);
+  text-decoration: underline;
 }
 
 .trust-grid {
@@ -759,7 +762,6 @@
 }
 
 .detail-belt {
-  margin-top: 22px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
@@ -859,10 +861,6 @@
 }
 
 @media (max-width: 960px) {
-  .atelier-product-page {
-    padding-top: 18px;
-  }
-
   .hero-frame {
     height: 460px;
   }
@@ -884,7 +882,6 @@
 
 @media (max-width: 600px) {
   .atelier-product-page {
-    padding-top: 72px;
     padding-bottom: 52px;
   }
 

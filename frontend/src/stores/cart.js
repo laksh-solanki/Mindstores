@@ -192,6 +192,11 @@ export const useCartStore = defineStore('cart', {
         console.error('Failed to update cart quantity:', error)
         throw error
       }
+    },
+
+    clearCart() {
+      this.items = []
+      this.products = {}
     }
   }
 })

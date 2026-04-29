@@ -643,6 +643,8 @@
 .admin-shell {
   padding-top: 52px;
   padding-bottom: 64px;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .admin-kicker {
@@ -694,21 +696,23 @@
   background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(8px);
   box-shadow: 0 18px 40px rgba(20, 35, 33, 0.08);
+  overflow: hidden;
 }
 
 .surface-content {
-  padding: 12px;
+  padding: 16px;
 }
 
 .admin-table {
   border-radius: 14px;
   overflow: hidden;
+  width: 100%;
 }
 
 .product-thumb {
   width: 64px;
   height: 64px;
-  object-fit: cover;
+  object-fit: cover !important;
   border-radius: 10px;
   border: 1px solid #d8e2dd;
 }
@@ -716,23 +720,28 @@
 .mobile-list {
   display: grid;
   gap: 12px;
+  width: 100%;
 }
 
 .mobile-product-card {
   border: 1px solid #d8e2dd;
   border-radius: 16px;
-  padding: 12px;
+  padding: 14px;
   background: #ffffff;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .mobile-item-top {
   display: flex;
-  gap: 12px;
+  gap: 14px;
+  align-items: flex-start;
+  width: 100%;
 }
 
 .mobile-product-image {
-  width: 92px;
-  height: 92px;
+  width: 120px;
+  height: 120px;
   border-radius: 10px;
   object-fit: cover;
   border: 1px solid #d8e2dd;
@@ -808,22 +817,79 @@
 @media (max-width: 960px) {
   .admin-shell {
     padding-top: 40px;
+    padding-left: 16px;
+    padding-right: 16px;
   }
 
   .surface-content {
-    padding: 8px;
+    padding: 12px;
+  }
+
+  .admin-head-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .add-btn {
+    align-self: flex-start;
   }
 }
 
 @media (max-width: 600px) {
   .admin-shell {
-    padding-top: 32px;
-    padding-bottom: 44px;
+    padding-top: 24px;
+    padding-bottom: 32px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .admin-head-row {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .add-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .page-title {
+    font-size: 1.75rem;
+  }
+
+  .admin-subtitle {
+    font-size: 0.9rem;
   }
 
   .mobile-product-image {
-    width: 84px;
-    height: 84px;
+    width: 100px;
+    height: 100px;
+  }
+
+  .mobile-item-top {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .mobile-item-copy h3 {
+    font-size: 0.95rem;
+    word-break: break-word;
+  }
+
+  .mobile-meta {
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .mobile-actions {
+    justify-content: flex-end;
+    padding-top: 8px;
+    border-top: 1px solid #f0f0f0;
+    margin-top: 8px;
+  }
+
+  .mobile-product-card {
+    padding: 10px;
   }
 }
 </style>

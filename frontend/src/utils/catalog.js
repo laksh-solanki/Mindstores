@@ -72,11 +72,30 @@ export function buildCatalogEntries(products = []) {
 
 export function resolveCatalogEntryFromProducts(products, categorySlug, subcategorySlug) {
   const normalizedCategorySlug = slugifyCatalogValue(categorySlug)
-  const normalizedSubcategorySlug = slugifyCatalogValue(subcategorySlug)
 
-  if (!normalizedCategorySlug || !normalizedSubcategorySlug) {
+  if (!normalizedCategorySlug) {
     return null
   }
+
+  // If no subcategory, find category only
+  if (!subcategorySlug) {
+    const category = buildCatalogEntries(products).find(
+      (entry) => entry.key === normalizedCategorySlug,
+    )
+
+    if (!category) {
+      return null
+    }
+
+    return {
+      category,
+      item: null,
+      canonicalPath: `/${category.key}`,
+    }
+  }
+
+  // Full category + subcategory lookup
+  const normalizedSubcategorySlug = slugifyCatalogValue(subcategorySlug)
 
   const category = buildCatalogEntries(products).find(
     (entry) => entry.key === normalizedCategorySlug,

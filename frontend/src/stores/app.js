@@ -9,9 +9,9 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { defineStore } from "pinia";
+import { useCartStore } from "./cart";
 // Import initialized firebase app
 import { app as firebaseApp } from "@/plugins/firebase";
-
 import { API_URL } from "@/utils/api";
 import {
   getCurrencyForCountry,
@@ -310,6 +310,9 @@ export const useAppStore = defineStore("app", {
             console.warn("Backend logout failed, proceeding with Firebase logout.", error);
           });
         await signOut(auth);
+        // Clear cart on logout for all users
+        const cartStore = useCartStore();
+        cartStore.clearCart();
       } catch (error) {
         console.error("Firebase logout failed:", error);
       } finally {

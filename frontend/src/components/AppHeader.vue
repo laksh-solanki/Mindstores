@@ -27,6 +27,7 @@
                       append-icon="mdi-menu-right"
                       :prepend-icon="category.icon"
                       :title="category.label"
+                      @click="openCategory(category.key)"
                     />
                   </template>
                   <v-list density="compact" min-width="200">
@@ -88,6 +89,10 @@
           <template #activator="{ props }">
             <v-list-item v-bind="props" :prepend-icon="category.icon" :title="category.label" />
           </template>
+          <v-list-item
+            :title="`All ${category.label}`"
+            @click="openCategoryFromMobile(category.key)"
+          />
           <v-list-item
             v-for="item in category.items"
             :key="item.key"
@@ -184,8 +189,19 @@
     router.push(`/${targetCategory.key}/${targetItem.key}`)
   }
 
+  function openCategory (categoryKey) {
+    const targetCategory = categoryDropdown.value.find((category) => category.key === categoryKey)
+    if (!targetCategory) return
+    closeMobileMenu()
+    router.push(`/${categoryKey}`)
+  }
+
   function openCatalogItemFromMobile (categoryKey, itemKey) {
     openCatalogItem(categoryKey, itemKey)
+  }
+
+  function openCategoryFromMobile (categoryKey) {
+    openCategory(categoryKey)
   }
 
   watch(
