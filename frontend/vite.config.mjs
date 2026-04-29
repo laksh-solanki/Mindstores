@@ -56,6 +56,7 @@ export default defineConfig(({ mode }) => {
       extensions: [".js", ".json", ".jsx", ".mjs", ".vue"],
     },
     server: {
+      open: true,
       port: Number.parseInt(env.VITE_PORT) || 3000,
       host: true
     },

@@ -1,9 +1,8 @@
 import axios from 'axios'
 import { defineStore } from 'pinia'
+import { API_URL } from '@/utils/api'
 import { useAppStore } from './app'
 
-// REFIX: Vite compatible env var (Port 8000)
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const pendingProductRequests = new Map()
 const NOT_AUTHENTICATED_ERROR_MESSAGE = 'User not authenticated'
 

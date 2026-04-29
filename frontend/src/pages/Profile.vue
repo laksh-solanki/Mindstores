@@ -222,6 +222,7 @@
   import { useRouter } from 'vue-router'
   import BaseAlert from '@/components/BaseAlert.vue'
   import { useAppStore } from '@/stores/app'
+  import { API_URL } from '@/utils/api'
   import { fetchExchangeRates, formatCurrencyAmount } from '@/utils/currency'
   import {
     getCurrencyForCountry,
@@ -279,8 +280,6 @@
     setup() {
       const router = useRouter()
       const appStore = useAppStore()
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-
       const orders = ref([])
       const loading = ref(false)
       const savingAll = ref(false)

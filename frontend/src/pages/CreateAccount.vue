@@ -5,112 +5,35 @@
     <div class="bg-grid" />
 
     <v-container class="auth-shell">
-      <v-row class="auth-frame" no-gutters>
-        <v-col class="auth-visual" cols="12" lg="7">
-          <div class="visual-overlay" />
-          <div class="visual-content">
-            <div class="brand-chip">
-              <v-img alt="logo" class="brand-mark" src="../assets/logo.svg" />
-              <span>Mindstore Lounge</span>
-            </div>
-
-            <p class="visual-kicker">Member Setup</p>
-            <h1 class="visual-title">Create your premium shopping identity in minutes.</h1>
-            <p class="visual-copy">
-              Set up one account to keep your profile, cart, and order history synced across every visit.
-            </p>
-
-            <div class="insight-grid">
-              <article class="insight-card">
-                <v-icon size="18">mdi-account-check-outline</v-icon>
-                <div>
-                  <h3>Quick Registration</h3>
-                  <p>Start with your email and a secure password.</p>
-                </div>
-              </article>
-
-              <article class="insight-card">
-                <v-icon size="18">mdi-cart-check</v-icon>
-                <div>
-                  <h3>Personalized Cart</h3>
-                  <p>Keep your selections ready for future sessions.</p>
-                </div>
-              </article>
-
-              <article class="insight-card">
-                <v-icon size="18">mdi-shield-star-outline</v-icon>
-                <div>
-                  <h3>Trusted Security</h3>
-                  <p>Protected onboarding with account-safe access.</p>
-                </div>
-              </article>
-            </div>
-          </div>
-        </v-col>
-
-        <v-col class="auth-main" cols="12" lg="5">
+      <v-row no-gutters>
+        <v-col class="auth-main pa-3" cols="12" lg="5">
           <div class="form-card">
             <p class="form-kicker">New Member</p>
             <h2 class="form-title">Create account</h2>
             <p class="form-subtitle">Use your details below to join Mindstore.</p>
 
-            <BaseAlert
-              v-if="errorMessage"
-              class="mt-3"
-              :message="errorMessage"
-              type="error"
-            />
+            <BaseAlert v-if="errorMessage" class="mt-3" :message="errorMessage" type="error" />
 
             <v-form class="mt-4" @submit.prevent="submitSignup">
-              <v-text-field
-                v-model="name"
-                autocomplete="name"
-                density="comfortable"
-                label="Full name"
-                prepend-inner-icon="mdi-account-outline"
-                rounded="lg"
-                variant="outlined"
-              />
+              <v-text-field v-model="name" autocomplete="name" density="comfortable" label="Full name"
+                prepend-inner-icon="mdi-account-outline" rounded="lg" variant="outlined" />
 
-              <v-text-field
-                v-model="email"
-                autocomplete="email"
-                class="mt-1"
-                density="comfortable"
-                label="Email address"
-                prepend-inner-icon="mdi-email-outline"
-                rounded="lg"
-                type="email"
-                variant="outlined"
-              />
+              <v-text-field v-model="email" autocomplete="email" class="mt-1" density="comfortable"
+                label="Email address" prepend-inner-icon="mdi-email-outline" rounded="lg" type="email"
+                variant="outlined" />
 
-              <v-text-field
-                v-model="password"
+              <v-text-field v-model="password"
                 :append-inner-icon="showPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
-                autocomplete="new-password"
-                class="mt-1"
-                density="comfortable"
-                label="Password"
-                prepend-inner-icon="mdi-lock-outline"
-                rounded="lg"
-                :type="showPassword ? 'text' : 'password'"
-                variant="outlined"
-                @click:append-inner="showPassword = !showPassword"
-              />
+                autocomplete="new-password" class="mt-1" density="comfortable" label="Password"
+                prepend-inner-icon="mdi-lock-outline" rounded="lg" :type="showPassword ? 'text' : 'password'"
+                variant="outlined" @click:append-inner="showPassword = !showPassword" />
 
-              <v-text-field
-                v-model="confirmPassword"
+              <v-text-field v-model="confirmPassword"
                 :append-inner-icon="showConfirmPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
-                autocomplete="new-password"
-                class="mt-1"
-                density="comfortable"
-                label="Confirm password"
-                prepend-inner-icon="mdi-lock-check-outline"
-                rounded="lg"
-                :type="showConfirmPassword ? 'text' : 'password'"
-                variant="outlined"
-                @click:append-inner="showConfirmPassword = !showConfirmPassword"
-              />
+                autocomplete="new-password" class="mt-1" density="comfortable" label="Confirm password"
+                prepend-inner-icon="mdi-lock-check-outline" rounded="lg"
+                :type="showConfirmPassword ? 'text' : 'password'" variant="outlined"
+                @click:append-inner="showConfirmPassword = !showConfirmPassword" />
 
               <div class="form-meta">
                 <span>Minimum 6 characters</span>
@@ -118,16 +41,8 @@
                 <span>Secure signup flow</span>
               </div>
 
-              <v-btn
-                block
-                class="submit-btn mt-3"
-                :disabled="isSubmitDisabled"
-                :loading="appStore.loading"
-                rounded="pill"
-                size="large"
-                type="submit"
-                variant="flat"
-              >
+              <v-btn block class="submit-btn mt-3" :disabled="isSubmitDisabled" :loading="appStore.loading"
+                rounded="pill" size="large" type="submit" variant="flat">
                 Create Account
               </v-btn>
             </v-form>
@@ -145,95 +60,95 @@
 </template>
 
 <script>
-  import { computed, onMounted, ref, watch } from 'vue'
-  import { useRouter } from 'vue-router'
-  import BaseAlert from '@/components/BaseAlert.vue'
-  import { useAppStore } from '@/stores/app'
-  import { getAuthErrorMessage } from '@/utils/authErrors'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import BaseAlert from '@/components/BaseAlert.vue'
+import { useAppStore } from '@/stores/app'
+import { getAuthErrorMessage } from '@/utils/authErrors'
 
-  export default {
-    name: 'CreateAccount',
-    components: {
-      BaseAlert
-    },
-    setup() {
-      const appStore = useAppStore()
-      const router = useRouter()
-      const name = ref('')
-      const email = ref('')
-      const password = ref('')
-      const confirmPassword = ref('')
-      const showPassword = ref(false)
-      const showConfirmPassword = ref(false)
-      const errorMessage = ref('')
+export default {
+  name: 'CreateAccount',
+  components: {
+    BaseAlert
+  },
+  setup() {
+    const appStore = useAppStore()
+    const router = useRouter()
+    const name = ref('')
+    const email = ref('')
+    const password = ref('')
+    const confirmPassword = ref('')
+    const showPassword = ref(false)
+    const showConfirmPassword = ref(false)
+    const errorMessage = ref('')
 
-      const isSubmitDisabled = computed(() => {
-        return (
-          appStore.loading ||
-          !name.value.trim() ||
-          !email.value.trim() ||
-          !password.value ||
-          password.value.length < 6 ||
-          !confirmPassword.value
-        )
-      })
-
-      const redirectIfAuthenticated = () => {
-        if (appStore.isAuthenticated) {
-          router.replace('/')
-        }
-      }
-
-      onMounted(() => {
-        redirectIfAuthenticated()
-      })
-
-      watch(
-        () => appStore.isAuthenticated,
-        () => {
-          redirectIfAuthenticated()
-        },
+    const isSubmitDisabled = computed(() => {
+      return (
+        appStore.loading ||
+        !name.value.trim() ||
+        !email.value.trim() ||
+        !password.value ||
+        password.value.length < 6 ||
+        !confirmPassword.value
       )
+    })
 
-      const submitSignup = async () => {
-        errorMessage.value = ''
-
-        if (password.value !== confirmPassword.value) {
-          errorMessage.value = 'Passwords do not match.'
-          return
-        }
-
-        if (password.value.length < 6) {
-          errorMessage.value = 'Password must be at least 6 characters.'
-          return
-        }
-
-        try {
-          await appStore.createAccountWithEmail({
-            name: name.value,
-            email: email.value,
-            password: password.value
-          })
-          router.replace('/')
-        } catch (error) {
-          errorMessage.value = getAuthErrorMessage(error)
-        }
-      }
-
-      return {
-        appStore,
-        name,
-        email,
-        password,
-        confirmPassword,
-        showPassword,
-        showConfirmPassword,
-        errorMessage,
-        isSubmitDisabled,
-        submitSignup
+    const redirectIfAuthenticated = () => {
+      if (appStore.isAuthenticated) {
+        router.replace('/')
       }
     }
+
+    onMounted(() => {
+      redirectIfAuthenticated()
+    })
+
+    watch(
+      () => appStore.isAuthenticated,
+      () => {
+        redirectIfAuthenticated()
+      },
+    )
+
+    const submitSignup = async () => {
+      errorMessage.value = ''
+
+      if (password.value !== confirmPassword.value) {
+        errorMessage.value = 'Passwords do not match.'
+        return
+      }
+
+      if (password.value.length < 6) {
+        errorMessage.value = 'Password must be at least 6 characters.'
+        return
+      }
+
+      try {
+        await appStore.createAccountWithEmail({
+          name: name.value,
+          email: email.value,
+          password: password.value
+        })
+        router.replace('/')
+      } catch (error) {
+        errorMessage.value = getAuthErrorMessage(error)
+      }
+    }
+
+    return {
+      appStore,
+      name,
+      email,
+      password,
+      confirmPassword,
+      showPassword,
+      showConfirmPassword,
+      errorMessage,
+      isSubmitDisabled,
+      submitSignup
+    }
   }
+}
 </script>
 
 <style scoped>
@@ -287,7 +202,7 @@
 }
 
 .auth-shell {
-  min-height: 100vh;
+  min-height: 100vh !important;
   display: flex;
   align-items: center;
   position: relative;
@@ -414,8 +329,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: clamp(20px, 3.2vw, 40px);
-  background: linear-gradient(165deg, rgba(253, 254, 253, 0.95), rgba(244, 248, 246, 0.94));
+  background: linear-gradient(165deg, rgba(253, 254, 253, 0.95), rgba(244, 248, 246, 0.94)) !important;
 }
 
 .form-card {

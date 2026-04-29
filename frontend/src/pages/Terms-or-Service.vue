@@ -59,7 +59,7 @@
               <footer class="d-flex flex-column flex-sm-row justify-space-between align-center gap-4">
                 <div class="text-center text-sm-left">
                   <p class="text-subtitle-2 mb-0">Have questions about these terms?</p>
-                  <a class="text-primary text-decoration-none" href="https://mindstores.onrender.com/privacy">https://mindstores.onrender.com/</a>
+                  <router-link class="text-primary text-decoration-none" to="/privacy">View our Privacy Policy</router-link>
                 </div>
                 <v-btn
                   class="rounded-pill px-8"

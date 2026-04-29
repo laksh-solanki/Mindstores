@@ -180,10 +180,10 @@
             <v-card-actions class="summary-actions">
               <v-btn
                 block
-                class="pay-btn border"
+                variant="flat"
                 color="primary"
                 :loading="submitting"
-                rounded="pill"
+                rounded="lg"
                 size="large"
                 @click="submitPayment"
               >
@@ -191,11 +191,11 @@
               </v-btn>
 
               <v-btn
-                class="payment-cancel-btn border"
+                block
                 color="error"
-                rounded="xl"
+                rounded="lg"
                 size="large"
-                variant="outlined"
+                variant="plain"
                 @click="cancelPayment"
               >
                 Cancel Payment
@@ -234,6 +234,7 @@
   import { useRoute, useRouter } from 'vue-router'
   import BaseAlert from '@/components/BaseAlert.vue'
   import { useCartStore } from '@/stores/cart'
+  import { API_URL } from '@/utils/api'
   import { useCurrency } from '@/utils/currency'
   const PROMO_CODES = [
     {
@@ -289,8 +290,6 @@
         cvv: '',
         upiId: '',
       })
-
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
       const selectedItems = computed(() => {
         return cartStore.items
@@ -474,7 +473,6 @@
 }
 
 .payment-subtitle {
-  margin: 10px auto 0;
   max-width: 620px;
   color: #61737a;
   line-height: 1.7;
@@ -482,12 +480,6 @@
 
 .payment-hero-actions {
   margin-top: 10px;
-}
-
-.payment-cancel-btn {
-  text-transform: none;
-  color: #50656d;
-  border-color: #c7b3b3;
 }
 
 .payment-row {
@@ -636,13 +628,6 @@
   padding: 12px 20px 22px;
   display: flex;
   flex-direction: column;
-}
-
-.pay-btn {
-  text-transform: none;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  box-shadow: 0 12px 24px rgba(198, 115, 42, 0.25);
 }
 
 .empty-row {

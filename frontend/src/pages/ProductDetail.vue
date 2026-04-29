@@ -193,9 +193,8 @@
   import BaseAlert from '@/components/BaseAlert.vue'
   import { useAppStore } from '@/stores/app'
   import { useCartStore } from '@/stores/cart'
+  import { API_URL } from '@/utils/api'
   import { useCurrency } from '@/utils/currency'
-
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
   const route = useRoute()
   const router = useRouter()

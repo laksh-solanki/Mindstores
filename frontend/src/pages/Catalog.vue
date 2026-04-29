@@ -16,7 +16,7 @@
       </section>
 
       <v-row v-if="catalogEntry" class="catalog-layout">
-        <v-col cols="12" md="4" lg="3">
+        <v-col cols="12" lg="3" md="4">
           <aside class="filter-panel">
             <div class="filter-head">
               <h3>Filters</h3>
@@ -78,16 +78,16 @@
               class="filter-control"
               density="comfortable"
               hide-details
-              :items="sortOptions"
               item-title="label"
               item-value="value"
+              :items="sortOptions"
               label="Sort By"
               variant="outlined"
             />
           </aside>
         </v-col>
 
-        <v-col cols="12" md="8" lg="9">
+        <v-col cols="12" lg="9" md="8">
           <div class="results-head">
             <p class="result-label">{{ resultsLabel }}</p>
             <v-chip
@@ -101,7 +101,13 @@
           </div>
 
           <v-row v-if="loading">
-            <v-col v-for="n in 8" :key="n" cols="12" lg="4" sm="6">
+            <v-col
+              v-for="n in 8"
+              :key="n"
+              cols="12"
+              lg="4"
+              sm="6"
+            >
               <v-skeleton-loader class="result-skeleton" type="image, article" />
             </v-col>
           </v-row>
@@ -157,10 +163,9 @@
   import axios from 'axios'
   import { computed, onUnmounted, reactive, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
-  import { resolveCatalogRoute } from '@/constants/catalogMenu'
+  import { API_URL } from '@/utils/api'
+  import { resolveCatalogEntryFromProducts } from '@/utils/catalog'
   import { useCurrency } from '@/utils/currency'
-
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
   const route = useRoute()
   const router = useRouter()
@@ -169,6 +174,7 @@
   const loadingSource = ref(false)
   const loadingProducts = ref(false)
   const loading = computed(() => loadingSource.value || loadingProducts.value)
+  const catalogEntry = ref(null)
   const products = ref([])
   const sourceProducts = ref([])
   const totalItems = ref(0)
@@ -195,7 +201,6 @@
 
   let filterFetchTimer = null
 
-  const catalogEntry = computed(() => resolveCatalogRoute(route.params.category, route.params.subcategory))
   const pageTitle = computed(() => {
     if (!catalogEntry.value) return 'Catalog'
     return `${catalogEntry.value.category.label} / ${catalogEntry.value.item.name}`
@@ -205,7 +210,7 @@
     for (const product of sourceProducts.value) {
       companies.add(getCompanyLabel(product))
     }
-    return ['All', ...Array.from(companies).filter(Boolean).sort((a, b) => a.localeCompare(b))]
+    return ['All', ...Array.from(companies).filter(Boolean).toSorted((a, b) => a.localeCompare(b))]
   })
   const resultsLabel = computed(() => {
     if (totalItems.value <= 0) return '0 items'
@@ -228,25 +233,46 @@
   }
 
   async function fetchSourceProducts() {
-    if (!catalogEntry.value) {
-      sourceProducts.value = []
-      products.value = []
-      return
-    }
-
     const requestId = ++sourceRequestVersion.value
     loadingSource.value = true
     try {
       const response = await axios.get(`${API_URL}/api/products`, {
         params: {
-          ...buildCategoryQuery(),
           limit: 250,
           sort: 'newest',
         },
       })
 
       if (requestId !== sourceRequestVersion.value) return
-      sourceProducts.value = Array.isArray(response.data) ? response.data : []
+      const allProducts = Array.isArray(response.data) ? response.data : []
+      const nextCatalogEntry = resolveCatalogEntryFromProducts(
+        allProducts,
+        route.params.category,
+        route.params.subcategory,
+      )
+
+      if (!nextCatalogEntry) {
+        catalogEntry.value = null
+        sourceProducts.value = []
+        products.value = []
+        totalItems.value = 0
+        totalPages.value = 1
+        currentPage.value = 1
+        return
+      }
+
+      catalogEntry.value = nextCatalogEntry
+      if (route.path !== nextCatalogEntry.canonicalPath) {
+        router.replace(nextCatalogEntry.canonicalPath)
+        return
+      }
+
+      sourceProducts.value = allProducts.filter((product) => {
+        return (
+          product?.category === nextCatalogEntry.category.apiCategory &&
+          product?.subcategory === nextCatalogEntry.item.apiSubcategory
+        )
+      })
 
       if (sourceProducts.value.length === 0) {
         priceBounds.value = { min: 0, max: 0 }
@@ -270,6 +296,7 @@
     } catch (error) {
       if (requestId !== sourceRequestVersion.value) return
       console.error('Failed to fetch source products:', error)
+      catalogEntry.value = null
       sourceProducts.value = []
       products.value = []
       totalItems.value = 0
@@ -375,21 +402,6 @@
   watch(
     () => [route.params.category, route.params.subcategory],
     async () => {
-      const currentEntry = catalogEntry.value
-      if (!currentEntry) {
-        products.value = []
-        sourceProducts.value = []
-        totalItems.value = 0
-        totalPages.value = 1
-        currentPage.value = 1
-        return
-      }
-
-      if (route.path !== currentEntry.canonicalPath) {
-        router.replace(currentEntry.canonicalPath)
-        return
-      }
-
       await fetchSourceProducts()
     },
     { immediate: true },

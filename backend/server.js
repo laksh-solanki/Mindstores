@@ -47,7 +47,7 @@ const enforceOriginCheck = parseBooleanEnv(
 const mutationRateLimitMax = Number.parseInt(process.env.MUTATION_RATE_LIMIT_MAX || "120", 10);
 
 const createSessionToken = () => randomBytes(32).toString("base64url");
-const hashSessionToken = (token) => createHash("sha256").update(String(token)).digest("hex");
+const hashSessionToken = async (token) => createHash("sha256").update(String(token)).digest("hex");
 
 try {
   const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
@@ -72,7 +72,7 @@ const fastify = Fastify({
 const configuredCorsOrigins =
   process.env.CORS_ORIGIN ||
   process.env.CORS_ORIGINS ||
-  "http://localhost:3000,http://localhost:5173,https://mindstores.onrender.com";
+  "http://localhost:3000,http://localhost:5173,https://mindstores.vercel.app,https://mindstores.onrender.com";
 
 const allowedOrigins = configuredCorsOrigins
   .split(",")
@@ -185,7 +185,7 @@ const getCurrentUser = async (request) => {
   if (!token) return null;
 
   const db = fastify.mongo.db;
-  const tokenHash = hashSessionToken(token);
+  const tokenHash = await hashSessionToken(token);
   const session = await db
     .collection("user_sessions")
     .findOne({

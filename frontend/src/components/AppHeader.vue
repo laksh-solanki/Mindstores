@@ -18,38 +18,38 @@
               </v-btn>
             </template>
 
-            <v-list density="compact" min-width="280">
-              <template v-for="category in categoryDropdown" :key="category.key">
-                <v-list-subheader>{{ category.label }}</v-list-subheader>
-                <v-list-item
-                  v-for="item in category.items"
-                  :key="item.key"
-                  :prepend-icon="item.icon"
-                  :title="item.name"
-                  @click="openCatalogItem(category.key, item.key)"
-                />
-              </template>
+            <v-list density="compact">
+              <v-list-item v-for="category in categoryDropdown" :key="category.key">
+                <v-menu activator="parent" open-on-hover submenu>
+                  <template #activator="{ props }">
+                    <v-list-item
+                      v-bind="props"
+                      append-icon="mdi-menu-right"
+                      :prepend-icon="category.icon"
+                      :title="category.label"
+                    />
+                  </template>
+                  <v-list density="compact" min-width="200">
+                    <v-list-item
+                      v-for="item in category.items"
+                      :key="item.key"
+                      :title="item.name"
+                      @click="openCatalogItem(category.key, item.key)"
+                    />
+                  </v-list>
+                </v-menu>
+              </v-list-item>
             </v-list>
           </v-menu>
 
-          <v-btn class="cart-btn" to="/cart" variant="text">
+          <v-btn class="cart-btn" to="/cart" variant="flat">
             Cart
-            <v-badge
-              v-if="cartStore.itemCount > 0"
-              color="primary"
-              :content="cartStore.itemCount"
-              inline
-            />
+            <v-badge v-if="cartStore.itemCount > 0" color="primary" :content="cartStore.itemCount" inline />
           </v-btn>
         </div>
 
         <div class="d-flex align-center ga-1">
-          <v-btn
-            v-if="appStore.isAuthenticated"
-            icon
-            to="/profile"
-            variant="text"
-          >
+          <v-btn v-if="appStore.isAuthenticated" icon to="/profile" variant="text">
             <v-avatar v-if="profileImage" :image="profileImage" size="32" />
             <v-icon v-else>mdi-account-circle</v-icon>
           </v-btn>
@@ -80,36 +80,25 @@
       </v-container>
     </v-app-bar>
 
-    <v-navigation-drawer
-      v-model="isMobileMenuOpen"
-      location="right"
-      temporary
-      width="290"
-    >
+    <v-navigation-drawer v-model="isMobileMenuOpen" location="right" temporary width="290">
       <v-list density="comfortable" nav>
         <v-list-item prepend-icon="mdi-home-outline" title="Home" to="/" @click="closeMobileMenu" />
-        <v-list-group value="categories">
+
+        <v-list-group v-for="category in categoryDropdown" :key="category.key" :value="category.key">
           <template #activator="{ props }">
-            <v-list-item v-bind="props" prepend-icon="mdi-shape-outline" title="Categories" />
+            <v-list-item v-bind="props" :prepend-icon="category.icon" :title="category.label" />
           </template>
-          <template v-for="category in categoryDropdown" :key="`mobile-${category.key}`">
-            <v-list-subheader>{{ category.label }}</v-list-subheader>
-            <v-list-item
-              v-for="item in category.items"
-              :key="`mobile-${category.key}-${item.key}`"
-              :prepend-icon="item.icon"
-              :title="item.name"
-              @click="openCatalogItemFromMobile(category.key, item.key)"
-            />
-          </template>
+          <v-list-item
+            v-for="item in category.items"
+            :key="item.key"
+            :title="item.name"
+            @click="openCatalogItemFromMobile(category.key, item.key)"
+          />
         </v-list-group>
+
         <v-list-item prepend-icon="mdi-cart-outline" title="Cart" to="/cart" @click="closeMobileMenu">
           <template #append>
-            <v-badge
-              v-if="cartStore.itemCount > 0"
-              color="primary"
-              :content="cartStore.itemCount"
-            />
+            <v-badge v-if="cartStore.itemCount > 0" color="primary" :content="cartStore.itemCount" />
           </template>
         </v-list-item>
         <v-list-item
@@ -139,11 +128,13 @@
 </template>
 
 <script setup>
-  import { computed, ref, watch } from 'vue'
+  import axios from 'axios'
+  import { computed, onMounted, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
-  import { CATALOG_MENU } from '@/constants/catalogMenu'
   import { useAppStore } from '@/stores/app'
   import { useCartStore } from '@/stores/cart'
+  import { API_URL } from '@/utils/api'
+  import { buildCatalogEntries } from '@/utils/catalog'
 
   const route = useRoute()
   const router = useRouter()
@@ -151,30 +142,49 @@
   const cartStore = useCartStore()
 
   const isMobileMenuOpen = ref(false)
-  const categoryDropdown = CATALOG_MENU
+  const categoryDropdown = ref([])
+
   const isAuthPage = computed(() => ['/login', '/create-account'].includes(route.path))
   const profileImage = computed(() =>
     appStore.user?.picture || appStore.user?.photoURL || appStore.user?.photo_url || null,
   )
   const canAccessAdmin = computed(() => Boolean(appStore.user?.is_admin))
 
-  const toggleMobileMenu = () => {
+  async function loadCategoryDropdown() {
+    try {
+      const response = await axios.get(`${API_URL}/api/products`, {
+        params: {
+          limit: 250,
+          sort: 'name_asc',
+        },
+        timeout: 10_000,
+      })
+      categoryDropdown.value = buildCatalogEntries(
+        Array.isArray(response.data) ? response.data : [],
+      )
+    } catch (error) {
+      console.error('Failed to load category menu:', error)
+      categoryDropdown.value = []
+    }
+  }
+
+  function toggleMobileMenu () {
     isMobileMenuOpen.value = !isMobileMenuOpen.value
   }
 
-  const closeMobileMenu = () => {
+  function closeMobileMenu () {
     isMobileMenuOpen.value = false
   }
 
-  const openCatalogItem = (categoryKey, itemKey) => {
-    const targetCategory = categoryDropdown.find((category) => category.key === categoryKey)
+  function openCatalogItem (categoryKey, itemKey) {
+    const targetCategory = categoryDropdown.value.find((category) => category.key === categoryKey)
     const targetItem = targetCategory?.items.find((item) => item.key === itemKey)
     if (!targetCategory || !targetItem) return
     closeMobileMenu()
     router.push(`/${targetCategory.key}/${targetItem.key}`)
   }
 
-  const openCatalogItemFromMobile = (categoryKey, itemKey) => {
+  function openCatalogItemFromMobile (categoryKey, itemKey) {
     openCatalogItem(categoryKey, itemKey)
   }
 
@@ -184,6 +194,10 @@
       closeMobileMenu()
     },
   )
+
+  onMounted(() => {
+    loadCategoryDropdown()
+  })
 </script>
 
 <style scoped>

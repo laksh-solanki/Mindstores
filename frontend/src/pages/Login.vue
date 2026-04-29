@@ -4,51 +4,9 @@
     <div class="bg-shape shape-b" />
     <div class="bg-grid" />
 
-    <v-container class="auth-shell">
-      <v-row class="auth-frame" no-gutters>
-        <v-col class="auth-visual" cols="12" lg="7">
-          <div class="visual-overlay" />
-          <div class="visual-content">
-            <div class="brand-chip">
-              <v-img alt="logo" class="brand-mark" src="../assets/logo.svg" />
-              <span>Mindstore Lounge</span>
-            </div>
-
-            <p class="visual-kicker">Members Area</p>
-            <h1 class="visual-title">Log in to your premium shopping control room.</h1>
-            <p class="visual-copy">
-              Keep every order, payment detail, and wishlist synced in one place with a secure session.
-            </p>
-
-            <div class="insight-grid">
-              <article class="insight-card">
-                <v-icon size="18">mdi-shield-lock-outline</v-icon>
-                <div>
-                  <h3>Protected Access</h3>
-                  <p>Encrypted sign in for account privacy.</p>
-                </div>
-              </article>
-
-              <article class="insight-card">
-                <v-icon size="18">mdi-package-variant-closed-check</v-icon>
-                <div>
-                  <h3>Order Timeline</h3>
-                  <p>Track active and delivered orders quickly.</p>
-                </div>
-              </article>
-
-              <article class="insight-card">
-                <v-icon size="18">mdi-lightning-bolt-outline</v-icon>
-                <div>
-                  <h3>Faster Checkout</h3>
-                  <p>Saved details unlock smooth repeat purchases.</p>
-                </div>
-              </article>
-            </div>
-          </div>
-        </v-col>
-
-        <v-col class="auth-main" cols="12" lg="5">
+    <v-container class="auth-shell" fluid>
+      <v-row no-gutters>
+        <v-col class="auth-main pa-3" cols="12" lg="5" align="center" justify="center">
           <div class="form-card">
             <p class="form-kicker">Account Login</p>
             <h2 class="form-title">Welcome back</h2>
@@ -98,7 +56,7 @@
                 class="submit-btn mt-3"
                 :disabled="isSubmitDisabled"
                 :loading="appStore.loading"
-                rounded="pill"
+                rounded="lg"
                 size="large"
                 type="submit"
                 variant="flat"
@@ -231,35 +189,15 @@
     linear-gradient(rgba(18, 44, 49, 0.08) 1px, transparent 1px),
     linear-gradient(90deg, rgba(18, 44, 49, 0.08) 1px, transparent 1px);
   background-size: 50px 50px;
-  mask-image: radial-gradient(circle at 50% 40%, #000 36%, transparent 88%);
+  mask-image: radial-gradient(circle at 50% 40%, #000 36%, transparent 88%) !important;
 }
 
 .auth-shell {
-  min-height: 100vh;
+  min-height: 100vh !important;
   display: flex;
   align-items: center;
   position: relative;
   z-index: 1;
-  padding-top: 22px;
-  padding-bottom: 22px;
-}
-
-.auth-frame {
-  width: 100%;
-  border: 1px solid #d3deda;
-  border-radius: 28px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.78);
-  box-shadow: 0 26px 60px rgba(18, 40, 45, 0.14);
-  backdrop-filter: blur(10px);
-}
-
-.auth-visual {
-  position: relative;
-  color: #f4efe8;
-  background:
-    linear-gradient(152deg, rgba(11, 29, 33, 0.94), rgba(19, 47, 53, 0.92)),
-    radial-gradient(circle at 20% 20%, rgba(227, 180, 130, 0.3), rgba(227, 180, 130, 0));
 }
 
 .visual-overlay {
@@ -267,7 +205,7 @@
   inset: 0;
   background:
     radial-gradient(circle at 86% 12%, rgba(225, 170, 108, 0.3), rgba(225, 170, 108, 0)),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 35%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 35%) !important;
 }
 
 .visual-content {
@@ -362,8 +300,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: clamp(20px, 3.2vw, 40px);
-  background: linear-gradient(165deg, rgba(253, 254, 253, 0.95), rgba(244, 248, 246, 0.94));
+  background: linear-gradient(165deg, rgba(230, 226, 226, 0.95), rgba(244, 248, 246, 0.94)) !important;
 }
 
 .form-card {
@@ -371,7 +308,7 @@
   max-width: 430px;
   border: 1px solid var(--login-border);
   border-radius: 20px;
-  background: #ffffff;
+  background: #ff0000;
   padding: clamp(20px, 3vw, 30px);
   box-shadow: 0 14px 34px rgba(24, 43, 49, 0.1);
   animation: reveal-up 0.65s ease;

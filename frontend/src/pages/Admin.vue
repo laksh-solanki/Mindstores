@@ -247,6 +247,7 @@
   import { useDisplay } from "vuetify";
   import BaseAlert from "@/components/BaseAlert.vue";
   import { useAppStore } from "@/stores/app";
+  import { API_URL } from "@/utils/api";
 
   const CATEGORY_OPTIONS_BASE = ["Electronics", "Furniture", "Clothing"];
   const SUBCATEGORY_OPTIONS_BY_CATEGORY = {
@@ -303,7 +304,6 @@
         { title: "Actions", key: "actions", sortable: false },
       ];
 
-      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
       const normalizeText = (value) =>
         value == null ? "" : String(value).trim();
       const normalizeCategoryName = (value) => {

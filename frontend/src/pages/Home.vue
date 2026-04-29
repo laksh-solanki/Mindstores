@@ -211,6 +211,7 @@
   import BaseAlert from '@/components/BaseAlert.vue'
   import { useAppStore } from '@/stores/app'
   import { useCartStore } from '@/stores/cart'
+  import { API_URL } from '@/utils/api'
   import { useCurrency } from '@/utils/currency'
 
   const CATEGORY_PRIORITY = ['Electronics', 'Furniture', 'Clothing']
@@ -316,8 +317,6 @@
       const selectedCategory = ref('All')
       const productsSection = ref(null)
       const storiesSection = ref(null)
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-
       const normalizeCategory = (category) => {
         const value = (category || '').toString().trim()
         if (!value) return 'Other'

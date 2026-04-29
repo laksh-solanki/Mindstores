@@ -7,6 +7,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
+    "worker:dev": "wrangler dev worker.js",
+    "deploy": "wrangler deploy worker.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -17,10 +19,14 @@
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.2.0",
     "@fastify/mongodb": "^10.0.0",
+    "cookie": "^1.0.2",
     "dotenv": "^17.3.1",
     "fastify": "^5.7.4",
     "firebase-admin": "^13.6.1",
     "mongodb": "^7.1.0",
     "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.86.0"
   }
 }

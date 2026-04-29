@@ -12,6 +12,7 @@ import { defineStore } from "pinia";
 // Import initialized firebase app
 import { app as firebaseApp } from "@/plugins/firebase";
 
+import { API_URL } from "@/utils/api";
 import {
   getCurrencyForCountry,
   loadUserSettings,
@@ -23,9 +24,6 @@ const AUTH_REQUEST_TIMEOUT_MS = 20_000;
 const AUTH_REQUEST_RETRIES = 1;
 let backendSessionPromise = null;
 let backendSessionUid = null;
-
-// REFIX: Define API_URL to connect to Fastify Backend (Port 8000)
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 function extractCountryCodeFromLocale(locale = "") {
   if (typeof locale !== "string") {

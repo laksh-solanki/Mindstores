@@ -184,7 +184,7 @@ export default async function registerAuthRoutes(fastify, deps) {
 
       await db.collection("user_sessions").insertOne({
         user_id: userId,
-        session_token_hash: hashSessionToken(sessionToken),
+        session_token_hash: await hashSessionToken(sessionToken),
         expires_at: expiresAt,
         created_at: new Date(),
         user_agent: request.headers["user-agent"] || null,
@@ -289,7 +289,7 @@ export default async function registerAuthRoutes(fastify, deps) {
 
     const token = getSessionTokenFromRequest(request);
     if (token) {
-      const sessionTokenHash = hashSessionToken(token);
+      const sessionTokenHash = await hashSessionToken(token);
       await fastify.mongo.db
         .collection("user_sessions")
         .deleteMany({
