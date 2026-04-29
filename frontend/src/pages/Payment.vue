@@ -180,11 +180,11 @@
             <v-card-actions class="summary-actions">
               <v-btn
                 block
-                variant="flat"
                 color="primary"
                 :loading="submitting"
                 rounded="lg"
                 size="large"
+                variant="flat"
                 @click="submitPayment"
               >
                 Pay {{ formatAmount(payableAmount) }}

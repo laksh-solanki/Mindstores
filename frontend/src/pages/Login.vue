@@ -6,7 +6,13 @@
 
     <v-container class="auth-shell" fluid>
       <v-row no-gutters>
-        <v-col class="auth-main pa-3" cols="12" lg="5" align="center" justify="center">
+        <v-col
+          align="center"
+          class="auth-main pa-3"
+          cols="12"
+          justify="center"
+          lg="5"
+        >
           <div class="form-card">
             <p class="form-kicker">Account Login</p>
             <h2 class="form-title">Welcome back</h2>

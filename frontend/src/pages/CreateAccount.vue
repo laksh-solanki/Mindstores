@@ -15,25 +15,55 @@
             <BaseAlert v-if="errorMessage" class="mt-3" :message="errorMessage" type="error" />
 
             <v-form class="mt-4" @submit.prevent="submitSignup">
-              <v-text-field v-model="name" autocomplete="name" density="comfortable" label="Full name"
-                prepend-inner-icon="mdi-account-outline" rounded="lg" variant="outlined" />
+              <v-text-field
+                v-model="name"
+                autocomplete="name"
+                density="comfortable"
+                label="Full name"
+                prepend-inner-icon="mdi-account-outline"
+                rounded="lg"
+                variant="outlined"
+              />
 
-              <v-text-field v-model="email" autocomplete="email" class="mt-1" density="comfortable"
-                label="Email address" prepend-inner-icon="mdi-email-outline" rounded="lg" type="email"
-                variant="outlined" />
+              <v-text-field
+                v-model="email"
+                autocomplete="email"
+                class="mt-1"
+                density="comfortable"
+                label="Email address"
+                prepend-inner-icon="mdi-email-outline"
+                rounded="lg"
+                type="email"
+                variant="outlined"
+              />
 
-              <v-text-field v-model="password"
+              <v-text-field
+                v-model="password"
                 :append-inner-icon="showPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
-                autocomplete="new-password" class="mt-1" density="comfortable" label="Password"
-                prepend-inner-icon="mdi-lock-outline" rounded="lg" :type="showPassword ? 'text' : 'password'"
-                variant="outlined" @click:append-inner="showPassword = !showPassword" />
+                autocomplete="new-password"
+                class="mt-1"
+                density="comfortable"
+                label="Password"
+                prepend-inner-icon="mdi-lock-outline"
+                rounded="lg"
+                :type="showPassword ? 'text' : 'password'"
+                variant="outlined"
+                @click:append-inner="showPassword = !showPassword"
+              />
 
-              <v-text-field v-model="confirmPassword"
+              <v-text-field
+                v-model="confirmPassword"
                 :append-inner-icon="showConfirmPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
-                autocomplete="new-password" class="mt-1" density="comfortable" label="Confirm password"
-                prepend-inner-icon="mdi-lock-check-outline" rounded="lg"
-                :type="showConfirmPassword ? 'text' : 'password'" variant="outlined"
-                @click:append-inner="showConfirmPassword = !showConfirmPassword" />
+                autocomplete="new-password"
+                class="mt-1"
+                density="comfortable"
+                label="Confirm password"
+                prepend-inner-icon="mdi-lock-check-outline"
+                rounded="lg"
+                :type="showConfirmPassword ? 'text' : 'password'"
+                variant="outlined"
+                @click:append-inner="showConfirmPassword = !showConfirmPassword"
+              />
 
               <div class="form-meta">
                 <span>Minimum 6 characters</span>
@@ -41,8 +71,16 @@
                 <span>Secure signup flow</span>
               </div>
 
-              <v-btn block class="submit-btn mt-3" :disabled="isSubmitDisabled" :loading="appStore.loading"
-                rounded="pill" size="large" type="submit" variant="flat">
+              <v-btn
+                block
+                class="submit-btn mt-3"
+                :disabled="isSubmitDisabled"
+                :loading="appStore.loading"
+                rounded="pill"
+                size="large"
+                type="submit"
+                variant="flat"
+              >
                 Create Account
               </v-btn>
             </v-form>
@@ -60,95 +98,95 @@
 </template>
 
 <script>
-import { computed, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import BaseAlert from '@/components/BaseAlert.vue'
-import { useAppStore } from '@/stores/app'
-import { getAuthErrorMessage } from '@/utils/authErrors'
+  import { computed, onMounted, ref, watch } from 'vue'
+  import { useRouter } from 'vue-router'
+  import BaseAlert from '@/components/BaseAlert.vue'
+  import { useAppStore } from '@/stores/app'
+  import { getAuthErrorMessage } from '@/utils/authErrors'
 
-export default {
-  name: 'CreateAccount',
-  components: {
-    BaseAlert
-  },
-  setup() {
-    const appStore = useAppStore()
-    const router = useRouter()
-    const name = ref('')
-    const email = ref('')
-    const password = ref('')
-    const confirmPassword = ref('')
-    const showPassword = ref(false)
-    const showConfirmPassword = ref(false)
-    const errorMessage = ref('')
+  export default {
+    name: 'CreateAccount',
+    components: {
+      BaseAlert
+    },
+    setup() {
+      const appStore = useAppStore()
+      const router = useRouter()
+      const name = ref('')
+      const email = ref('')
+      const password = ref('')
+      const confirmPassword = ref('')
+      const showPassword = ref(false)
+      const showConfirmPassword = ref(false)
+      const errorMessage = ref('')
 
-    const isSubmitDisabled = computed(() => {
-      return (
-        appStore.loading ||
-        !name.value.trim() ||
-        !email.value.trim() ||
-        !password.value ||
-        password.value.length < 6 ||
-        !confirmPassword.value
-      )
-    })
+      const isSubmitDisabled = computed(() => {
+        return (
+          appStore.loading ||
+          !name.value.trim() ||
+          !email.value.trim() ||
+          !password.value ||
+          password.value.length < 6 ||
+          !confirmPassword.value
+        )
+      })
 
-    const redirectIfAuthenticated = () => {
-      if (appStore.isAuthenticated) {
-        router.replace('/')
+      const redirectIfAuthenticated = () => {
+        if (appStore.isAuthenticated) {
+          router.replace('/')
+        }
       }
-    }
 
-    onMounted(() => {
-      redirectIfAuthenticated()
-    })
-
-    watch(
-      () => appStore.isAuthenticated,
-      () => {
+      onMounted(() => {
         redirectIfAuthenticated()
-      },
-    )
+      })
 
-    const submitSignup = async () => {
-      errorMessage.value = ''
+      watch(
+        () => appStore.isAuthenticated,
+        () => {
+          redirectIfAuthenticated()
+        },
+      )
 
-      if (password.value !== confirmPassword.value) {
-        errorMessage.value = 'Passwords do not match.'
-        return
+      const submitSignup = async () => {
+        errorMessage.value = ''
+
+        if (password.value !== confirmPassword.value) {
+          errorMessage.value = 'Passwords do not match.'
+          return
+        }
+
+        if (password.value.length < 6) {
+          errorMessage.value = 'Password must be at least 6 characters.'
+          return
+        }
+
+        try {
+          await appStore.createAccountWithEmail({
+            name: name.value,
+            email: email.value,
+            password: password.value
+          })
+          router.replace('/')
+        } catch (error) {
+          errorMessage.value = getAuthErrorMessage(error)
+        }
       }
 
-      if (password.value.length < 6) {
-        errorMessage.value = 'Password must be at least 6 characters.'
-        return
+      return {
+        appStore,
+        name,
+        email,
+        password,
+        confirmPassword,
+        showPassword,
+        showConfirmPassword,
+        errorMessage,
+        isSubmitDisabled,
+        submitSignup
       }
-
-      try {
-        await appStore.createAccountWithEmail({
-          name: name.value,
-          email: email.value,
-          password: password.value
-        })
-        router.replace('/')
-      } catch (error) {
-        errorMessage.value = getAuthErrorMessage(error)
-      }
-    }
-
-    return {
-      appStore,
-      name,
-      email,
-      password,
-      confirmPassword,
-      showPassword,
-      showConfirmPassword,
-      errorMessage,
-      isSubmitDisabled,
-      submitSignup
     }
   }
-}
 </script>
 
 <style scoped>

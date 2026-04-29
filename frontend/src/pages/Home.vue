@@ -150,12 +150,12 @@
                 <div class="collection-meta">
                   <span class="collection-price">{{ formatAmount(product.price) }}</span>
                   <v-btn
+                    prepend-icon="mdi-cart-plus"
                     rounded="pill"
                     size="small"
-                    variant="outlined"
-                    prepend-icon="mdi-cart-plus"
-                    @click.stop="quickAddToCart(product.product_id)"
                     text="Add"
+                    variant="outlined"
+                    @click.stop="quickAddToCart(product.product_id)"
                   />
                 </div>
               </v-card-text>

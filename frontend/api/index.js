@@ -42,7 +42,7 @@ function buildForwardHeaders(req) {
 
     if (Array.isArray(value)) {
       for (const item of value) {
-        if (item != null) headers.append(key, String(item))
+        if (item != null) {headers.append(key, String(item))}
       }
       continue
     }
@@ -60,9 +60,9 @@ async function readBody(req) {
     return undefined
   }
 
-  if (req.body == null) return undefined
-  if (Buffer.isBuffer(req.body) || typeof req.body === 'string') return req.body
-  if (req.body instanceof Uint8Array) return Buffer.from(req.body)
+  if (req.body == null) {return undefined}
+  if (Buffer.isBuffer(req.body) || typeof req.body === 'string') {return req.body}
+  if (req.body instanceof Uint8Array) {return Buffer.from(req.body)}
   return JSON.stringify(req.body)
 }
 
@@ -85,7 +85,7 @@ export default async function handler(req, res) {
     res.setHeader('x-proxy-target', targetUrl.toString())
 
     for (const [key, value] of upstreamResponse.headers.entries()) {
-      if (key.toLowerCase() === 'set-cookie') continue
+      if (key.toLowerCase() === 'set-cookie') {continue}
       res.setHeader(key, value)
     }
 

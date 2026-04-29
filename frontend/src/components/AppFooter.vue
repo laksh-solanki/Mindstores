@@ -1,5 +1,5 @@
 <template>
-  <v-footer class="bg-surface" border>
+  <v-footer border class="bg-surface">
     <v-container class="footer-container">
       <div class="footer-row">
         <div>

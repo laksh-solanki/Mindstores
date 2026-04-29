@@ -15,7 +15,13 @@
             </div>
             <p class="empty-title">Your cart is currently empty</p>
             <p class="empty-copy">Explore our latest collection and add products you love.</p>
-            <v-btn class="empty-cta" color="primary" rounded="pill" size="large" @click="$router.push('/')">
+            <v-btn
+              class="empty-cta"
+              color="primary"
+              rounded="pill"
+              size="large"
+              @click="$router.push('/')"
+            >
               Continue Shopping
             </v-btn>
           </div>
@@ -29,42 +35,82 @@
             <span>{{ cartStore.items.length }} items</span>
           </div>
 
-          <v-card v-for="item in cartStore.items" :key="item.product_id" class="cart-item-card border"
-            variant="elevated">
+          <v-card
+            v-for="item in cartStore.items"
+            :key="item.product_id"
+            class="cart-item-card border"
+            variant="elevated"
+          >
             <v-row no-gutters>
               <v-col cols="12" md="3" sm="4">
-                <div class="cart-item-image-wrapper is-clickable " role="button" tabindex="0"
-                  @click="goToProduct(item.product_id)" @keyup.enter="goToProduct(item.product_id)">
-                  <v-img v-if="cartStore.products[item.product_id]" :alt="cartStore.products[item.product_id].name"
-                    class="cart-item-image" :src="cartStore.products[item.product_id].image_url" />
+                <div
+                  class="cart-item-image-wrapper is-clickable "
+                  role="button"
+                  tabindex="0"
+                  @click="goToProduct(item.product_id)"
+                  @keyup.enter="goToProduct(item.product_id)"
+                >
+                  <v-img
+                    v-if="cartStore.products[item.product_id]"
+                    :alt="cartStore.products[item.product_id].name"
+                    class="cart-item-image"
+                    :src="cartStore.products[item.product_id].image_url"
+                  />
                 </div>
               </v-col>
               <v-col cols="12" md="9" sm="8">
                 <v-card-text class="item-content">
                   <div class="item-main-row">
                     <div class="item-check-wrap">
-                      <v-checkbox v-model="selectedProductIds" class="item-check" color="primary" density="compact"
-                        hide-details :value="item.product_id" />
+                      <v-checkbox
+                        v-model="selectedProductIds"
+                        class="item-check"
+                        color="primary"
+                        density="compact"
+                        hide-details
+                        :value="item.product_id"
+                      />
                       <div>
-                        <h3 class="cart-item-name is-clickable" role="button" tabindex="0"
-                          @click="goToProduct(item.product_id)" @keyup.enter="goToProduct(item.product_id)">
+                        <h3
+                          class="cart-item-name is-clickable"
+                          role="button"
+                          tabindex="0"
+                          @click="goToProduct(item.product_id)"
+                          @keyup.enter="goToProduct(item.product_id)"
+                        >
                           {{ cartStore.products[item.product_id]?.name }}
                         </h3>
                         <p class="cart-item-price">
                           {{ formatAmount(cartStore.products[item.product_id]?.price) }}
                         </p>
                         <div class="cart-item-quantity">
-                          <v-btn :disabled="item.quantity <= 1 || isQuantityUpdating(item.product_id)" slim
-                            icon="mdi-minus" size="small" variant="outlined" @click="changeQuantity(item, -1)" />
+                          <v-btn
+                            :disabled="item.quantity <= 1 || isQuantityUpdating(item.product_id)"
+                            icon="mdi-minus"
+                            size="small"
+                            slim
+                            variant="outlined"
+                            @click="changeQuantity(item, -1)"
+                          />
                           <span class="quantity-value">{{ item.quantity }}</span>
                           <v-btn
                             :disabled="item.quantity >= getMaxQuantity(item.product_id) || isQuantityUpdating(item.product_id)"
-                            icon="mdi-plus" size="small" variant="outlined" @click="changeQuantity(item, 1)" />
+                            icon="mdi-plus"
+                            size="small"
+                            variant="outlined"
+                            @click="changeQuantity(item, 1)"
+                          />
                           <span class="stock-hint">Max {{ getMaxQuantity(item.product_id) }}</span>
                         </div>
                       </div>
                     </div>
-                    <v-btn class="remove-btn" icon size="small" variant="text" @click="removeItem(item.product_id)">
+                    <v-btn
+                      class="remove-btn"
+                      icon
+                      size="small"
+                      variant="text"
+                      @click="removeItem(item.product_id)"
+                    >
                       <v-icon>mdi-close</v-icon>
                     </v-btn>
                   </div>
@@ -83,33 +129,61 @@
                 <span>{{ selectedProductIds.length }} / {{ cartStore.items.length }}</span>
               </div>
               <div class="summary-row select-all-row">
-                <v-checkbox v-model="selectAllChecked" color="primary" density="compact" hide-details
-                  label="Select all products" />
+                <v-checkbox
+                  v-model="selectAllChecked"
+                  color="primary"
+                  density="compact"
+                  hide-details
+                  label="Select all products"
+                />
               </div>
               <div class="promo-section">
                 <div class="promo-head">
                   <p class="promo-label">Promo Code</p>
-                  <v-btn v-if="appliedPromoCode" class="promo-clear-btn" size="x-small" variant="text"
-                    @click="clearPromoCode">
+                  <v-btn
+                    v-if="appliedPromoCode"
+                    class="promo-clear-btn"
+                    size="x-small"
+                    variant="text"
+                    @click="clearPromoCode"
+                  >
                     Clear
                   </v-btn>
                 </div>
                 <p class="promo-subtitle">Select a code below or type one manually, then click Apply.</p>
                 <div class="promo-input-row">
-                  <v-text-field v-model="promoInput"
+                  <v-text-field
+                    v-model="promoInput"
                     :class="['promo-input', { 'promo-input-pending': isPromoPending, 'promo-input-applied': isPromoApplied }]"
-                    density="comfortable" hide-details persistent-placeholder placeholder="Enter code" rounded="lg"
-                    variant="outlined" @keydown.enter.prevent="applyPromoCode" />
-                  <v-btn class="promo-apply-btn" color="primary" :disabled="!normalizedPromoInput" height="48"
-                    rounded="lg" @click="applyPromoCode">
+                    density="comfortable"
+                    hide-details
+                    persistent-placeholder
+                    placeholder="Enter code"
+                    rounded="lg"
+                    variant="outlined"
+                    @keydown.enter.prevent="applyPromoCode"
+                  />
+                  <v-btn
+                    class="promo-apply-btn"
+                    color="primary"
+                    :disabled="!normalizedPromoInput"
+                    height="48"
+                    rounded="lg"
+                    @click="applyPromoCode"
+                  >
                     Apply
                   </v-btn>
                 </div>
                 <div class="promo-chip-row">
-                  <v-chip v-for="promo in PROMO_CODES" :key="promo.code" class="promo-chip"
-                    :color="appliedPromoCode === promo.code ? 'primary' : undefined" size="small"
+                  <v-chip
+                    v-for="promo in PROMO_CODES"
+                    :key="promo.code"
+                    class="promo-chip"
+                    :color="appliedPromoCode === promo.code ? 'primary' : undefined"
+                    size="small"
                     :variant="appliedPromoCode === promo.code ? 'flat' : 'outlined'"
-                    @click="selectPromoCode(promo.code)">
+                    @click="selectPromoCode(promo.code)"
+                  >
                     {{ promo.code }}
                   </v-chip>
                 </div>
@@ -134,341 +208,356 @@
               </div>
             </v-card-text>
             <v-card-actions class="summary-actions">
-              <v-btn block color="primary" :disabled="selectedProductIds.length === 0" :loading="checkoutLoading"
-                variant="flat" rounded="lg" size="large" text="Place Order" @click="checkout" />
+              <v-btn
+                block
+                color="primary"
+                :disabled="selectedProductIds.length === 0"
+                :loading="checkoutLoading"
+                rounded="lg"
+                size="large"
+                text="Place Order"
+                variant="flat"
+                @click="checkout"
+              />
             </v-card-actions>
           </v-card>
         </v-col>
       </v-row>
     </v-container>
 
-    <BaseAlert v-model="snackbar" floating :message="snackbarText" :timeout="3000" :type="snackbarColor" />
+    <BaseAlert
+      v-model="snackbar"
+      floating
+      :message="snackbarText"
+      :timeout="3000"
+      :type="snackbarColor"
+    />
   </div>
 </template>
 
 <script>
-import { computed, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import BaseAlert from '@/components/BaseAlert.vue'
-import { useCartStore } from '@/stores/cart'
-import { useCurrency } from '@/utils/currency'
+  import { computed, onMounted, ref, watch } from 'vue'
+  import { useRouter } from 'vue-router'
+  import BaseAlert from '@/components/BaseAlert.vue'
+  import { useCartStore } from '@/stores/cart'
+  import { useCurrency } from '@/utils/currency'
 
-const PROMO_CODES = [
-  {
-    code: 'SAVE10',
-    type: 'percent',
-    value: 10,
-    minSubtotal: 60
-  },
-  {
-    code: 'FLAT20',
-    type: 'flat',
-    value: 20,
-    minSubtotal: 120
-  },
-  {
-    code: 'SAVE20',
-    type: 'percent',
-    value: 20,
-    minSubtotal: 180
-  }
-]
-
-export default {
-  name: 'Cart',
-  components: {
-    BaseAlert
-  },
-  setup() {
-    const router = useRouter()
-    const cartStore = useCartStore()
-    const checkoutLoading = ref(false)
-    const snackbar = ref(false)
-    const snackbarText = ref('')
-    const snackbarColor = ref('success')
-    const selectedProductIds = ref([])
-    const { formatAmount, userSettings } = useCurrency()
-    const quantityUpdatingById = ref({})
-    const promoInput = ref('')
-    const appliedPromoCode = ref('')
-
-    const selectedTotalAmount = computed(() => {
-      return cartStore.items.reduce((total, item) => {
-        if (!selectedProductIds.value.includes(item.product_id)) {
-          return total
-        }
-        const product = cartStore.products[item.product_id]
-        return total + (product ? product.price * item.quantity : 0)
-      }, 0)
-    })
-
-    const activePromo = computed(() => {
-      return PROMO_CODES.find((promo) => promo.code === appliedPromoCode.value) || null
-    })
-    const normalizedPromoInput = computed(() => normalizePromoCode(promoInput.value))
-    const isPromoApplied = computed(() => {
-      return Boolean(appliedPromoCode.value) && normalizedPromoInput.value === appliedPromoCode.value
-    })
-    const isPromoPending = computed(() => {
-      return Boolean(normalizedPromoInput.value) && normalizedPromoInput.value !== appliedPromoCode.value
-    })
-
-    const promoDiscount = computed(() => {
-      const promo = activePromo.value
-      const subtotal = selectedTotalAmount.value
-      if (!promo || subtotal <= 0 || subtotal < promo.minSubtotal) {
-        return 0
-      }
-
-      if (promo.type === 'percent') {
-        return Number(((subtotal * promo.value) / 100).toFixed(2))
-      }
-
-      return Math.min(subtotal, promo.value)
-    })
-
-    const finalTotalAmount = computed(() => {
-      return Math.max(0, selectedTotalAmount.value - promoDiscount.value)
-    })
-
-    const describePromo = (promo) => {
-      if (!promo) {
-        return ''
-      }
-      if (promo.type === 'percent') {
-        return `${promo.value}% off selected items above ${formatAmount(promo.minSubtotal)}`
-      }
-      return `${formatAmount(promo.value)} off selected items above ${formatAmount(promo.minSubtotal)}`
+  const PROMO_CODES = [
+    {
+      code: 'SAVE10',
+      type: 'percent',
+      value: 10,
+      minSubtotal: 60
+    },
+    {
+      code: 'FLAT20',
+      type: 'flat',
+      value: 20,
+      minSubtotal: 120
+    },
+    {
+      code: 'SAVE20',
+      type: 'percent',
+      value: 20,
+      minSubtotal: 180
     }
+  ]
 
-    const promoHelperText = computed(() => {
-      if (appliedPromoCode.value && activePromo.value && promoDiscount.value > 0) {
-        return `Applied ${appliedPromoCode.value}: ${describePromo(activePromo.value)}`
-      }
-      if (isPromoPending.value) {
-        return `Selected ${normalizedPromoInput.value}. Click Apply to activate this promo code.`
-      }
-      return `Valid codes: ${PROMO_CODES.map((promo) => promo.code).join(', ')}`
-    })
+  export default {
+    name: 'Cart',
+    components: {
+      BaseAlert
+    },
+    setup() {
+      const router = useRouter()
+      const cartStore = useCartStore()
+      const checkoutLoading = ref(false)
+      const snackbar = ref(false)
+      const snackbarText = ref('')
+      const snackbarColor = ref('success')
+      const selectedProductIds = ref([])
+      const { formatAmount, userSettings } = useCurrency()
+      const quantityUpdatingById = ref({})
+      const promoInput = ref('')
+      const appliedPromoCode = ref('')
 
-    const selectAllChecked = computed({
-      get: () => cartStore.items.length > 0 && selectedProductIds.value.length === cartStore.items.length,
-      set: (checked) => {
-        if (checked) {
-          selectedProductIds.value = cartStore.items.map((item) => item.product_id)
+      const selectedTotalAmount = computed(() => {
+        return cartStore.items.reduce((total, item) => {
+          if (!selectedProductIds.value.includes(item.product_id)) {
+            return total
+          }
+          const product = cartStore.products[item.product_id]
+          return total + (product ? product.price * item.quantity : 0)
+        }, 0)
+      })
+
+      const activePromo = computed(() => {
+        return PROMO_CODES.find((promo) => promo.code === appliedPromoCode.value) || null
+      })
+      const normalizedPromoInput = computed(() => normalizePromoCode(promoInput.value))
+      const isPromoApplied = computed(() => {
+        return Boolean(appliedPromoCode.value) && normalizedPromoInput.value === appliedPromoCode.value
+      })
+      const isPromoPending = computed(() => {
+        return Boolean(normalizedPromoInput.value) && normalizedPromoInput.value !== appliedPromoCode.value
+      })
+
+      const promoDiscount = computed(() => {
+        const promo = activePromo.value
+        const subtotal = selectedTotalAmount.value
+        if (!promo || subtotal <= 0 || subtotal < promo.minSubtotal) {
+          return 0
+        }
+
+        if (promo.type === 'percent') {
+          return Number(((subtotal * promo.value) / 100).toFixed(2))
+        }
+
+        return Math.min(subtotal, promo.value)
+      })
+
+      const finalTotalAmount = computed(() => {
+        return Math.max(0, selectedTotalAmount.value - promoDiscount.value)
+      })
+
+      const describePromo = (promo) => {
+        if (!promo) {
+          return ''
+        }
+        if (promo.type === 'percent') {
+          return `${promo.value}% off selected items above ${formatAmount(promo.minSubtotal)}`
+        }
+        return `${formatAmount(promo.value)} off selected items above ${formatAmount(promo.minSubtotal)}`
+      }
+
+      const promoHelperText = computed(() => {
+        if (appliedPromoCode.value && activePromo.value && promoDiscount.value > 0) {
+          return `Applied ${appliedPromoCode.value}: ${describePromo(activePromo.value)}`
+        }
+        if (isPromoPending.value) {
+          return `Selected ${normalizedPromoInput.value}. Click Apply to activate this promo code.`
+        }
+        return `Valid codes: ${PROMO_CODES.map((promo) => promo.code).join(', ')}`
+      })
+
+      const selectAllChecked = computed({
+        get: () => cartStore.items.length > 0 && selectedProductIds.value.length === cartStore.items.length,
+        set: (checked) => {
+          if (checked) {
+            selectedProductIds.value = cartStore.items.map((item) => item.product_id)
+            return
+          }
+          selectedProductIds.value = []
+        }
+      })
+
+      const removeItem = async (productId) => {
+        try {
+          await cartStore.removeFromCart(productId)
+          selectedProductIds.value = selectedProductIds.value.filter((id) => id !== productId)
+          snackbarText.value = 'Item removed from cart'
+          snackbarColor.value = 'success'
+          snackbar.value = true
+        } catch {
+          snackbarText.value = 'Failed to remove item'
+          snackbarColor.value = 'error'
+          snackbar.value = true
+        }
+      }
+
+      const getMaxQuantity = (productId) => {
+        const product = cartStore.products[productId]
+        const stock = Number(product?.stock)
+
+        if (!Number.isFinite(stock) || stock <= 0) {
+          const fallbackItem = cartStore.items.find((item) => item.product_id === productId)
+          return Math.max(1, Number(fallbackItem?.quantity || 1))
+        }
+
+        return Math.max(1, Math.floor(stock))
+      }
+
+      const isQuantityUpdating = (productId) => Boolean(quantityUpdatingById.value[productId])
+
+      const changeQuantity = async (item, step) => {
+        const currentQuantity = Number(item.quantity || 0)
+        const nextQuantity = currentQuantity + step
+        const maxQuantity = getMaxQuantity(item.product_id)
+
+        if (nextQuantity < 1) {
           return
         }
-        selectedProductIds.value = []
-      }
-    })
 
-    const removeItem = async (productId) => {
-      try {
-        await cartStore.removeFromCart(productId)
-        selectedProductIds.value = selectedProductIds.value.filter((id) => id !== productId)
-        snackbarText.value = 'Item removed from cart'
+        if (nextQuantity > maxQuantity) {
+          snackbarText.value = `Only ${maxQuantity} items available for this product`
+          snackbarColor.value = 'warning'
+          snackbar.value = true
+          return
+        }
+
+        if (isQuantityUpdating(item.product_id)) {
+          return
+        }
+
+        quantityUpdatingById.value = {
+          ...quantityUpdatingById.value,
+          [item.product_id]: true
+        }
+
+        try {
+          await cartStore.updateCartQuantity(item.product_id, nextQuantity)
+        } catch (error) {
+          snackbarText.value = error?.response?.data?.message || 'Failed to update quantity'
+          snackbarColor.value = 'error'
+          snackbar.value = true
+        } finally {
+          const nextState = { ...quantityUpdatingById.value }
+          delete nextState[item.product_id]
+          quantityUpdatingById.value = nextState
+        }
+      }
+
+      const normalizePromoCode = (value) => String(value || '').trim().toUpperCase()
+
+      const applyPromoCode = () => {
+        const normalizedCode = normalizedPromoInput.value
+        if (!normalizedCode) {
+          snackbarText.value = 'Enter a promo code first'
+          snackbarColor.value = 'warning'
+          snackbar.value = true
+          return
+        }
+
+        if (selectedProductIds.value.length === 0) {
+          snackbarText.value = 'Select products before applying promo code'
+          snackbarColor.value = 'warning'
+          snackbar.value = true
+          return
+        }
+
+        const promo = PROMO_CODES.find((item) => item.code === normalizedCode)
+
+        if (!promo) {
+          appliedPromoCode.value = ''
+          snackbarText.value = 'Invalid promo code. Please use a valid code.'
+          snackbarColor.value = 'error'
+          snackbar.value = true
+          return
+        }
+
+        if (selectedTotalAmount.value < promo.minSubtotal) {
+          appliedPromoCode.value = ''
+          snackbarText.value = `Promo ${promo.code} requires at least ${formatAmount(promo.minSubtotal)} selected subtotal`
+          snackbarColor.value = 'warning'
+          snackbar.value = true
+          return
+        }
+
+        appliedPromoCode.value = promo.code
+        promoInput.value = promo.code
+        snackbarText.value = `Promo ${promo.code} applied successfully`
         snackbarColor.value = 'success'
         snackbar.value = true
-      } catch {
-        snackbarText.value = 'Failed to remove item'
-        snackbarColor.value = 'error'
-        snackbar.value = true
-      }
-    }
-
-    const getMaxQuantity = (productId) => {
-      const product = cartStore.products[productId]
-      const stock = Number(product?.stock)
-
-      if (!Number.isFinite(stock) || stock <= 0) {
-        const fallbackItem = cartStore.items.find((item) => item.product_id === productId)
-        return Math.max(1, Number(fallbackItem?.quantity || 1))
       }
 
-      return Math.max(1, Math.floor(stock))
-    }
-
-    const isQuantityUpdating = (productId) => Boolean(quantityUpdatingById.value[productId])
-
-    const changeQuantity = async (item, step) => {
-      const currentQuantity = Number(item.quantity || 0)
-      const nextQuantity = currentQuantity + step
-      const maxQuantity = getMaxQuantity(item.product_id)
-
-      if (nextQuantity < 1) {
-        return
+      const selectPromoCode = (code) => {
+        const normalizedCode = normalizePromoCode(code)
+        promoInput.value = normalizedCode
       }
 
-      if (nextQuantity > maxQuantity) {
-        snackbarText.value = `Only ${maxQuantity} items available for this product`
-        snackbarColor.value = 'warning'
-        snackbar.value = true
-        return
-      }
-
-      if (isQuantityUpdating(item.product_id)) {
-        return
-      }
-
-      quantityUpdatingById.value = {
-        ...quantityUpdatingById.value,
-        [item.product_id]: true
-      }
-
-      try {
-        await cartStore.updateCartQuantity(item.product_id, nextQuantity)
-      } catch (error) {
-        snackbarText.value = error?.response?.data?.message || 'Failed to update quantity'
-        snackbarColor.value = 'error'
-        snackbar.value = true
-      } finally {
-        const nextState = { ...quantityUpdatingById.value }
-        delete nextState[item.product_id]
-        quantityUpdatingById.value = nextState
-      }
-    }
-
-    const normalizePromoCode = (value) => String(value || '').trim().toUpperCase()
-
-    const applyPromoCode = () => {
-      const normalizedCode = normalizedPromoInput.value
-      if (!normalizedCode) {
-        snackbarText.value = 'Enter a promo code first'
-        snackbarColor.value = 'warning'
-        snackbar.value = true
-        return
-      }
-
-      if (selectedProductIds.value.length === 0) {
-        snackbarText.value = 'Select products before applying promo code'
-        snackbarColor.value = 'warning'
-        snackbar.value = true
-        return
-      }
-
-      const promo = PROMO_CODES.find((item) => item.code === normalizedCode)
-
-      if (!promo) {
+      const clearPromoCode = () => {
         appliedPromoCode.value = ''
-        snackbarText.value = 'Invalid promo code. Please use a valid code.'
-        snackbarColor.value = 'error'
-        snackbar.value = true
-        return
+        promoInput.value = ''
       }
 
-      if (selectedTotalAmount.value < promo.minSubtotal) {
-        appliedPromoCode.value = ''
-        snackbarText.value = `Promo ${promo.code} requires at least ${formatAmount(promo.minSubtotal)} selected subtotal`
-        snackbarColor.value = 'warning'
-        snackbar.value = true
-        return
-      }
-
-      appliedPromoCode.value = promo.code
-      promoInput.value = promo.code
-      snackbarText.value = `Promo ${promo.code} applied successfully`
-      snackbarColor.value = 'success'
-      snackbar.value = true
-    }
-
-    const selectPromoCode = (code) => {
-      const normalizedCode = normalizePromoCode(code)
-      promoInput.value = normalizedCode
-    }
-
-    const clearPromoCode = () => {
-      appliedPromoCode.value = ''
-      promoInput.value = ''
-    }
-
-    const goToProduct = async (productId) => {
-      if (!productId) {
-        return
-      }
-      await router.push(`/product/${productId}`)
-    }
-
-    const checkout = async () => {
-      if (selectedProductIds.value.length === 0) {
-        return
-      }
-
-      checkoutLoading.value = true
-      try {
-        const selectedParam = selectedProductIds.value
-          .map((productId) => encodeURIComponent(productId))
-          .join(',')
-        const queryParts = [`selected=${selectedParam}`]
-        if (appliedPromoCode.value && promoDiscount.value > 0) {
-          queryParts.push(`promo=${encodeURIComponent(appliedPromoCode.value)}`)
+      const goToProduct = async (productId) => {
+        if (!productId) {
+          return
         }
-        await router.push(`/payment?${queryParts.join('&')}`)
-      } finally {
-        checkoutLoading.value = false
+        await router.push(`/product/${productId}`)
       }
-    }
 
-    watch(
-      () => cartStore.items.map((item) => item.product_id),
-      (productIds) => {
-        const productIdSet = new Set(productIds)
-        selectedProductIds.value = selectedProductIds.value.filter((id) => productIdSet.has(id))
-        if (userSettings.value.quickCheckout && selectedProductIds.value.length === 0 && productIds.length > 0) {
-          selectedProductIds.value = [...productIds]
+      const checkout = async () => {
+        if (selectedProductIds.value.length === 0) {
+          return
         }
-      },
-      { immediate: true }
-    )
 
-    watch(
-      () => `${selectedProductIds.value.join(',')}|${selectedTotalAmount.value}`,
-      () => {
-        if (!activePromo.value) return
-
-        if (selectedProductIds.value.length === 0 || selectedTotalAmount.value < activePromo.value.minSubtotal) {
-          appliedPromoCode.value = ''
+        checkoutLoading.value = true
+        try {
+          const selectedParam = selectedProductIds.value
+            .map((productId) => encodeURIComponent(productId))
+            .join(',')
+          const queryParts = [`selected=${selectedParam}`]
+          if (appliedPromoCode.value && promoDiscount.value > 0) {
+            queryParts.push(`promo=${encodeURIComponent(appliedPromoCode.value)}`)
+          }
+          await router.push(`/payment?${queryParts.join('&')}`)
+        } finally {
+          checkoutLoading.value = false
         }
       }
-    )
 
-    onMounted(async () => {
-      await cartStore.fetchCart()
-      selectedProductIds.value = userSettings.value.quickCheckout
-        ? cartStore.items.map((item) => item.product_id)
-        : []
-    })
+      watch(
+        () => cartStore.items.map((item) => item.product_id),
+        (productIds) => {
+          const productIdSet = new Set(productIds)
+          selectedProductIds.value = selectedProductIds.value.filter((id) => productIdSet.has(id))
+          if (userSettings.value.quickCheckout && selectedProductIds.value.length === 0 && productIds.length > 0) {
+            selectedProductIds.value = [...productIds]
+          }
+        },
+        { immediate: true }
+      )
 
-    return {
-      cartStore,
-      removeItem,
-      goToProduct,
-      checkout,
-      checkoutLoading,
-      changeQuantity,
-      getMaxQuantity,
-      isQuantityUpdating,
-      applyPromoCode,
-      selectPromoCode,
-      clearPromoCode,
-      PROMO_CODES,
-      promoInput,
-      normalizedPromoInput,
-      isPromoApplied,
-      isPromoPending,
-      appliedPromoCode,
-      promoDiscount,
-      finalTotalAmount,
-      promoHelperText,
-      selectedProductIds,
-      selectedTotalAmount,
-      selectAllChecked,
-      formatAmount,
-      snackbar,
-      snackbarText,
-      snackbarColor
+      watch(
+        () => `${selectedProductIds.value.join(',')}|${selectedTotalAmount.value}`,
+        () => {
+          if (!activePromo.value) return
+
+          if (selectedProductIds.value.length === 0 || selectedTotalAmount.value < activePromo.value.minSubtotal) {
+            appliedPromoCode.value = ''
+          }
+        }
+      )
+
+      onMounted(async () => {
+        await cartStore.fetchCart()
+        selectedProductIds.value = userSettings.value.quickCheckout
+          ? cartStore.items.map((item) => item.product_id)
+          : []
+      })
+
+      return {
+        cartStore,
+        removeItem,
+        goToProduct,
+        checkout,
+        checkoutLoading,
+        changeQuantity,
+        getMaxQuantity,
+        isQuantityUpdating,
+        applyPromoCode,
+        selectPromoCode,
+        clearPromoCode,
+        PROMO_CODES,
+        promoInput,
+        normalizedPromoInput,
+        isPromoApplied,
+        isPromoPending,
+        appliedPromoCode,
+        promoDiscount,
+        finalTotalAmount,
+        promoHelperText,
+        selectedProductIds,
+        selectedTotalAmount,
+        selectAllChecked,
+        formatAmount,
+        snackbar,
+        snackbarText,
+        snackbarColor
+      }
     }
   }
-}
 </script>
 
 <style scoped>
