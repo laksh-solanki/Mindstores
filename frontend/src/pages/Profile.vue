@@ -487,7 +487,7 @@
       const fetchOrders = async () => {
         loading.value = true
         try {
-          const response = await axios.get(`${API_URL}/api/orders`, { withCredentials: true })
+          const response = await axios.get(`${API_URL}/orders`, { withCredentials: true })
           orders.value = Array.isArray(response.data) ? response.data : []
         } catch (error) {
           console.error('Failed to fetch orders:', error)

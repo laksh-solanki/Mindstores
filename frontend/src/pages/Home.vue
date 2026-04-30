@@ -405,7 +405,7 @@
         try {
           for (let attempt = 0; attempt <= PRODUCT_FETCH_RETRIES; attempt++) {
             try {
-              const response = await axios.get(`${API_URL}/api/products`, { timeout: PRODUCT_REQUEST_TIMEOUT_MS })
+              const response = await axios.get(`${API_URL}/products`, { timeout: PRODUCT_REQUEST_TIMEOUT_MS })
               const fetchedProducts = Array.isArray(response.data) ? response.data : []
               products.value = fetchedProducts
               cachedProducts = fetchedProducts

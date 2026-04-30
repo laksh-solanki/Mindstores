@@ -173,7 +173,7 @@ export const useAppStore = defineStore("app", {
           for (let attempt = 0; attempt <= AUTH_REQUEST_RETRIES; attempt++) {
             try {
               response = await axios.post(
-                `${API_URL}/api/auth/firebase-login`,
+                `${API_URL}/auth/firebase-login`,
                 {
                   idToken,
                   locale: getClientLocale(),
@@ -305,7 +305,7 @@ export const useAppStore = defineStore("app", {
       this.loading = true;
       try {
         await axios
-          .post(`${API_URL}/api/auth/logout`, {}, { withCredentials: true })
+          .post(`${API_URL}/auth/logout`, {}, { withCredentials: true })
           .catch((error) => {
             console.warn("Backend logout failed, proceeding with Firebase logout.", error);
           });
@@ -326,7 +326,7 @@ export const useAppStore = defineStore("app", {
       }
 
       try {
-        const response = await axios.get(`${API_URL}/api/auth/me`, {
+        const response = await axios.get(`${API_URL}/auth/me`, {
           withCredentials: true,
           timeout: AUTH_REQUEST_TIMEOUT_MS,
         });
@@ -385,7 +385,7 @@ export const useAppStore = defineStore("app", {
           }
         }
 
-        const response = await axios.put(`${API_URL}/api/auth/profile`, payload, {
+        const response = await axios.put(`${API_URL}/auth/profile`, payload, {
           withCredentials: true,
           timeout: AUTH_REQUEST_TIMEOUT_MS,
         });

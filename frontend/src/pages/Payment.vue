@@ -384,7 +384,7 @@
         submitting.value = true
         try {
           const response = await axios.post(
-            `${API_URL}/api/checkout/place-order`,
+            `${API_URL}/checkout/place-order`,
             {
               selected_product_ids: selectedProductIds.value,
               promo_code: selectedPromoCode.value && promoDiscount.value > 0 ? selectedPromoCode.value : undefined

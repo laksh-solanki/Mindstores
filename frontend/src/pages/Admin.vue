@@ -403,7 +403,7 @@
       const fetchProducts = async () => {
         loading.value = true;
         try {
-          const response = await axios.get(`${API_URL}/api/products`);
+          const response = await axios.get(`${API_URL}/products`);
           products.value = response.data;
         } catch (error) {
           console.error("Failed to fetch products:", error);
@@ -526,13 +526,13 @@
         try {
           if (editMode.value) {
             await axios.put(
-              `${API_URL}/api/products/${encodeURIComponent(currentProductId.value)}`,
+              `${API_URL}/products/${encodeURIComponent(currentProductId.value)}`,
               payload,
               { withCredentials: true },
             );
             snackbarText.value = "Product updated successfully";
           } else {
-            await axios.post(`${API_URL}/api/products`, payload, {
+            await axios.post(`${API_URL}/products`, payload, {
               withCredentials: true,
             });
             snackbarText.value = "Product added successfully";
@@ -577,7 +577,7 @@
 
         try {
           await axios.delete(
-            `${API_URL}/api/products/${encodeURIComponent(selectedProduct.product_id)}`,
+            `${API_URL}/products/${encodeURIComponent(selectedProduct.product_id)}`,
             { withCredentials: true },
           );
           snackbarText.value = "Product deleted successfully";

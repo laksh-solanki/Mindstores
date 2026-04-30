@@ -157,7 +157,7 @@
 
   async function loadCategoryDropdown() {
     try {
-      const response = await axios.get(`${API_URL}/api/products`, {
+      const response = await axios.get(`${API_URL}/products`, {
         params: {
           limit: 250,
           sort: 'name_asc',

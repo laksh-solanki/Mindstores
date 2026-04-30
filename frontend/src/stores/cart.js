@@ -50,7 +50,7 @@ export const useCartStore = defineStore('cart', {
     async fetchCart() {
       try {
         const response = await this.withAuthRetry(() =>
-          axios.get(`${API_URL}/api/cart`, { withCredentials: true })
+          axios.get(`${API_URL}/cart`, { withCredentials: true })
         )
         this.items = response.data.items || []
 
@@ -90,7 +90,7 @@ export const useCartStore = defineStore('cart', {
       // For multiple items, a single products request is usually faster than N detail requests.
       if (missingProductIds.length > 1) {
         try {
-          const response = await axios.get(`${API_URL}/api/products`, { timeout: 8000 })
+          const response = await axios.get(`${API_URL}/products`, { timeout: 8000 })
           const allProducts = Array.isArray(response.data) ? response.data : []
           const productsById = new Map(allProducts.map((product) => [product.product_id, product]))
 
@@ -120,7 +120,7 @@ export const useCartStore = defineStore('cart', {
       }
 
       const request = axios
-        .get(`${API_URL}/api/products/${productId}`)
+        .get(`${API_URL}/products/${productId}`)
         .then((response) => {
           this.products[productId] = response.data
           return response.data
@@ -146,7 +146,7 @@ export const useCartStore = defineStore('cart', {
       try {
         await this.withAuthRetry(() =>
           axios.post(
-            `${API_URL}/api/cart/add`,
+            `${API_URL}/cart/add`,
             { product_id: productId, quantity },
             { withCredentials: true }
           )
@@ -162,7 +162,7 @@ export const useCartStore = defineStore('cart', {
       try {
         await this.withAuthRetry(() =>
           axios.post(
-            `${API_URL}/api/cart/remove`,
+            `${API_URL}/cart/remove`,
             { product_id: productId },
             { withCredentials: true }
           )
@@ -178,7 +178,7 @@ export const useCartStore = defineStore('cart', {
       try {
         await this.withAuthRetry(() =>
           axios.post(
-            `${API_URL}/api/cart/update`,
+            `${API_URL}/cart/update`,
             { product_id: productId, quantity },
             { withCredentials: true }
           )

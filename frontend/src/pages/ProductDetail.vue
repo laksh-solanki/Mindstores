@@ -286,7 +286,7 @@ const atelierDetails = computed(() => {
 async function fetchProduct(productId = route.params.id) {
   loading.value = true
   try {
-    const response = await axios.get(`${API_URL}/api/products/${productId}`)
+    const response = await axios.get(`${API_URL}/products/${productId}`)
     product.value = response.data
     quantity.value = 1
   } catch (error) {
