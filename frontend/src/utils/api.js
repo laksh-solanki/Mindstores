@@ -1,7 +1,8 @@
 const normalizeApiBaseUrl = (value) => String(value || '').trim().replace(/\/+$/, '')
 
-// In production, use same-origin /api so Vercel can proxy requests and cookies reliably.
-const defaultApiBaseUrl = import.meta.env.DEV ? 'http://localhost:8000' : '/api'
+const defaultApiBaseUrl = import.meta.env.DEV
+  ? 'https://mindstores-backend-production.audit29122006.workers.dev'
+  : 'https://mindstores-backend-production.audit29122006.workers.dev'
 
 export const API_URL = normalizeApiBaseUrl(import.meta.env.VITE_API_URL || defaultApiBaseUrl)
 

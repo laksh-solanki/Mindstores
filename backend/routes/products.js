@@ -224,7 +224,7 @@ export default async function registerProductRoutes(fastify, deps) {
     return { updates };
   };
 
-  fastify.get("/api/products", async (request, reply) => {
+  fastify.get("/products", async (request, reply) => {
     const { category, subcategory, company, sort, search } = request.query;
     const normalizedCategory = normalizeCategoryName(category);
     const normalizedSubcategory = normalizeSubcategoryName(normalizedCategory || category, subcategory);
@@ -337,7 +337,7 @@ export default async function registerProductRoutes(fastify, deps) {
     };
   });
 
-  fastify.get("/api/products/:id", async (request, reply) => {
+  fastify.get("/products/:id", async (request, reply) => {
     const filter = await buildProductFilter(request.params.id);
     if (!filter) return reply.code(400).send({ message: "Invalid product id" });
 
@@ -349,7 +349,7 @@ export default async function registerProductRoutes(fastify, deps) {
     return serializeProduct(product);
   });
 
-  fastify.post("/api/products", { preHandler: [adminMutationRateLimit] }, async (request, reply) => {
+  fastify.post("/products", { preHandler: [adminMutationRateLimit] }, async (request, reply) => {
     if (!(await requireAdmin(request, reply))) return;
 
     const { payload, error: validationError } = buildCreateProductPayload(request.body);
@@ -382,7 +382,7 @@ export default async function registerProductRoutes(fastify, deps) {
     return product;
   });
 
-  fastify.put("/api/products/:id", { preHandler: [adminMutationRateLimit] }, async (request, reply) => {
+  fastify.put("/products/:id", { preHandler: [adminMutationRateLimit] }, async (request, reply) => {
     if (!(await requireAdmin(request, reply))) return;
 
     const { id } = request.params;
@@ -416,7 +416,7 @@ export default async function registerProductRoutes(fastify, deps) {
     return serializeProduct(updatedProduct);
   });
 
-  fastify.delete("/api/products/:id", { preHandler: [adminMutationRateLimit] }, async (request, reply) => {
+  fastify.delete("/products/:id", { preHandler: [adminMutationRateLimit] }, async (request, reply) => {
     if (!(await requireAdmin(request, reply))) return;
 
     const filter = await buildProductFilter(request.params.id);

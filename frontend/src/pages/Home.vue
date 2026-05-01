@@ -290,7 +290,7 @@
       const rawCache = window.localStorage.getItem(PRODUCTS_CACHE_KEY)
       if (!rawCache) return null
       const parsed = JSON.parse(rawCache)
-      if (!Array.isArray(parsed?.products)) return null
+      if (!Array.isArray(parsed?.products) || parsed.products.length === 0) return null
       return {
         products: parsed.products,
         expiresAt: Number(parsed.expiresAt) || 0
@@ -410,7 +410,9 @@
               products.value = fetchedProducts
               cachedProducts = fetchedProducts
               cacheExpiresAt = Date.now() + CACHE_TTL_MS
-              writePersistedProductsCache(fetchedProducts, cacheExpiresAt)
+              if (fetchedProducts.length > 0) {
+                writePersistedProductsCache(fetchedProducts, cacheExpiresAt)
+              }
               return
             } catch (error) {
               lastError = error

@@ -106,7 +106,7 @@ export default async function registerAuthRoutes(fastify, deps) {
     maxRequests: 10,
   });
 
-  fastify.post("/api/auth/firebase-login", { preHandler: [authWriteRateLimit, authLoginRateLimit] }, async (request, reply) => {
+  fastify.post("/auth/firebase-login", { preHandler: [authWriteRateLimit, authLoginRateLimit] }, async (request, reply) => {
     reply.header("Cache-Control", "no-store");
 
     const idToken = typeof request.body?.idToken === "string" ? request.body.idToken.trim() : "";
@@ -221,13 +221,13 @@ export default async function registerAuthRoutes(fastify, deps) {
     }
   });
 
-  fastify.get("/api/auth/me", { preHandler: [authReadRateLimit] }, async (request, reply) => {
+  fastify.get("/auth/me", { preHandler: [authReadRateLimit] }, async (request, reply) => {
     reply.header("Cache-Control", "no-store");
     if (!(await requireAuth(request, reply))) return;
     return request.user;
   });
 
-  fastify.put("/api/auth/profile", { preHandler: [authWriteRateLimit] }, async (request, reply) => {
+  fastify.put("/auth/profile", { preHandler: [authWriteRateLimit] }, async (request, reply) => {
     reply.header("Cache-Control", "no-store");
     if (!(await requireAuth(request, reply))) return;
 
@@ -284,7 +284,7 @@ export default async function registerAuthRoutes(fastify, deps) {
     return user;
   });
 
-  fastify.post("/api/auth/logout", { preHandler: [authWriteRateLimit] }, async (request, reply) => {
+  fastify.post("/auth/logout", { preHandler: [authWriteRateLimit] }, async (request, reply) => {
     reply.header("Cache-Control", "no-store");
 
     const token = getSessionTokenFromRequest(request);

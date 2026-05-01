@@ -6,7 +6,7 @@ export default async function registerOrderRoutes(fastify, deps) {
     maxRequests: 80,
   });
 
-  fastify.get("/api/orders", { preHandler: [ordersReadRateLimit] }, async (request, reply) => {
+  fastify.get("/orders", { preHandler: [ordersReadRateLimit] }, async (request, reply) => {
     if (!(await requireAuth(request, reply))) return;
     reply.header("Cache-Control", "no-store");
 

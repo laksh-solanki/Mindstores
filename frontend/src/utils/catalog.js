@@ -28,14 +28,13 @@ export function buildCatalogEntries(products = []) {
     const categoryLabel = normalizeCatalogLabel(product?.category)
     const subcategoryLabel = normalizeCatalogLabel(product?.subcategory)
 
-    if (!categoryLabel || !subcategoryLabel) {
+    if (!categoryLabel) {
       continue
     }
 
     const categoryKey = slugifyCatalogValue(categoryLabel)
-    const itemKey = slugifyCatalogValue(subcategoryLabel)
 
-    if (!categoryKey || !itemKey) {
+    if (!categoryKey) {
       continue
     }
 
@@ -50,6 +49,11 @@ export function buildCatalogEntries(products = []) {
     }
 
     const category = categoriesBySlug.get(categoryKey)
+    const itemKey = slugifyCatalogValue(subcategoryLabel)
+    if (!itemKey) {
+      continue
+    }
+
     if (!category.itemsBySlug.has(itemKey)) {
       category.itemsBySlug.set(itemKey, {
         key: itemKey,

@@ -11,7 +11,7 @@ export default async function registerCheckoutRoutes(fastify, deps) {
     maxRequests: 12,
   });
 
-  fastify.post("/api/checkout/place-order", { preHandler: [placeOrderRateLimit] }, async (request, reply) => {
+  fastify.post("/checkout/place-order", { preHandler: [placeOrderRateLimit] }, async (request, reply) => {
     if (!(await requireAuth(request, reply))) return;
 
     const db = fastify.mongo.db;

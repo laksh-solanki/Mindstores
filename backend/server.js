@@ -83,6 +83,9 @@ const isOriginAllowed = (origin) =>
   !origin || allowedOriginSet.has("*") || allowedOriginSet.has(origin);
 
 const mutatingMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const apiPathPrefixes = ["/auth", "/cart", "/checkout", "/orders", "/products"];
+const isBackendApiRoute = (pathname) =>
+  apiPathPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 const getRequestOrigin = (request) => {
   const rawOrigin = request.headers.origin;
   if (typeof rawOrigin === "string" && rawOrigin.trim()) {
@@ -233,7 +236,8 @@ const requireAdmin = async (request, reply) => {
 
 fastify.decorateRequest("user", null);
 fastify.addHook("onRequest", async (request, reply) => {
-  const isApiRoute = request.url.startsWith("/api/");
+  const requestPath = request.url.split("?")[0];
+  const isApiRoute = isBackendApiRoute(requestPath);
   const isMutatingApiRequest = isApiRoute && mutatingMethods.has(request.method);
 
   if (isMutatingApiRequest) {
@@ -260,7 +264,7 @@ fastify.addHook("onSend", async (request, reply, payload) => {
   reply.header("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
   reply.header("X-Permitted-Cross-Domain-Policies", "none");
 
-  if (request.url.startsWith("/api/")) {
+  if (isBackendApiRoute(request.url.split("?")[0])) {
     reply.header(
       "Content-Security-Policy",
       "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'",

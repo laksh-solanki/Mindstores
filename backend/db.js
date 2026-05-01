@@ -3,6 +3,8 @@
  * Uses MongoDB Atlas Data API for cloud deployment
  */
 
+import { seedProducts } from "./data/seed-products.js";
+
 class AtlasDataAPIClient {
   constructor(baseUrl, apiKey, database) {
     this.baseUrl = baseUrl.replace(/\/+$/, "");
@@ -193,9 +195,16 @@ export function createDbClient(env = {}) {
 
 function createMemoryStore() {
   const collections = new Map();
+  const cloneDocument = (document) => JSON.parse(JSON.stringify(document));
   const getCollectionStore = (name) => {
     if (!collections.has(name)) {
       collections.set(name, new Map());
+      if (name === "products") {
+        seedProducts.forEach((product, index) => {
+          const key = product.product_id || `seed_product_${index}`;
+          collections.get(name).set(key, cloneDocument(product));
+        });
+      }
     }
     return collections.get(name);
   };
@@ -218,7 +227,9 @@ function createMemoryStore() {
         },
         async updateOne(filter, update) { return { modifiedCount: 1 }; },
         async deleteOne(filter) { return { deletedCount: 1 }; },
-        async countDocuments() { return store.size; }
+        async countDocuments(filter = {}) {
+          return Array.from(store.values()).filter((document) => matches(document, filter)).length;
+        }
       };
     }
   };

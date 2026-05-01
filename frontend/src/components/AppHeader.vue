@@ -18,28 +18,26 @@
               </v-btn>
             </template>
 
-            <v-list density="compact">
-              <v-list-item v-for="category in categoryDropdown" :key="category.key">
-                <v-menu activator="parent" open-on-hover submenu>
-                  <template #activator="{ props }">
-                    <v-list-item
-                      v-bind="props"
-                      append-icon="mdi-menu-right"
-                      :prepend-icon="category.icon"
-                      :title="category.label"
-                      @click="openCategory(category.key)"
-                    />
-                  </template>
-                  <v-list density="compact" min-width="200">
-                    <v-list-item
-                      v-for="item in category.items"
-                      :key="item.key"
-                      :title="item.name"
-                      @click="openCatalogItem(category.key, item.key)"
-                    />
-                  </v-list>
-                </v-menu>
-              </v-list-item>
+            <v-list density="compact" min-width="260">
+              <template v-if="categoryDropdown.length > 0">
+                <template v-for="category in categoryDropdown" :key="category.key">
+                  <v-list-item
+                    class="category-row"
+                    :prepend-icon="category.icon"
+                    :title="category.label"
+                    @click="openCategory(category.key)"
+                  />
+                  <v-list-item
+                    v-for="item in category.items"
+                    :key="`${category.key}-${item.key}`"
+                    class="subcategory-row"
+                    :title="item.name"
+                    @click="openCatalogItem(category.key, item.key)"
+                  />
+                  <v-divider />
+                </template>
+              </template>
+              <v-list-item v-else disabled title="Loading categories..." />
             </v-list>
           </v-menu>
 
@@ -100,6 +98,7 @@
             @click="openCatalogItemFromMobile(category.key, item.key)"
           />
         </v-list-group>
+        <v-list-item v-if="categoryDropdown.length === 0" disabled title="Loading categories..." />
 
         <v-list-item prepend-icon="mdi-cart-outline" title="Cart" to="/cart" @click="closeMobileMenu">
           <template #append>
@@ -245,5 +244,13 @@
 
 .cart-btn {
   gap: 6px;
+}
+
+.category-row {
+  font-weight: 700;
+}
+
+.subcategory-row {
+  padding-inline-start: 48px !important;
 }
 </style>

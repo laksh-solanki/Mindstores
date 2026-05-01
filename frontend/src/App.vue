@@ -33,6 +33,7 @@
   function handleWindowLoad () {
     pageBooting.value = false
   }
+  
 
   let removeBeforeEachGuard = null
   let removeAfterEachGuard = null

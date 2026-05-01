@@ -219,6 +219,10 @@ function createFirebaseAdmin(env) {
   };
 }
 
+const apiPathPrefixes = ["/auth", "/cart", "/checkout", "/orders", "/products"];
+const isBackendApiRoute = (pathname) =>
+  apiPathPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+
 async function getFastify(env) {
   if (fastifyInstance) return fastifyInstance;
 
@@ -260,7 +264,7 @@ async function getFastify(env) {
     reply.header("X-Content-Type-Options", "nosniff");
     reply.header("X-Frame-Options", "DENY");
     reply.header("Referrer-Policy", "no-referrer");
-    if (request.url.startsWith("/api/")) {
+    if (isBackendApiRoute(request.url.split("?")[0])) {
       reply.header("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
     }
     if (isProduction) reply.header("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");

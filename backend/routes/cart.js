@@ -8,7 +8,7 @@ export default async function registerCartRoutes(fastify, deps) {
   const normalizeProductId = (value) => (typeof value === "string" ? value.trim() : "");
   const parseQuantity = (value) => Number(value);
 
-  fastify.get("/api/cart", async (request, reply) => {
+  fastify.get("/cart", async (request, reply) => {
     if (!(await requireAuth(request, reply))) return;
 
     const cart = await fastify.mongo.db
@@ -24,7 +24,7 @@ export default async function registerCartRoutes(fastify, deps) {
     return cart;
   });
 
-  fastify.post("/api/cart/add", { preHandler: [cartMutationRateLimit] }, async (request, reply) => {
+  fastify.post("/cart/add", { preHandler: [cartMutationRateLimit] }, async (request, reply) => {
     if (!(await requireAuth(request, reply))) return;
     const product_id = normalizeProductId(request.body?.product_id);
     const { quantity } = request.body || {};
@@ -85,7 +85,7 @@ export default async function registerCartRoutes(fastify, deps) {
     return { message: "Item added to cart" };
   });
 
-  fastify.post("/api/cart/remove", { preHandler: [cartMutationRateLimit] }, async (request, reply) => {
+  fastify.post("/cart/remove", { preHandler: [cartMutationRateLimit] }, async (request, reply) => {
     if (!(await requireAuth(request, reply))) return;
     const product_id = normalizeProductId(request.body?.product_id);
     if (!product_id || product_id.length > 80) {
@@ -102,7 +102,7 @@ export default async function registerCartRoutes(fastify, deps) {
     return { message: "Item removed" };
   });
 
-  fastify.post("/api/cart/update", { preHandler: [cartMutationRateLimit] }, async (request, reply) => {
+  fastify.post("/cart/update", { preHandler: [cartMutationRateLimit] }, async (request, reply) => {
     if (!(await requireAuth(request, reply))) return;
 
     const product_id = normalizeProductId(request.body?.product_id);
