@@ -135,14 +135,18 @@ export default async function registerCheckoutRoutes(fastify, deps) {
         );
     } catch (error) {
       if (decrementedItems.length > 0) {
-        await Promise.all(
-          decrementedItems.map((item) =>
-            db.collection("products").updateOne(
-              { product_id: item.product_id },
-              { $inc: { stock: item.quantity } },
+        try {
+          await Promise.all(
+            decrementedItems.map((item) =>
+              db.collection("products").updateOne(
+                { product_id: item.product_id },
+                { $inc: { stock: item.quantity } },
+              ),
             ),
-          ),
-        );
+          );
+        } catch (compensationError) {
+          fastify.log?.error?.({ err: compensationError, msg: "Failed to compensate stock" });
+        }
       }
 
       if (String(error?.message || "").startsWith("INSUFFICIENT_STOCK:")) {

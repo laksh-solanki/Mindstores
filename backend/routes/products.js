@@ -1,4 +1,19 @@
-import { ObjectId } from "mongodb";
+/**
+ * Environment-agnostic ObjectId helper
+ */
+const getObjectId = async (id) => {
+  try {
+    const { ObjectId } = await import("mongodb");
+    return new ObjectId(id);
+  } catch {
+    // Fallback for environments without the mongodb driver (e.g. Workers using Atlas Data API)
+    return { $oid: id };
+  }
+};
+
+const isObjectIdValid = (id) => {
+  return typeof id === "string" && /^[0-9a-fA-F]{24}$/.test(id);
+};
 
 const CATEGORY_SUBCATEGORY_OPTIONS = {
   Electronics: ["Mobiles", "Cameras", "Headphones", "Laptops", "Accessories", "Audio", "Gaming"],
@@ -90,13 +105,13 @@ export default async function registerProductRoutes(fastify, deps) {
     };
   };
 
-  const buildProductFilter = (id) => {
+  const buildProductFilter = async (id) => {
     const normalizedId = (id || "").toString().trim();
     if (!normalizedId) return null;
 
-    if (ObjectId.isValid(normalizedId)) {
+    if (isObjectIdValid(normalizedId)) {
       return {
-        $or: [{ product_id: normalizedId }, { _id: new ObjectId(normalizedId) }],
+        $or: [{ product_id: normalizedId }, { _id: await getObjectId(normalizedId) }],
       };
     }
     return { product_id: normalizedId };
@@ -323,7 +338,7 @@ export default async function registerProductRoutes(fastify, deps) {
   });
 
   fastify.get("/api/products/:id", async (request, reply) => {
-    const filter = buildProductFilter(request.params.id);
+    const filter = await buildProductFilter(request.params.id);
     if (!filter) return reply.code(400).send({ message: "Invalid product id" });
 
     const product = await fastify.mongo.db
@@ -371,7 +386,7 @@ export default async function registerProductRoutes(fastify, deps) {
     if (!(await requireAdmin(request, reply))) return;
 
     const { id } = request.params;
-    const filter = buildProductFilter(id);
+    const filter = await buildProductFilter(id);
     if (!filter) return reply.code(400).send({ message: "Invalid product id" });
 
     const existingProduct = await fastify.mongo.db
@@ -404,7 +419,7 @@ export default async function registerProductRoutes(fastify, deps) {
   fastify.delete("/api/products/:id", { preHandler: [adminMutationRateLimit] }, async (request, reply) => {
     if (!(await requireAdmin(request, reply))) return;
 
-    const filter = buildProductFilter(request.params.id);
+    const filter = await buildProductFilter(request.params.id);
     if (!filter) return reply.code(400).send({ message: "Invalid product id" });
 
     const result = await fastify.mongo.db

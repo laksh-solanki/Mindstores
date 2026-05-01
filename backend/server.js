@@ -201,9 +201,16 @@ const getCurrentUser = async (request) => {
     return null;
   }
 
-  return await db
+  const user = await db
     .collection("users")
     .findOne({ user_id: session.user_id }, { projection: { _id: 0 } });
+
+  if (user) {
+    const normalizedEmail = (user.email || "").toLowerCase().trim();
+    user.is_admin = ADMIN_EMAILS.has(normalizedEmail);
+  }
+
+  return user;
 };
 
 const requireAuth = async (request, reply) => {

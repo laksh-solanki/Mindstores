@@ -89,7 +89,9 @@ function canSyncPictureToFirebase(picture) {
 }
 
 function mapFirebaseUser (firebaseUser) {
-  if (!firebaseUser) {return null;}
+  if (!firebaseUser) {
+    return null;
+  }
   return {
     uid: firebaseUser.uid || null,
     name: firebaseUser.displayName || null,
@@ -225,7 +227,9 @@ export const useAppStore = defineStore("app", {
     },
 
     initAuthListener() {
-      if (this.authListenerInitialized) {return;}
+      if (this.authListenerInitialized) {
+        return;
+      }
       this.authListenerInitialized = true;
 
       onAuthStateChanged(auth, async (firebaseUser) => {

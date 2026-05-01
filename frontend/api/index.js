@@ -24,19 +24,32 @@ function buildForwardHeaders(req) {
   const headers = new Headers()
   const blockedHeaders = new Set([
     'host',
-    'origin',
     'referer',
     'connection',
     'content-length',
   ])
 
+  // Preserve origin for CORS validation on backend
+  const preservedHeaders = new Set([
+    'origin',
+    'x-forwarded-origin',
+  ])
+
   for (const [key, value] of Object.entries(req.headers || {})) {
     const normalizedKey = String(key || '').toLowerCase()
-    if (
-      blockedHeaders.has(normalizedKey) ||
-      normalizedKey.startsWith('x-forwarded-') ||
-      normalizedKey.startsWith('x-vercel-')
-    ) {
+    if (blockedHeaders.has(normalizedKey)) {
+      continue
+    }
+
+    // Allow origin headers through for proper CORS validation
+    if (preservedHeaders.has(normalizedKey)) {
+      if (value != null) {
+        headers.set(key, String(value))
+      }
+      continue
+    }
+
+    if (normalizedKey.startsWith('x-forwarded-') || normalizedKey.startsWith('x-vercel-')) {
       continue
     }
 
@@ -82,19 +95,52 @@ export default async function handler(req, res) {
 
     const upstreamResponse = await fetch(targetUrl, fetchOptions)
     res.status(upstreamResponse.status)
+
+    // Add CORS headers for browser requests
+    const requestOrigin = req.headers.origin || req.headers.origin
+    if (requestOrigin) {
+      res.setHeader('Access-Control-Allow-Origin', requestOrigin)
+      res.setHeader('Access-Control-Allow-Credentials', 'true')
+    }
+
     res.setHeader('x-proxy-target', targetUrl.toString())
 
+    // Properly forward all response headers except hop-by-hop
+    const hopByHopHeaders = new Set([
+      'connection',
+      'keep-alive',
+      'proxy-authenticate',
+      'proxy-authorization',
+      'te',
+      'trailers',
+      'transfer-encoding',
+      'upgrade',
+    ])
+
     for (const [key, value] of upstreamResponse.headers.entries()) {
-      if (key.toLowerCase() === 'set-cookie') {continue}
+      if (hopByHopHeaders.has(key.toLowerCase())) {
+        continue
+      }
+      // Handle set-cookie specially - forward each one
+      if (key.toLowerCase() === 'set-cookie') {
+        // set-cookie should already be handled via getSetCookie() below
+        continue
+      }
       res.setHeader(key, value)
     }
 
+    // Properly handle set-cookie headers
     const setCookieValues =
       typeof upstreamResponse.headers.getSetCookie === 'function'
         ? upstreamResponse.headers.getSetCookie()
+        : upstreamResponse.headers.get('set-cookie')
+        ? [upstreamResponse.headers.get('set-cookie')]
         : []
-    if (setCookieValues.length > 0) {
-      res.setHeader('set-cookie', setCookieValues)
+
+    for (const cookie of setCookieValues) {
+      if (cookie) {
+        res.appendHeader('Set-Cookie', cookie)
+      }
     }
 
     const responseBuffer = Buffer.from(await upstreamResponse.arrayBuffer())
