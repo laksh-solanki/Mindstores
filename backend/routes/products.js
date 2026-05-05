@@ -1,83 +1,13 @@
-/**
- * Environment-agnostic ObjectId helper
- */
-const getObjectId = async (id) => {
-  try {
-    const { ObjectId } = await import("mongodb");
-    return new ObjectId(id);
-  } catch {
-    // Fallback for environments without the mongodb driver (e.g. Workers using Atlas Data API)
-    return { $oid: id };
-  }
-};
-
-const isObjectIdValid = (id) => {
-  return typeof id === "string" && /^[0-9a-fA-F]{24}$/.test(id);
-};
-
 const CATEGORY_SUBCATEGORY_OPTIONS = {
   Electronics: ["Mobiles", "Cameras", "Headphones", "Laptops", "Accessories", "Audio", "Gaming"],
   Furniture: ["Sofas", "Tables", "Chairs", "Living Room", "Bedroom", "Kitchen", "Dining", "Office"],
   Clothing: ["Shirts", "Jeans", "Jackets", "Men", "Women", "Kids", "Unisex"],
 };
 
-const CATEGORY_NAME_BY_KEY = Object.keys(CATEGORY_SUBCATEGORY_OPTIONS).reduce(
-  (acc, category) => {
-    acc[category.toLowerCase()] = category;
-    return acc;
-  },
-  {},
-);
-
-const normalizeText = (value) => (value == null ? "" : String(value).trim());
-const escapeRegex = (value) => normalizeText(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-const isSafeImageUrl = (value) => {
-  const normalized = normalizeText(value);
-  if (!normalized || normalized.length > 2048) return false;
-  try {
-    const parsedUrl = new URL(normalized);
-    return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
-  } catch {
-    return false;
-  }
-};
-
-const normalizeCategoryName = (category) => {
-  const normalizedCategory = normalizeText(category);
-  if (!normalizedCategory) return "";
-  return CATEGORY_NAME_BY_KEY[normalizedCategory.toLowerCase()] || normalizedCategory;
-};
-
-const getSubcategoryOptions = (category) =>
-  CATEGORY_SUBCATEGORY_OPTIONS[normalizeCategoryName(category)] || [];
-
-const normalizeSubcategoryName = (category, subcategory) => {
-  const normalizedSubcategory = normalizeText(subcategory);
-  if (!normalizedSubcategory) return "";
-  const matchingSubcategory = getSubcategoryOptions(category).find(
-    (option) => option.toLowerCase() === normalizedSubcategory.toLowerCase(),
-  );
-  return matchingSubcategory || normalizedSubcategory;
-};
-
-const parseNumberQueryParam = (value) => {
-  const parsedNumber = Number(value);
-  if (!Number.isFinite(parsedNumber)) return null;
-  return parsedNumber;
-};
-
-const parseBooleanQueryParam = (value) => {
-  const normalizedValue = normalizeText(value).toLowerCase();
-  if (normalizedValue === "true" || normalizedValue === "1") return true;
-  if (normalizedValue === "false" || normalizedValue === "0") return false;
-  return null;
-};
-
-const parseIntegerQueryParam = (value) => {
-  const parsedValue = Number.parseInt(value, 10);
-  if (!Number.isFinite(parsedValue)) return null;
-  return parsedValue;
-};
+const CATEGORY_NAME_BY_KEY = Object.keys(CATEGORY_SUBCATEGORY_OPTIONS).reduce((acc, categoryName) => {
+  acc[categoryName.toLowerCase()] = categoryName;
+  return acc;
+}, {});
 
 const SORT_OPTIONS = {
   newest: { created_at: -1, _id: -1 },
@@ -88,165 +18,295 @@ const SORT_OPTIONS = {
   name_desc: { name: -1 },
 };
 
+function normalizeText(value, maxLength = 0) {
+  const text = value == null ? "" : String(value).trim();
+  if (!text) {
+    return "";
+  }
+  if (maxLength > 0 && text.length > maxLength) {
+    return text.slice(0, maxLength);
+  }
+  return text;
+}
+
+function hasOwn(obj, key) {
+  return Object.prototype.hasOwnProperty.call(obj || {}, key);
+}
+
+function escapeRegex(value) {
+  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizeCategoryName(value) {
+  const normalized = normalizeText(value, 80);
+  if (!normalized) {
+    return "";
+  }
+  return CATEGORY_NAME_BY_KEY[normalized.toLowerCase()] || normalized;
+}
+
+function getSubcategoryOptions(category) {
+  return CATEGORY_SUBCATEGORY_OPTIONS[normalizeCategoryName(category)] || [];
+}
+
+function normalizeSubcategoryName(category, subcategory) {
+  const normalizedSubcategory = normalizeText(subcategory, 80);
+  if (!normalizedSubcategory) {
+    return "";
+  }
+
+  const exactMatch = getSubcategoryOptions(category).find(
+    (option) => option.toLowerCase() === normalizedSubcategory.toLowerCase(),
+  );
+  return exactMatch || normalizedSubcategory;
+}
+
+function parseNumberQueryParam(value) {
+  if (value == null || value === "") {
+    return null;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function parseIntegerQueryParam(value) {
+  if (value == null || value === "") {
+    return null;
+  }
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function parseBooleanQueryParam(value) {
+  const normalized = normalizeText(value, 10).toLowerCase();
+  if (!normalized) {
+    return null;
+  }
+  if (normalized === "true" || normalized === "1") {
+    return true;
+  }
+  if (normalized === "false" || normalized === "0") {
+    return false;
+  }
+  return null;
+}
+
+function isObjectIdLike(value) {
+  return typeof value === "string" && /^[0-9a-fA-F]{24}$/.test(value);
+}
+
+async function buildObjectId(value) {
+  const normalized = String(value || "").trim();
+  if (!isObjectIdLike(normalized)) {
+    return null;
+  }
+
+  try {
+    const { ObjectId } = await import("mongodb");
+    return new ObjectId(normalized);
+  } catch {
+    // Atlas Data API style fallback for Worker/memory clients.
+    return { $oid: normalized };
+  }
+}
+
+function isSafeImageUrl(value) {
+  const normalized = normalizeText(value, 2048);
+  if (!normalized) {
+    return false;
+  }
+
+  try {
+    const parsed = new URL(normalized);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function serializeProduct(product) {
+  if (!product) {
+    return null;
+  }
+  const { _id, ...rest } = product;
+  return {
+    ...rest,
+    product_id: rest.product_id || String(_id),
+  };
+}
+
+function buildCreateProductPayload(input) {
+  const payload = {
+    name: normalizeText(input?.name, 120),
+    company: normalizeText(input?.company, 80),
+    description: normalizeText(input?.description, 5000),
+    category: normalizeCategoryName(input?.category),
+    subcategory: normalizeSubcategoryName(input?.category, input?.subcategory),
+    image_url: normalizeText(input?.image_url, 2048),
+    price: Number(input?.price),
+    stock: Number(input?.stock),
+  };
+
+  if (!payload.name) {
+    return { error: "Product name is required" };
+  }
+  if (!payload.category) {
+    return { error: "Category is required" };
+  }
+  if (!Number.isFinite(payload.price) || payload.price < 0) {
+    return { error: "Price must be a valid number" };
+  }
+  if (!Number.isInteger(payload.stock) || payload.stock < 0) {
+    return { error: "Stock must be a non-negative integer" };
+  }
+  if (!payload.image_url || !isSafeImageUrl(payload.image_url)) {
+    return { error: "Image URL must be a valid http/https URL" };
+  }
+
+  const subcategoryOptions = getSubcategoryOptions(payload.category);
+  if (subcategoryOptions.length > 0 && !payload.subcategory) {
+    return { error: "Subcategory is required for the selected category" };
+  }
+
+  return { payload };
+}
+
+function buildUpdateProductPayload(input, existingProduct) {
+  if (!input || typeof input !== "object") {
+    return { error: "Invalid update payload" };
+  }
+
+  const existingCategory = normalizeCategoryName(existingProduct?.category);
+  const nextCategory = hasOwn(input, "category")
+    ? normalizeCategoryName(input.category)
+    : existingCategory;
+
+  const nextSubcategory = hasOwn(input, "subcategory")
+    ? normalizeSubcategoryName(nextCategory, input.subcategory)
+    : normalizeSubcategoryName(nextCategory, existingProduct?.subcategory);
+
+  const updates = {};
+
+  if (hasOwn(input, "name")) {
+    const normalized = normalizeText(input.name, 120);
+    if (!normalized) {
+      return { error: "Product name is required" };
+    }
+    updates.name = normalized;
+  }
+
+  if (hasOwn(input, "company")) {
+    updates.company = normalizeText(input.company, 80);
+  }
+
+  if (hasOwn(input, "description")) {
+    updates.description = normalizeText(input.description, 5000);
+  }
+
+  if (hasOwn(input, "category")) {
+    if (!nextCategory) {
+      return { error: "Category is required" };
+    }
+    updates.category = nextCategory;
+  }
+
+  if (hasOwn(input, "subcategory")) {
+    updates.subcategory = nextSubcategory;
+  }
+
+  if (hasOwn(input, "image_url")) {
+    const imageUrl = normalizeText(input.image_url, 2048);
+    if (!imageUrl || !isSafeImageUrl(imageUrl)) {
+      return { error: "Image URL must be a valid http/https URL" };
+    }
+    updates.image_url = imageUrl;
+  }
+
+  if (hasOwn(input, "price")) {
+    const price = Number(input.price);
+    if (!Number.isFinite(price) || price < 0) {
+      return { error: "Price must be a valid number" };
+    }
+    updates.price = price;
+  }
+
+  if (hasOwn(input, "stock")) {
+    const stock = Number(input.stock);
+    if (!Number.isInteger(stock) || stock < 0) {
+      return { error: "Stock must be a non-negative integer" };
+    }
+    updates.stock = stock;
+  }
+
+  const subcategoryOptions = getSubcategoryOptions(nextCategory);
+  if (subcategoryOptions.length > 0 && !nextSubcategory) {
+    return { error: "Subcategory is required for the selected category" };
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return { error: "No valid fields provided for update" };
+  }
+
+  updates.updated_at = new Date();
+  return { updates };
+}
+
+async function buildProductFilter(id) {
+  const normalizedId = normalizeText(id, 160);
+  if (!normalizedId) {
+    return null;
+  }
+
+  const objectId = await buildObjectId(normalizedId);
+  if (objectId) {
+    return {
+      $or: [{ product_id: normalizedId }, { _id: objectId }],
+    };
+  }
+
+  return { product_id: normalizedId };
+}
+
 export default async function registerProductRoutes(fastify, deps) {
   const { uuidv4, requireAdmin, createRateLimitGuard } = deps;
+
   const adminMutationRateLimit = createRateLimitGuard({
     keyPrefix: "products:admin-mutation",
     windowMs: 60_000,
     maxRequests: 40,
   });
 
-  const serializeProduct = (product) => {
-    if (!product) return null;
-    const { _id, ...rest } = product;
-    return {
-      ...rest,
-      product_id: rest.product_id || String(_id),
-    };
-  };
-
-  const buildProductFilter = async (id) => {
-    const normalizedId = (id || "").toString().trim();
-    if (!normalizedId) return null;
-
-    if (isObjectIdValid(normalizedId)) {
-      return {
-        $or: [{ product_id: normalizedId }, { _id: await getObjectId(normalizedId) }],
-      };
-    }
-    return { product_id: normalizedId };
-  };
-
-  const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj || {}, key);
-
-  const buildCreateProductPayload = (productInput) => {
-    const payload = {
-      name: normalizeText(productInput?.name),
-      company: normalizeText(productInput?.company),
-      description: normalizeText(productInput?.description),
-      category: normalizeCategoryName(productInput?.category),
-      subcategory: normalizeSubcategoryName(productInput?.category, productInput?.subcategory),
-      image_url: normalizeText(productInput?.image_url),
-      price: Number(productInput?.price),
-      stock: Number(productInput?.stock),
-    };
-
-    if (!payload.name) return { error: "Product name is required" };
-    if (payload.name.length > 120) return { error: "Product name is too long" };
-    if (payload.company.length > 80) return { error: "Company name is too long" };
-    if (payload.description.length > 5000) return { error: "Description is too long" };
-    if (!Number.isFinite(payload.price) || payload.price < 0) {
-      return { error: "Price must be a valid number" };
-    }
-    if (!payload.category) return { error: "Category is required" };
-    if (!Number.isInteger(payload.stock) || payload.stock < 0) {
-      return { error: "Stock must be a non-negative integer" };
-    }
-    if (!payload.image_url) return { error: "Image URL is required" };
-    if (!isSafeImageUrl(payload.image_url)) return { error: "Image URL must be a valid http/https URL" };
-
-    const requiredSubcategories = getSubcategoryOptions(payload.category);
-    if (requiredSubcategories.length > 0 && !payload.subcategory) {
-      return { error: "Subcategory is required for the selected category" };
-    }
-
-    return { payload };
-  };
-
-  const buildUpdateProductPayload = (updatesInput, existingProduct) => {
-    if (!updatesInput || typeof updatesInput !== "object") {
-      return { error: "Invalid update payload" };
-    }
-
-    const existingCategory = normalizeCategoryName(existingProduct?.category);
-    const nextCategory = hasOwn(updatesInput, "category")
-      ? normalizeCategoryName(updatesInput.category)
-      : existingCategory;
-    const nextSubcategory = hasOwn(updatesInput, "subcategory")
-      ? normalizeSubcategoryName(nextCategory, updatesInput.subcategory)
-      : normalizeSubcategoryName(nextCategory, existingProduct?.subcategory);
-
-    const updates = {};
-    if (hasOwn(updatesInput, "name")) {
-      const normalizedName = normalizeText(updatesInput.name);
-      if (!normalizedName) return { error: "Product name is required" };
-      if (normalizedName.length > 120) return { error: "Product name is too long" };
-      updates.name = normalizedName;
-    }
-    if (hasOwn(updatesInput, "company")) {
-      const normalizedCompany = normalizeText(updatesInput.company);
-      if (normalizedCompany.length > 80) return { error: "Company name is too long" };
-      updates.company = normalizedCompany;
-    }
-    if (hasOwn(updatesInput, "description")) {
-      const normalizedDescription = normalizeText(updatesInput.description);
-      if (normalizedDescription.length > 5000) return { error: "Description is too long" };
-      updates.description = normalizedDescription;
-    }
-    if (hasOwn(updatesInput, "category")) {
-      if (!nextCategory) return { error: "Category is required" };
-      updates.category = nextCategory;
-    }
-    if (hasOwn(updatesInput, "subcategory")) {
-      updates.subcategory = nextSubcategory;
-    }
-    if (hasOwn(updatesInput, "image_url")) {
-      const normalizedImageUrl = normalizeText(updatesInput.image_url);
-      if (!normalizedImageUrl) return { error: "Image URL is required" };
-      if (!isSafeImageUrl(normalizedImageUrl)) return { error: "Image URL must be a valid http/https URL" };
-      updates.image_url = normalizedImageUrl;
-    }
-    if (hasOwn(updatesInput, "price")) {
-      const normalizedPrice = Number(updatesInput.price);
-      if (!Number.isFinite(normalizedPrice) || normalizedPrice < 0) {
-        return { error: "Price must be a valid number" };
-      }
-      updates.price = normalizedPrice;
-    }
-    if (hasOwn(updatesInput, "stock")) {
-      const normalizedStock = Number(updatesInput.stock);
-      if (!Number.isInteger(normalizedStock) || normalizedStock < 0) {
-        return { error: "Stock must be a non-negative integer" };
-      }
-      updates.stock = normalizedStock;
-    }
-
-    const requiredSubcategories = getSubcategoryOptions(nextCategory);
-    if (requiredSubcategories.length > 0 && !nextSubcategory) {
-      return { error: "Subcategory is required for the selected category" };
-    }
-
-    if (Object.keys(updates).length === 0) {
-      return { error: "No valid fields provided for update" };
-    }
-
-    updates.updated_at = new Date();
-    return { updates };
-  };
-
   fastify.get("/products", async (request, reply) => {
-    const { category, subcategory, company, sort, search } = request.query;
-    const normalizedCategory = normalizeCategoryName(category);
-    const normalizedSubcategory = normalizeSubcategoryName(normalizedCategory || category, subcategory);
-    const normalizedCompany = normalizeText(company);
-    const normalizedSearch = normalizeText(search).slice(0, 80);
+    const queryParams = request.query || {};
+
+    const normalizedCategory = normalizeCategoryName(queryParams.category);
+    const normalizedSubcategory = normalizeSubcategoryName(
+      normalizedCategory || queryParams.category,
+      queryParams.subcategory,
+    );
+    const normalizedCompany = normalizeText(queryParams.company, 100);
+    const normalizedSearch = normalizeText(queryParams.search, 80);
+
     const filters = [];
 
     if (normalizedCategory) {
       filters.push({ category: normalizedCategory });
     }
+
     if (normalizedSubcategory) {
       filters.push({ subcategory: normalizedSubcategory });
     }
+
     if (normalizedCompany) {
-      const escapedCompany = escapeRegex(normalizedCompany);
+      const escaped = escapeRegex(normalizedCompany);
       filters.push({
         $or: [
-          { company: { $regex: `^${escapedCompany}$`, $options: "i" } },
-          { name: { $regex: `^${escapedCompany}(\\s|\\b)`, $options: "i" } },
+          { company: { $regex: `^${escaped}$`, $options: "i" } },
+          { name: { $regex: `^${escaped}(\\s|\\b)`, $options: "i" } },
         ],
       });
     }
+
     if (normalizedSearch) {
       const escapedSearch = escapeRegex(normalizedSearch);
       filters.push({
@@ -260,67 +320,74 @@ export default async function registerProductRoutes(fastify, deps) {
       });
     }
 
-    const minPriceInput = request.query?.min_price ?? request.query?.minPrice;
-    const maxPriceInput = request.query?.max_price ?? request.query?.maxPrice;
+    const minPriceInput = queryParams.min_price ?? queryParams.minPrice;
+    const maxPriceInput = queryParams.max_price ?? queryParams.maxPrice;
     const minPrice = parseNumberQueryParam(minPriceInput);
     const maxPrice = parseNumberQueryParam(maxPriceInput);
+
     if (minPrice != null || maxPrice != null) {
-      const priceQuery = {};
-      if (minPrice != null) priceQuery.$gte = Math.max(0, minPrice);
-      if (maxPrice != null) priceQuery.$lte = Math.max(0, maxPrice);
-      filters.push({ price: priceQuery });
+      if (minPrice != null && minPrice < 0) {
+        return reply.code(400).send({ message: "min_price cannot be negative" });
+      }
+      if (maxPrice != null && maxPrice < 0) {
+        return reply.code(400).send({ message: "max_price cannot be negative" });
+      }
+      if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
+        return reply.code(400).send({ message: "min_price cannot be greater than max_price" });
+      }
+
+      const priceFilter = {};
+      if (minPrice != null) {
+        priceFilter.$gte = minPrice;
+      }
+      if (maxPrice != null) {
+        priceFilter.$lte = maxPrice;
+      }
+      filters.push({ price: priceFilter });
     }
 
-    const inStockInput = request.query?.in_stock ?? request.query?.inStock;
+    const inStockInput = queryParams.in_stock ?? queryParams.inStock;
     const inStock = parseBooleanQueryParam(inStockInput);
     if (inStock === true) {
       filters.push({ stock: { $gt: 0 } });
     }
 
     const query =
-      filters.length === 0 ? {} : filters.length === 1 ? filters[0] : { $and: filters };
-    const normalizedSort = normalizeText(sort).toLowerCase();
-    const sortClause = SORT_OPTIONS[normalizedSort] || SORT_OPTIONS.newest;
+      filters.length === 0
+        ? {}
+        : filters.length === 1
+          ? filters[0]
+          : { $and: filters };
 
-    const includeMetaInput = request.query?.include_meta ?? request.query?.includeMeta;
+    const normalizedSortKey = normalizeText(queryParams.sort, 30).toLowerCase();
+    const sortClause = SORT_OPTIONS[normalizedSortKey] || SORT_OPTIONS.newest;
+
+    const includeMetaInput = queryParams.include_meta ?? queryParams.includeMeta;
     const includeMeta = parseBooleanQueryParam(includeMetaInput) === true;
-    const pageInput = parseIntegerQueryParam(request.query?.page);
-    const pageSizeInput = parseIntegerQueryParam(
-      request.query?.page_size ?? request.query?.pageSize,
-    );
-    const limitInput = parseIntegerQueryParam(request.query?.limit);
-    const usePagination = includeMeta || pageInput != null || pageSizeInput != null;
+
+    const page = Math.max(1, parseIntegerQueryParam(queryParams.page) || 1);
+    const pageSizeInput = parseIntegerQueryParam(queryParams.page_size ?? queryParams.pageSize);
+    const limitInput = parseIntegerQueryParam(queryParams.limit);
+
+    const shouldPaginate = includeMeta || pageSizeInput != null || parseIntegerQueryParam(queryParams.page) != null;
 
     reply.header("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
 
-    if (!usePagination) {
-      const limit = Number.isFinite(limitInput)
-        ? Math.min(Math.max(limitInput, 1), 250)
-        : 150;
+    const productsCollection = fastify.mongo.db.collection("products");
 
-      const products = await fastify.mongo.db
-        .collection("products")
-        .find(query)
-        .sort(sortClause)
-        .limit(limit)
-        .toArray();
+    if (!shouldPaginate) {
+      const limit = Number.isFinite(limitInput) ? Math.min(Math.max(limitInput, 1), 250) : 150;
+      const products = await productsCollection.find(query).sort(sortClause).limit(limit).toArray();
       return products.map(serializeProduct);
     }
 
-    const page = Math.max(1, pageInput || 1);
     const pageSizeBase = pageSizeInput ?? limitInput ?? 24;
     const pageSize = Math.min(Math.max(pageSizeBase, 1), 250);
     const skip = (page - 1) * pageSize;
 
-    const productCollection = fastify.mongo.db.collection("products");
     const [products, total] = await Promise.all([
-      productCollection
-        .find(query)
-        .sort(sortClause)
-        .skip(skip)
-        .limit(pageSize)
-        .toArray(),
-      productCollection.countDocuments(query),
+      productsCollection.find(query).sort(sortClause).skip(skip).limit(pageSize).toArray(),
+      productsCollection.countDocuments(query),
     ]);
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -338,97 +405,105 @@ export default async function registerProductRoutes(fastify, deps) {
   });
 
   fastify.get("/products/:id", async (request, reply) => {
-    const filter = await buildProductFilter(request.params.id);
-    if (!filter) return reply.code(400).send({ message: "Invalid product id" });
+    const filter = await buildProductFilter(request.params?.id);
+    if (!filter) {
+      return reply.code(400).send({ message: "Invalid product id" });
+    }
 
-    const product = await fastify.mongo.db
-      .collection("products")
-      .findOne(filter);
-    if (!product) return reply.code(404).send({ message: "Product not found" });
+    const product = await fastify.mongo.db.collection("products").findOne(filter);
+    if (!product) {
+      return reply.code(404).send({ message: "Product not found" });
+    }
+
     reply.header("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
     return serializeProduct(product);
   });
 
   fastify.post("/products", { preHandler: [adminMutationRateLimit] }, async (request, reply) => {
-    if (!(await requireAdmin(request, reply))) return;
-
-    const { payload, error: validationError } = buildCreateProductPayload(request.body);
-    if (validationError) {
-      return reply.code(400).send({ message: validationError });
+    if (!(await requireAdmin(request, reply))) {
+      return;
     }
 
-    const product = {
-      ...payload,
-      product_id: normalizeText(request.body?.product_id) || `prod_${uuidv4().substring(0, 12)}`,
-      created_at: new Date(),
-      updated_at: new Date(),
-    };
-
-    if (!product.product_id) {
-      product.product_id = `prod_${uuidv4().substring(0, 12)}`;
+    const body = request.body && typeof request.body === "object" ? request.body : {};
+    const { payload, error } = buildCreateProductPayload(body);
+    if (error) {
+      return reply.code(400).send({ message: error });
     }
-    if (!/^[a-zA-Z0-9_-]{4,80}$/.test(product.product_id)) {
+
+    const explicitProductId = normalizeText(body.product_id, 80);
+    const generatedProductId = `prod_${uuidv4().replace(/-/g, "").slice(0, 12)}`;
+    const productId = explicitProductId || generatedProductId;
+
+    if (!/^[a-zA-Z0-9_-]{4,80}$/.test(productId)) {
       return reply.code(400).send({ message: "product_id format is invalid" });
     }
 
-    const existingWithProductId = await fastify.mongo.db
+    const existing = await fastify.mongo.db
       .collection("products")
-      .findOne({ product_id: product.product_id }, { projection: { _id: 1 } });
-    if (existingWithProductId) {
+      .findOne({ product_id: productId }, { projection: { _id: 1 } });
+
+    if (existing) {
       return reply.code(409).send({ message: "product_id already exists" });
     }
 
-    await fastify.mongo.db.collection("products").insertOne(product);
-    return product;
+    const now = new Date();
+    const newProduct = {
+      ...payload,
+      product_id: productId,
+      created_at: now,
+      updated_at: now,
+    };
+
+    await fastify.mongo.db.collection("products").insertOne(newProduct);
+    return serializeProduct(newProduct);
   });
 
   fastify.put("/products/:id", { preHandler: [adminMutationRateLimit] }, async (request, reply) => {
-    if (!(await requireAdmin(request, reply))) return;
+    if (!(await requireAdmin(request, reply))) {
+      return;
+    }
 
-    const { id } = request.params;
-    const filter = await buildProductFilter(id);
-    if (!filter) return reply.code(400).send({ message: "Invalid product id" });
+    const filter = await buildProductFilter(request.params?.id);
+    if (!filter) {
+      return reply.code(400).send({ message: "Invalid product id" });
+    }
 
-    const existingProduct = await fastify.mongo.db
-      .collection("products")
-      .findOne(filter);
+    const existingProduct = await fastify.mongo.db.collection("products").findOne(filter);
     if (!existingProduct) {
       return reply.code(404).send({ message: "Product not found" });
     }
 
-    const { updates, error: validationError } = buildUpdateProductPayload(request.body, existingProduct);
-    if (validationError) {
-      return reply.code(400).send({ message: validationError });
+    const body = request.body && typeof request.body === "object" ? request.body : {};
+    const { updates, error } = buildUpdateProductPayload(body, existingProduct);
+
+    if (error) {
+      return reply.code(400).send({ message: error });
     }
 
-    const result = await fastify.mongo.db
-      .collection("products")
-      .updateOne(filter, { $set: updates });
-
+    const result = await fastify.mongo.db.collection("products").updateOne(filter, { $set: updates });
     if (result.matchedCount === 0) {
       return reply.code(404).send({ message: "Product not found" });
     }
 
-    const updatedProduct = await fastify.mongo.db
-      .collection("products")
-      .findOne(filter);
-
+    const updatedProduct = await fastify.mongo.db.collection("products").findOne(filter);
     return serializeProduct(updatedProduct);
   });
 
   fastify.delete("/products/:id", { preHandler: [adminMutationRateLimit] }, async (request, reply) => {
-    if (!(await requireAdmin(request, reply))) return;
+    if (!(await requireAdmin(request, reply))) {
+      return;
+    }
 
-    const filter = await buildProductFilter(request.params.id);
-    if (!filter) return reply.code(400).send({ message: "Invalid product id" });
+    const filter = await buildProductFilter(request.params?.id);
+    if (!filter) {
+      return reply.code(400).send({ message: "Invalid product id" });
+    }
 
-    const result = await fastify.mongo.db
-      .collection("products")
-      .deleteOne(filter);
-
+    const result = await fastify.mongo.db.collection("products").deleteOne(filter);
     if (result.deletedCount === 0) {
       return reply.code(404).send({ message: "Product not found" });
     }
+
     return { message: "Product deleted successfully" };
   });
 }

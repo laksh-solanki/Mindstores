@@ -1,0 +1,108 @@
+const DEFAULT_WORKER_API_URL = 'https://mindstores-backend-production.audit29122006.workers.dev'
+
+const HOP_BY_HOP_HEADERS = new Set([
+  'connection',
+  'content-encoding',
+  'content-length',
+  'keep-alive',
+  'proxy-authenticate',
+  'proxy-authorization',
+  'te',
+  'trailer',
+  'transfer-encoding',
+  'upgrade',
+])
+
+function normalizeApiBaseUrl(value) {
+  return String(value || '').trim().replace(/\/+$/, '')
+}
+
+function getWorkerApiUrl() {
+  return normalizeApiBaseUrl(process.env.BACKEND_API_URL || DEFAULT_WORKER_API_URL)
+}
+
+function buildTargetUrl(req, workerApiUrl) {
+  const requestUrl = new URL(req.url || '/', `https://${req.headers.host || 'localhost'}`)
+  const pathWithoutApiPrefix = requestUrl.pathname.replace(/^\/api(?=\/|$)/, '') || '/'
+  return `${workerApiUrl}${pathWithoutApiPrefix}${requestUrl.search}`
+}
+
+async function readRequestBody(req) {
+  const chunks = []
+  for await (const chunk of req) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+  }
+  return Buffer.concat(chunks)
+}
+
+function copyRequestHeaders(req) {
+  const headers = new Headers()
+  for (const [key, value] of Object.entries(req.headers || {})) {
+    if (!key || HOP_BY_HOP_HEADERS.has(key.toLowerCase()) || value == null) {
+      continue
+    }
+
+    if (Array.isArray(value)) {
+      headers.set(key, value.join(', '))
+    } else {
+      headers.set(key, String(value))
+    }
+  }
+  return headers
+}
+
+function copyResponseHeaders(response, res, workerApiUrl) {
+  response.headers.forEach((value, key) => {
+    if (HOP_BY_HOP_HEADERS.has(key.toLowerCase()) || key.toLowerCase() === 'set-cookie') {
+      return
+    }
+    res.setHeader(key, value)
+  })
+
+  const setCookies = typeof response.headers.getSetCookie === 'function'
+    ? response.headers.getSetCookie()
+    : []
+  if (setCookies.length > 0) {
+    res.setHeader('Set-Cookie', setCookies)
+  } else {
+    const setCookie = response.headers.get('set-cookie')
+    if (setCookie) {
+      res.setHeader('Set-Cookie', setCookie)
+    }
+  }
+
+  res.setHeader('X-Proxy-Target', workerApiUrl)
+}
+
+export default async function handler(req, res) {
+  const workerApiUrl = getWorkerApiUrl()
+  const targetUrl = buildTargetUrl(req, workerApiUrl)
+  const method = String(req.method || 'GET').toUpperCase()
+  const body = method === 'GET' || method === 'HEAD' ? undefined : await readRequestBody(req)
+
+  try {
+    const response = await fetch(targetUrl, {
+      method,
+      headers: copyRequestHeaders(req),
+      body: body && body.length > 0 ? body : undefined,
+      redirect: 'manual',
+    })
+
+    copyResponseHeaders(response, res, workerApiUrl)
+    res.statusCode = response.status
+
+    if ([204, 205, 304].includes(response.status) || method === 'HEAD') {
+      res.end()
+      return
+    }
+
+    const responseBody = Buffer.from(await response.arrayBuffer())
+    res.end(responseBody)
+  } catch (error) {
+    console.error('Cloudflare Worker proxy failed', error)
+    res.statusCode = 502
+    res.setHeader('Content-Type', 'application/json; charset=utf-8')
+    res.setHeader('X-Proxy-Target', workerApiUrl)
+    res.end(JSON.stringify({ message: 'Backend proxy unavailable' }))
+  }
+}

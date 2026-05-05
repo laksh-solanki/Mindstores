@@ -1,8 +1,11 @@
 const normalizeApiBaseUrl = (value) => String(value || '').trim().replace(/\/+$/, '')
 
+const LOCAL_API_BASE_URL = 'http://localhost:8000'
+const DEPLOYED_API_BASE_URL = '/api'
+
 const defaultApiBaseUrl = import.meta.env.DEV
-  ? 'https://mindstores-backend-production.audit29122006.workers.dev'
-  : 'https://mindstores-backend-production.audit29122006.workers.dev'
+  ? LOCAL_API_BASE_URL
+  : DEPLOYED_API_BASE_URL
 
 export const API_URL = normalizeApiBaseUrl(import.meta.env.VITE_API_URL || defaultApiBaseUrl)
 

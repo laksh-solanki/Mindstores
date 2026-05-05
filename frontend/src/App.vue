@@ -1,12 +1,12 @@
 <template>
   <v-app>
-    <AppHeader />
+    <AppHeader v-if="!isAdminPage" />
 
     <v-main>
       <router-view />
     </v-main>
 
-    <AppFooter v-if="!isAuthPage" />
+    <AppFooter v-if="!isAuthPage && !isAdminPage" />
     <FullScreenLoader :model-value="showFullscreenLoader" />
   </v-app>
 </template>
@@ -26,6 +26,7 @@
   const pageBooting = ref(document.readyState !== 'complete')
 
   const isAuthPage = computed(() => ['/login', '/create-account'].includes(route.path))
+  const isAdminPage = computed(() => route.path === '/admin')
   const showFullscreenLoader = computed(() => {
     return appStore.loading || routeLoading.value || pageBooting.value
   })

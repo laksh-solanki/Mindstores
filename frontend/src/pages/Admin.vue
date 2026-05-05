@@ -1,283 +1,692 @@
 <template>
-  <div class="admin-page">
-    <v-container class="admin-shell">
-      <section v-if="isAdmin" class="admin-hero">
-        <p class="admin-kicker">Management</p>
-        <div class="admin-head-row">
-          <div>
-            <h1 class="page-title">Admin Dashboard</h1>
-            <p class="admin-subtitle">
-              Manage product catalog, pricing, inventory, and storefront
-              content.
-            </p>
+  <v-layout class="admin-page">
+    <v-app-bar :color="adminColors.green" density="comfortable" flat>
+      <template #prepend>
+        <v-avatar :color="adminColors.cream" icon="mdi-storefront-outline" />
+      </template>
+      <v-app-bar-title class="text-h6 font-weight-bold">
+        Admin
+      </v-app-bar-title>
+      <v-spacer />
+      <div class="d-flex align-center gap-2">
+        <v-avatar :color="adminColors.avatar" size="33" class="text-white">
+          <span class="font-weight-bold">{{ userInitials }}</span>
+        </v-avatar>
+        <span class="text-white d-none d-sm-inline">{{ userName }}</span>
+      </div>
+    </v-app-bar>
+
+    <v-navigation-drawer :color="adminColors.creamLight" rail expand-on-hover width="312" elevation="1">
+      <v-list density="comfortable">
+        <v-list-item v-for="item in navItems" :key="item.id" :active="activePanel === item.id" density="comfortable"
+          @click="activePanel = item.id">
+          <template #prepend>
+            <v-icon>{{ item.icon }}</v-icon>
+          </template>
+          <v-list-item-title>{{ item.label }}</v-list-item-title>
+        </v-list-item>
+      </v-list>
+
+      <v-divider />
+
+      <v-list density="comfortable">
+        <v-list-item :active="activePanel === 'settings'" density="comfortable" @click="activePanel = 'settings'">
+          <template #prepend>
+            <v-icon>mdi-cog-outline</v-icon>
+          </template>
+          <v-list-item-title>Settings</v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </v-navigation-drawer>
+
+    <v-main>
+      <v-container>
+        <v-alert v-if="!isAdmin" class="admin-warning" type="warning" title="Admin Required"
+          text="Admin access is required to add, update, or delete products." closable />
+
+        <section v-if="activePanel === 'dashboard'" class="dashboard-panel">
+          <v-row align="stretch">
+            <v-col v-for="metric in metricCards" :key="metric.label">
+              <v-sheet class="pa-5 d-flex align-center justify-space-between" :color="adminColors.creamSoft" rounded="lg">
+                <div>
+                  <p class="mb-1">{{ metric.label }}</p>
+                  <h3 class="mb-0">{{ metric.value }}</h3>
+                </div>
+                <v-icon :class="metric.className" size="34">{{ metric.icon }}</v-icon>
+              </v-sheet>
+            </v-col>
+          </v-row>
+
+          <section class="admin-section recent-section">
+            <div class="section-heading">
+              <div>
+                <h2>Recent Inventory</h2>
+                <p>Search and review storefront products before editing.</p>
+              </div>
+              <v-btn class="admin-primary-btn" :disabled="!isAdmin" @click="openAddDialog">
+                <v-icon start>mdi-plus</v-icon>
+                Add Product
+              </v-btn>
+            </div>
+
+            <v-text-field v-model="productSearch" class="admin-search" density="comfortable" hide-details label="Search"
+              prepend-inner-icon="mdi-magnify" rounded="xl" variant="outlined" />
+
+            <div class="recent-table">
+              <div class="recent-head">
+                <span>Name</span>
+                <span>Amount</span>
+                <span>Vendor</span>
+                <span>Status</span>
+                <span>Stock</span>
+              </div>
+
+              <div v-for="product in recentProducts" :key="product.product_id" class="recent-row">
+                <div class="product-cell">
+                  <img :alt="product.name" :src="product.image_url">
+                  <span>{{ product.name }}</span>
+                </div>
+                <span>{{ formatCurrency(product.price) }}</span>
+                <span>{{ product.company || "Mindstores" }}</span>
+                <span>
+                  <v-chip class="status-chip" :class="stockStatus(product).className" size="small" variant="outlined">
+                    {{ stockStatus(product).label }}
+                  </v-chip>
+                </span>
+                <span>{{ formatNumber(product.stock || 0) }}</span>
+              </div>
+
+              <div v-if="recentProducts.length === 0" class="empty-row">
+                No products match your search.
+              </div>
+            </div>
+          </section>
+
+          <div class="lower-grid">
+            <section class="admin-section">
+              <h2>Transactions</h2>
+              <div class="summary-list">
+                <div v-for="category in categoryStats" :key="category.name" class="summary-item">
+                  <v-avatar class="summary-avatar" size="42">
+                    {{ category.name.slice(0, 1) }}
+                  </v-avatar>
+                  <div>
+                    <h3>{{ category.name }}</h3>
+                    <p>{{ category.count }} products</p>
+                  </div>
+                  <strong>{{ formatCurrency(category.value) }}</strong>
+                </div>
+              </div>
+            </section>
+
+            <section class="admin-section">
+              <h2>Summary</h2>
+              <div class="summary-list">
+                <div class="summary-item">
+                  <v-avatar class="summary-avatar revenue" size="42">R</v-avatar>
+                  <div>
+                    <h3>Catalog Value</h3>
+                    <p>Price multiplied by stock</p>
+                  </div>
+                  <strong>{{ formatCurrency(totalCatalogValue) }}</strong>
+                </div>
+                <div class="summary-item">
+                  <v-avatar class="summary-avatar stock" size="42">S</v-avatar>
+                  <div>
+                    <h3>Low Stock</h3>
+                    <p>Products below 5 units</p>
+                  </div>
+                  <strong>{{ lowStockCount }}</strong>
+                </div>
+                <div class="summary-item">
+                  <v-avatar class="summary-avatar category" size="42">C</v-avatar>
+                  <div>
+                    <h3>Top Category</h3>
+                    <p>{{ topCategory.name }}</p>
+                  </div>
+                  <strong>{{ topCategory.count }}</strong>
+                </div>
+              </div>
+            </section>
           </div>
-          <v-btn
-            class="add-btn"
-            color="primary"
-            :disabled="!isAdmin"
-            rounded="pill"
-            size="large"
-            @click="openAddDialog"
-          >
-            <v-icon start>mdi-plus</v-icon>
-            Add Product
-          </v-btn>
-        </div>
-      </section>
+        </section>
 
-      <BaseAlert
-        v-if="!isAdmin"
-        class="admin-warning"
-        message="Admin access is required to add, update, or delete products."
-        type="warning"
-      />
-
-      <v-card v-if="isAdmin" class="admin-surface border" variant="flat">
-        <v-card-text class="surface-content">
-          <v-data-table
-            v-if="!isMobile"
-            class="admin-table elevation-0 border"
-            :headers="headers"
-            :items="products"
-            :loading="loading"
-          >
-            <template #item.image_url="{ item }">
-              <img alt="Product" class="product-thumb d-flex my-2" :src="item.image_url">
-            </template>
-
-            <template #item.price="{ item }">
-              <span>${{
-                Number((resolveProductRecord(item) || {}).price || 0).toFixed(
-                  2,
-                )
-              }}</span>
-            </template>
-
-            <template #item.category_display="{ item }">
-              <span>{{ formatCategory(resolveProductRecord(item)) }}</span>
-            </template>
-
-            <template #item.actions="{ item }">
-              <v-btn
-                :disabled="!isAdmin"
-                icon
-                size="small"
-                variant="text"
-                @click="editProduct(item)"
-              >
-                <v-icon>mdi-pencil</v-icon>
+        <section v-else-if="activePanel === 'products'" class="products-panel">
+          <section class="admin-section">
+            <div class="section-heading">
+              <div>
+                <h2>Product Catalog</h2>
+                <p>Add, edit, delete, and audit storefront inventory.</p>
+              </div>
+              <v-btn class="admin-primary-btn" :disabled="!isAdmin" :loading="loading" @click="openAddDialog">
+                <v-icon start>mdi-plus</v-icon>
+                Add Product
               </v-btn>
-              <v-btn
-                color="error"
-                :disabled="!isAdmin"
-                icon
-                size="small"
-                variant="text"
-                @click="deleteProduct(item)"
-              >
-                <v-icon>mdi-delete</v-icon>
-              </v-btn>
-            </template>
-          </v-data-table>
+            </div>
 
-          <div v-else class="mobile-list">
-            <v-card
-              v-for="product in products"
-              :key="product.product_id"
-              class="mobile-product-card"
-              variant="flat"
-            >
-              <div class="mobile-item-top">
-                <img
-                  alt="Product"
-                  class="mobile-product-image"
-                  :src="product.image_url"
-                >
-                <div class="mobile-item-copy">
-                  <h3>{{ product.name }}</h3>
-                  <p v-if="product.company" class="mobile-company">{{ product.company }}</p>
-                  <p>{{ formatCategory(product) }}</p>
-                  <div class="mobile-meta">
-                    <span class="mobile-price">${{ Number(product.price || 0).toFixed(2) }}</span>
-                    <v-chip
-                      size="small"
-                      variant="tonal"
-                    >Stock: {{ product.stock }}</v-chip>
+            <v-text-field v-model="productSearch" class="admin-search" density="comfortable" hide-details
+              label="Search products" prepend-inner-icon="mdi-magnify" rounded="xl" variant="outlined" />
+
+            <v-data-table v-if="!isMobile" class="admin-data-table" :headers="headers" :items="filteredProducts"
+              :loading="loading" :items-per-page="8">
+              <template #item.image_url="{ item }">
+                <img alt="Product" class="product-thumb" :src="resolveProductRecord(item)?.image_url">
+              </template>
+
+              <template #item.name="{ item }">
+                <div class="table-name">
+                  <strong>{{ resolveProductRecord(item)?.name }}</strong>
+                  <span>{{ resolveProductRecord(item)?.product_id }}</span>
+                </div>
+              </template>
+
+              <template #item.price="{ item }">
+                <span>{{ formatCurrency(resolveProductRecord(item)?.price || 0) }}</span>
+              </template>
+
+              <template #item.category_display="{ item }">
+                <span>{{ formatCategory(resolveProductRecord(item)) }}</span>
+              </template>
+
+              <template #item.stock="{ item }">
+                <v-chip class="status-chip" :class="stockStatus(resolveProductRecord(item)).className" size="small"
+                  variant="outlined">
+                  {{ resolveProductRecord(item)?.stock || 0 }}
+                </v-chip>
+              </template>
+
+              <template #item.actions="{ item }">
+                <div class="table-actions">
+                  <v-btn :disabled="!isAdmin" icon size="small" variant="text" @click="editProduct(item)">
+                    <v-icon>mdi-pencil-outline</v-icon>
+                    <v-tooltip activator="parent" location="top">Edit product</v-tooltip>
+                  </v-btn>
+                  <v-btn color="error" :disabled="!isAdmin" icon size="small" variant="text"
+                    @click="deleteProduct(item)">
+                    <v-icon>mdi-delete-outline</v-icon>
+                    <v-tooltip activator="parent" location="top">Delete product</v-tooltip>
+                  </v-btn>
+                </div>
+              </template>
+            </v-data-table>
+
+            <div v-else class="mobile-list">
+              <article v-for="product in filteredProducts" :key="product.product_id" class="mobile-product-card">
+                <div class="mobile-item-top">
+                  <img alt="Product" class="mobile-product-image" :src="product.image_url">
+                  <div class="mobile-item-copy">
+                    <h3>{{ product.name }}</h3>
+                    <p v-if="product.company" class="mobile-company">{{ product.company }}</p>
+                    <p>{{ formatCategory(product) }}</p>
+                    <div class="mobile-meta">
+                      <span class="mobile-price">{{ formatCurrency(product.price) }}</span>
+                      <v-chip class="status-chip" :class="stockStatus(product).className" size="small"
+                        variant="outlined">
+                        Stock: {{ product.stock }}
+                      </v-chip>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mobile-actions">
+                  <v-btn class="mobile-action-btn" :disabled="!isAdmin" size="small" variant="text"
+                    @click="editProduct(product)">
+                    <v-icon size="18" start>mdi-pencil-outline</v-icon>
+                    Edit
+                  </v-btn>
+                  <v-btn class="mobile-action-btn" color="error" :disabled="!isAdmin" size="small" variant="text"
+                    @click="deleteProduct(product)">
+                    <v-icon size="18" start>mdi-delete-outline</v-icon>
+                    Delete
+                  </v-btn>
+                </div>
+              </article>
+            </div>
+          </section>
+        </section>
+
+        <section v-else-if="activePanel === 'analytics'" class="analytics-panel">
+          <div class="lower-grid">
+            <section class="admin-section">
+              <h2>Category Analytics</h2>
+              <div class="category-bars">
+                <div v-for="category in categoryStats" :key="category.name" class="category-bar">
+                  <div>
+                    <strong>{{ category.name }}</strong>
+                    <span>{{ category.count }} products</span>
+                  </div>
+                  <div class="bar-track">
+                    <span :style="{ width: `${category.percent}%` }" />
                   </div>
                 </div>
               </div>
+            </section>
 
-              <div class="mobile-actions">
-                <v-btn
-                  class="mobile-action-btn"
-                  :disabled="!isAdmin"
-                  size="small"
-                  variant="text"
-                  @click="editProduct(product)"
-                >
-                  <v-icon size="18" start>mdi-pencil</v-icon>
-                  Edit
-                </v-btn>
-                <v-btn
-                  class="mobile-action-btn"
-                  color="error"
-                  :disabled="!isAdmin"
-                  size="small"
-                  variant="text"
-                  @click="deleteProduct(product)"
-                >
-                  <v-icon size="18" start>mdi-delete</v-icon>
-                  Delete
-                </v-btn>
+            <section class="admin-section">
+              <h2>Stock Watch</h2>
+              <div class="summary-list">
+                <div v-for="product in lowStockProducts" :key="product.product_id" class="summary-item">
+                  <v-avatar class="summary-avatar stock" size="42">
+                    <v-icon size="20">mdi-alert-outline</v-icon>
+                  </v-avatar>
+                  <div>
+                    <h3>{{ product.name }}</h3>
+                    <p>{{ product.company || "Mindstores" }}</p>
+                  </div>
+                  <strong>{{ product.stock }}</strong>
+                </div>
+                <div v-if="lowStockProducts.length === 0" class="empty-row">
+                  No low-stock products right now.
+                </div>
               </div>
-            </v-card>
+            </section>
           </div>
-        </v-card-text>
-      </v-card>
-    </v-container>
+        </section>
 
-    <v-dialog v-model="dialog" max-width="640">
+        <section v-else class="settings-panel">
+          <section class="admin-section">
+            <div class="section-heading">
+              <div>
+                <h2>Settings</h2>
+                <p>Current admin session and data connection status.</p>
+              </div>
+              <v-btn class="admin-secondary-btn" :loading="loading" @click="fetchProducts">
+                <v-icon start>mdi-refresh</v-icon>
+                Refresh
+              </v-btn>
+            </div>
+
+            <div class="settings-grid">
+              <div class="settings-tile">
+                <span>Admin access</span>
+                <strong>{{ isAdmin ? "Enabled" : "Locked" }}</strong>
+              </div>
+              <div class="settings-tile">
+                <span>Products loaded</span>
+                <strong>{{ formatNumber(products.length) }}</strong>
+              </div>
+              <div class="settings-tile wide">
+                <span>API base</span>
+                <strong>{{ apiBaseLabel }}</strong>
+              </div>
+            </div>
+          </section>
+        </section>
+      </v-container>
+    </v-main>
+
+    <v-dialog v-model="dialog" max-width="720">
       <v-card class="admin-dialog-card">
         <v-card-title class="dialog-title">
           {{ editMode ? "Edit Product" : "Add Product" }}
         </v-card-title>
         <v-card-text>
           <v-form ref="form" class="dialog-form">
-            <v-text-field
-              v-model="formData.name"
-              label="Product Name"
-              required
-              variant="outlined"
-            />
+            <v-text-field v-model="formData.name" label="Product Name" required variant="outlined" />
 
-            <v-textarea
-              v-model="formData.description"
-              label="Description"
-              rows="3"
-              variant="outlined"
-            />
+            <v-textarea v-model="formData.description" label="Description" rows="3" variant="outlined" />
 
-            <v-text-field
-              v-model="formData.company"
-              label="Company / Brand"
-              placeholder="Example: Sony, Apple, Ikea"
-              variant="outlined"
-            />
+            <v-text-field v-model="formData.company" label="Company / Brand" placeholder="Example: Sony, Apple, Ikea"
+              variant="outlined" />
 
-            <v-text-field
-              v-model.number="formData.price"
-              label="Price"
-              prefix="$"
-              required
-              step="0"
-              type="number"
-              variant="outlined"
-            />
+            <div class="form-grid">
+              <v-text-field v-model.number="formData.price" label="Price" prefix="$" required step="0" type="number"
+                variant="outlined" />
 
-            <v-select
-              v-model="formData.category"
-              :items="categoryOptions"
-              label="Category"
-              required
-              variant="outlined"
-            />
+              <v-text-field v-model.number="formData.stock" label="Stock" required type="number" variant="outlined" />
+            </div>
 
-            <v-select
-              v-model="formData.subcategory"
-              :disabled="availableSubcategories.length === 0"
-              :hint="
-                availableSubcategories.length === 0
-                  ? 'No subcategory required for this category'
-                  : ''
-              "
-              :items="availableSubcategories"
-              label="Subcategory"
-              persistent-hint
-              :required="availableSubcategories.length > 0"
-              variant="outlined"
-            />
+            <div class="form-grid">
+              <v-select v-model="formData.category" :items="categoryOptions" label="Category" required
+                variant="outlined" />
 
-            <v-text-field
-              v-model.number="formData.stock"
-              label="Stock"
-              required
-              type="number"
-              variant="outlined"
-            />
+              <v-select v-model="formData.subcategory" :disabled="availableSubcategories.length === 0" :hint="availableSubcategories.length === 0
+                ? 'No subcategory required for this category'
+                : ''
+                " :items="availableSubcategories" label="Subcategory" persistent-hint
+                :required="availableSubcategories.length > 0" variant="outlined" />
+            </div>
 
-            <v-text-field
-              v-model="formData.image_url"
-              label="Image URL"
-              required
-              variant="outlined"
-            />
+            <v-text-field v-model="formData.image_url" label="Image URL" required variant="outlined" />
           </v-form>
         </v-card-text>
         <v-card-actions class="dialog-actions">
           <v-spacer />
-          <v-btn rounded="pill" variant="text" @click="dialog = false">
+          <v-btn variant="text" @click="dialog = false">
             Cancel
           </v-btn>
-          <v-btn
-            color="primary"
-            :disabled="!isAdmin"
-            :loading="saving"
-            rounded="pill"
-            @click="saveProduct"
-          >
+          <v-btn class="admin-primary-btn" :disabled="!isAdmin" :loading="saving" @click="saveProduct">
             {{ editMode ? "Update" : "Add" }}
           </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <BaseAlert
-      v-model="snackbar"
-      floating
-      :message="snackbarText"
-      :timeout="3000"
-      :type="snackbarColor"
-    />
-  </div>
+    <v-snackbar v-model="snackbar" :color="snackbarColor" timeout="3000" location="top">
+      {{ snackbarText }}
+    </v-snackbar>
+  </v-layout>
 </template>
 
 <script>
-  import axios from "axios";
-  import { computed, onMounted, ref, watch } from "vue";
-  import { useDisplay } from "vuetify";
-  import BaseAlert from "@/components/BaseAlert.vue";
-  import { useAppStore } from "@/stores/app";
-  import { API_URL } from "@/utils/api";
+import axios from "axios";
+import { computed, onMounted, ref, watch } from "vue";
+import { useDisplay } from "vuetify";
+import { useAppStore } from "@/stores/app";
+import { API_URL } from "@/utils/api";
 
-  const CATEGORY_OPTIONS_BASE = ["Electronics", "Furniture", "Clothing"];
-  const SUBCATEGORY_OPTIONS_BY_CATEGORY = {
-    Electronics: ["Mobiles", "Cameras", "Headphones", "Laptops", "Accessories", "Audio", "Gaming"],
-    Furniture: ["Sofas", "Tables", "Chairs", "Living Room", "Bedroom", "Kitchen", "Dining", "Office"],
-    Clothing: ["Shirts", "Jeans", "Jackets", "Men", "Women", "Kids", "Unisex"],
-  };
-  const CATEGORY_NAME_BY_KEY = CATEGORY_OPTIONS_BASE.reduce((acc, category) => {
-    acc[category.toLowerCase()] = category;
-    return acc;
-  }, {});
+const CATEGORY_OPTIONS_BASE = ["Electronics", "Furniture", "Clothing"];
+const SUBCATEGORY_OPTIONS_BY_CATEGORY = {
+  Electronics: ["Mobiles", "Cameras", "Headphones", "Laptops", "Accessories", "Audio", "Gaming"],
+  Furniture: ["Sofas", "Tables", "Chairs", "Living Room", "Bedroom", "Kitchen", "Dining", "Office"],
+  Clothing: ["Shirts", "Jeans", "Jackets", "Men", "Women", "Kids", "Unisex"],
+};
+const CATEGORY_NAME_BY_KEY = CATEGORY_OPTIONS_BASE.reduce((acc, category) => {
+  acc[category.toLowerCase()] = category;
+  return acc;
+}, {});
 
-  export default {
-    name: "Admin",
-    components: {
-      BaseAlert,
-    },
-    setup() {
-      const appStore = useAppStore();
-      const { smAndDown } = useDisplay();
-      const products = ref([]);
-      const loading = ref(false);
-      const dialog = ref(false);
-      const editMode = ref(false);
-      const saving = ref(false);
-      const snackbar = ref(false);
-      const snackbarText = ref("");
-      const snackbarColor = ref("success");
+export default {
+  name: "Admin",
+  setup() {
+    const appStore = useAppStore();
+    const { smAndDown } = useDisplay();
+    const adminColors = {
+      green: '#356b5a',
+      greenDark: '#2f604f',
+      cream: '#fbf5df',
+      creamLight: '#fff9e8',
+      creamSoft: '#fff9e8',
+      avatar: '#bb8053',
+      border: 'rgba(51, 75, 65, 0.24)',
+      text: '#111712',
+      muted: '#6d6b5d',
+    };
+    const products = ref([]);
+    const loading = ref(false);
+    const dialog = ref(false);
+    const editMode = ref(false);
+    const saving = ref(false);
+    const snackbar = ref(false);
+    const snackbarText = ref("");
+    const snackbarColor = ref("success");
+    const productSearch = ref("");
+    const activePanel = ref("dashboard");
 
-      const formData = ref({
+    const formData = ref({
+      name: "",
+      company: "",
+      description: "",
+      price: 0,
+      category: "",
+      subcategory: "",
+      stock: 0,
+      image_url: "",
+    });
+
+    const navItems = [
+      { id: "dashboard", label: "Dashboard", icon: "mdi-view-dashboard-outline" },
+      { id: "products", label: "Products", icon: "mdi-chart-line" },
+      { id: "analytics", label: "Analytics", icon: "mdi-finance" },
+    ];
+
+    const currentProductId = ref(null);
+    const isAdmin = computed(() => Boolean(appStore.user?.is_admin));
+    const isMobile = computed(() => smAndDown.value);
+    const userName = computed(() => appStore.user?.name || appStore.user?.email || "Admin User");
+    const userInitials = computed(() => {
+      const source = userName.value || "Admin";
+      return source
+        .split(/\s|@/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part.slice(0, 1).toUpperCase())
+        .join("") || "A";
+    });
+    const apiBaseLabel = computed(() => API_URL);
+    const resolveProductRecord = (item) =>
+      item?.raw || item?.item?.raw || item?.item || item || null;
+
+    const headers = [
+      { title: "Image", key: "image_url", sortable: false },
+      { title: "Name", key: "name" },
+      { title: "Company", key: "company" },
+      { title: "Category", key: "category_display" },
+      { title: "Price", key: "price" },
+      { title: "Stock", key: "stock" },
+      { title: "Actions", key: "actions", sortable: false },
+    ];
+
+    const normalizeText = (value) =>
+      value == null ? "" : String(value).trim();
+    const normalizeCategoryName = (value) => {
+      const normalizedValue = normalizeText(value);
+      const lowerCasedValue = normalizedValue.toLowerCase();
+      return CATEGORY_NAME_BY_KEY[lowerCasedValue] || normalizedValue;
+    };
+    const getSubcategoryOptions = (category) => {
+      const normalizedCategory = normalizeCategoryName(category);
+      return SUBCATEGORY_OPTIONS_BY_CATEGORY[normalizedCategory] || [];
+    };
+    const normalizeSubcategoryName = (category, subcategory) => {
+      const normalizedSubcategory = normalizeText(subcategory);
+      if (!normalizedSubcategory) return "";
+      const matchingSubcategory = getSubcategoryOptions(category).find(
+        (option) =>
+          option.toLowerCase() === normalizedSubcategory.toLowerCase(),
+      );
+      return matchingSubcategory || normalizedSubcategory;
+    };
+    const formatCurrency = (value) =>
+      new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 2,
+      }).format(Number(value || 0));
+    const formatNumber = (value) =>
+      new Intl.NumberFormat("en-US").format(Number(value || 0));
+    const categoryOptions = computed(() => {
+      const currentCategory = normalizeCategoryName(formData.value.category);
+      if (!currentCategory) return CATEGORY_OPTIONS_BASE;
+      if (
+        CATEGORY_OPTIONS_BASE.some(
+          (category) =>
+            category.toLowerCase() === currentCategory.toLowerCase(),
+        )
+      ) {
+        return CATEGORY_OPTIONS_BASE;
+      }
+      return [...CATEGORY_OPTIONS_BASE, currentCategory];
+    });
+    const availableSubcategories = computed(() => {
+      const matchedSubcategories = getSubcategoryOptions(
+        formData.value.category,
+      );
+      const selectedSubcategory = normalizeSubcategoryName(
+        formData.value.category,
+        formData.value.subcategory,
+      );
+      if (!selectedSubcategory) return matchedSubcategories;
+      if (
+        matchedSubcategories.some(
+          (subcategory) =>
+            subcategory.toLowerCase() === selectedSubcategory.toLowerCase(),
+        )
+      ) {
+        return matchedSubcategories;
+      }
+      return [...matchedSubcategories, selectedSubcategory];
+    });
+    const formatCategory = (product) => {
+      const mainCategory = normalizeCategoryName(product?.category) || "Other";
+      const subcategory = normalizeSubcategoryName(
+        mainCategory,
+        product?.subcategory,
+      );
+      return subcategory ? `${mainCategory} / ${subcategory}` : mainCategory;
+    };
+    const stockStatus = (product) => {
+      const stock = Number(product?.stock || 0);
+      if (stock <= 0) {
+        return { label: "Out", className: "is-cancelled" };
+      }
+      if (stock < 5) {
+        return { label: "Low", className: "is-pending" };
+      }
+      return { label: "Active", className: "is-completed" };
+    };
+
+    const matchesProductSearch = (product) => {
+      const query = productSearch.value.trim().toLowerCase();
+      if (!query) return true;
+      return [
+        product.name,
+        product.company,
+        product.category,
+        product.subcategory,
+        product.product_id,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(query);
+    };
+    const filteredProducts = computed(() => products.value.filter(matchesProductSearch));
+    const recentProducts = computed(() =>
+      [...filteredProducts.value]
+        .sort((left, right) => new Date(right.updated_at || 0) - new Date(left.updated_at || 0))
+        .slice(0, 5),
+    );
+    const totalInventoryUnits = computed(() =>
+      products.value.reduce((total, product) => total + Number(product.stock || 0), 0),
+    );
+    const totalCatalogValue = computed(() =>
+      products.value.reduce(
+        (total, product) => total + Number(product.price || 0) * Number(product.stock || 0),
+        0,
+      ),
+    );
+    const averagePrice = computed(() => {
+      if (products.value.length === 0) return 0;
+      return products.value.reduce((total, product) => total + Number(product.price || 0), 0) / products.value.length;
+    });
+    const lowStockCount = computed(() =>
+      products.value.filter((product) => Number(product.stock || 0) < 5).length,
+    );
+    const categoryStats = computed(() => {
+      const stats = new Map();
+      for (const product of products.value) {
+        const category = normalizeCategoryName(product.category) || "Other";
+        const existing = stats.get(category) || { name: category, count: 0, units: 0, value: 0, percent: 0 };
+        existing.count += 1;
+        existing.units += Number(product.stock || 0);
+        existing.value += Number(product.price || 0) * Number(product.stock || 0);
+        stats.set(category, existing);
+      }
+
+      const maxCount = Math.max(1, ...Array.from(stats.values()).map((item) => item.count));
+      return Array.from(stats.values())
+        .map((item) => ({
+          ...item,
+          percent: Math.max(8, Math.round((item.count / maxCount) * 100)),
+        }))
+        .sort((left, right) => right.count - left.count);
+    });
+    const topCategory = computed(() => categoryStats.value[0] || { name: "None", count: 0 });
+    const lowStockProducts = computed(() =>
+      products.value
+        .filter((product) => Number(product.stock || 0) < 5)
+        .sort((left, right) => Number(left.stock || 0) - Number(right.stock || 0))
+        .slice(0, 5),
+    );
+    const metricCards = computed(() => [
+      {
+        label: "Total products",
+        value: formatNumber(products.value.length),
+        icon: "mdi-shape-outline",
+        className: "metric-red",
+      },
+      {
+        label: "Inventory units",
+        value: formatNumber(totalInventoryUnits.value),
+        icon: "mdi-account-group-outline",
+        className: "metric-blue",
+      },
+      {
+        label: "Catalog value",
+        value: formatCurrency(totalCatalogValue.value),
+        icon: "mdi-star-outline",
+        className: "metric-green",
+      },
+      {
+        label: "Average price",
+        value: formatCurrency(averagePrice.value),
+        icon: "mdi-cart-outline",
+        className: "metric-orange",
+      },
+    ]);
+
+    watch(
+      () => formData.value.category,
+      (nextCategory) => {
+        const normalizedCategory = normalizeCategoryName(nextCategory);
+        if (normalizedCategory !== formData.value.category) {
+          formData.value.category = normalizedCategory;
+          return;
+        }
+
+        const categorySubcategories = getSubcategoryOptions(normalizedCategory);
+        if (categorySubcategories.length === 0) {
+          formData.value.subcategory = "";
+          return;
+        }
+
+        const selectedSubcategory = normalizeSubcategoryName(
+          normalizedCategory,
+          formData.value.subcategory,
+        );
+        if (!selectedSubcategory) return;
+        if (
+          categorySubcategories.some(
+            (subcategory) =>
+              subcategory.toLowerCase() === selectedSubcategory.toLowerCase(),
+          )
+        ) {
+          if (selectedSubcategory !== formData.value.subcategory) {
+            formData.value.subcategory = selectedSubcategory;
+          }
+          return;
+        }
+        formData.value.subcategory = "";
+      },
+    );
+
+    const fetchProducts = async () => {
+      loading.value = true;
+      try {
+        const response = await axios.get(`${API_URL}/products`);
+        products.value = Array.isArray(response.data) ? response.data : response.data?.items || [];
+      } catch (error) {
+        console.error("Failed to fetch products:", error);
+        snackbarText.value = "Failed to fetch products";
+        snackbarColor.value = "error";
+        snackbar.value = true;
+      } finally {
+        loading.value = false;
+      }
+    };
+
+    const openAddDialog = () => {
+      if (!isAdmin.value) {
+        snackbarText.value = "Admin access required";
+        snackbarColor.value = "warning";
+        snackbar.value = true;
+        return;
+      }
+
+      editMode.value = false;
+      currentProductId.value = null;
+      formData.value = {
         name: "",
         company: "",
         description: "",
@@ -286,523 +695,671 @@
         subcategory: "",
         stock: 0,
         image_url: "",
-      });
-
-      const currentProductId = ref(null);
-      const isAdmin = computed(() => Boolean(appStore.user?.is_admin));
-      const isMobile = computed(() => smAndDown.value);
-      const resolveProductRecord = (item) =>
-        item?.raw || item?.item?.raw || item?.item || item || null;
-
-      const headers = [
-        { title: "Image", key: "image_url", sortable: false },
-        { title: "Name", key: "name" },
-        { title: "Company", key: "company" },
-        { title: "Category", key: "category_display" },
-        { title: "Price", key: "price" },
-        { title: "Stock", key: "stock" },
-        { title: "Actions", key: "actions", sortable: false },
-      ];
-
-      const normalizeText = (value) =>
-        value == null ? "" : String(value).trim();
-      const normalizeCategoryName = (value) => {
-        const normalizedValue = normalizeText(value);
-        const lowerCasedValue = normalizedValue.toLowerCase();
-        return CATEGORY_NAME_BY_KEY[lowerCasedValue] || normalizedValue;
       };
-      const getSubcategoryOptions = (category) => {
-        const normalizedCategory = normalizeCategoryName(category);
-        return SUBCATEGORY_OPTIONS_BY_CATEGORY[normalizedCategory] || [];
+      dialog.value = true;
+    };
+
+    const editProduct = (product) => {
+      if (!isAdmin.value) {
+        snackbarText.value = "Admin access required";
+        snackbarColor.value = "warning";
+        snackbar.value = true;
+        return;
+      }
+
+      const selectedProduct = resolveProductRecord(product);
+      if (!selectedProduct?.product_id) {
+        snackbarText.value = "Unable to update: product id not found";
+        snackbarColor.value = "error";
+        snackbar.value = true;
+        return;
+      }
+
+      editMode.value = true;
+      currentProductId.value = selectedProduct.product_id;
+      formData.value = {
+        name: selectedProduct.name,
+        company: normalizeText(selectedProduct.company || ""),
+        description: selectedProduct.description,
+        price: selectedProduct.price,
+        category: normalizeCategoryName(selectedProduct.category),
+        subcategory: normalizeSubcategoryName(
+          selectedProduct.category,
+          selectedProduct.subcategory,
+        ),
+        stock: selectedProduct.stock,
+        image_url: selectedProduct.image_url,
       };
-      const normalizeSubcategoryName = (category, subcategory) => {
-        const normalizedSubcategory = normalizeText(subcategory);
-        if (!normalizedSubcategory) return "";
-        const matchingSubcategory = getSubcategoryOptions(category).find(
-          (option) =>
-            option.toLowerCase() === normalizedSubcategory.toLowerCase(),
-        );
-        return matchingSubcategory || normalizedSubcategory;
-      };
-      const categoryOptions = computed(() => {
-        const currentCategory = normalizeCategoryName(formData.value.category);
-        if (!currentCategory) return CATEGORY_OPTIONS_BASE;
-        if (
-          CATEGORY_OPTIONS_BASE.some(
-            (category) =>
-              category.toLowerCase() === currentCategory.toLowerCase(),
-          )
-        ) {
-          return CATEGORY_OPTIONS_BASE;
-        }
-        return [...CATEGORY_OPTIONS_BASE, currentCategory];
-      });
-      const availableSubcategories = computed(() => {
-        const matchedSubcategories = getSubcategoryOptions(
-          formData.value.category,
-        );
-        const selectedSubcategory = normalizeSubcategoryName(
+      dialog.value = true;
+    };
+
+    const buildProductPayload = () => {
+      const payload = {
+        name: normalizeText(formData.value.name),
+        company: normalizeText(formData.value.company),
+        description: normalizeText(formData.value.description),
+        category: normalizeCategoryName(formData.value.category),
+        subcategory: normalizeSubcategoryName(
           formData.value.category,
           formData.value.subcategory,
-        );
-        if (!selectedSubcategory) return matchedSubcategories;
-        if (
-          matchedSubcategories.some(
-            (subcategory) =>
-              subcategory.toLowerCase() === selectedSubcategory.toLowerCase(),
-          )
-        ) {
-          return matchedSubcategories;
-        }
-        return [...matchedSubcategories, selectedSubcategory];
-      });
-      const formatCategory = (product) => {
-        const mainCategory = normalizeCategoryName(product?.category) || "Other";
-        const subcategory = normalizeSubcategoryName(
-          mainCategory,
-          product?.subcategory,
-        );
-        return subcategory ? `${mainCategory} / ${subcategory}` : mainCategory;
+        ),
+        image_url: normalizeText(formData.value.image_url),
+        price: Number(formData.value.price),
+        stock: Math.max(0, Math.trunc(Number(formData.value.stock))),
       };
 
-      watch(
-        () => formData.value.category,
-        (nextCategory) => {
-          const normalizedCategory = normalizeCategoryName(nextCategory);
-          if (normalizedCategory !== formData.value.category) {
-            formData.value.category = normalizedCategory;
-            return;
-          }
+      if (!payload.name) return { error: "Product name is required" };
+      if (!Number.isFinite(payload.price) || payload.price < 0)
+        return { error: "Price must be a valid number" };
+      if (!payload.category) return { error: "Category is required" };
+      if (
+        getSubcategoryOptions(payload.category).length > 0 &&
+        !payload.subcategory
+      ) {
+        return { error: "Subcategory is required for the selected category" };
+      }
+      if (!payload.image_url) return { error: "Image URL is required" };
 
-          const categorySubcategories = getSubcategoryOptions(normalizedCategory);
-          if (categorySubcategories.length === 0) {
-            formData.value.subcategory = "";
-            return;
-          }
+      return { payload };
+    };
 
-          const selectedSubcategory = normalizeSubcategoryName(
-            normalizedCategory,
-            formData.value.subcategory,
-          );
-          if (!selectedSubcategory) return;
-          if (
-            categorySubcategories.some(
-              (subcategory) =>
-                subcategory.toLowerCase() === selectedSubcategory.toLowerCase(),
-            )
-          ) {
-            if (selectedSubcategory !== formData.value.subcategory) {
-              formData.value.subcategory = selectedSubcategory;
-            }
-            return;
-          }
-          formData.value.subcategory = "";
-        },
-      );
+    const saveProduct = async () => {
+      if (!isAdmin.value) {
+        snackbarText.value = "Admin access required";
+        snackbarColor.value = "warning";
+        snackbar.value = true;
+        return;
+      }
 
-      const fetchProducts = async () => {
-        loading.value = true;
-        try {
-          const response = await axios.get(`${API_URL}/products`);
-          products.value = response.data;
-        } catch (error) {
-          console.error("Failed to fetch products:", error);
-        } finally {
-          loading.value = false;
-        }
-      };
+      const { payload, error: validationError } = buildProductPayload();
+      if (validationError) {
+        snackbarText.value = validationError;
+        snackbarColor.value = "warning";
+        snackbar.value = true;
+        return;
+      }
 
-      const openAddDialog = () => {
-        if (!isAdmin.value) {
-          snackbarText.value = "Admin access required";
-          snackbarColor.value = "warning";
-          snackbar.value = true;
-          return;
-        }
+      if (editMode.value && !currentProductId.value) {
+        snackbarText.value = "Unable to update: missing product id";
+        snackbarColor.value = "error";
+        snackbar.value = true;
+        return;
+      }
 
-        editMode.value = false;
-        currentProductId.value = null;
-        formData.value = {
-          name: "",
-          company: "",
-          description: "",
-          price: 0,
-          category: "",
-          subcategory: "",
-          stock: 0,
-          image_url: "",
-        };
-        dialog.value = true;
-      };
-
-      const editProduct = (product) => {
-        if (!isAdmin.value) {
-          snackbarText.value = "Admin access required";
-          snackbarColor.value = "warning";
-          snackbar.value = true;
-          return;
-        }
-
-        const selectedProduct = resolveProductRecord(product);
-        if (!selectedProduct?.product_id) {
-          snackbarText.value = "Unable to update: product id not found";
-          snackbarColor.value = "error";
-          snackbar.value = true;
-          return;
-        }
-
-        editMode.value = true;
-        currentProductId.value = selectedProduct.product_id;
-        formData.value = {
-          name: selectedProduct.name,
-          company: normalizeText(selectedProduct.company || ""),
-          description: selectedProduct.description,
-          price: selectedProduct.price,
-          category: normalizeCategoryName(selectedProduct.category),
-          subcategory: normalizeSubcategoryName(
-            selectedProduct.category,
-            selectedProduct.subcategory,
-          ),
-          stock: selectedProduct.stock,
-          image_url: selectedProduct.image_url,
-        };
-        dialog.value = true;
-      };
-
-      const buildProductPayload = () => {
-        const payload = {
-          name: normalizeText(formData.value.name),
-          company: normalizeText(formData.value.company),
-          description: normalizeText(formData.value.description),
-          category: normalizeCategoryName(formData.value.category),
-          subcategory: normalizeSubcategoryName(
-            formData.value.category,
-            formData.value.subcategory,
-          ),
-          image_url: normalizeText(formData.value.image_url),
-          price: Number(formData.value.price),
-          stock: Math.max(0, Math.trunc(Number(formData.value.stock))),
-        };
-
-        if (!payload.name) return { error: "Product name is required" };
-        if (!Number.isFinite(payload.price) || payload.price < 0)
-          return { error: "Price must be a valid number" };
-        if (!payload.category) return { error: "Category is required" };
-        if (
-          getSubcategoryOptions(payload.category).length > 0 &&
-          !payload.subcategory
-        ) {
-          return { error: "Subcategory is required for the selected category" };
-        }
-        if (!payload.image_url) return { error: "Image URL is required" };
-
-        return { payload };
-      };
-
-      const saveProduct = async () => {
-        if (!isAdmin.value) {
-          snackbarText.value = "Admin access required";
-          snackbarColor.value = "warning";
-          snackbar.value = true;
-          return;
-        }
-
-        const { payload, error: validationError } = buildProductPayload();
-        if (validationError) {
-          snackbarText.value = validationError;
-          snackbarColor.value = "warning";
-          snackbar.value = true;
-          return;
-        }
-
-        if (editMode.value && !currentProductId.value) {
-          snackbarText.value = "Unable to update: missing product id";
-          snackbarColor.value = "error";
-          snackbar.value = true;
-          return;
-        }
-
-        saving.value = true;
-        try {
-          if (editMode.value) {
-            await axios.put(
-              `${API_URL}/products/${encodeURIComponent(currentProductId.value)}`,
-              payload,
-              { withCredentials: true },
-            );
-            snackbarText.value = "Product updated successfully";
-          } else {
-            await axios.post(`${API_URL}/products`, payload, {
-              withCredentials: true,
-            });
-            snackbarText.value = "Product added successfully";
-          }
-
-          snackbarColor.value = "success";
-          snackbar.value = true;
-          dialog.value = false;
-          await fetchProducts();
-        } catch (error) {
-          console.error("Failed to save product:", error);
-          snackbarText.value =
-            error.response?.data?.message || "Failed to save product";
-          snackbarColor.value = "error";
-          snackbar.value = true;
-        } finally {
-          saving.value = false;
-        }
-      };
-
-      const deleteProduct = async (product) => {
-        if (!isAdmin.value) {
-          snackbarText.value = "Admin access required";
-          snackbarColor.value = "warning";
-          snackbar.value = true;
-          return;
-        }
-
-        const selectedProduct = resolveProductRecord(product);
-        if (!selectedProduct?.product_id) {
-          snackbarText.value = "Unable to delete: product id not found";
-          snackbarColor.value = "error";
-          snackbar.value = true;
-          return;
-        }
-
-        if (
-          !confirm(`Are you sure you want to delete ${selectedProduct.name}?`)
-        ) {
-          return;
-        }
-
-        try {
-          await axios.delete(
-            `${API_URL}/products/${encodeURIComponent(selectedProduct.product_id)}`,
+      saving.value = true;
+      try {
+        if (editMode.value) {
+          await axios.put(
+            `${API_URL}/products/${encodeURIComponent(currentProductId.value)}`,
+            payload,
             { withCredentials: true },
           );
-          snackbarText.value = "Product deleted successfully";
-          snackbarColor.value = "success";
-          snackbar.value = true;
-          await fetchProducts();
-        } catch (error) {
-          console.error("Failed to delete product:", error);
-          snackbarText.value =
-            error.response?.data?.message || "Failed to delete product";
-          snackbarColor.value = "error";
-          snackbar.value = true;
+          snackbarText.value = "Product updated successfully";
+        } else {
+          await axios.post(`${API_URL}/products`, payload, {
+            withCredentials: true,
+          });
+          snackbarText.value = "Product added successfully";
         }
-      };
 
-      onMounted(() => {
-        fetchProducts();
-      });
+        snackbarColor.value = "success";
+        snackbar.value = true;
+        dialog.value = false;
+        await fetchProducts();
+      } catch (error) {
+        console.error("Failed to save product:", error);
+        snackbarText.value =
+          error.response?.data?.message || "Failed to save product";
+        snackbarColor.value = "error";
+        snackbar.value = true;
+      } finally {
+        saving.value = false;
+      }
+    };
 
-      return {
-        products,
-        loading,
-        dialog,
-        editMode,
-        saving,
-        snackbar,
-        snackbarText,
-        snackbarColor,
-        isAdmin,
-        isMobile,
-        formData,
-        headers,
-        categoryOptions,
-        availableSubcategories,
-        resolveProductRecord,
-        formatCategory,
-        openAddDialog,
-        editProduct,
-        saveProduct,
-        deleteProduct,
-      };
-    },
-  };
+    const deleteProduct = async (product) => {
+      if (!isAdmin.value) {
+        snackbarText.value = "Admin access required";
+        snackbarColor.value = "warning";
+        snackbar.value = true;
+        return;
+      }
+
+      const selectedProduct = resolveProductRecord(product);
+      if (!selectedProduct?.product_id) {
+        snackbarText.value = "Unable to delete: product id not found";
+        snackbarColor.value = "error";
+        snackbar.value = true;
+        return;
+      }
+
+      if (
+        !confirm(`Are you sure you want to delete ${selectedProduct.name}?`)
+      ) {
+        return;
+      }
+
+      try {
+        await axios.delete(
+          `${API_URL}/products/${encodeURIComponent(selectedProduct.product_id)}`,
+          { withCredentials: true },
+        );
+        snackbarText.value = "Product deleted successfully";
+        snackbarColor.value = "success";
+        snackbar.value = true;
+        await fetchProducts();
+      } catch (error) {
+        console.error("Failed to delete product:", error);
+        snackbarText.value =
+          error.response?.data?.message || "Failed to delete product";
+        snackbarColor.value = "error";
+        snackbar.value = true;
+      }
+    };
+
+    onMounted(() => {
+      fetchProducts();
+    });
+
+    return {
+      products,
+      loading,
+      dialog,
+      editMode,
+      saving,
+      snackbar,
+      snackbarText,
+      snackbarColor,
+      isAdmin,
+      isMobile,
+      formData,
+      headers,
+      categoryOptions,
+      availableSubcategories,
+      productSearch,
+      filteredProducts,
+      recentProducts,
+      metricCards,
+      categoryStats,
+      lowStockProducts,
+      lowStockCount,
+      totalCatalogValue,
+      topCategory,
+      navItems,
+      activePanel,
+      userName,
+      userInitials,
+      apiBaseLabel,
+      adminColors,
+      resolveProductRecord,
+      formatCategory,
+      formatCurrency,
+      formatNumber,
+      stockStatus,
+      fetchProducts,
+      openAddDialog,
+      editProduct,
+      saveProduct,
+      deleteProduct,
+    };
+  },
+};
 </script>
 
 <style scoped>
 .admin-page {
-  min-height: 100vh;
-  background:
-    radial-gradient(
-      circle at 10% 14%,
-      rgba(206, 124, 43, 0.2) 0%,
-      rgba(206, 124, 43, 0) 36%
-    ),
-    radial-gradient(
-      circle at 88% 78%,
-      rgba(35, 62, 60, 0.14) 0%,
-      rgba(35, 62, 60, 0) 40%
-    ),
-    linear-gradient(160deg, #f2f6f3 0%, #ecf2ee 45%, #eef3f0 100%);
+  background: #fbf5df;
+  color: #111712;
 }
 
-.admin-shell {
-  padding-top: 52px;
-  padding-bottom: 64px;
-  max-width: 1400px;
-  margin: 0 auto;
+.admin-main {
+  padding: 20px;
+  background: #fbf5df;
 }
 
-.admin-kicker {
-  font-size: 0.78rem;
-  letter-spacing: 1.8px;
-  text-transform: uppercase;
-  color: #b46a22;
-  font-weight: 700;
+.admin-warning {
+  margin-bottom: 16px;
 }
 
-.admin-head-row {
-  margin-top: 10px;
+.gap-2 {
+  gap: 8px;
+}
+
+:deep(.v-app-bar__content) {
+  padding: 0 16px !important;
+}
+
+:deep(.v-navigation-drawer) {
+  border-right: 1px solid rgba(51, 75, 65, 0.24);
+}
+
+:deep(.v-list-item--active) {
+  background: rgba(68, 101, 76, 0.25);
+}
+
+:deep(.v-list-item--active .v-list-item__overlay) {
+  opacity: 0;
+}
+
+.dashboard-panel,
+.products-panel,
+.analytics-panel,
+.settings-panel {
+  display: grid;
+  gap: 24px;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.metric-card,
+.admin-section {
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: rgba(255, 249, 232, 0.82);
+}
+
+.metric-card {
+  min-height: 98px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.metric-card p {
+  max-width: 120px;
+  margin: 0 0 6px;
+  color: #171914;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metric-card h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  line-height: 1.2;
+  font-weight: 500;
+}
+
+.metric-blue {
+  color: #399bec;
+}
+
+.metric-green {
+  color: #58af62;
+}
+
+.metric-orange {
+  color: #ff9814;
+}
+
+.metric-red {
+  color: #ff5a52;
+}
+
+.admin-section {
+  padding: 20px;
+}
+
+.section-heading {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  flex-wrap: wrap;
+  margin-bottom: 16px;
 }
 
-.page-title {
-  font-family: "Playfair Display", serif;
-  font-size: clamp(2rem, 4vw, 3.1rem);
-  color: #1c2d30;
+.section-heading h2,
+.admin-section>h2 {
+  margin: 0;
+  font-size: 1.75rem;
+  line-height: 1.2;
+  font-weight: 500;
 }
 
-.admin-subtitle {
-  margin-top: 10px;
-  max-width: 620px;
-  color: #5e7076;
-  line-height: 1.7;
+.section-heading p {
+  margin: 6px 0 0;
+  color: var(--admin-muted);
 }
 
-.add-btn {
-  text-transform: none;
+.admin-primary-btn {
+  background: var(--admin-green) !important;
+  color: #ffffff !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+}
+
+.admin-secondary-btn {
+  color: var(--admin-green) !important;
+  border: 1px solid var(--admin-border);
+  border-radius: 4px !important;
+}
+
+.admin-search {
+  margin-bottom: 14px;
+}
+
+.admin-search :deep(.v-field) {
+  background: transparent;
+  border-radius: 999px;
+}
+
+.recent-table {
+  overflow-x: auto;
+}
+
+.recent-head,
+.recent-row {
+  min-width: 760px;
+  display: grid;
+  grid-template-columns: minmax(260px, 2fr) 140px 130px 130px 80px;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 20px;
+}
+
+.recent-head {
   font-weight: 700;
-  letter-spacing: 0.1px;
-  box-shadow: 0 12px 24px rgba(198, 115, 42, 0.25);
+  border-bottom: 1px solid var(--admin-border);
 }
 
-.admin-warning {
-  margin-top: 24px;
-  border-radius: 14px;
+.recent-row {
+  min-height: 55px;
+  border-bottom: 1px solid rgba(51, 75, 65, 0.18);
+  font-size: 1.02rem;
 }
 
-.admin-surface {
-  margin-top: 24px;
-  border: 1px solid #d8e2dd;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(8px);
-  box-shadow: 0 18px 40px rgba(20, 35, 33, 0.08);
-  overflow: hidden;
+.product-cell {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
 }
 
-.surface-content {
-  padding: 16px;
-}
-
-.admin-table {
-  border-radius: 14px;
-  overflow: hidden;
-  width: 100%;
-}
-
+.product-cell img,
 .product-thumb {
-  width: 64px;
-  height: 64px;
-  object-fit: cover !important;
-  border-radius: 10px;
-  border: 1px solid #d8e2dd;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 1px solid rgba(51, 75, 65, 0.18);
+  background: #ffffff;
+}
+
+.product-cell span,
+.table-name strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-chip {
+  min-width: 86px;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.status-chip.is-completed {
+  color: #45ad9a;
+  border-color: #5bc8ad;
+  background: rgba(91, 200, 173, 0.14);
+}
+
+.status-chip.is-pending {
+  color: #e6a431;
+  border-color: #ffbe58;
+  background: rgba(255, 190, 88, 0.14);
+}
+
+.status-chip.is-cancelled {
+  color: #d46c42;
+  border-color: #f19c7e;
+  background: rgba(241, 156, 126, 0.14);
+}
+
+.lower-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.summary-list {
+  margin-top: 20px;
+  display: grid;
+  gap: 14px;
+}
+
+.summary-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+}
+
+.summary-avatar {
+  background: #c9deca;
+  color: var(--admin-green);
+  font-weight: 700;
+}
+
+.summary-avatar.revenue {
+  background: #bcd5c7;
+}
+
+.summary-avatar.stock {
+  background: #f8d59f;
+  color: #9d5e00;
+}
+
+.summary-avatar.category {
+  background: #d7d2b2;
+  color: #56512f;
+}
+
+.summary-item h3 {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 500;
+}
+
+.summary-item p {
+  margin: 4px 0 0;
+  color: var(--admin-muted);
+  font-size: 0.9rem;
+}
+
+.summary-item strong {
+  font-size: 1.05rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.admin-data-table {
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: transparent !important;
+}
+
+.admin-data-table :deep(.v-table__wrapper),
+.admin-data-table :deep(table),
+.admin-data-table :deep(tbody),
+.admin-data-table :deep(thead) {
+  background: transparent !important;
+}
+
+.table-name {
+  display: grid;
+  gap: 3px;
+}
+
+.table-name span {
+  color: var(--admin-muted);
+  font-size: 0.82rem;
+}
+
+.table-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .mobile-list {
   display: grid;
   gap: 12px;
-  width: 100%;
 }
 
 .mobile-product-card {
-  border: 1px solid #d8e2dd;
-  border-radius: 16px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
   padding: 14px;
-  background: #ffffff;
-  width: 100%;
-  box-sizing: border-box;
+  background: rgba(255, 249, 232, 0.9);
 }
 
 .mobile-item-top {
   display: flex;
   gap: 14px;
   align-items: flex-start;
-  width: 100%;
 }
 
 .mobile-product-image {
-  width: 120px;
-  height: 120px;
-  border-radius: 10px;
+  width: 96px;
+  height: 96px;
+  border-radius: 8px;
   object-fit: cover;
-  border: 1px solid #d8e2dd;
+  border: 1px solid var(--admin-border);
 }
 
 .mobile-item-copy {
-  flex: 1;
   min-width: 0;
 }
 
 .mobile-item-copy h3 {
+  margin: 0;
   font-size: 1rem;
-  color: #1e2d31;
   line-height: 1.35;
 }
 
 .mobile-item-copy p {
-  margin-top: 4px;
-  color: #6b7d84;
-  font-size: 0.88rem;
+  margin: 4px 0 0;
+  color: var(--admin-muted);
 }
 
 .mobile-company {
-  color: #244047;
+  color: var(--admin-green) !important;
   font-weight: 700;
+}
+
+.mobile-meta,
+.mobile-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .mobile-meta {
   margin-top: 10px;
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
 }
 
 .mobile-price {
-  color: #b15f1e;
-  font-weight: 800;
+  color: #1b1d16;
+  font-weight: 700;
 }
 
 .mobile-actions {
-  margin-top: 8px;
-  display: flex;
   justify-content: flex-end;
-  gap: 6px;
+  margin-top: 10px;
 }
 
 .mobile-action-btn {
-  text-transform: none;
   font-weight: 700;
+}
+
+.category-bars {
+  margin-top: 22px;
+  display: grid;
+  gap: 18px;
+}
+
+.category-bar {
+  display: grid;
+  gap: 8px;
+}
+
+.category-bar>div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.category-bar span {
+  color: var(--admin-muted);
+}
+
+.bar-track {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(48, 93, 77, 0.14);
+  overflow: hidden;
+}
+
+.bar-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--admin-green);
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.settings-tile {
+  min-height: 96px;
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.settings-tile.wide {
+  grid-column: 1 / -1;
+}
+
+.settings-tile span {
+  color: var(--admin-muted);
+}
+
+.settings-tile strong {
+  word-break: break-word;
+}
+
+.empty-row {
+  padding: 18px;
+  color: var(--admin-muted);
 }
 
 .admin-dialog-card {
-  border-radius: 18px;
+  border-radius: 8px;
 }
 
 .dialog-title {
-  font-family: "Playfair Display", serif;
-  font-size: 1.55rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  color: #1f2f33;
 }
 
 .dialog-form {
@@ -810,86 +1367,61 @@
   gap: 10px;
 }
 
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
 .dialog-actions {
-  padding: 8px 18px 18px;
+  padding: 8px 22px 22px;
+}
+
+@media (max-width: 1180px) {
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 960px) {
-  .admin-shell {
-    padding-top: 40px;
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-
-  .surface-content {
-    padding: 12px;
-  }
-
-  .admin-head-row {
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .add-btn {
-    align-self: flex-start;
+  .lower-grid {
+    grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 600px) {
-  .admin-shell {
-    padding-top: 24px;
-    padding-bottom: 32px;
-    padding-left: 12px;
-    padding-right: 12px;
+@media (max-width: 700px) {
+  .admin-main {
+    padding: 12px;
   }
 
-  .admin-head-row {
-    flex-direction: column;
-    gap: 16px;
+  .admin-warning {
+    width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
   }
 
-  .add-btn {
+  .metric-grid,
+  .settings-grid,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-heading {
+    display: grid;
+  }
+
+  .admin-primary-btn,
+  .admin-secondary-btn {
     width: 100%;
-    justify-content: center;
-  }
-
-  .page-title {
-    font-size: 1.75rem;
-  }
-
-  .admin-subtitle {
-    font-size: 0.9rem;
-  }
-
-  .mobile-product-image {
-    width: 100px;
-    height: 100px;
   }
 
   .mobile-item-top {
-    flex-direction: row;
-    align-items: flex-start;
+    display: grid;
   }
 
-  .mobile-item-copy h3 {
-    font-size: 0.95rem;
-    word-break: break-word;
-  }
-
-  .mobile-meta {
-    flex-direction: row;
-    gap: 8px;
-  }
-
-  .mobile-actions {
-    justify-content: flex-end;
-    padding-top: 8px;
-    border-top: 1px solid #f0f0f0;
-    margin-top: 8px;
-  }
-
-  .mobile-product-card {
-    padding: 10px;
+  .mobile-product-image {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
   }
 }
 </style>

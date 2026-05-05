@@ -4,11 +4,12 @@ import cookie from "@fastify/cookie";
 import mongodb from "@fastify/mongodb";
 import dotenv from "dotenv";
 import admin from "firebase-admin";
-import { v4 as uuidv4 } from "uuid";
 import { readFile } from "node:fs/promises";
 import { createHash, randomBytes } from "node:crypto";
 import path from "node:path";
-import { fileURLToPath } from "url";
+import { fileURLToPath } from "node:url";
+
+import { createDbClient } from "./db.js";
 
 import registerAuthRoutes from "./routes/auth.js";
 import registerCartRoutes from "./routes/cart.js";
@@ -20,54 +21,77 @@ import registerRootRoutes from "./routes/root.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, ".env") });
 
-const isHostedEnv = Boolean(process.env.RENDER || process.env.RAILWAY_ENVIRONMENT || process.env.VERCEL);
-const parseBooleanEnv = (value, fallback) => {
-  if (value == null) return fallback;
-  return value === "true";
-};
+function parseBooleanEnv(value, fallback = false) {
+  if (value == null) {
+    return fallback;
+  }
+  const normalized = String(value).trim().toLowerCase();
+  if (normalized === "true" || normalized === "1") {
+    return true;
+  }
+  if (normalized === "false" || normalized === "0") {
+    return false;
+  }
+  return fallback;
+}
 
-const requestBodyLimitBytes = Number.parseInt(process.env.REQUEST_BODY_LIMIT_BYTES || "1048576", 10);
-const sessionDurationDays = Number.parseInt(process.env.SESSION_DURATION_DAYS || "7", 10);
+function parseIntegerEnv(value, fallback) {
+  const parsed = Number.parseInt(String(value ?? ""), 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+const isHostedEnv = Boolean(process.env.RENDER || process.env.RAILWAY_ENVIRONMENT || process.env.VERCEL);
+const isProductionEnv = String(process.env.NODE_ENV || "").toLowerCase() === "production" || isHostedEnv;
+
+const requestBodyLimitBytes = parseIntegerEnv(process.env.REQUEST_BODY_LIMIT_BYTES, 1_048_576);
+const sessionDurationDays = parseIntegerEnv(process.env.SESSION_DURATION_DAYS, 7);
+const mutationRateLimitMax = parseIntegerEnv(process.env.MUTATION_RATE_LIMIT_MAX, 120);
+const trustProxy = parseBooleanEnv(process.env.TRUST_PROXY, isHostedEnv);
+
 const useSecureCookies =
   process.env.COOKIE_SECURE != null
-    ? process.env.COOKIE_SECURE === "true"
-    : process.env.NODE_ENV === "production" || isHostedEnv;
-const requestedCookieSameSite =
-  process.env.COOKIE_SAMESITE || (useSecureCookies ? "none" : "lax");
-const cookieSameSite =
-  requestedCookieSameSite === "none" && !useSecureCookies ? "lax" : requestedCookieSameSite;
+    ? parseBooleanEnv(process.env.COOKIE_SECURE, true)
+    : isProductionEnv;
+
+const requestedCookieSameSite = String(process.env.COOKIE_SAMESITE || (useSecureCookies ? "none" : "lax"))
+  .trim()
+  .toLowerCase();
+
+const cookieSameSite = requestedCookieSameSite === "none" && !useSecureCookies ? "lax" : requestedCookieSameSite;
 if (requestedCookieSameSite === "none" && !useSecureCookies) {
   console.warn("COOKIE_SAMESITE=none requires secure cookies. Falling back to sameSite=lax.");
 }
+
 const allowHeaderSessionToken = parseBooleanEnv(process.env.ALLOW_HEADER_SESSION_TOKEN, false);
-const enforceOriginCheck = parseBooleanEnv(
-  process.env.ENFORCE_ORIGIN_CHECK,
-  process.env.NODE_ENV === "production" || isHostedEnv,
-);
-const mutationRateLimitMax = Number.parseInt(process.env.MUTATION_RATE_LIMIT_MAX || "120", 10);
+const enforceOriginCheck = parseBooleanEnv(process.env.ENFORCE_ORIGIN_CHECK, isProductionEnv);
+const allowNullOriginOnMutations = parseBooleanEnv(process.env.ALLOW_NULL_ORIGIN_ON_MUTATIONS, false);
 
-const createSessionToken = () => randomBytes(32).toString("base64url");
-const hashSessionToken = async (token) => createHash("sha256").update(String(token)).digest("hex");
+const apiPathPrefixes = ["/auth", "/cart", "/checkout", "/orders", "/products"];
+const mutatingMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const isBackendApiRoute = (pathname) =>
+  apiPathPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 
-try {
-  const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
-    ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)
-    : JSON.parse(
-        await readFile(new URL("./service-account.json", import.meta.url), "utf-8"),
-      );
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
-  console.log("Firebase Admin Initialized");
-} catch (error) {
-  console.warn("Warning: Firebase service credentials not found. Firebase auth will fail.");
+function getRequestPath(url = "") {
+  return String(url).split("?")[0] || "/";
 }
 
-const fastify = Fastify({
-  logger: true,
-  bodyLimit: requestBodyLimitBytes,
-  trustProxy: parseBooleanEnv(process.env.TRUST_PROXY, isHostedEnv),
-});
+function getRequestOrigin(request) {
+  const rawOrigin = request.headers?.origin;
+  if (typeof rawOrigin === "string" && rawOrigin.trim()) {
+    return rawOrigin.trim();
+  }
+
+  const referer = request.headers?.referer;
+  if (typeof referer === "string" && referer.trim()) {
+    try {
+      return new URL(referer).origin;
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}
 
 const configuredCorsOrigins =
   process.env.CORS_ORIGIN ||
@@ -78,68 +102,98 @@ const allowedOrigins = configuredCorsOrigins
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
+
 const allowedOriginSet = new Set(allowedOrigins);
-const isOriginAllowed = (origin) =>
-  !origin || allowedOriginSet.has("*") || allowedOriginSet.has(origin);
+const isOriginAllowed = (origin) => !origin || allowedOriginSet.has("*") || allowedOriginSet.has(origin);
 
-const mutatingMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
-const apiPathPrefixes = ["/auth", "/cart", "/checkout", "/orders", "/products"];
-const isBackendApiRoute = (pathname) =>
-  apiPathPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
-const getRequestOrigin = (request) => {
-  const rawOrigin = request.headers.origin;
-  if (typeof rawOrigin === "string" && rawOrigin.trim()) {
-    return rawOrigin.trim();
+const ADMIN_EMAILS = new Set(
+  String(process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean),
+);
+if (ADMIN_EMAILS.size === 0) {
+  ADMIN_EMAILS.add("lakshsolanki848@gmail.com");
+}
+
+const createSessionToken = () => randomBytes(32).toString("base64url");
+const hashSessionToken = async (token) => createHash("sha256").update(String(token)).digest("hex");
+
+async function createFirebaseAdmin() {
+  if (admin.apps?.length > 0) {
+    return admin;
   }
 
-  const referer = request.headers.referer;
-  if (typeof referer === "string" && referer.trim()) {
-    try {
-      return new URL(referer).origin;
-    } catch {
-      return null;
-    }
-  }
-  return null;
-};
+  try {
+    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
+      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)
+      : JSON.parse(await readFile(new URL("./service-account.json", import.meta.url), "utf-8"));
 
-const ADMIN_EMAILS = new Set(["lakshsolanki848@gmail.com"]);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+
+    console.log("Firebase Admin initialized.");
+    return admin;
+  } catch (error) {
+    console.warn("Firebase credentials unavailable. Auth token verification will fail until configured.");
+    return {
+      auth() {
+        return {
+          async verifyIdToken() {
+            throw new Error("Firebase Admin credentials not configured");
+          },
+        };
+      },
+    };
+  }
+}
+
 const rateLimitStore = new Map();
 
-const createRateLimitGuard = ({ keyPrefix, windowMs, maxRequests }) => async (request, reply) => {
-  const ipAddress = request.ip || "unknown";
-  const key = `${keyPrefix}:${ipAddress}`;
-  const now = Date.now();
+function createRateLimitGuard({ keyPrefix, windowMs, maxRequests }) {
+  return async (request, reply) => {
+    const ipAddress = request.ip || "unknown";
+    const now = Date.now();
+    const key = `${keyPrefix}:${ipAddress}`;
 
-  let state = rateLimitStore.get(key);
-  if (!state || state.resetAt <= now) {
-    state = { count: 0, resetAt: now + windowMs };
-    rateLimitStore.set(key, state);
-  }
+    let state = rateLimitStore.get(key);
+    if (!state || state.resetAt <= now) {
+      state = { count: 0, resetAt: now + windowMs };
+      rateLimitStore.set(key, state);
+    }
 
-  state.count += 1;
+    state.count += 1;
+    if (state.count > maxRequests) {
+      const retryAfterSeconds = Math.max(1, Math.ceil((state.resetAt - now) / 1000));
+      reply.header("Retry-After", String(retryAfterSeconds));
+      await reply.code(429).send({ message: "Too many requests. Please try again later." });
+      return;
+    }
 
-  if (state.count > maxRequests) {
-    const retryAfter = Math.max(1, Math.ceil((state.resetAt - now) / 1000));
-    reply.header("Retry-After", String(retryAfter));
-    await reply.code(429).send({ message: "Too many requests. Please try again later." });
-    return;
-  }
-
-  if (rateLimitStore.size > 5000) {
-    for (const [storedKey, storedState] of rateLimitStore.entries()) {
-      if (storedState.resetAt <= now) {
-        rateLimitStore.delete(storedKey);
+    if (rateLimitStore.size > 5_000) {
+      for (const [storedKey, storedState] of rateLimitStore.entries()) {
+        if (storedState.resetAt <= now) {
+          rateLimitStore.delete(storedKey);
+        }
       }
     }
-  }
-};
+  };
+}
 
 const mutationRateLimitGuard = createRateLimitGuard({
   keyPrefix: "mutation",
   windowMs: 60_000,
   maxRequests: mutationRateLimitMax,
 });
+
+const fastify = Fastify({
+  logger: true,
+  bodyLimit: requestBodyLimitBytes,
+  trustProxy,
+});
+
+fastify.register(cookie);
 
 const corsAllowedHeaders = ["Content-Type", "Authorization"];
 if (allowHeaderSessionToken) {
@@ -150,56 +204,67 @@ fastify.register(cors, {
   credentials: true,
   allowedHeaders: corsAllowedHeaders,
   methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  origin: (origin, cb) => {
-    if (isOriginAllowed(origin)) {
-      cb(null, true);
-      return;
-    }
-    cb(null, false);
+  origin: (origin, callback) => {
+    callback(null, isOriginAllowed(origin));
   },
 });
 
-fastify.register(cookie);
+if (process.env.MONGO_URL) {
+  fastify.register(mongodb, {
+    forceClose: true,
+    url: process.env.MONGO_URL,
+    database: process.env.DB_NAME,
+  });
+} else {
+  fastify.decorate("mongo", {
+    db: createDbClient(process.env),
+  });
+}
 
-fastify.register(mongodb, {
-  forceClose: true,
-  url: process.env.MONGO_URL,
-  database: process.env.DB_NAME,
-});
+const firebaseAdmin = await createFirebaseAdmin();
 
-const getSessionTokenFromRequest = (request) => {
-  const cookieToken = request.cookies.session_token;
+if (process.env.MONGO_URL) {
+  await fastify.after();
+}
+
+if (!fastify.mongo?.db) {
+  fastify.mongo = { db: createDbClient(process.env) };
+}
+
+function getSessionTokenFromRequest(request) {
+  const cookieToken = request.cookies?.session_token;
   if (typeof cookieToken === "string" && cookieToken.trim()) {
     return cookieToken.trim();
   }
 
   if (allowHeaderSessionToken) {
-    const headerToken = request.headers["x-session-token"];
+    const headerToken = request.headers?.["x-session-token"];
     if (typeof headerToken === "string" && headerToken.trim()) {
       return headerToken.trim();
     }
   }
 
   return null;
-};
+}
 
-const getCurrentUser = async (request) => {
+async function getCurrentUser(request) {
   const token = getSessionTokenFromRequest(request);
-  if (!token) return null;
+  if (!token) {
+    return null;
+  }
 
   const db = fastify.mongo.db;
   const tokenHash = await hashSessionToken(token);
-  const session = await db
-    .collection("user_sessions")
-    .findOne({
-      $or: [{ session_token_hash: tokenHash }, { session_token: token }],
-    });
+  const session = await db.collection("user_sessions").findOne({
+    $or: [{ session_token_hash: tokenHash }, { session_token: token }],
+  });
 
   if (!session) {
     return null;
   }
 
-  if (new Date(session.expires_at) < new Date()) {
+  const expiresAtMs = new Date(session.expires_at || 0).getTime();
+  if (!Number.isFinite(expiresAtMs) || expiresAtMs <= Date.now()) {
     await db.collection("user_sessions").deleteOne({ _id: session._id });
     return null;
   }
@@ -208,41 +273,52 @@ const getCurrentUser = async (request) => {
     .collection("users")
     .findOne({ user_id: session.user_id }, { projection: { _id: 0 } });
 
-  if (user) {
-    const normalizedEmail = (user.email || "").toLowerCase().trim();
-    user.is_admin = ADMIN_EMAILS.has(normalizedEmail);
+  if (!user) {
+    return null;
   }
 
-  return user;
-};
+  const normalizedEmail = String(user.email || "").toLowerCase().trim();
+  return {
+    ...user,
+    is_admin: ADMIN_EMAILS.has(normalizedEmail),
+  };
+}
 
-const requireAuth = async (request, reply) => {
+async function requireAuth(request, reply) {
   if (!request.user) {
     await reply.code(401).send({ message: "Not authenticated" });
     return false;
   }
   return true;
-};
+}
 
-const requireAdmin = async (request, reply) => {
-  if (!(await requireAuth(request, reply))) return false;
-  const normalizedEmail = (request.user.email || "").toLowerCase().trim();
+async function requireAdmin(request, reply) {
+  if (!(await requireAuth(request, reply))) {
+    return false;
+  }
+
+  const normalizedEmail = String(request.user?.email || "").toLowerCase().trim();
   if (!ADMIN_EMAILS.has(normalizedEmail)) {
     await reply.code(403).send({ message: "Admin access required" });
     return false;
   }
+
   return true;
-};
+}
 
 fastify.decorateRequest("user", null);
+
 fastify.addHook("onRequest", async (request, reply) => {
-  const requestPath = request.url.split("?")[0];
-  const isApiRoute = isBackendApiRoute(requestPath);
-  const isMutatingApiRequest = isApiRoute && mutatingMethods.has(request.method);
+  const pathName = getRequestPath(request.url);
+  const isMutatingApiRequest = isBackendApiRoute(pathName) && mutatingMethods.has(request.method);
 
   if (isMutatingApiRequest) {
     if (enforceOriginCheck) {
       const requestOrigin = getRequestOrigin(request);
+      if (!requestOrigin && !allowNullOriginOnMutations) {
+        await reply.code(403).send({ message: "Missing origin" });
+        return;
+      }
       if (requestOrigin && !isOriginAllowed(requestOrigin)) {
         await reply.code(403).send({ message: "Forbidden origin" });
         return;
@@ -250,7 +326,9 @@ fastify.addHook("onRequest", async (request, reply) => {
     }
 
     await mutationRateLimitGuard(request, reply);
-    if (reply.sent) return;
+    if (reply.sent) {
+      return;
+    }
   }
 
   request.user = await getCurrentUser(request);
@@ -264,7 +342,7 @@ fastify.addHook("onSend", async (request, reply, payload) => {
   reply.header("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
   reply.header("X-Permitted-Cross-Domain-Policies", "none");
 
-  if (isBackendApiRoute(request.url.split("?")[0])) {
+  if (isBackendApiRoute(getRequestPath(request.url))) {
     reply.header(
       "Content-Security-Policy",
       "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'",
@@ -278,9 +356,25 @@ fastify.addHook("onSend", async (request, reply, payload) => {
   return payload;
 });
 
+fastify.setErrorHandler((error, request, reply) => {
+  request.log.error({ err: error, route: request.url });
+
+  if (reply.sent) {
+    return;
+  }
+
+  const statusCode = Number(error.statusCode || 500);
+  if (statusCode >= 400 && statusCode < 500) {
+    reply.code(statusCode).send({ message: error.message || "Request error" });
+    return;
+  }
+
+  reply.code(500).send({ message: "Internal server error" });
+});
+
 const routeDeps = {
-  admin,
-  uuidv4,
+  admin: firebaseAdmin,
+  uuidv4: () => randomBytes(16).toString("hex"),
   createSessionToken,
   hashSessionToken,
   useSecureCookies,
@@ -302,12 +396,15 @@ await registerOrderRoutes(fastify, routeDeps);
 
 const start = async () => {
   try {
-    const port = process.env.PORT || 8000;
-    await fastify.listen({ port, host: "0.0.0.0" });
-    console.log(`Server running at http://localhost:${port}`);
-  } catch (err) {
-    fastify.log.error(err);
+    const port = parseIntegerEnv(process.env.PORT, 8000);
+    await fastify.listen({ host: "0.0.0.0", port });
+    const address = fastify.server.address();
+    const resolvedPort = typeof address === "object" && address ? address.port : port;
+    console.log(`Server running on http://localhost:${resolvedPort}`);
+  } catch (error) {
+    fastify.log.error(error);
     process.exit(1);
   }
 };
+
 start();
