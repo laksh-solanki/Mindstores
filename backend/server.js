@@ -9,8 +9,10 @@ import { createHash, randomBytes } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { createAdminAccessService } from "./adminAccess.js";
 import { createDbClient } from "./db.js";
 
+import registerAdminRoutes from "./routes/admin.js";
 import registerAuthRoutes from "./routes/auth.js";
 import registerCartRoutes from "./routes/cart.js";
 import registerCheckoutRoutes from "./routes/checkout.js";
@@ -66,7 +68,7 @@ const allowHeaderSessionToken = parseBooleanEnv(process.env.ALLOW_HEADER_SESSION
 const enforceOriginCheck = parseBooleanEnv(process.env.ENFORCE_ORIGIN_CHECK, isProductionEnv);
 const allowNullOriginOnMutations = parseBooleanEnv(process.env.ALLOW_NULL_ORIGIN_ON_MUTATIONS, false);
 
-const apiPathPrefixes = ["/auth", "/cart", "/checkout", "/orders", "/products"];
+const apiPathPrefixes = ["/admin", "/auth", "/cart", "/checkout", "/orders", "/products"];
 const mutatingMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const isBackendApiRoute = (pathname) =>
   apiPathPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
@@ -106,15 +108,10 @@ const allowedOrigins = configuredCorsOrigins
 const allowedOriginSet = new Set(allowedOrigins);
 const isOriginAllowed = (origin) => !origin || allowedOriginSet.has("*") || allowedOriginSet.has(origin);
 
-const ADMIN_EMAILS = new Set(
-  String(process.env.ADMIN_EMAILS || "")
-    .split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean),
-);
-if (ADMIN_EMAILS.size === 0) {
-  ADMIN_EMAILS.add("lakshsolanki848@gmail.com");
-}
+const bootstrapAdminEmails = String(process.env.ADMIN_EMAILS || "")
+  .split(",")
+  .map((email) => email.trim())
+  .filter(Boolean);
 
 const createSessionToken = () => randomBytes(32).toString("base64url");
 const hashSessionToken = async (token) => createHash("sha256").update(String(token)).digest("hex");
@@ -231,6 +228,11 @@ if (!fastify.mongo?.db) {
   fastify.mongo = { db: createDbClient(process.env) };
 }
 
+const adminAccess = createAdminAccessService(fastify.mongo.db, {
+  bootstrapEmails: bootstrapAdminEmails,
+});
+await adminAccess.ensureSeeded();
+
 function getSessionTokenFromRequest(request) {
   const cookieToken = request.cookies?.session_token;
   if (typeof cookieToken === "string" && cookieToken.trim()) {
@@ -280,7 +282,7 @@ async function getCurrentUser(request) {
   const normalizedEmail = String(user.email || "").toLowerCase().trim();
   return {
     ...user,
-    is_admin: ADMIN_EMAILS.has(normalizedEmail),
+    is_admin: await adminAccess.isAdminEmail(normalizedEmail),
   };
 }
 
@@ -298,7 +300,7 @@ async function requireAdmin(request, reply) {
   }
 
   const normalizedEmail = String(request.user?.email || "").toLowerCase().trim();
-  if (!ADMIN_EMAILS.has(normalizedEmail)) {
+  if (!(await adminAccess.isAdminEmail(normalizedEmail))) {
     await reply.code(403).send({ message: "Admin access required" });
     return false;
   }
@@ -380,7 +382,7 @@ const routeDeps = {
   useSecureCookies,
   cookieSameSite,
   sessionDurationDays,
-  ADMIN_EMAILS,
+  adminAccess,
   requireAuth,
   requireAdmin,
   createRateLimitGuard,
@@ -389,6 +391,7 @@ const routeDeps = {
 
 await registerRootRoutes(fastify);
 await registerAuthRoutes(fastify, routeDeps);
+await registerAdminRoutes(fastify, routeDeps);
 await registerProductRoutes(fastify, routeDeps);
 await registerCartRoutes(fastify, routeDeps);
 await registerCheckoutRoutes(fastify, routeDeps);

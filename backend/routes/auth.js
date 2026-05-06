@@ -84,14 +84,14 @@ function resolveCountryCode({ decodedToken, requestBody, locale, existingUser })
   return tokenCountry || requestCountry || localeCountry || existingCountry || null;
 }
 
-function buildUserProjection(user, adminEmails) {
+async function buildUserProjection(user, adminAccess) {
   if (!user) {
     return null;
   }
   const normalizedEmail = String(user.email || "").toLowerCase().trim();
   return {
     ...user,
-    is_admin: adminEmails.has(normalizedEmail),
+    is_admin: await adminAccess.isAdminEmail(normalizedEmail),
   };
 }
 
@@ -103,7 +103,7 @@ export default async function registerAuthRoutes(fastify, deps) {
     useSecureCookies,
     cookieSameSite,
     sessionDurationDays,
-    ADMIN_EMAILS,
+    adminAccess,
     requireAuth,
     createRateLimitGuard,
     getSessionTokenFromRequest,
@@ -177,7 +177,7 @@ export default async function registerAuthRoutes(fastify, deps) {
           normalizeImageUrl(existingUser?.picture) ||
           null;
 
-        const isAdminUser = ADMIN_EMAILS.has(normalizedEmail);
+        const isAdminUser = await adminAccess.isAdminEmail(normalizedEmail);
 
         await db.collection("users").updateOne(
           { user_id: userId },
@@ -244,7 +244,7 @@ export default async function registerAuthRoutes(fastify, deps) {
           .collection("users")
           .findOne({ user_id: userId }, { projection: { _id: 0 } });
 
-        return { user: buildUserProjection(user, ADMIN_EMAILS) };
+        return { user: await buildUserProjection(user, adminAccess) };
       } catch (error) {
         fastify.log.error({ err: error, route: "/auth/firebase-login" });
         return reply.code(401).send({ message: "Invalid Token" });
@@ -258,7 +258,7 @@ export default async function registerAuthRoutes(fastify, deps) {
       return;
     }
 
-    return buildUserProjection(request.user, ADMIN_EMAILS);
+    return await buildUserProjection(request.user, adminAccess);
   });
 
   fastify.put("/auth/profile", { preHandler: [authWriteRateLimit] }, async (request, reply) => {
@@ -305,7 +305,7 @@ export default async function registerAuthRoutes(fastify, deps) {
     }
 
     if (Object.keys(updates).length === 0) {
-      return buildUserProjection(request.user, ADMIN_EMAILS);
+      return await buildUserProjection(request.user, adminAccess);
     }
 
     updates.updated_at = new Date();
@@ -318,7 +318,7 @@ export default async function registerAuthRoutes(fastify, deps) {
       .collection("users")
       .findOne({ user_id: request.user.user_id }, { projection: { _id: 0 } });
 
-    return buildUserProjection(updatedUser, ADMIN_EMAILS);
+    return await buildUserProjection(updatedUser, adminAccess);
   });
 
   fastify.post("/auth/logout", { preHandler: [authWriteRateLimit] }, async (request, reply) => {

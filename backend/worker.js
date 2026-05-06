@@ -1,7 +1,9 @@
 import { parse as parseCookie, serialize as serializeCookie } from "cookie";
 
+import { createAdminAccessService } from "./adminAccess.js";
 import { createDbClient } from "./db.js";
 
+import registerAdminRoutes from "./routes/admin.js";
 import registerAuthRoutes from "./routes/auth.js";
 import registerCartRoutes from "./routes/cart.js";
 import registerCheckoutRoutes from "./routes/checkout.js";
@@ -9,7 +11,7 @@ import registerOrderRoutes from "./routes/orders.js";
 import registerProductRoutes from "./routes/products.js";
 import registerRootRoutes from "./routes/root.js";
 
-const API_PATH_PREFIXES = ["/auth", "/cart", "/checkout", "/orders", "/products"];
+const API_PATH_PREFIXES = ["/admin", "/auth", "/cart", "/checkout", "/orders", "/products"];
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 function parseBooleanEnv(value, fallback = false) {
@@ -455,12 +457,13 @@ async function getWorkerApp(env) {
     const allowedOriginSet = new Set(allowedOrigins);
     const isOriginAllowed = (origin) => !origin || allowedOriginSet.has("*") || allowedOriginSet.has(origin);
 
-    const adminEmails = new Set(
-      String(env.ADMIN_EMAILS || "lakshsolanki848@gmail.com")
+    const adminAccess = createAdminAccessService(db, {
+      bootstrapEmails: String(env.ADMIN_EMAILS || "")
         .split(",")
-        .map((email) => email.trim().toLowerCase())
+        .map((email) => email.trim())
         .filter(Boolean),
-    );
+    });
+    await adminAccess.ensureSeeded();
 
     const rateLimitStore = new Map();
     const createRateLimitGuard = ({ keyPrefix, windowMs, maxRequests }) => async (request, reply) => {
@@ -558,7 +561,7 @@ async function getWorkerApp(env) {
       const normalizedEmail = String(user.email || "").toLowerCase().trim();
       return {
         ...user,
-        is_admin: adminEmails.has(normalizedEmail),
+        is_admin: await adminAccess.isAdminEmail(normalizedEmail),
       };
     };
 
@@ -576,7 +579,7 @@ async function getWorkerApp(env) {
       }
 
       const normalizedEmail = String(request.user?.email || "").toLowerCase().trim();
-      if (!adminEmails.has(normalizedEmail)) {
+      if (!(await adminAccess.isAdminEmail(normalizedEmail))) {
         await reply.code(403).send({ message: "Admin access required" });
         return false;
       }
@@ -666,7 +669,7 @@ async function getWorkerApp(env) {
       useSecureCookies,
       cookieSameSite,
       sessionDurationDays,
-      ADMIN_EMAILS: adminEmails,
+      adminAccess,
       requireAuth,
       requireAdmin,
       createRateLimitGuard,
@@ -675,6 +678,7 @@ async function getWorkerApp(env) {
 
     await registerRootRoutes(fastify);
     await registerAuthRoutes(fastify, routeDeps);
+    await registerAdminRoutes(fastify, routeDeps);
     await registerProductRoutes(fastify, routeDeps);
     await registerCartRoutes(fastify, routeDeps);
     await registerCheckoutRoutes(fastify, routeDeps);
