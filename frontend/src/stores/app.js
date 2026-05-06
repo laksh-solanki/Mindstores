@@ -9,7 +9,6 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { defineStore } from "pinia";
-import { useCartStore } from "./cart";
 // Import initialized firebase app
 import { app as firebaseApp } from "@/plugins/firebase";
 import { API_URL } from "@/utils/api";
@@ -18,10 +17,12 @@ import {
   loadUserSettings,
   saveUserSettings,
 } from "@/utils/userSettings";
+import { useCartStore } from "./cart";
 
 const auth = getAuth(firebaseApp);
 const AUTH_REQUEST_TIMEOUT_MS = 20_000;
 const AUTH_REQUEST_RETRIES = 1;
+const AUTH_BOOT_TIMEOUT_MS = 6000;
 let backendSessionPromise = null;
 let backendSessionUid = null;
 
@@ -232,18 +233,35 @@ export const useAppStore = defineStore("app", {
       }
       this.authListenerInitialized = true;
 
-      onAuthStateChanged(auth, async (firebaseUser) => {
-        if (firebaseUser) {
-          const isReady = await this.ensureBackendSession(firebaseUser);
-          if (!isReady) {
-            await signOut(auth);
+      const authBootTimer = setTimeout(() => {
+        if (this.loading) {
+          this.loading = false;
+        }
+      }, AUTH_BOOT_TIMEOUT_MS);
+
+      onAuthStateChanged(
+        auth,
+        async (firebaseUser) => {
+          clearTimeout(authBootTimer);
+          if (firebaseUser) {
+            const isReady = await this.ensureBackendSession(firebaseUser);
+            if (!isReady) {
+              await signOut(auth);
+            }
+          } else {
+            this.user = null;
+            this.isAuthenticated = false;
           }
-        } else {
+          this.loading = false;
+        },
+        (error) => {
+          clearTimeout(authBootTimer);
+          console.error("Firebase auth listener failed:", error);
           this.user = null;
           this.isAuthenticated = false;
-        }
-        this.loading = false;
-      });
+          this.loading = false;
+        },
+      );
     },
 
     async loginWithEmail(email, password) {
@@ -307,6 +325,9 @@ export const useAppStore = defineStore("app", {
 
     async logout() {
       this.loading = true;
+      const cartStore = useCartStore();
+      cartStore.clearCart();
+
       try {
         await axios
           .post(`${API_URL}/auth/logout`, {}, { withCredentials: true })
@@ -314,9 +335,6 @@ export const useAppStore = defineStore("app", {
             console.warn("Backend logout failed, proceeding with Firebase logout.", error);
           });
         await signOut(auth);
-        // Clear cart on logout for all users
-        const cartStore = useCartStore();
-        cartStore.clearCart();
       } catch (error) {
         console.error("Firebase logout failed:", error);
       } finally {

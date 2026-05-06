@@ -1,5 +1,5 @@
 <template>
-  <v-footer border class="bg-surface">
+  <v-footer border class="app-footer">
     <v-container class="footer-container">
       <div class="footer-row">
         <div>
@@ -19,7 +19,7 @@
       <v-divider class="my-3" />
 
       <p class="text-caption text-medium-emphasis">
-        © {{ new Date().getFullYear() }} Mindstore
+        &copy; {{ new Date().getFullYear() }} Mindstore
       </p>
     </v-container>
   </v-footer>
@@ -30,6 +30,12 @@
   width: 100%;
   padding-top: 16px;
   padding-bottom: 12px;
+}
+
+.app-footer {
+  background: var(--ms-surface) !important;
+  border-top: 1px solid var(--ms-border) !important;
+  color: var(--ms-ink);
 }
 
 .footer-row {
@@ -50,10 +56,11 @@
 .footer-link {
   font-size: 0.9rem;
   text-decoration: none;
-  color: rgba(0, 0, 0, 0.68);
+  color: var(--ms-muted);
 }
 
 .footer-link.router-link-active {
-  color: rgba(0, 0, 0, 0.9);
+  color: var(--ms-green);
+  font-weight: 700;
 }
 </style>

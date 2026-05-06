@@ -1,72 +1,133 @@
 <template>
-  <v-layout>
-    <v-app-bar color="primary" density="comfortable" flat>
-      <template #prepend>
-        <v-app-bar-nav-icon v-if="isMobile && isAdmin" @click="drawer = !drawer" />
-        <v-avatar v-else color="white" size="40">
-          <v-icon color="primary">mdi-storefront-outline</v-icon>
-        </v-avatar>
-      </template>
+  <v-layout class="admin-page">
+    <v-app-bar class="admin-premium-header" flat height="70">
+      <div class="admin-header-shell">
+        <v-btn
+          v-if="isMobile && isAdmin"
+          aria-label="Toggle admin navigation"
+          icon="mdi-menu"
+          rounded="lg"
+          variant="text"
+          @click="drawer = !drawer"
+        />
 
-      <v-app-bar-title class="font-weight-bold">
-        Mindstores Admin
-      </v-app-bar-title>
+        <div class="admin-brand-block">
+          <v-avatar class="admin-brand-icon" color="primary" rounded="lg" size="42">
+            <v-icon color="white">mdi-storefront-outline</v-icon>
+          </v-avatar>
+          <div>
+            <p>Mindstores Admin</p>
+            <span>{{ activePanelLabel }} control center</span>
+          </div>
+        </div>
 
-      <v-spacer />
+        <div v-if="isAdmin" class="admin-status-row d-none d-lg-flex">
+          <v-chip color="primary" size="small" variant="tonal">
+            {{ formatNumber(products.length) }} products
+          </v-chip>
+          <v-chip :color="lowStockCount > 0 ? 'warning' : 'success'" size="small" variant="tonal">
+            {{ formatNumber(lowStockCount) }} low stock
+          </v-chip>
+          <v-chip color="info" size="small" variant="tonal">
+            {{ lastSyncedLabel }}
+          </v-chip>
+        </div>
 
-      <v-btn class="d-none d-sm-inline-flex mr-2" color="white" to="/" variant="text">
-        <v-icon start>mdi-store-outline</v-icon>
-        Storefront
-      </v-btn>
+        <v-spacer />
 
-      <v-menu location="bottom end">
-        <template #activator="{ props }">
-          <v-btn v-bind="props" icon variant="text">
-            <v-avatar color="white" size="34">
-              <span class="text-primary font-weight-bold">{{ userInitials }}</span>
-            </v-avatar>
-            <v-tooltip activator="parent" location="bottom">{{ userName }}</v-tooltip>
-          </v-btn>
-        </template>
+        <v-text-field
+          v-if="isAdmin"
+          v-model="adminQuickSearch"
+          class="admin-header-search d-none d-md-flex"
+          clearable
+          density="compact"
+          hide-details
+          label="Search admin"
+          prepend-inner-icon="mdi-magnify"
+          rounded="lg"
+          variant="outlined"
+          @keydown.enter.prevent="runAdminSearch"
+        />
 
-        <v-list density="compact" min-width="220">
-          <v-list-item :subtitle="currentUserEmail" :title="userName">
-            <template #prepend>
+        <v-menu v-if="isAdmin" v-model="isQuickActionMenuOpen" location="bottom end">
+          <template #activator="{ props }">
+            <v-btn v-bind="props" class="admin-header-btn" rounded="lg" variant="tonal">
+              <v-icon start>mdi-lightning-bolt-outline</v-icon>
+              Actions
+            </v-btn>
+          </template>
+
+          <v-list density="comfortable" min-width="240">
+            <v-list-item
+              v-for="item in navItems"
+              :key="item.id"
+              :prepend-icon="item.icon"
+              :title="item.label"
+              @click="selectPanel(item.id)"
+            />
+            <v-divider />
+            <v-list-item prepend-icon="mdi-refresh" title="Refresh data" @click="refreshAdminData" />
+            <v-list-item prepend-icon="mdi-plus" title="Add product" @click="openAddDialog" />
+          </v-list>
+        </v-menu>
+
+        <v-btn class="admin-header-btn d-none d-sm-inline-flex" to="/" variant="text">
+          <v-icon start>mdi-store-outline</v-icon>
+          Storefront
+        </v-btn>
+
+        <v-menu location="bottom end">
+          <template #activator="{ props }">
+            <v-btn v-bind="props" class="admin-account-btn" rounded="lg" variant="text">
               <v-avatar color="primary" size="34">
-                <span class="text-white">{{ userInitials }}</span>
+                <span class="text-white font-weight-bold">{{ userInitials }}</span>
               </v-avatar>
-            </template>
-          </v-list-item>
-          <v-divider />
-          <v-list-item to="/">
-            <template #prepend>
-              <v-icon>mdi-store-outline</v-icon>
-            </template>
-            <v-list-item-title>Storefront</v-list-item-title>
-          </v-list-item>
-          <v-list-item v-if="isAuthenticated" @click="logout">
-            <template #prepend>
-              <v-icon>mdi-logout</v-icon>
-            </template>
-            <v-list-item-title>Logout</v-list-item-title>
-          </v-list-item>
-          <v-list-item v-else to="/login">
-            <template #prepend>
-              <v-icon>mdi-login</v-icon>
-            </template>
-            <v-list-item-title>Login</v-list-item-title>
-          </v-list-item>
-        </v-list>
-      </v-menu>
+              <span class="d-none d-xl-inline admin-account-name">{{ userName }}</span>
+              <v-tooltip activator="parent" location="bottom">{{ userName }}</v-tooltip>
+            </v-btn>
+          </template>
+
+          <v-list density="compact" min-width="220">
+            <v-list-item :subtitle="currentUserEmail" :title="userName">
+              <template #prepend>
+                <v-avatar color="primary" size="34">
+                  <span class="text-white">{{ userInitials }}</span>
+                </v-avatar>
+              </template>
+            </v-list-item>
+            <v-divider />
+            <v-list-item to="/">
+              <template #prepend>
+                <v-icon>mdi-store-outline</v-icon>
+              </template>
+              <v-list-item-title>Storefront</v-list-item-title>
+            </v-list-item>
+            <v-list-item v-if="isAuthenticated" @click="logout">
+              <template #prepend>
+                <v-icon>mdi-logout</v-icon>
+              </template>
+              <v-list-item-title>Logout</v-list-item-title>
+            </v-list-item>
+            <v-list-item v-else to="/login">
+              <template #prepend>
+                <v-icon>mdi-login</v-icon>
+              </template>
+              <v-list-item-title>Login</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </div>
     </v-app-bar>
 
     <v-navigation-drawer
       v-if="isAdmin"
       v-model="drawer"
+      class="admin-drawer"
       color="surface"
       elevation="1"
       expand-on-hover
       :rail="!isMobile"
+      rail-width="70"
       :temporary="isMobile"
       width="296"
     >
@@ -88,8 +149,8 @@
       </v-list>
     </v-navigation-drawer>
 
-    <v-main>
-      <v-container class="pa-4 pa-md-6" fluid>
+    <v-main class="admin-main">
+      <v-container class="admin-content pa-4 pa-md-5" fluid>
         <v-row v-if="!isAdmin" align="center" justify="center">
           <v-col cols="12" lg="6" md="8">
             <v-card variant="outlined">
@@ -209,7 +270,13 @@
                       <template #item.name="{ item }">
                         <div class="d-flex align-center ga-3 py-2">
                           <v-avatar color="surface" rounded="lg" size="44">
-                            <v-img :alt="resolveTableItem(item)?.name" cover :src="resolveTableItem(item)?.image_url" />
+                            <v-img
+                              v-if="productImageUrl(resolveTableItem(item))"
+                              :alt="resolveTableItem(item)?.name"
+                              cover
+                              :src="productImageUrl(resolveTableItem(item))"
+                            />
+                            <v-icon v-else color="primary">mdi-image-off-outline</v-icon>
                           </v-avatar>
                           <div class="overflow-hidden">
                             <div class="font-weight-medium text-truncate">{{ resolveTableItem(item)?.name }}</div>
@@ -412,7 +479,13 @@
                 <template #item.name="{ item }">
                   <div class="d-flex align-center ga-3 py-2">
                     <v-avatar color="surface" rounded="lg" size="44">
-                      <v-img :alt="resolveTableItem(item)?.name" cover :src="resolveTableItem(item)?.image_url" />
+                      <v-img
+                        v-if="productImageUrl(resolveTableItem(item))"
+                        :alt="resolveTableItem(item)?.name"
+                        cover
+                        :src="productImageUrl(resolveTableItem(item))"
+                      />
+                      <v-icon v-else color="primary">mdi-image-off-outline</v-icon>
                     </v-avatar>
                     <div class="overflow-hidden">
                       <div class="font-weight-medium text-truncate">{{ resolveTableItem(item)?.name }}</div>
@@ -662,7 +735,7 @@
                 />
               </v-col>
               <v-col cols="12" md="6">
-                <v-select
+                <v-combobox
                   v-model="formData.category"
                   density="comfortable"
                   :items="categoryOptions"
@@ -672,12 +745,11 @@
                 />
               </v-col>
               <v-col cols="12" md="6">
-                <v-select
+                <v-combobox
                   v-model="formData.subcategory"
                   density="comfortable"
-                  :disabled="availableSubcategories.length === 0"
                   :items="availableSubcategories"
-                  label="Subcategory"
+                  label="Subcategory (optional)"
                   variant="outlined"
                 />
               </v-col>
@@ -746,18 +818,10 @@
   import { useDisplay } from "vuetify";
   import { useAppStore } from "@/stores/app";
   import { API_URL } from "@/utils/api";
+  import { safeDisplayImageUrl } from "@/utils/images";
+  import { clearProductsCache } from "@/utils/productCache";
 
   const DEFAULT_ADMIN_EMAIL = "lakshsolanki848@gmail.com";
-  const CATEGORY_OPTIONS_BASE = ["Electronics", "Furniture", "Clothing"];
-  const SUBCATEGORY_OPTIONS_BY_CATEGORY = {
-    Electronics: ["Mobiles", "Cameras", "Headphones", "Laptops", "Accessories", "Audio", "Gaming"],
-    Furniture: ["Sofas", "Tables", "Chairs", "Living Room", "Bedroom", "Kitchen", "Dining", "Office"],
-    Clothing: ["Shirts", "Jeans", "Jackets", "Men", "Women", "Kids", "Unisex"],
-  };
-  const CATEGORY_NAME_BY_KEY = CATEGORY_OPTIONS_BASE.reduce((acc, category) => {
-    acc[category.toLowerCase()] = category;
-    return acc;
-  }, {});
   const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   const router = useRouter();
@@ -789,6 +853,8 @@
   const accessEditEmail = ref("");
   const logTypeFilter = ref("all");
   const lastSyncedAt = ref(null);
+  const adminQuickSearch = ref("");
+  const isQuickActionMenuOpen = ref(false);
   const snackbar = ref(false);
   const snackbarText = ref("");
   const snackbarColor = ref("success");
@@ -945,11 +1011,15 @@
 
   const categoryOptions = computed(() => {
     const currentCategory = normalizeCategoryName(formData.value.category);
-    if (!currentCategory) return CATEGORY_OPTIONS_BASE;
-    if (CATEGORY_OPTIONS_BASE.some((category) => category.toLowerCase() === currentCategory.toLowerCase())) {
-      return CATEGORY_OPTIONS_BASE;
+    const categories = new Set(
+      products.value
+        .map((product) => normalizeCategoryName(product.category))
+        .filter(Boolean),
+    );
+    if (currentCategory) {
+      categories.add(currentCategory);
     }
-    return [...CATEGORY_OPTIONS_BASE, currentCategory];
+    return [...categories].toSorted((left, right) => left.localeCompare(right));
   });
 
   const categoryFilterOptions = computed(() => {
@@ -961,13 +1031,21 @@
   });
 
   const availableSubcategories = computed(() => {
-    const matchedSubcategories = getSubcategoryOptions(formData.value.category);
+    const selectedCategory = normalizeCategoryName(formData.value.category);
+    const matchedSubcategories = selectedCategory
+      ? products.value
+        .filter((product) => normalizeCategoryName(product.category) === selectedCategory)
+        .map((product) => normalizeSubcategoryName(product.category, product.subcategory))
+        .filter(Boolean)
+      : products.value
+        .map((product) => normalizeSubcategoryName(product.category, product.subcategory))
+        .filter(Boolean);
     const selectedSubcategory = normalizeSubcategoryName(formData.value.category, formData.value.subcategory);
-    if (!selectedSubcategory) return matchedSubcategories;
-    if (matchedSubcategories.some((subcategory) => subcategory.toLowerCase() === selectedSubcategory.toLowerCase())) {
-      return matchedSubcategories;
+    const subcategories = new Set(matchedSubcategories);
+    if (selectedSubcategory) {
+      subcategories.add(selectedSubcategory);
     }
-    return [...matchedSubcategories, selectedSubcategory];
+    return [...subcategories].toSorted((left, right) => left.localeCompare(right));
   });
 
   const filteredProducts = computed(() =>
@@ -1152,24 +1230,10 @@
       const normalizedCategory = normalizeCategoryName(nextCategory);
       if (normalizedCategory !== formData.value.category) {
         formData.value.category = normalizedCategory;
-        return;
       }
-
-      const categorySubcategories = getSubcategoryOptions(normalizedCategory);
-      if (categorySubcategories.length === 0) {
+      if (!normalizedCategory) {
         formData.value.subcategory = "";
-        return;
       }
-
-      const selectedSubcategory = normalizeSubcategoryName(normalizedCategory, formData.value.subcategory);
-      if (!selectedSubcategory) return;
-      if (categorySubcategories.some((subcategory) => subcategory.toLowerCase() === selectedSubcategory.toLowerCase())) {
-        if (selectedSubcategory !== formData.value.subcategory) {
-          formData.value.subcategory = selectedSubcategory;
-        }
-        return;
-      }
-      formData.value.subcategory = "";
     },
   );
 
@@ -1185,9 +1249,30 @@
 
   function selectPanel(panel) {
     activePanel.value = panel;
+    isQuickActionMenuOpen.value = false;
     if (isMobile.value) {
       drawer.value = false;
     }
+  }
+
+  function runAdminSearch() {
+    const query = normalizeText(adminQuickSearch.value);
+    if (!query) {
+      return;
+    }
+
+    if (activePanel.value === "users") {
+      userSearch.value = query;
+      return;
+    }
+
+    if (activePanel.value === "settings") {
+      accessSearch.value = query;
+      return;
+    }
+
+    productSearch.value = query;
+    activePanel.value = "products";
   }
 
   function normalizeText(value) {
@@ -1204,21 +1289,11 @@
   }
 
   function normalizeCategoryName(value) {
-    const normalizedValue = normalizeText(value);
-    return CATEGORY_NAME_BY_KEY[normalizedValue.toLowerCase()] || normalizedValue;
-  }
-
-  function getSubcategoryOptions(category) {
-    return SUBCATEGORY_OPTIONS_BY_CATEGORY[normalizeCategoryName(category)] || [];
+    return normalizeText(value).slice(0, 80);
   }
 
   function normalizeSubcategoryName(category, subcategory) {
-    const normalizedSubcategory = normalizeText(subcategory);
-    if (!normalizedSubcategory) return "";
-    const matchingSubcategory = getSubcategoryOptions(category).find(
-      (option) => option.toLowerCase() === normalizedSubcategory.toLowerCase(),
-    );
-    return matchingSubcategory || normalizedSubcategory;
+    return normalizeText(subcategory).slice(0, 80);
   }
 
   function resolveTableItem(item) {
@@ -1267,6 +1342,10 @@
     const mainCategory = normalizeCategoryName(product?.category) || "Other";
     const subcategory = normalizeSubcategoryName(mainCategory, product?.subcategory);
     return subcategory ? `${mainCategory} / ${subcategory}` : mainCategory;
+  }
+
+  function productImageUrl(product) {
+    return safeDisplayImageUrl(product?.image_url);
   }
 
   function stockStatus(product) {
@@ -1376,6 +1455,7 @@
   }
 
   function openAddDialog() {
+    isQuickActionMenuOpen.value = false;
     editMode.value = false;
     currentProductId.value = null;
     resetProductForm();
@@ -1431,10 +1511,6 @@
       return { error: "Image URL must be valid" };
     }
 
-    if (getSubcategoryOptions(payload.category).length > 0 && !payload.subcategory) {
-      return { error: "Subcategory is required" };
-    }
-
     return { payload };
   }
 
@@ -1464,6 +1540,7 @@
       }
 
       productDialog.value = false;
+      clearProductsCache();
       await fetchProducts();
     } catch (error) {
       console.error("Failed to save product:", error);
@@ -1489,6 +1566,7 @@
         withCredentials: true,
       });
       notify("Product deleted");
+      clearProductsCache();
       await fetchProducts();
     } catch (error) {
       console.error("Failed to delete product:", error);
@@ -1592,3 +1670,204 @@
     router.push("/login");
   }
 </script>
+
+<style scoped>
+.admin-premium-header {
+  border-bottom: 1px solid rgba(17, 31, 26, 0.35);
+  background: var(--ms-green) !important;
+  color: #fff8e8 !important;
+  backdrop-filter: blur(12px);
+}
+
+.admin-header-shell {
+  width: 100%;
+  min-height: 70px;
+  padding-inline: 18px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.admin-brand-block {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 220px;
+}
+
+.admin-brand-icon {
+  background: #fff8e8 !important;
+  color: var(--ms-green) !important;
+  box-shadow: none;
+}
+
+.admin-brand-icon :deep(.v-icon) {
+  color: var(--ms-green) !important;
+}
+
+.admin-brand-block p {
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.15;
+  color: #fff8e8;
+}
+
+.admin-brand-block span {
+  display: block;
+  margin-top: 2px;
+  color: rgba(255, 248, 232, 0.72);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.admin-status-row {
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.admin-header-search {
+  width: clamp(220px, 24vw, 360px);
+}
+
+.admin-header-search :deep(.v-field) {
+  background: #fff8e8;
+  color: var(--ms-ink);
+}
+
+.admin-header-btn,
+.admin-account-btn {
+  color: #fff8e8;
+}
+
+.admin-header-btn:hover,
+.admin-account-btn:hover {
+  background: rgba(255, 248, 232, 0.14) !important;
+}
+
+.admin-account-btn {
+  max-width: 220px;
+}
+
+.admin-account-name {
+  max-width: 128px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-main {
+  background: var(--ms-bg) !important;
+}
+
+.admin-content {
+  max-width: none !important;
+}
+
+.admin-drawer {
+  background: var(--ms-surface) !important;
+  border-right: 1px solid var(--ms-border) !important;
+  box-shadow: none !important;
+}
+
+.admin-drawer :deep(.v-navigation-drawer__content) {
+  overflow-x: hidden;
+}
+
+.admin-drawer :deep(.v-list) {
+  padding: 12px 8px !important;
+}
+
+.admin-drawer :deep(.v-list-subheader) {
+  min-height: 36px;
+  padding-inline: 12px !important;
+  color: var(--ms-green);
+  font-weight: 700;
+}
+
+.admin-drawer :deep(.v-list-item) {
+  min-height: 54px;
+  border-radius: 8px !important;
+  margin-bottom: 8px;
+  color: #1d1d1d;
+}
+
+.admin-drawer :deep(.v-list-item__prepend) {
+  width: 42px;
+  justify-content: center;
+  margin-inline-end: 12px;
+}
+
+.admin-drawer :deep(.v-list-item__prepend > .v-icon) {
+  margin-inline-end: 0;
+}
+
+.admin-drawer :deep(.v-list-item--active) {
+  background: var(--ms-green-soft) !important;
+  color: var(--ms-green) !important;
+}
+
+.admin-page :deep(.v-card) {
+  background: var(--ms-surface) !important;
+  border: 1px solid var(--ms-border) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+.admin-page :deep(.v-card-title) {
+  color: var(--ms-ink);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.admin-page :deep(.v-card-text),
+.admin-page :deep(.v-card-actions),
+.admin-page :deep(.text-body-1),
+.admin-page :deep(.text-body-2),
+.admin-page :deep(.v-list-item-title) {
+  color: var(--ms-ink) !important;
+}
+
+.admin-page :deep(.text-caption),
+.admin-page :deep(.text-medium-emphasis),
+.admin-page :deep(.v-list-item-subtitle) {
+  color: var(--ms-muted) !important;
+}
+
+.admin-page :deep(.v-table) {
+  background: transparent !important;
+}
+
+.admin-page :deep(.v-table__wrapper) {
+  border-radius: 8px;
+}
+
+@media (max-width: 960px) {
+  .admin-header-shell {
+    padding-inline: 12px;
+  }
+
+  .admin-brand-block {
+    min-width: 0;
+  }
+
+  .admin-brand-block span {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-premium-header {
+    height: 74px !important;
+  }
+
+  .admin-header-btn {
+    display: none;
+  }
+
+  .admin-brand-block p {
+    font-size: 0.92rem;
+  }
+}
+</style>

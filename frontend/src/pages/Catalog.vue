@@ -2,7 +2,7 @@
   <div class="catalog-page">
     <v-container class="catalog-shell">
       <section v-if="catalogEntry" class="catalog-intro">
-        <p class="catalog-kicker">Category Collection</p>
+        <p class="catalog-kicker">{{ catalogEntry.isAll ? 'Product Catalog' : 'Category Collection' }}</p>
         <h1>{{ pageTitle }}</h1>
       </section>
 
@@ -119,7 +119,16 @@
             >
               <v-card class="result-card" elevation="0" @click="openProduct(product.product_id)">
                 <div class="result-media">
-                  <img :alt="product.name" class="result-image" loading="lazy" :src="product.image_url">
+                  <img
+                    v-if="productImageUrl(product)"
+                    :alt="product.name"
+                    class="result-image"
+                    loading="lazy"
+                    :src="productImageUrl(product)"
+                  >
+                  <v-icon v-else class="result-image-placeholder" color="primary" size="44">
+                    mdi-image-off-outline
+                  </v-icon>
                 </div>
                 <v-card-text class="result-content">
                   <p class="result-company">{{ getCompanyLabel(product) }}</p>
@@ -158,11 +167,13 @@
 
 <script setup>
   import axios from 'axios'
-  import { computed, onUnmounted, reactive, ref, watch } from 'vue'
+  import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { API_URL } from '@/utils/api'
   import { resolveCatalogEntryFromProducts } from '@/utils/catalog'
   import { useCurrency } from '@/utils/currency'
+  import { safeDisplayImageUrl } from '@/utils/images'
+  import { PRODUCTS_CACHE_INVALIDATED_EVENT } from '@/utils/productCache'
 
   const route = useRoute()
   const router = useRouter()
@@ -198,14 +209,26 @@
 
   let filterFetchTimer = null
 
+  const isAllProductsRoute = computed(() => route.name === 'CatalogAll')
+  const querySearchTerm = computed(() => String(route.query.search || '').trim().slice(0, 80))
+
   const pageTitle = computed(() => {
     if (!catalogEntry.value) return 'Catalog'
-    // Category-only view
-    if (!catalogEntry.value.item) {
-      return `${catalogEntry.value.category.label}`
+    const parts = ['Product']
+
+    if (!catalogEntry.value.isAll) {
+      parts.push(catalogEntry.value.category.label)
+      if (catalogEntry.value.item) {
+        parts.push(catalogEntry.value.item.name)
+      }
     }
-    // Category + subcategory view
-    return `${catalogEntry.value.category.label} / ${catalogEntry.value.item.name}`
+
+    const activeSearch = String(filters.search || '').trim()
+    if (activeSearch) {
+      parts.push(activeSearch)
+    }
+
+    return parts.join('/')
   })
   const companyOptions = computed(() => {
     const companies = new Set()
@@ -226,9 +249,13 @@
     return fallbackNameToken || 'Unknown'
   }
 
+  function productImageUrl(product) {
+    return safeDisplayImageUrl(product?.image_url)
+  }
+
   function buildCategoryQuery() {
     if (!catalogEntry.value) return {}
-    // Category-only view - show all products in category
+    if (catalogEntry.value.isAll) return {}
     if (!catalogEntry.value.item) {
       return {
         category: catalogEntry.value.category.apiCategory,
@@ -254,42 +281,24 @@
 
       if (requestId !== sourceRequestVersion.value) return
       const allProducts = Array.isArray(response.data) ? response.data : []
-      const nextCatalogEntry = resolveCatalogEntryFromProducts(
-        allProducts,
-        route.params.category,
-        route.params.subcategory,
-      )
-
-      // Handle category-only route (no subcategory)
-      const isCategoryOnly = !route.params.subcategory
-      let categoryOnlyEntry = null
-
-      if (isCategoryOnly) {
-        // Find the category without requiring subcategory
-        const normalizedCategorySlug = String(route.params.category || '').toLowerCase()
-        const foundCategory = allProducts.find(p =>
-          String(p.category || '').toLowerCase().replace(/[^a-z0-9]+/g, '-') === normalizedCategorySlug
+      const nextCatalogEntry = isAllProductsRoute.value
+        ? {
+          category: {
+            key: 'products',
+            label: 'Product',
+            apiCategory: '',
+          },
+          item: null,
+          isAll: true,
+          canonicalPath: '/products',
+        }
+        : resolveCatalogEntryFromProducts(
+          allProducts,
+          route.params.category,
+          route.params.subcategory,
         )
 
-        if (foundCategory) {
-          const categoryLabel = foundCategory.category
-          const categoryKey = String(categoryLabel || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')
-          categoryOnlyEntry = {
-            category: {
-              key: categoryKey,
-              label: categoryLabel,
-              apiCategory: categoryLabel,
-            },
-            item: null, // No subcategory filter
-            canonicalPath: `/${categoryKey}`
-          }
-        }
-      }
-
-      // Use category-only entry if that's what we're navigating to
-      const finalCatalogEntry = isCategoryOnly ? categoryOnlyEntry : nextCatalogEntry
-
-      if (!finalCatalogEntry) {
+      if (!nextCatalogEntry) {
         catalogEntry.value = null
         sourceProducts.value = []
         products.value = []
@@ -299,26 +308,24 @@
         return
       }
 
-      catalogEntry.value = finalCatalogEntry
+      catalogEntry.value = nextCatalogEntry
 
-      // Only redirect if we have a subcategory and path doesn't match
-      if (!isCategoryOnly && route.path !== finalCatalogEntry.canonicalPath) {
-        router.replace(finalCatalogEntry.canonicalPath)
+      if (route.path !== nextCatalogEntry.canonicalPath) {
+        router.replace({
+          path: nextCatalogEntry.canonicalPath,
+          query: route.query,
+        })
         return
       }
 
-      // Filter products based on whether we have a subcategory or not
-      sourceProducts.value = allProducts.filter((product) => {
-        // Category-only: show all products in the category
-        if (isCategoryOnly && !nextCatalogEntry?.item) {
-          return product?.category === finalCatalogEntry.category.apiCategory
-        }
-        // Category + subcategory: filter by both
-        return (
-          product?.category === finalCatalogEntry.category.apiCategory &&
-          product?.subcategory === finalCatalogEntry.item?.apiSubcategory
-        )
-      })
+      sourceProducts.value = nextCatalogEntry.isAll
+        ? allProducts
+        : allProducts.filter((product) => {
+          if (product?.category !== nextCatalogEntry.category.apiCategory) {
+            return false
+          }
+          return !nextCatalogEntry.item || product?.subcategory === nextCatalogEntry.item.apiSubcategory
+        })
 
       if (sourceProducts.value.length === 0) {
         priceBounds.value = { min: 0, max: 0 }
@@ -335,7 +342,7 @@
       filters.company = 'All'
       filters.inStock = false
       filters.sort = 'newest'
-      filters.search = ''
+      filters.search = querySearchTerm.value
       currentPage.value = 1
       suppressFilterWatch.value = false
       await fetchProducts()
@@ -436,6 +443,15 @@
     priceRange.value = [priceBounds.value.min, priceBounds.value.max]
     suppressFilterWatch.value = false
     currentPage.value = 1
+    if (route.query.search) {
+      router.replace({
+        path: route.path,
+        query: {
+          ...route.query,
+          search: undefined,
+        },
+      })
+    }
     if (wasPageOne) {
       scheduleFetchProducts()
     }
@@ -446,12 +462,23 @@
   }
 
   watch(
-    () => [route.params.category, route.params.subcategory],
+    () => [route.name, route.params.category, route.params.subcategory],
     async () => {
       await fetchSourceProducts()
     },
     { immediate: true },
   )
+
+  watch(querySearchTerm, () => {
+    if (!catalogEntry.value) return
+    if (filters.search === querySearchTerm.value) return
+
+    suppressFilterWatch.value = true
+    filters.search = querySearchTerm.value
+    currentPage.value = 1
+    suppressFilterWatch.value = false
+    fetchProducts()
+  })
 
   watch(
     () => [filters.search, filters.company, filters.inStock, filters.sort, priceRange.value[0], priceRange.value[1]],
@@ -471,10 +498,19 @@
     fetchProducts()
   })
 
+  function handleProductsInvalidated() {
+    fetchSourceProducts()
+  }
+
+  onMounted(() => {
+    window.addEventListener(PRODUCTS_CACHE_INVALIDATED_EVENT, handleProductsInvalidated)
+  })
+
   onUnmounted(() => {
     if (filterFetchTimer) {
       clearTimeout(filterFetchTimer)
     }
+    window.removeEventListener(PRODUCTS_CACHE_INVALIDATED_EVENT, handleProductsInvalidated)
   })
 </script>
 
@@ -611,12 +647,19 @@
   height: 220px;
   overflow: hidden;
   background: #e9eeeb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .result-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.result-image-placeholder {
+  opacity: 0.7;
 }
 
 .result-content {

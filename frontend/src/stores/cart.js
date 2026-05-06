@@ -47,21 +47,21 @@ export const useCartStore = defineStore('cart', {
       }
     },
 
-    async fetchCart() {
+    async fetchCart(options = {}) {
       try {
         const response = await this.withAuthRetry(() =>
           axios.get(`${API_URL}/cart`, { withCredentials: true })
         )
         this.items = response.data.items || []
+        const forceProductRefresh = Boolean(options.forceProductRefresh)
 
-        const missingProductIds = [...new Set(
-          this.items
-            .map((item) => item.product_id)
-            .filter((productId) => !this.products[productId]),
-        )]
+        const cartProductIds = [...new Set(this.items.map((item) => item.product_id))]
+        if (forceProductRefresh) {
+          this.invalidateProducts(cartProductIds)
+        }
 
-        if (missingProductIds.length > 0) {
-          await this.fetchMissingProducts(missingProductIds)
+        if (cartProductIds.length > 0) {
+          await this.fetchMissingProducts(cartProductIds, { force: forceProductRefresh })
         }
       } catch (error) {
         const isNotAuthenticated =
@@ -78,20 +78,25 @@ export const useCartStore = defineStore('cart', {
       }
     },
 
-    async fetchMissingProducts(productIds) {
+    async fetchMissingProducts(productIds, options = {}) {
+      const force = Boolean(options.force)
       const missingProductIds = [...new Set(
-        productIds.filter((productId) => !this.products[productId])
+        productIds.filter((productId) => force || !this.products[productId])
       )]
 
       if (missingProductIds.length === 0) {
         return
       }
 
+      if (force) {
+        this.invalidateProducts(missingProductIds)
+      }
+
       // For multiple items, a single products request is usually faster than N detail requests.
       if (missingProductIds.length > 1) {
         try {
           const response = await axios.get(`${API_URL}/products`, { timeout: 8000 })
-          const allProducts = Array.isArray(response.data) ? response.data : []
+          const allProducts = Array.isArray(response.data) ? response.data : response.data?.items || []
           const productsById = new Map(allProducts.map((product) => [product.product_id, product]))
 
           for (const productId of missingProductIds) {
@@ -110,12 +115,17 @@ export const useCartStore = defineStore('cart', {
       }
     },
 
-    async fetchProductDetails(productId) {
-      if (this.products[productId]) {
+    async fetchProductDetails(productId, options = {}) {
+      const force = Boolean(options.force)
+      if (!force && this.products[productId]) {
         return this.products[productId]
       }
 
-      if (pendingProductRequests.has(productId)) {
+      if (force) {
+        this.invalidateProducts([productId])
+      }
+
+      if (!force && pendingProductRequests.has(productId)) {
         return pendingProductRequests.get(productId)
       }
 
@@ -197,6 +207,15 @@ export const useCartStore = defineStore('cart', {
     clearCart() {
       this.items = []
       this.products = {}
+      pendingProductRequests.clear()
+    },
+
+    invalidateProducts(productIds = []) {
+      for (const productId of productIds) {
+        if (!productId) {continue}
+        delete this.products[productId]
+        pendingProductRequests.delete(productId)
+      }
     }
   }
 })

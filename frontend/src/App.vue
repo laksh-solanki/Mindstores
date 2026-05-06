@@ -7,6 +7,7 @@
     </v-main>
 
     <AppFooter v-if="!isAuthPage && !isAdminPage" />
+    <CookieConsent />
     <FullScreenLoader :model-value="showFullscreenLoader" />
   </v-app>
 </template>
@@ -16,6 +17,7 @@
   import { useRoute, useRouter } from 'vue-router'
   import AppFooter from '@/components/AppFooter.vue'
   import AppHeader from '@/components/AppHeader.vue'
+  import CookieConsent from '@/components/CookieConsent.vue'
   import FullScreenLoader from '@/components/FullScreenLoader.vue'
   import { useAppStore } from '@/stores/app'
 
@@ -23,18 +25,12 @@
   const router = useRouter()
   const appStore = useAppStore()
   const routeLoading = ref(false)
-  const pageBooting = ref(document.readyState !== 'complete')
 
   const isAuthPage = computed(() => ['/login', '/create-account'].includes(route.path))
   const isAdminPage = computed(() => route.path === '/admin')
   const showFullscreenLoader = computed(() => {
-    return appStore.loading || routeLoading.value || pageBooting.value
+    return routeLoading.value
   })
-
-  function handleWindowLoad () {
-    pageBooting.value = false
-  }
-  
 
   let removeBeforeEachGuard = null
   let removeAfterEachGuard = null
@@ -58,19 +54,12 @@
     removeRouteErrorHandler = router.onError(() => {
       routeLoading.value = false
     })
-
-    if (document.readyState === 'complete') {
-      pageBooting.value = false
-    } else {
-      window.addEventListener('load', handleWindowLoad, { once: true })
-    }
   })
 
   onUnmounted(() => {
     removeBeforeEachGuard?.()
     removeAfterEachGuard?.()
     removeRouteErrorHandler?.()
-    window.removeEventListener('load', handleWindowLoad)
   })
 </script>
 
@@ -88,10 +77,18 @@ body,
 }
 
 :root {
-  --ms-bg: #f5f5f5;
-  --ms-surface: #ffffff;
-  --ms-ink: #1e1e1e;
-  --ms-border: #e0e0e0;
+  --ms-bg: #f8f1dd;
+  --ms-surface: #fff9e8;
+  --ms-surface-strong: #fffdf2;
+  --ms-ink: #151515;
+  --ms-muted: #6f6a5c;
+  --ms-border: #cfc5a8;
+  --ms-green: #316d59;
+  --ms-green-strong: #285b4b;
+  --ms-green-soft: #c4d1c0;
+  --ms-blue: #2f83dc;
+  --ms-orange: #f59e0b;
+  --ms-red: #ef5350;
 }
 
 body {
@@ -101,7 +98,17 @@ body {
 }
 
 .v-main {
-  background-color: var(--ms-bg);
+  background-color: var(--ms-bg) !important;
+}
+
+.v-theme--light {
+  --v-theme-primary: 49, 109, 89;
+  --v-theme-on-primary: 255, 255, 255;
+  --v-theme-surface: 255, 249, 232;
+  --v-theme-background: 248, 241, 221;
+  --v-theme-success: 72, 170, 98;
+  --v-theme-warning: 245, 158, 11;
+  --v-theme-error: 239, 83, 80;
 }
 
 /* Global alignment + responsive baseline */
@@ -118,7 +125,8 @@ body {
   .premium-tos
 ) {
   background: var(--ms-bg) !important;
-  color: #1f1f1f !important;
+  background-image: none !important;
+  color: var(--ms-ink) !important;
 }
 
 :where(
@@ -134,7 +142,11 @@ body {
   .premium-tos
 ) .v-container {
   max-width: 1200px !important;
-  padding-inline: 16px !important;
+  padding-inline: 18px !important;
+}
+
+.admin-page .v-container {
+  max-width: none !important;
 }
 
 :where(
@@ -181,7 +193,7 @@ body {
   .auth-page
 ) :is(.section-head, .profile-hero, .payment-hero, .cart-hero, .admin-hero, .catalog-intro) {
   text-align: left !important;
-  margin-bottom: 12px !important;
+  margin-bottom: 14px !important;
 }
 
 .hero-glow,
@@ -231,7 +243,7 @@ body {
   background: var(--ms-surface) !important;
   border: 1px solid var(--ms-border) !important;
   box-shadow: none !important;
-  border-radius: 12px !important;
+  border-radius: 8px !important;
 }
 
 :is(.collection-card, .result-card, .story-card, .mobile-product-card, .order-item) {
@@ -266,6 +278,7 @@ body {
   min-height: 40px;
   text-transform: none !important;
   font-weight: 600 !important;
+  letter-spacing: 0 !important;
 }
 
 .hero-btn--primary,
@@ -280,7 +293,7 @@ body {
 .primary-btn,
 .submit-btn,
 .save-btn {
-  background: #1976d2 !important;
+  background: var(--ms-green) !important;
   color: #ffffff !important;
   box-shadow: none !important;
 }
@@ -292,7 +305,47 @@ body {
 .secondary-btn {
   background: transparent !important;
   border-color: var(--ms-border) !important;
-  color: #1f1f1f !important;
+  color: var(--ms-ink) !important;
+}
+
+.v-card,
+.v-sheet,
+.v-list {
+  color: var(--ms-ink);
+}
+
+.v-field {
+  border-radius: 8px !important;
+}
+
+.v-field--variant-outlined {
+  background: var(--ms-surface-strong) !important;
+}
+
+.v-field--variant-outlined .v-field__outline {
+  color: var(--ms-border) !important;
+}
+
+.v-field--focused .v-field__outline,
+.v-field:hover .v-field__outline {
+  color: var(--ms-green) !important;
+}
+
+.v-data-table {
+  background: transparent !important;
+}
+
+.v-data-table .v-table__wrapper > table > thead > tr > th {
+  color: var(--ms-ink) !important;
+  font-weight: 700 !important;
+}
+
+.v-data-table .v-table__wrapper > table > tbody > tr > td {
+  border-bottom-color: rgba(66, 57, 37, 0.22) !important;
+}
+
+.v-chip {
+  letter-spacing: 0 !important;
 }
 
 .auth-visual {
@@ -357,6 +410,10 @@ body {
     padding-inline: 24px !important;
   }
 
+  .admin-page .v-container {
+    max-width: none !important;
+  }
+
   .progress-rail {
     grid-template-columns: auto 1fr auto 1fr auto !important;
     justify-items: stretch !important;
@@ -395,7 +452,7 @@ body {
     .premium-wrapper,
     .glass-card
   ) {
-    border-radius: 10px !important;
+    border-radius: 8px !important;
   }
 
   :is(.summary-actions, .action-row, .hero-actions, .membership-actions, .mobile-actions, .avatar-actions) .v-btn {

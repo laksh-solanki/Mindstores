@@ -47,14 +47,18 @@ function normalizeImageUrl(value) {
     return null;
   }
 
-  const normalized = normalizeText(value, { maxLength: 2048 });
+  const normalized = normalizeText(value);
   if (!normalized) {
     return null;
   }
 
-  const isDataImage = /^data:image\/(png|jpeg|jpg|webp|gif);base64,[a-zA-Z0-9+/=]+$/i.test(normalized);
-  if (isDataImage) {
-    return normalized.length <= 700_000 ? normalized : null;
+  if (normalized.startsWith("data:image/")) {
+    const isDataImage = /^data:image\/(png|jpeg|jpg|webp|gif);base64,[a-zA-Z0-9+/=]+$/i.test(normalized);
+    return isDataImage && normalized.length <= 700_000 ? normalized : null;
+  }
+
+  if (normalized.length > 2048) {
+    return null;
   }
 
   try {
@@ -285,7 +289,7 @@ export default async function registerAuthRoutes(fastify, deps) {
       } else {
         const normalizedPicture = normalizeImageUrl(pictureValue);
         if (!normalizedPicture) {
-          return reply.code(400).send({ message: "Profile image must be a valid http/https URL" });
+          return reply.code(400).send({ message: "Profile image must be a valid image upload or http/https URL" });
         }
         updates.picture = normalizedPicture;
       }

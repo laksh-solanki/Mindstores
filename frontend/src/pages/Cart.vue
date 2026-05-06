@@ -51,11 +51,12 @@
                   @keyup.enter="goToProduct(item.product_id)"
                 >
                   <v-img
-                    v-if="cartStore.products[item.product_id]"
+                    v-if="cartProductImageUrl(item.product_id)"
                     :alt="cartStore.products[item.product_id].name"
                     class="cart-item-image"
-                    :src="cartStore.products[item.product_id].image_url"
+                    :src="cartProductImageUrl(item.product_id)"
                   />
+                  <v-icon v-else color="primary" size="48">mdi-image-off-outline</v-icon>
                 </div>
               </v-col>
               <v-col cols="12" md="9" sm="8">
@@ -67,6 +68,7 @@
                         class="item-check"
                         color="primary"
                         density="compact"
+                        :disabled="isItemUnavailable(item)"
                         hide-details
                         :value="item.product_id"
                       />
@@ -83,9 +85,17 @@
                         <p class="cart-item-price">
                           {{ formatAmount(cartStore.products[item.product_id]?.price) }}
                         </p>
+                        <v-chip
+                          class="mt-2 stock-status-chip"
+                          :color="isItemUnavailable(item) ? 'error' : getStockStatusColor(item)"
+                          size="small"
+                          variant="tonal"
+                        >
+                          {{ getStockMessage(item) }}
+                        </v-chip>
                         <div class="cart-item-quantity">
                           <v-btn
-                            :disabled="item.quantity <= 1 || isQuantityUpdating(item.product_id)"
+                            :disabled="item.quantity <= 1 || isItemUnavailable(item) || isQuantityUpdating(item.product_id)"
                             icon="mdi-minus"
                             size="small"
                             slim
@@ -94,13 +104,15 @@
                           />
                           <span class="quantity-value">{{ item.quantity }}</span>
                           <v-btn
-                            :disabled="item.quantity >= getMaxQuantity(item.product_id) || isQuantityUpdating(item.product_id)"
+                            :disabled="isItemUnavailable(item) || item.quantity >= getMaxQuantity(item.product_id) || isQuantityUpdating(item.product_id)"
                             icon="mdi-plus"
                             size="small"
                             variant="outlined"
                             @click="changeQuantity(item, 1)"
                           />
-                          <span class="stock-hint">Max {{ getMaxQuantity(item.product_id) }}</span>
+                          <span class="stock-hint">
+                            {{ getMaxQuantity(item.product_id) > 0 ? `Max ${getMaxQuantity(item.product_id)}` : 'Not available' }}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -134,9 +146,18 @@
                   color="primary"
                   density="compact"
                   hide-details
-                  label="Select all products"
+                  label="Select available products"
                 />
               </div>
+              <v-alert
+                v-if="selectedStockIssues.length > 0"
+                class="mb-3"
+                density="compact"
+                type="warning"
+                variant="tonal"
+              >
+                Review sold out or low-stock items before checkout.
+              </v-alert>
               <div class="promo-section">
                 <div class="promo-head">
                   <p class="promo-label">Promo Code</p>
@@ -211,7 +232,7 @@
               <v-btn
                 block
                 color="primary"
-                :disabled="selectedProductIds.length === 0"
+                :disabled="checkoutDisabled"
                 :loading="checkoutLoading"
                 rounded="lg"
                 size="large"
@@ -241,6 +262,7 @@
   import BaseAlert from '@/components/BaseAlert.vue'
   import { useCartStore } from '@/stores/cart'
   import { useCurrency } from '@/utils/currency'
+  import { safeDisplayImageUrl } from '@/utils/images'
 
   const PROMO_CODES = [
     {
@@ -320,6 +342,20 @@
         return Math.max(0, selectedTotalAmount.value - promoDiscount.value)
       })
 
+      const availableCartItems = computed(() => {
+        return cartStore.items.filter((item) => !isItemUnavailable(item))
+      })
+
+      const selectedStockIssues = computed(() => {
+        return cartStore.items.filter((item) => {
+          return selectedProductIds.value.includes(item.product_id) && isItemUnavailable(item)
+        })
+      })
+
+      const checkoutDisabled = computed(() => {
+        return selectedProductIds.value.length === 0 || selectedStockIssues.value.length > 0
+      })
+
       const describePromo = (promo) => {
         if (!promo) {
           return ''
@@ -341,10 +377,12 @@
       })
 
       const selectAllChecked = computed({
-        get: () => cartStore.items.length > 0 && selectedProductIds.value.length === cartStore.items.length,
+        get: () => {
+          return availableCartItems.value.length > 0 && selectedProductIds.value.length === availableCartItems.value.length
+        },
         set: (checked) => {
           if (checked) {
-            selectedProductIds.value = cartStore.items.map((item) => item.product_id)
+            selectedProductIds.value = availableCartItems.value.map((item) => item.product_id)
             return
           }
           selectedProductIds.value = []
@@ -370,11 +408,30 @@
         const stock = Number(product?.stock)
 
         if (!Number.isFinite(stock) || stock <= 0) {
-          const fallbackItem = cartStore.items.find((item) => item.product_id === productId)
-          return Math.max(1, Number(fallbackItem?.quantity || 1))
+          return 0
         }
 
         return Math.max(1, Math.floor(stock))
+      }
+
+      const isItemUnavailable = (item) => {
+        const stock = getMaxQuantity(item.product_id)
+        const quantity = Number(item.quantity || 0)
+        return stock <= 0 || quantity > stock
+      }
+
+      const getStockMessage = (item) => {
+        const stock = getMaxQuantity(item.product_id)
+        const quantity = Number(item.quantity || 0)
+        if (stock <= 0) return 'Sold out'
+        if (quantity > stock) return `Only ${stock} left`
+        if (stock <= 5) return `Low stock: ${stock}`
+        return `${stock} in stock`
+      }
+
+      const getStockStatusColor = (item) => {
+        const stock = getMaxQuantity(item.product_id)
+        return stock <= 5 ? 'warning' : 'success'
       }
 
       const isQuantityUpdating = (productId) => Boolean(quantityUpdatingById.value[productId])
@@ -418,6 +475,7 @@
       }
 
       const normalizePromoCode = (value) => String(value || '').trim().toUpperCase()
+      const cartProductImageUrl = (productId) => safeDisplayImageUrl(cartStore.products[productId]?.image_url)
 
       const applyPromoCode = () => {
         const normalizedCode = normalizedPromoInput.value
@@ -482,6 +540,13 @@
           return
         }
 
+        if (selectedStockIssues.value.length > 0) {
+          snackbarText.value = 'Remove sold out or low-stock selections before checkout'
+          snackbarColor.value = 'warning'
+          snackbar.value = true
+          return
+        }
+
         checkoutLoading.value = true
         try {
           const selectedParam = selectedProductIds.value
@@ -498,12 +563,13 @@
       }
 
       watch(
-        () => cartStore.items.map((item) => item.product_id),
-        (productIds) => {
-          const productIdSet = new Set(productIds)
+        () => cartStore.items.map((item) => `${item.product_id}:${item.quantity}:${cartStore.products[item.product_id]?.stock ?? ''}`),
+        () => {
+          const availableIds = availableCartItems.value.map((item) => item.product_id)
+          const productIdSet = new Set(availableIds)
           selectedProductIds.value = selectedProductIds.value.filter((id) => productIdSet.has(id))
-          if (userSettings.value.quickCheckout && selectedProductIds.value.length === 0 && productIds.length > 0) {
-            selectedProductIds.value = [...productIds]
+          if (userSettings.value.quickCheckout && selectedProductIds.value.length === 0 && availableIds.length > 0) {
+            selectedProductIds.value = [...availableIds]
           }
         },
         { immediate: true }
@@ -521,9 +587,9 @@
       )
 
       onMounted(async () => {
-        await cartStore.fetchCart()
+        await cartStore.fetchCart({ forceProductRefresh: true })
         selectedProductIds.value = userSettings.value.quickCheckout
-          ? cartStore.items.map((item) => item.product_id)
+          ? availableCartItems.value.map((item) => item.product_id)
           : []
       })
 
@@ -534,8 +600,13 @@
         checkout,
         checkoutLoading,
         changeQuantity,
+        checkoutDisabled,
         getMaxQuantity,
+        getStockMessage,
+        getStockStatusColor,
+        isItemUnavailable,
         isQuantityUpdating,
+        cartProductImageUrl,
         applyPromoCode,
         selectPromoCode,
         clearPromoCode,
@@ -549,6 +620,7 @@
         finalTotalAmount,
         promoHelperText,
         selectedProductIds,
+        selectedStockIssues,
         selectedTotalAmount,
         selectAllChecked,
         formatAmount,
@@ -680,6 +752,9 @@
   height: 160px !important;
   background: #eef3ef;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .is-clickable {

@@ -1,4 +1,4 @@
-const DEFAULT_WORKER_API_URL = 'https://mindstores-backend-production.audit29122006.workers.dev'
+const DEFAULT_WORKER_API_URL = 'https://mindstores-backend.audit29122006.workers.dev'
 
 const HOP_BY_HOP_HEADERS = new Set([
   'connection',
@@ -52,12 +52,12 @@ function copyRequestHeaders(req) {
 }
 
 function copyResponseHeaders(response, res, workerApiUrl) {
-  response.headers.forEach((value, key) => {
+  for (const [key, value] of response.headers) {
     if (HOP_BY_HOP_HEADERS.has(key.toLowerCase()) || key.toLowerCase() === 'set-cookie') {
-      return
+      continue
     }
     res.setHeader(key, value)
-  })
+  }
 
   const setCookies = typeof response.headers.getSetCookie === 'function'
     ? response.headers.getSetCookie()

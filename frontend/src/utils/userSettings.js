@@ -6,7 +6,17 @@ const DEFAULT_SETTINGS = {
   currency: 'USD',
   orderUpdates: true,
   promotionalEmails: false,
-  quickCheckout: true
+  quickCheckout: true,
+  lowStockAlerts: true,
+  saveDeliveryDetails: true,
+  deliveryProfile: {
+    phone: '',
+    address: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    instructions: ''
+  }
 }
 
 const ALLOWED_CURRENCIES = ['USD', 'EUR', 'GBP', 'INR']
@@ -34,6 +44,27 @@ const COUNTRY_NAME_TO_CODE = Object.freeze({
 
 const isBrowser = typeof window !== 'undefined'
 
+function normalizeTextField(value, maxLength = 160) {
+  if (typeof value !== 'string') {
+    return ''
+  }
+
+  return value.trim().slice(0, maxLength)
+}
+
+function normalizeDeliveryProfile(raw = {}) {
+  const deliveryProfile = raw && typeof raw === 'object' ? raw : {}
+
+  return {
+    phone: normalizeTextField(deliveryProfile.phone, 32),
+    address: normalizeTextField(deliveryProfile.address, 220),
+    city: normalizeTextField(deliveryProfile.city, 96),
+    state: normalizeTextField(deliveryProfile.state, 96),
+    postalCode: normalizeTextField(deliveryProfile.postalCode || deliveryProfile.zip, 32),
+    instructions: normalizeTextField(deliveryProfile.instructions, 240)
+  }
+}
+
 function normalizeSettings(raw = {}) {
   const rawCurrency = typeof raw.currency === 'string' ? raw.currency.trim().toUpperCase() : ''
   const currency = ALLOWED_CURRENCIES.includes(rawCurrency) ? rawCurrency : DEFAULT_SETTINGS.currency
@@ -43,7 +74,10 @@ function normalizeSettings(raw = {}) {
     currency,
     orderUpdates: typeof raw.orderUpdates === 'boolean' ? raw.orderUpdates : DEFAULT_SETTINGS.orderUpdates,
     promotionalEmails: typeof raw.promotionalEmails === 'boolean' ? raw.promotionalEmails : DEFAULT_SETTINGS.promotionalEmails,
-    quickCheckout: typeof raw.quickCheckout === 'boolean' ? raw.quickCheckout : DEFAULT_SETTINGS.quickCheckout
+    quickCheckout: typeof raw.quickCheckout === 'boolean' ? raw.quickCheckout : DEFAULT_SETTINGS.quickCheckout,
+    lowStockAlerts: typeof raw.lowStockAlerts === 'boolean' ? raw.lowStockAlerts : DEFAULT_SETTINGS.lowStockAlerts,
+    saveDeliveryDetails: typeof raw.saveDeliveryDetails === 'boolean' ? raw.saveDeliveryDetails : DEFAULT_SETTINGS.saveDeliveryDetails,
+    deliveryProfile: normalizeDeliveryProfile(raw.deliveryProfile)
   }
 }
 
@@ -212,6 +246,7 @@ export {
   hasSavedCurrencyPreference,
   loadUserSettings,
   normalizeCountryCode,
+  normalizeDeliveryProfile,
   normalizeSettings,
   resolveCurrencyFromUserCountry,
   saveUserSettings,

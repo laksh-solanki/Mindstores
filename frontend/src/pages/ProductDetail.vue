@@ -25,7 +25,13 @@
 
       <template v-else-if="product">
         <header class="hero-intro reveal-fade">
-          <v-btn class="back-nav-btn" prepend-icon="mdi-arrow-left" rounded="pill" variant="tonal" @click="goBack">
+          <v-btn
+            class="back-nav-btn"
+            prepend-icon="mdi-arrow-left"
+            rounded="pill"
+            variant="tonal"
+            @click="goBack"
+          >
             Back
           </v-btn>
         </header>
@@ -34,8 +40,19 @@
           <v-col cols="12" md="7">
             <section class="gallery-board reveal-up">
               <div class="hero-frame">
-                <img :alt="product.name" contain class="hero-image" decoding="async" sizes="(max-width: 768px) 100vw, 50vw" fetchpriority="high" loading="eager"
-                  :src="product.image_url">
+                <img
+                  v-if="productImageUrl"
+                  :alt="product.name"
+                  class="hero-image"
+                  decoding="async"
+                  fetchpriority="high"
+                  loading="eager"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  :src="productImageUrl"
+                >
+                <v-icon v-else class="hero-image-placeholder" color="primary" size="72">
+                  mdi-image-off-outline
+                </v-icon>
 
                 <div class="edition-badge">
                   <p>Limited Atelier Drop</p>
@@ -87,27 +104,50 @@
                 <div class="quantity-row">
                   <span class="quantity-label">Quantity</span>
                   <div class="quantity-control">
-                    <v-btn :disabled="quantity <= 1" icon size="small" variant="outlined" @click="decreaseQuantity">
+                    <v-btn
+                      :disabled="quantity <= 1"
+                      icon
+                      size="small"
+                      variant="outlined"
+                      @click="decreaseQuantity"
+                    >
                       <v-icon>mdi-minus</v-icon>
                     </v-btn>
 
                     <span class="quantity-value">{{ quantity }}</span>
 
-                    <v-btn :disabled="!stockReady || quantity >= product.stock" icon size="small" variant="outlined"
-                      @click="increaseQuantity">
+                    <v-btn
+                      :disabled="!stockReady || quantity >= product.stock"
+                      icon
+                      size="small"
+                      variant="outlined"
+                      @click="increaseQuantity"
+                    >
                       <v-icon>mdi-plus</v-icon>
                     </v-btn>
                   </div>
                 </div>
 
-                <v-btn block class="action-add-to-cart" :disabled="!stockReady" rounded="pill" size="large"
-                  @click="addToCart">
+                <v-btn
+                  block
+                  class="action-add-to-cart"
+                  :disabled="!stockReady"
+                  rounded="pill"
+                  size="large"
+                  @click="addToCart"
+                >
                   <v-icon start>mdi-cart</v-icon>
                   {{ stockReady ? 'Add to Cart' : 'Sold Out' }}
                 </v-btn>
 
-                <v-btn block class="action-buy-now mt-3" :disabled="!stockReady" rounded="pill" variant="flat"
-                  @click="buyNow">
+                <v-btn
+                  block
+                  class="action-buy-now mt-3"
+                  :disabled="!stockReady"
+                  rounded="pill"
+                  variant="flat"
+                  @click="buyNow"
+                >
                   <v-icon start>mdi-lightning-bolt</v-icon>
                   Buy Now
                 </v-btn>
@@ -143,243 +183,263 @@
       </section>
     </v-container>
 
-    <BaseAlert v-model="snackbar" floating :message="snackbarText" :timeout="2200" :type="snackbarColor" />
+    <BaseAlert
+      v-model="snackbar"
+      floating
+      :message="snackbarText"
+      :timeout="2200"
+      :type="snackbarColor"
+    />
   </div>
 </template>
 
 <script setup>
-import axios from 'axios'
-import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import BaseAlert from '@/components/BaseAlert.vue'
-import { useAppStore } from '@/stores/app'
-import { useCartStore } from '@/stores/cart'
-import { API_URL } from '@/utils/api'
-import { useCurrency } from '@/utils/currency'
+  import axios from 'axios'
+  import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+  import { useRoute, useRouter } from 'vue-router'
+  import BaseAlert from '@/components/BaseAlert.vue'
+  import { useAppStore } from '@/stores/app'
+  import { useCartStore } from '@/stores/cart'
+  import { API_URL } from '@/utils/api'
+  import { useCurrency } from '@/utils/currency'
+  import { safeDisplayImageUrl } from '@/utils/images'
+  import { PRODUCTS_CACHE_INVALIDATED_EVENT } from '@/utils/productCache'
 
-const route = useRoute()
-const router = useRouter()
-const appStore = useAppStore()
-const cartStore = useCartStore()
-const { formatAmount } = useCurrency()
+  const route = useRoute()
+  const router = useRouter()
+  const appStore = useAppStore()
+  const cartStore = useCartStore()
+  const { formatAmount } = useCurrency()
 
-const loading = ref(false)
-const product = ref(null)
-const quantity = ref(1)
-const snackbar = ref(false)
-const snackbarText = ref('')
-const snackbarColor = ref('success')
+  const loading = ref(false)
+  const product = ref(null)
+  const quantity = ref(1)
+  const snackbar = ref(false)
+  const snackbarText = ref('')
+  const snackbarColor = ref('success')
 
-const fallbackDescription = 'A design-first piece crafted to blend visual calm with daily utility.'
+  const fallbackDescription = 'A design-first piece crafted to blend visual calm with daily utility.'
+  const productImageUrl = computed(() => safeDisplayImageUrl(product.value?.image_url))
 
-// Description truncation logic
-const isTruncated = ref(true)
-const LINES_THRESHOLD = 4
-const CHARS_PER_LINE = 120
+  // Description truncation logic
+  const isTruncated = ref(true)
+  const LINES_THRESHOLD = 4
+  const CHARS_PER_LINE = 120
 
-const fullDescription = computed(() => {
-  return product.value?.description || fallbackDescription
-})
+  const fullDescription = computed(() => {
+    return product.value?.description || fallbackDescription
+  })
 
-const truncatedDescription = computed(() => {
-  const text = fullDescription.value
-  const maxChars = LINES_THRESHOLD * CHARS_PER_LINE
-  if (text.length <= maxChars) return text
-  return text.slice(0, maxChars).trim() + '...'
-})
+  const truncatedDescription = computed(() => {
+    const text = fullDescription.value
+    const maxChars = LINES_THRESHOLD * CHARS_PER_LINE
+    if (text.length <= maxChars) return text
+    return text.slice(0, maxChars).trim() + '...'
+  })
 
-const showSeeMore = computed(() => {
-  return fullDescription.value.length > (LINES_THRESHOLD * CHARS_PER_LINE)
-})
+  const showSeeMore = computed(() => {
+    return fullDescription.value.length > (LINES_THRESHOLD * CHARS_PER_LINE)
+  })
 
-function toggleDescription() {
-  isTruncated.value = !isTruncated.value
-}
-
-const formattedPrice = computed(() => {
-  const price = Number(product.value?.price || 0)
-  return formatAmount(price)
-})
-
-const categoryLabel = computed(() => {
-  const value = String(product.value?.category || 'Curated Collection').trim()
-  return value.length > 0 ? value.toUpperCase() : 'CURATED COLLECTION'
-})
-
-const ratingScore = computed(() => {
-  const seed = Number(product.value?.product_id || route.params.id || 0)
-  const score = 4.1 + ((seed % 7) / 10)
-  return Math.min(score, 4.9)
-})
-
-const ratingLabel = computed(() => ratingScore.value.toFixed(1))
-
-const ratingStars = computed(() => {
-  const filledCount = Math.round(ratingScore.value)
-  return Array.from({ length: 5 }, (_, index) => index < filledCount)
-})
-
-const reviewCount = computed(() => {
-  const seed = Number(product.value?.product_id || route.params.id || 1)
-  return 148 + (seed % 91)
-})
-
-const stockReady = computed(() => Number(product.value?.stock || 0) > 0)
-
-const stockText = computed(() => {
-  const stock = Number(product.value?.stock || 0)
-  if (stock <= 0) return 'Currently unavailable'
-  if (stock <= 5) return `Only ${stock} pieces left`
-  return `${stock} pieces ready to ship`
-})
-
-const materialLabel = computed(() => {
-  const category = String(product.value?.category || '').toLowerCase()
-  if (category.includes('furniture')) return 'Premium engineered wood'
-  if (category.includes('electronics')) return 'Precision electronic finish'
-  if (category.includes('clothing')) return 'Soft premium fabric blend'
-  return 'Handpicked premium materials'
-})
-
-const visualPanels = computed(() => {
-  return [
-    { title: 'Material', value: materialLabel.value },
-    { title: 'Dispatch', value: stockReady.value ? 'Within 24 hours' : 'Restock in progress' },
-    { title: 'Returns', value: '30-day easy return' },
-  ]
-})
-
-const trustChips = computed(() => {
-  const chips = [
-    { icon: 'mdi-shield-check', label: 'Quality checked' },
-    { icon: 'mdi-truck-fast-outline', label: 'Tracked shipping' },
-    { icon: 'mdi-credit-card-check-outline', label: 'Secure checkout' },
-    { icon: 'mdi-refresh-circle', label: 'Easy returns' },
-  ]
-
-  if (stockReady.value) {
-    chips.unshift({ icon: 'mdi-clock-fast', label: 'Priority dispatch' })
+  function toggleDescription() {
+    isTruncated.value = !isTruncated.value
   }
 
-  return chips.slice(0, 4)
-})
+  const formattedPrice = computed(() => {
+    const price = Number(product.value?.price || 0)
+    return formatAmount(price)
+  })
 
-const atelierDetails = computed(() => {
-  const category = String(product.value?.category || 'Collection').trim()
+  const categoryLabel = computed(() => {
+    const value = String(product.value?.category || 'Curated Collection').trim()
+    return value.length > 0 ? value.toUpperCase() : 'CURATED COLLECTION'
+  })
 
-  return [
-    {
-      title: 'Curated Build',
-      copy: `Each ${category.toLowerCase()} item is selected for long-term everyday use and visual harmony.`
-    },
-    {
-      title: 'Refined Experience',
-      copy: 'Protective packaging, quality checks, and smooth post-purchase support are standard with every order.'
-    },
-    {
-      title: 'Mindstore Promise',
-      copy: 'Transparent details, fast fulfillment, and reliable after-sales service with no hidden surprises.'
-    },
-  ]
-})
+  const ratingScore = computed(() => {
+    const seed = Number(product.value?.product_id || route.params.id || 0)
+    const score = 4.1 + ((seed % 7) / 10)
+    return Math.min(score, 4.9)
+  })
 
-async function fetchProduct(productId = route.params.id) {
-  loading.value = true
-  try {
-    const response = await axios.get(`${API_URL}/products/${productId}`)
-    product.value = response.data
-    quantity.value = 1
-  } catch (error) {
-    console.error('Failed to fetch product:', error)
-    product.value = null
-  } finally {
-    loading.value = false
-  }
-}
+  const ratingLabel = computed(() => ratingScore.value.toFixed(1))
 
-function increaseQuantity() {
-  const stock = Number(product.value?.stock || 0)
-  if (stock > 0 && quantity.value < stock) {
-    quantity.value += 1
-  }
-}
+  const ratingStars = computed(() => {
+    const filledCount = Math.round(ratingScore.value)
+    return Array.from({ length: 5 }, (_, index) => index < filledCount)
+  })
 
-function decreaseQuantity() {
-  if (quantity.value > 1) {
-    quantity.value -= 1
-  }
-}
+  const reviewCount = computed(() => {
+    const seed = Number(product.value?.product_id || route.params.id || 1)
+    return 148 + (seed % 91)
+  })
 
-function goBack() {
-  const historyState = window.history.state
-  const hasInAppBack = typeof historyState?.back === 'string' && historyState.back.length > 0
-  if (hasInAppBack) {
-    router.go(-1)
-    return
-  }
-  router.push('/')
-}
+  const stockReady = computed(() => Number(product.value?.stock || 0) > 0)
 
-async function addToCart() {
-  if (!appStore.isAuthenticated) {
-    router.push('/login')
-    return
-  }
+  const stockText = computed(() => {
+    const stock = Number(product.value?.stock || 0)
+    if (stock <= 0) return 'Currently unavailable'
+    if (stock <= 5) return `Only ${stock} pieces left`
+    return `${stock} pieces ready to ship`
+  })
 
-  if (!product.value || !stockReady.value) {
-    snackbarText.value = 'This product is currently unavailable.'
-    snackbarColor.value = 'error'
-    snackbar.value = true
-    return
-  }
+  const materialLabel = computed(() => {
+    const category = String(product.value?.category || '').toLowerCase()
+    if (category.includes('furniture')) return 'Premium engineered wood'
+    if (category.includes('electronics')) return 'Precision electronic finish'
+    if (category.includes('clothing')) return 'Soft premium fabric blend'
+    return 'Handpicked premium materials'
+  })
 
-  try {
-    await cartStore.addToCart(product.value.product_id, quantity.value)
-    snackbarText.value = 'Added to cart successfully'
-    snackbarColor.value = 'success'
-    snackbar.value = true
-  } catch {
-    snackbarText.value = 'Failed to add to cart'
-    snackbarColor.value = 'error'
-    snackbar.value = true
-  }
-}
+  const visualPanels = computed(() => {
+    return [
+      { title: 'Material', value: materialLabel.value },
+      { title: 'Dispatch', value: stockReady.value ? 'Within 24 hours' : 'Restock in progress' },
+      { title: 'Returns', value: '30-day easy return' },
+    ]
+  })
 
-async function buyNow() {
-  if (!appStore.isAuthenticated) {
-    router.push('/login')
-    return
-  }
+  const trustChips = computed(() => {
+    const chips = [
+      { icon: 'mdi-shield-check', label: 'Quality checked' },
+      { icon: 'mdi-truck-fast-outline', label: 'Tracked shipping' },
+      { icon: 'mdi-credit-card-check-outline', label: 'Secure checkout' },
+      { icon: 'mdi-refresh-circle', label: 'Easy returns' },
+    ]
 
-  if (!product.value || !stockReady.value) {
-    snackbarText.value = 'This product is currently unavailable.'
-    snackbarColor.value = 'error'
-    snackbar.value = true
-    return
-  }
+    if (stockReady.value) {
+      chips.unshift({ icon: 'mdi-clock-fast', label: 'Priority dispatch' })
+    }
 
-  try {
-    await cartStore.addToCart(product.value.product_id, quantity.value)
-    router.push('/cart')
-  } catch {
-    snackbarText.value = 'Unable to start checkout right now'
-    snackbarColor.value = 'error'
-    snackbar.value = true
-  }
-}
+    return chips.slice(0, 4)
+  })
 
-watch(
-  () => route.params.id,
-  (nextId, previousId) => {
-    if (nextId && nextId !== previousId) {
-      fetchProduct(nextId)
+  const atelierDetails = computed(() => {
+    const category = String(product.value?.category || 'Collection').trim()
+
+    return [
+      {
+        title: 'Curated Build',
+        copy: `Each ${category.toLowerCase()} item is selected for long-term everyday use and visual harmony.`
+      },
+      {
+        title: 'Refined Experience',
+        copy: 'Protective packaging, quality checks, and smooth post-purchase support are standard with every order.'
+      },
+      {
+        title: 'Mindstore Promise',
+        copy: 'Transparent details, fast fulfillment, and reliable after-sales service with no hidden surprises.'
+      },
+    ]
+  })
+
+  async function fetchProduct(productId = route.params.id) {
+    loading.value = true
+    try {
+      const response = await axios.get(`${API_URL}/products/${productId}`)
+      product.value = response.data
+      quantity.value = 1
+    } catch (error) {
+      console.error('Failed to fetch product:', error)
+      product.value = null
+    } finally {
+      loading.value = false
     }
   }
-)
 
-onMounted(() => {
-  fetchProduct()
-})
+  function increaseQuantity() {
+    const stock = Number(product.value?.stock || 0)
+    if (stock > 0 && quantity.value < stock) {
+      quantity.value += 1
+    }
+  }
+
+  function decreaseQuantity() {
+    if (quantity.value > 1) {
+      quantity.value -= 1
+    }
+  }
+
+  function goBack() {
+    const historyState = window.history.state
+    const hasInAppBack = typeof historyState?.back === 'string' && historyState.back.length > 0
+    if (hasInAppBack) {
+      router.go(-1)
+      return
+    }
+    router.push('/')
+  }
+
+  async function addToCart() {
+    if (!appStore.isAuthenticated) {
+      router.push('/login')
+      return
+    }
+
+    if (!product.value || !stockReady.value) {
+      snackbarText.value = 'This product is currently unavailable.'
+      snackbarColor.value = 'error'
+      snackbar.value = true
+      return
+    }
+
+    try {
+      await cartStore.addToCart(product.value.product_id, quantity.value)
+      snackbarText.value = 'Added to cart successfully'
+      snackbarColor.value = 'success'
+      snackbar.value = true
+    } catch {
+      snackbarText.value = 'Failed to add to cart'
+      snackbarColor.value = 'error'
+      snackbar.value = true
+    }
+  }
+
+  async function buyNow() {
+    if (!appStore.isAuthenticated) {
+      router.push('/login')
+      return
+    }
+
+    if (!product.value || !stockReady.value) {
+      snackbarText.value = 'This product is currently unavailable.'
+      snackbarColor.value = 'error'
+      snackbar.value = true
+      return
+    }
+
+    try {
+      await cartStore.addToCart(product.value.product_id, quantity.value)
+      router.push('/cart')
+    } catch {
+      snackbarText.value = 'Unable to start checkout right now'
+      snackbarColor.value = 'error'
+      snackbar.value = true
+    }
+  }
+
+  watch(
+    () => route.params.id,
+    (nextId, previousId) => {
+      if (nextId && nextId !== previousId) {
+        fetchProduct(nextId)
+      }
+    }
+  )
+
+  function handleProductsInvalidated() {
+    if (route.params.id) {
+      fetchProduct(route.params.id)
+    }
+  }
+
+  onMounted(() => {
+    window.addEventListener(PRODUCTS_CACHE_INVALIDATED_EVENT, handleProductsInvalidated)
+    fetchProduct()
+  })
+
+  onUnmounted(() => {
+    window.removeEventListener(PRODUCTS_CACHE_INVALIDATED_EVENT, handleProductsInvalidated)
+  })
 </script>
 
 <style scoped>
@@ -462,6 +522,9 @@ onMounted(() => {
   overflow: hidden;
   position: relative;
   background: linear-gradient(120deg, #dfe7eb, #cfdbe1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .hero-frame::after {
@@ -479,6 +542,10 @@ onMounted(() => {
   object-fit: cover;
   transform: scale(1.01);
   transition: transform 0.5s ease;
+}
+
+.hero-image-placeholder {
+  opacity: 0.72;
 }
 
 .gallery-board:hover .hero-image {

@@ -1,14 +1,3 @@
-const CATEGORY_SUBCATEGORY_OPTIONS = {
-  Electronics: ["Mobiles", "Cameras", "Headphones", "Laptops", "Accessories", "Audio", "Gaming"],
-  Furniture: ["Sofas", "Tables", "Chairs", "Living Room", "Bedroom", "Kitchen", "Dining", "Office"],
-  Clothing: ["Shirts", "Jeans", "Jackets", "Men", "Women", "Kids", "Unisex"],
-};
-
-const CATEGORY_NAME_BY_KEY = Object.keys(CATEGORY_SUBCATEGORY_OPTIONS).reduce((acc, categoryName) => {
-  acc[categoryName.toLowerCase()] = categoryName;
-  return acc;
-}, {});
-
 const SORT_OPTIONS = {
   newest: { created_at: -1, _id: -1 },
   oldest: { created_at: 1, _id: 1 },
@@ -38,27 +27,11 @@ function escapeRegex(value) {
 }
 
 function normalizeCategoryName(value) {
-  const normalized = normalizeText(value, 80);
-  if (!normalized) {
-    return "";
-  }
-  return CATEGORY_NAME_BY_KEY[normalized.toLowerCase()] || normalized;
-}
-
-function getSubcategoryOptions(category) {
-  return CATEGORY_SUBCATEGORY_OPTIONS[normalizeCategoryName(category)] || [];
+  return normalizeText(value, 80);
 }
 
 function normalizeSubcategoryName(category, subcategory) {
-  const normalizedSubcategory = normalizeText(subcategory, 80);
-  if (!normalizedSubcategory) {
-    return "";
-  }
-
-  const exactMatch = getSubcategoryOptions(category).find(
-    (option) => option.toLowerCase() === normalizedSubcategory.toLowerCase(),
-  );
-  return exactMatch || normalizedSubcategory;
+  return normalizeText(subcategory, 80);
 }
 
 function parseNumberQueryParam(value) {
@@ -163,11 +136,6 @@ function buildCreateProductPayload(input) {
     return { error: "Image URL must be a valid http/https URL" };
   }
 
-  const subcategoryOptions = getSubcategoryOptions(payload.category);
-  if (subcategoryOptions.length > 0 && !payload.subcategory) {
-    return { error: "Subcategory is required for the selected category" };
-  }
-
   return { payload };
 }
 
@@ -236,11 +204,6 @@ function buildUpdateProductPayload(input, existingProduct) {
       return { error: "Stock must be a non-negative integer" };
     }
     updates.stock = stock;
-  }
-
-  const subcategoryOptions = getSubcategoryOptions(nextCategory);
-  if (subcategoryOptions.length > 0 && !nextSubcategory) {
-    return { error: "Subcategory is required for the selected category" };
   }
 
   if (Object.keys(updates).length === 0) {

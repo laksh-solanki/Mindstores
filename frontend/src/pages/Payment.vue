@@ -152,10 +152,21 @@
               <div class="summary-list">
                 <div v-for="item in selectedItems" :key="item.product_id" class="summary-item">
                   <p class="item-name">{{ item.name }}</p>
-                  <p class="item-meta">Qty {{ item.quantity }}</p>
+                  <p class="item-meta">
+                    Qty {{ item.quantity }} &middot; {{ item.stock > 0 ? `${item.stock} in stock` : 'Sold out' }}
+                  </p>
                   <p class="item-price">{{ formatAmount(item.price * item.quantity) }}</p>
                 </div>
               </div>
+              <v-alert
+                v-if="selectedStockIssues.length > 0"
+                class="mt-3"
+                density="compact"
+                type="warning"
+                variant="tonal"
+              >
+                {{ selectedStockIssues.length }} selected item needs stock review.
+              </v-alert>
 
               <v-divider class="my-4" />
 
@@ -181,6 +192,7 @@
               <v-btn
                 block
                 color="primary"
+                :disabled="selectedStockIssues.length > 0"
                 :loading="submitting"
                 rounded="lg"
                 size="large"
@@ -233,9 +245,12 @@
   import { computed, onMounted, ref } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import BaseAlert from '@/components/BaseAlert.vue'
+  import { useAppStore } from '@/stores/app'
   import { useCartStore } from '@/stores/cart'
   import { API_URL } from '@/utils/api'
   import { useCurrency } from '@/utils/currency'
+  import { clearProductsCache } from '@/utils/productCache'
+  import { loadUserSettings } from '@/utils/userSettings'
   const PROMO_CODES = [
     {
       code: 'SAVE10',
@@ -265,6 +280,7 @@
     setup() {
       const route = useRoute()
       const router = useRouter()
+      const appStore = useAppStore()
       const cartStore = useCartStore()
       const submitting = ref(false)
       const snackbar = ref(false)
@@ -301,8 +317,13 @@
               quantity: item.quantity,
               name: product.name || 'Product',
               price: Number(product.price || 0),
+              stock: Number(product.stock || 0),
             }
           })
+      })
+
+      const selectedStockIssues = computed(() => {
+        return selectedItems.value.filter((item) => item.stock <= 0 || item.quantity > item.stock)
       })
 
       const totalAmount = computed(() => selectedItems.value.reduce((sum, item) => sum + item.price * item.quantity, 0))
@@ -345,6 +366,36 @@
         selectedPromoCode.value = PROMO_CODES.some((promo) => promo.code === rawPromo) ? rawPromo : ''
       }
 
+      const splitName = (name) => {
+        const parts = String(name || '').trim().split(/\s+/).filter(Boolean)
+        if (parts.length <= 1) {
+          return { firstName: parts[0] || '', lastName: '' }
+        }
+
+        return {
+          firstName: parts[0],
+          lastName: parts.slice(1).join(' ')
+        }
+      }
+
+      const prefillFormFromProfile = () => {
+        const settings = loadUserSettings()
+        const delivery = settings.deliveryProfile || {}
+        const { firstName, lastName } = splitName(appStore.user?.name || settings.displayName)
+
+        form.value = {
+          ...form.value,
+          firstName: form.value.firstName || firstName,
+          lastName: form.value.lastName || lastName,
+          email: form.value.email || appStore.user?.email || '',
+          phone: form.value.phone || (settings.saveDeliveryDetails ? delivery.phone : ''),
+          address: form.value.address || (settings.saveDeliveryDetails ? delivery.address : ''),
+          city: form.value.city || (settings.saveDeliveryDetails ? delivery.city : ''),
+          state: form.value.state || (settings.saveDeliveryDetails ? delivery.state : ''),
+          zip: form.value.zip || (settings.saveDeliveryDetails ? delivery.postalCode : '')
+        }
+      }
+
       const validateForm = () => {
         if (!form.value.firstName || !form.value.lastName) {
           return 'Enter your full name'
@@ -369,10 +420,14 @@
         if (selectedProductIds.value.length === 0) {
           return 'No products selected for payment'
         }
+        if (selectedStockIssues.value.length > 0) {
+          return 'Some selected products are sold out or below the requested quantity'
+        }
         return ''
       }
 
       const submitPayment = async () => {
+        await cartStore.fetchCart({ forceProductRefresh: true })
         const validationError = validateForm()
         if (validationError) {
           snackbarText.value = validationError
@@ -393,7 +448,9 @@
           )
 
           if (response.data?.success) {
-            await cartStore.fetchCart()
+            cartStore.invalidateProducts(selectedProductIds.value)
+            clearProductsCache()
+            await cartStore.fetchCart({ forceProductRefresh: true })
             router.push(`/order-success?order_id=${response.data.order_id}`)
             return
           }
@@ -414,7 +471,8 @@
       }
 
       onMounted(async () => {
-        await cartStore.fetchCart()
+        await Promise.allSettled([cartStore.fetchCart({ forceProductRefresh: true }), appStore.refreshCurrentUser()])
+        prefillFormFromProfile()
         parseSelectedProductIds()
       })
 
@@ -425,6 +483,7 @@
         selectedItems,
         totalAmount,
         selectedPromoCode,
+        selectedStockIssues,
         promoDiscount,
         payableAmount,
         maskedCardNumber,
