@@ -7,8 +7,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "worker:dev": "wrangler dev worker.js",
-    "deploy": "wrangler deploy worker.js",
+    "worker:dev": "wrangler dev --env=\"\"",
+    "deploy:dry-run": "wrangler deploy --dry-run --env=\"\"",
+    "deploy": "wrangler deploy --env=\"\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

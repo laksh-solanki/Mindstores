@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { defineStore } from 'pinia'
 import { API_URL } from '@/utils/api'
+import { extractProductItems } from '@/utils/products'
 import { useAppStore } from './app'
 
 const pendingProductRequests = new Map()
@@ -96,7 +97,7 @@ export const useCartStore = defineStore('cart', {
       if (missingProductIds.length > 1) {
         try {
           const response = await axios.get(`${API_URL}/products`, { timeout: 8000 })
-          const allProducts = Array.isArray(response.data) ? response.data : response.data?.items || []
+          const allProducts = extractProductItems(response.data)
           const productsById = new Map(allProducts.map((product) => [product.product_id, product]))
 
           for (const productId of missingProductIds) {

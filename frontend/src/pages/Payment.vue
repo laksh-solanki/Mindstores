@@ -1,234 +1,226 @@
 <template>
-  <div class="payment-page">
-    <v-container class="payment-shell">
-      <section class="payment-hero">
-        <p class="payment-kicker">Secure Checkout</p>
-        <h1 class="payment-title">Personal Payment</h1>
-        <p class="payment-subtitle">Finalize your order with encrypted payment and curated delivery details.</p>
+  <v-container class="py-6 py-md-8">
+    <v-sheet class="pa-4 pa-md-6 mb-6" border rounded="lg">
+      <v-chip color="primary" size="small" variant="tonal">Secure Checkout</v-chip>
+      <h1 class="text-h4 text-md-h3 font-weight-bold mt-3">Personal Payment</h1>
+      <p class="text-body-2 text-medium-emphasis mt-2">Finalize your order with encrypted payment and curated delivery details.</p>
+    </v-sheet>
 
-      </section>
+    <v-row v-if="selectedItems.length > 0">
+      <v-col cols="12" md="8">
+        <v-card rounded="lg" variant="outlined">
+          <v-card-title>Contact & Billing</v-card-title>
+          <v-divider />
+          <v-card-text>
+            <v-row>
+              <v-col cols="12" sm="6">
+                <v-text-field v-model="form.firstName" label="First Name" rounded="lg" variant="outlined" />
+              </v-col>
+              <v-col cols="12" sm="6">
+                <v-text-field v-model="form.lastName" label="Last Name" rounded="lg" variant="outlined" />
+              </v-col>
+              <v-col cols="12" sm="6">
+                <v-text-field
+                  v-model="form.email"
+                  label="Email"
+                  rounded="lg"
+                  type="email"
+                  variant="outlined"
+                />
+              </v-col>
+              <v-col cols="12" sm="6">
+                <v-text-field v-model="form.phone" label="Phone Number" rounded="lg" variant="outlined" />
+              </v-col>
+              <v-col cols="12">
+                <v-text-field v-model="form.address" label="Street Address" rounded="lg" variant="outlined" />
+              </v-col>
+              <v-col cols="12" sm="6">
+                <v-text-field v-model="form.city" label="City" rounded="lg" variant="outlined" />
+              </v-col>
+              <v-col cols="12" sm="3">
+                <v-text-field v-model="form.state" label="State" rounded="lg" variant="outlined" />
+              </v-col>
+              <v-col cols="12" sm="3">
+                <v-text-field v-model="form.zip" label="ZIP" rounded="lg" variant="outlined" />
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
 
-      <v-row v-if="selectedItems.length > 0" class="payment-row">
-        <v-col cols="12" md="8">
-          <v-card class="payment-card border" variant="flat">
-            <v-card-title class="section-title">Contact & Billing</v-card-title>
-            <v-card-text class="section-body">
-              <v-row>
-                <v-col cols="12" sm="6">
-                  <v-text-field v-model="form.firstName" label="First Name" rounded="lg" variant="outlined" />
-                </v-col>
-                <v-col cols="12" sm="6">
-                  <v-text-field v-model="form.lastName" label="Last Name" rounded="lg" variant="outlined" />
-                </v-col>
-                <v-col cols="12" sm="6">
-                  <v-text-field
-                    v-model="form.email"
-                    label="Email"
-                    rounded="lg"
-                    type="email"
-                    variant="outlined"
-                  />
-                </v-col>
-                <v-col cols="12" sm="6">
-                  <v-text-field v-model="form.phone" label="Phone Number" rounded="lg" variant="outlined" />
-                </v-col>
-                <v-col cols="12">
-                  <v-text-field v-model="form.address" label="Street Address" rounded="lg" variant="outlined" />
-                </v-col>
-                <v-col cols="12" sm="6">
-                  <v-text-field v-model="form.city" label="City" rounded="lg" variant="outlined" />
-                </v-col>
-                <v-col cols="12" sm="3">
-                  <v-text-field v-model="form.state" label="State" rounded="lg" variant="outlined" />
-                </v-col>
-                <v-col cols="12" sm="3">
-                  <v-text-field v-model="form.zip" label="ZIP" rounded="lg" variant="outlined" />
-                </v-col>
-              </v-row>
-            </v-card-text>
-          </v-card>
+        <v-card class="mt-4" rounded="lg" variant="outlined">
+          <v-card-title>Payment Method</v-card-title>
+          <v-divider />
+          <v-card-text>
+            <v-tabs
+              v-model="tab"
+              class="mb-4"
+              density="comfortable"
+              grow
+              mandatory
+            >
+              <v-tab value="upi">UPI ID</v-tab>
+              <v-tab value="card">Card</v-tab>
+            </v-tabs>
 
-          <v-card class="payment-card mt-4 border" variant="flat">
-            <v-card-title class="section-title">Payment Method</v-card-title>
+            <v-tabs-window v-model="tab">
+              <v-tabs-window-item value="upi">
+                <v-alert class="mb-3" density="compact" type="info" variant="tonal">
+                  Use any UPI app linked to your bank account.
+                </v-alert>
+                <v-row>
+                  <v-col cols="12">
+                    <v-text-field
+                      v-model="form.upiId"
+                      hint="Example: name@okaxis"
+                      label="UPI ID"
+                      persistent-hint
+                      rounded="lg"
+                      variant="outlined"
+                    />
+                  </v-col>
+                </v-row>
+              </v-tabs-window-item>
 
-            <v-card-text class="section-body">
-              <v-sheet class="pa-1">
-                <v-tabs
-                  v-model="tab"
-                  class="mb-4"
-                  density="comfortable"
-                  grow
-                  mandatory
-                  slider-color="blue-accent-4"
-                >
-                  <v-tab value="upi">UPI ID</v-tab>
-                  <v-tab value="card">Card</v-tab>
-                </v-tabs>
+              <v-tabs-window-item value="card">
+                <v-sheet class="pa-4 mb-4" border rounded="lg">
+                  <p class="text-caption text-medium-emphasis">Mindstore Card Preview</p>
+                  <p class="text-h6 font-weight-bold mt-2">{{ maskedCardNumber }}</p>
+                  <div class="d-flex justify-space-between text-caption text-medium-emphasis mt-2">
+                    <span>{{ form.cardHolder || 'CARD HOLDER' }}</span>
+                    <span>{{ form.expiry || 'MM/YY' }}</span>
+                  </div>
+                </v-sheet>
 
-                <v-tabs-window v-model="tab">
-                  <v-tabs-window-item value="upi">
-                    <v-sheet>
-                      <div class="upi-visual">
-                        <p class="upi-badge">Instant UPI</p>
-                        <h3>Pay by UPI ID</h3>
-                        <p>Use any UPI app linked to your bank account.</p>
-                      </div>
+                <v-row>
+                  <v-col cols="12">
+                    <v-text-field
+                      v-model="form.cardHolder"
+                      label="Card Holder Name"
+                      rounded="lg"
+                      variant="outlined"
+                    />
+                  </v-col>
+                  <v-col cols="12">
+                    <v-text-field
+                      v-model="form.cardNumber"
+                      label="Card Number"
+                      maxlength="19"
+                      rounded="lg"
+                      variant="outlined"
+                    />
+                  </v-col>
+                  <v-col cols="6" sm="4">
+                    <v-text-field
+                      v-model="form.expiry"
+                      label="Expiry (MM/YY)"
+                      maxlength="5"
+                      rounded="lg"
+                      variant="outlined"
+                    />
+                  </v-col>
+                  <v-col cols="6" sm="4">
+                    <v-text-field
+                      v-model="form.cvv"
+                      label="CVV"
+                      maxlength="4"
+                      rounded="lg"
+                      type="password"
+                      variant="outlined"
+                    />
+                  </v-col>
+                </v-row>
+              </v-tabs-window-item>
+            </v-tabs-window>
+          </v-card-text>
+        </v-card>
+      </v-col>
 
-                      <v-row class="mt-1">
-                        <v-col cols="12">
-                          <v-text-field
-                            v-model="form.upiId"
-                            hint="Example: name@okaxis"
-                            label="UPI ID"
-                            persistent-hint
-                            rounded="lg"
-                            variant="outlined"
-                          />
-                        </v-col>
-                      </v-row>
-                    </v-sheet>
-                  </v-tabs-window-item>
-                  <v-tabs-window-item value="card">
-                    <v-sheet>
-                      <div class="card-visual">
-                        <p class="card-label">Mindstore Black</p>
-                        <p class="card-number">{{ maskedCardNumber }}</p>
-                        <div class="card-meta">
-                          <span>{{ form.cardHolder || 'CARD HOLDER' }}</span>
-                          <span>{{ form.expiry || 'MM/YY' }}</span>
-                        </div>
-                      </div>
-
-                      <v-row class="mt-1">
-                        <v-col cols="12">
-                          <v-text-field
-                            v-model="form.cardHolder"
-                            label="Card Holder Name"
-                            rounded="lg"
-                            variant="outlined"
-                          />
-                        </v-col>
-                        <v-col cols="12">
-                          <v-text-field
-                            v-model="form.cardNumber"
-                            label="Card Number"
-                            maxlength="19"
-                            rounded="lg"
-                            variant="outlined"
-                          />
-                        </v-col>
-                        <v-col cols="6" sm="4">
-                          <v-text-field
-                            v-model="form.expiry"
-                            label="Expiry (MM/YY)"
-                            maxlength="5"
-                            rounded="lg"
-                            variant="outlined"
-                          />
-                        </v-col>
-                        <v-col cols="6" sm="4">
-                          <v-text-field
-                            v-model="form.cvv"
-                            label="CVV"
-                            maxlength="4"
-                            rounded="lg"
-                            type="password"
-                            variant="outlined"
-                          />
-                        </v-col>
-                      </v-row>
-                    </v-sheet>
-                  </v-tabs-window-item>
-                </v-tabs-window>
+      <v-col cols="12" md="4">
+        <v-card rounded="lg" variant="outlined">
+          <v-card-title>Order Summary</v-card-title>
+          <v-divider />
+          <v-card-text>
+            <div class="d-flex flex-column ga-2">
+              <v-sheet v-for="item in selectedItems" :key="item.product_id" class="pa-3" border rounded="lg">
+                <p class="font-weight-medium">{{ item.name }}</p>
+                <p class="text-caption text-medium-emphasis mt-1">
+                  Qty {{ item.quantity }} - {{ item.stock > 0 ? `${item.stock} in stock` : 'Sold out' }}
+                </p>
+                <p class="font-weight-bold mt-2">{{ formatAmount(item.price * item.quantity) }}</p>
               </v-sheet>
-            </v-card-text>
-          </v-card>
-        </v-col>
+            </div>
 
-        <v-col cols="12" md="4">
-          <v-card class="summary-card border" variant="flat">
-            <v-card-title class="summary-title">Order Summary</v-card-title>
-            <v-card-text class="summary-body">
-              <div class="summary-list">
-                <div v-for="item in selectedItems" :key="item.product_id" class="summary-item">
-                  <p class="item-name">{{ item.name }}</p>
-                  <p class="item-meta">
-                    Qty {{ item.quantity }} &middot; {{ item.stock > 0 ? `${item.stock} in stock` : 'Sold out' }}
-                  </p>
-                  <p class="item-price">{{ formatAmount(item.price * item.quantity) }}</p>
-                </div>
-              </div>
-              <v-alert
-                v-if="selectedStockIssues.length > 0"
-                class="mt-3"
-                density="compact"
-                type="warning"
-                variant="tonal"
-              >
-                {{ selectedStockIssues.length }} selected item needs stock review.
-              </v-alert>
+            <v-alert
+              v-if="selectedStockIssues.length > 0"
+              class="mt-3"
+              density="compact"
+              type="warning"
+              variant="tonal"
+            >
+              {{ selectedStockIssues.length }} selected item needs stock review.
+            </v-alert>
 
-              <v-divider class="my-4" />
+            <v-divider class="my-4" />
 
-              <div class="summary-row">
-                <span>Subtotal</span>
-                <strong>{{ formatAmount(totalAmount) }}</strong>
-              </div>
-              <div v-if="promoDiscount > 0" class="summary-row promo-row">
-                <span>Promo ({{ selectedPromoCode }})</span>
-                <strong>-{{ formatAmount(promoDiscount) }}</strong>
-              </div>
-              <div class="summary-row">
-                <span>Shipping</span>
-                <strong>Free</strong>
-              </div>
-              <div class="summary-row total-row">
-                <span>Total</span>
-                <strong>{{ formatAmount(payableAmount) }}</strong>
-              </div>
-            </v-card-text>
+            <div class="d-flex justify-space-between mb-2">
+              <span>Subtotal</span>
+              <strong>{{ formatAmount(totalAmount) }}</strong>
+            </div>
+            <div v-if="promoDiscount > 0" class="d-flex justify-space-between mb-2 text-success">
+              <span>Promo ({{ selectedPromoCode }})</span>
+              <strong>-{{ formatAmount(promoDiscount) }}</strong>
+            </div>
+            <div class="d-flex justify-space-between mb-2">
+              <span>Shipping</span>
+              <strong>Free</strong>
+            </div>
+            <div class="d-flex justify-space-between text-subtitle-1 font-weight-bold mt-3">
+              <span>Total</span>
+              <strong>{{ formatAmount(payableAmount) }}</strong>
+            </div>
+          </v-card-text>
 
-            <v-card-actions class="summary-actions">
-              <v-btn
-                block
-                color="primary"
-                :disabled="selectedStockIssues.length > 0"
-                :loading="submitting"
-                rounded="lg"
-                size="large"
-                variant="flat"
-                @click="submitPayment"
-              >
-                Pay {{ formatAmount(payableAmount) }}
-              </v-btn>
+          <v-card-actions class="d-flex flex-column ga-2">
+            <v-btn
+              block
+              color="primary"
+              :disabled="selectedStockIssues.length > 0"
+              :loading="submitting"
+              rounded="lg"
+              size="large"
+              variant="flat"
+              @click="submitPayment"
+            >
+              Pay {{ formatAmount(payableAmount) }}
+            </v-btn>
 
-              <v-btn
-                block
-                color="error"
-                rounded="lg"
-                size="large"
-                variant="plain"
-                @click="cancelPayment"
-              >
-                Cancel Payment
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-col>
-      </v-row>
+            <v-btn
+              block
+              color="error"
+              rounded="lg"
+              size="large"
+              variant="tonal"
+              @click="cancelPayment"
+            >
+              Cancel Payment
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-col>
+    </v-row>
 
-      <v-row v-else class="empty-row">
-        <v-col cols="12">
-          <v-card class="empty-card border" variant="flat">
-            <v-card-text class="text-center py-10">
-              <v-icon size="52">mdi-cart-outline</v-icon>
-              <h2 class="empty-title">No Selected Items</h2>
-              <p class="empty-copy">Go back to your cart and select products before payment.</p>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
-    </v-container>
+    <v-row v-else>
+      <v-col cols="12">
+        <v-card class="text-center py-10" rounded="lg" variant="outlined">
+          <v-icon size="52">mdi-cart-outline</v-icon>
+          <h2 class="text-h5 mt-4">No Selected Items</h2>
+          <p class="text-body-2 text-medium-emphasis mt-2">Go back to your cart and select products before payment.</p>
+          <div class="mt-4">
+            <v-btn color="primary" rounded="lg" to="/cart" variant="flat">Back to Cart</v-btn>
+          </div>
+        </v-card>
+      </v-col>
+    </v-row>
 
     <BaseAlert
       v-model="snackbar"
@@ -237,7 +229,7 @@
       :timeout="3000"
       :type="snackbarColor"
     />
-  </div>
+  </v-container>
 </template>
 
 <script>
@@ -251,6 +243,7 @@
   import { useCurrency } from '@/utils/currency'
   import { clearProductsCache } from '@/utils/productCache'
   import { loadUserSettings } from '@/utils/userSettings'
+
   const PROMO_CODES = [
     {
       code: 'SAVE10',
@@ -497,259 +490,3 @@
     }
   }
 </script>
-
-<style scoped>
-.payment-page {
-  min-height: 100vh;
-  background:
-    radial-gradient(circle at 8% 10%, rgba(207, 126, 48, 0.2) 0%, rgba(207, 126, 48, 0) 34%),
-    radial-gradient(circle at 92% 84%, rgba(36, 64, 61, 0.16) 0%, rgba(36, 64, 61, 0) 40%),
-    linear-gradient(160deg, #f2f6f3 0%, #ecf2ee 45%, #eef3f0 100%);
-}
-
-.payment-shell {
-  padding-top: 52px;
-  padding-bottom: 64px;
-}
-
-.payment-hero {
-  text-align: center;
-}
-
-.payment-kicker {
-  font-size: 0.78rem;
-  letter-spacing: 1.8px;
-  text-transform: uppercase;
-  color: #b46a22;
-  font-weight: 700;
-}
-
-.payment-title {
-  margin-top: 10px;
-  font-family: 'Playfair Display', serif;
-  font-size: clamp(2rem, 4vw, 3.2rem);
-  color: #1c2c30;
-}
-
-.payment-subtitle {
-  max-width: 620px;
-  color: #61737a;
-  line-height: 1.7;
-}
-
-.payment-hero-actions {
-  margin-top: 10px;
-}
-
-.payment-row {
-  margin-top: 32px;
-  row-gap: 12px;
-}
-
-.payment-card,
-.summary-card,
-.empty-card {
-  border: 1px solid #d8e2dd;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 20px 42px rgba(20, 35, 33, 0.08);
-}
-
-.section-title,
-.summary-title {
-  padding: 20px 20px 6px;
-  font-family: 'Playfair Display', serif;
-  font-size: 1.35rem;
-  color: #1f3034;
-}
-
-.upi-panel {
-  border: 1px solid #d9e4df;
-  border-radius: 16px;
-  background: linear-gradient(145deg, rgba(248, 252, 249, 0.9), rgba(242, 248, 244, 0.86));
-  padding: 14px;
-}
-
-.upi-visual {
-  border-radius: 12px;
-  background: linear-gradient(130deg, #25443f, #3b645d);
-  color: #f4f8f7;
-  padding: 14px;
-}
-
-.upi-badge {
-  display: inline-block;
-  border: 1px solid rgba(228, 237, 234, 0.44);
-  border-radius: 999px;
-  padding: 4px 8px;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.upi-visual h3 {
-  margin-top: 8px;
-  font-family: 'Playfair Display', serif;
-  font-size: 1.35rem;
-}
-
-.upi-visual p {
-  margin-top: 6px;
-  color: rgba(244, 248, 247, 0.88);
-}
-
-.card-visual {
-  border-radius: 18px;
-  background: linear-gradient(130deg, #1f3134, #2f494c 45%, #506f71);
-  color: #f4f8f7;
-  padding: 18px;
-  margin-bottom: 14px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 12px 24px rgba(24, 41, 44, 0.22);
-}
-
-.card-label {
-  font-size: 0.72rem;
-  letter-spacing: 1.4px;
-  text-transform: uppercase;
-  opacity: 0.9;
-}
-
-.card-number {
-  margin-top: 16px;
-  font-family: 'Manrope', sans-serif;
-  letter-spacing: 1.9px;
-  font-size: 1.15rem;
-}
-
-.card-meta {
-  margin-top: 18px;
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.76rem;
-  letter-spacing: 0.9px;
-  text-transform: uppercase;
-}
-
-.summary-body {
-  padding: 8px 20px 4px;
-}
-
-.summary-list {
-  display: grid;
-  gap: 10px;
-  max-height: 280px;
-  overflow: auto;
-}
-
-.summary-item {
-  border: 1px solid #e0e9e4;
-  border-radius: 12px;
-  background: #fbfdfc;
-  padding: 10px;
-}
-
-.item-name {
-  color: #203136;
-  font-weight: 700;
-  line-height: 1.3;
-}
-
-.item-meta {
-  margin-top: 4px;
-  font-size: 0.82rem;
-  color: #70828a;
-}
-
-.item-price {
-  margin-top: 6px;
-  color: #b15f1e;
-  font-weight: 800;
-}
-
-.summary-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  color: #566b71;
-}
-
-.promo-row {
-  color: #246a57;
-}
-
-.total-row {
-  margin-top: 6px;
-  font-size: 1.1rem;
-  color: #1f3034;
-}
-
-.summary-actions {
-  padding: 12px 20px 22px;
-  display: flex;
-  flex-direction: column;
-}
-
-.empty-row {
-  margin-top: 30px;
-}
-
-.empty-title {
-  margin-top: 14px;
-  font-family: 'Playfair Display', serif;
-  color: #1f3034;
-}
-
-.empty-copy {
-  margin-top: 8px;
-  color: #64767d;
-}
-
-@media (max-width: 960px) {
-  .payment-shell {
-    padding-top: 40px;
-  }
-
-  .summary-card {
-    margin-top: 8px;
-  }
-}
-
-@media (max-width: 600px) {
-  .payment-shell {
-    padding-top: 32px;
-    padding-bottom: 44px;
-  }
-
-  .payment-card,
-  .summary-card,
-  .empty-card {
-    border-radius: 16px;
-  }
-
-  .section-title,
-  .summary-title {
-    font-size: 1.2rem;
-  }
-
-  .section-body,
-  .summary-body,
-  .summary-actions {
-    padding-left: 14px;
-    padding-right: 14px;
-  }
-
-  .card-visual {
-    padding: 14px;
-  }
-
-  .card-number {
-    letter-spacing: 1.2px;
-    font-size: 1rem;
-  }
-
-  .mode-toggle {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
-}
-</style>
