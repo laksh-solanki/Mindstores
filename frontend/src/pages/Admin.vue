@@ -2,7 +2,7 @@
   <v-layout>
     <v-app-bar border="b" color="teal-darken-3" flat>
       <div class="d-flex align-center ga-3 px-3 px-md-6 w-100">
-        <v-btn v-if="isMobile && isAdmin" aria-label="Toggle admin navigation" icon="mdi-menu" rounded="lg"
+        <v-btn v-if="isMobile && canShowAdmin" aria-label="Toggle admin navigation" icon="mdi-menu" rounded="lg"
           variant="text" @click="drawer = !drawer" />
 
         <div class="d-inline-flex align-center ga-3 flex-shrink-0">
@@ -16,7 +16,7 @@
 
         <v-spacer />
 
-        <div v-if="isAdmin" class="ml-4 align-center ga-2 d-none d-lg-flex">
+        <div v-if="canShowAdmin" class="ml-4 align-center ga-2 d-none d-lg-flex">
           <v-chip color="teal-lighten-1" size="small" variant="elevated" border>
             {{ formatNumber(products.length) }} products
           </v-chip>
@@ -30,7 +30,7 @@
 
         <v-spacer />
 
-        <v-menu v-if="isAdmin" v-model="isQuickActionMenuOpen" location="bottom end">
+        <v-menu v-if="canShowAdmin" v-model="isQuickActionMenuOpen" location="bottom end">
 
           <v-list density="comfortable" min-width="240">
             <v-list-item v-for="item in navItems" :key="item.id" :prepend-icon="item.icon" :title="item.label"
@@ -84,7 +84,7 @@
       </div>
     </v-app-bar>
 
-    <v-navigation-drawer v-if="isAdmin" v-model="drawer" border="e" color="yellow-lighten-5" elevation="0" expand-on-hover
+    <v-navigation-drawer v-if="canShowAdmin" v-model="drawer" border="e" color="yellow-lighten-5" elevation="0" expand-on-hover
       :rail="!isMobile" rail-width="66" :temporary="isMobile" width="220">
       <v-list class="pa-3" density="comfortable" nav>
         <v-list-item v-for="item in navItems" :key="item.id" :active="activePanel === item.id" color="teal-darken-3"
@@ -99,7 +99,19 @@
 
     <v-main>
       <v-container class="pa-4 pa-md-5" fluid>
-        <v-row v-if="!authLoading && isAuthenticated && !isAdmin" align="center" justify="center">
+        <v-row v-if="authLoading" align="center" justify="center">
+          <v-col cols="12" lg="5" md="7">
+            <v-card variant="outlined">
+              <v-card-text class="py-10 text-center">
+                <v-progress-circular color="teal-darken-3" indeterminate size="42" />
+                <div class="text-h6 font-weight-bold mt-4">Checking admin session</div>
+                <div class="text-body-2 text-medium-emphasis">Please wait while access is verified.</div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
+
+        <v-row v-else-if="isAuthenticated && !isAdmin" align="center" justify="center">
           <v-col cols="12" lg="6" md="8">
             <v-card variant="outlined">
               <v-card-text class="pa-6">
@@ -137,7 +149,7 @@
           </v-col>
         </v-row>
 
-        <template v-else>
+        <template v-else-if="canShowAdmin">
           <v-row align="center" class="mb-5" dense>
             <v-col cols="12" md="7">
               <div class="text-h5 text-md-h4 font-weight-bold">{{ activePanelLabel }}</div>
@@ -488,6 +500,17 @@
             </v-col>
           </v-row>
         </template>
+
+        <v-row v-else align="center" justify="center">
+          <v-col cols="12" lg="5" md="7">
+            <v-card variant="outlined">
+              <v-card-text class="py-10 text-center">
+                <v-progress-circular color="teal-darken-3" indeterminate size="42" />
+                <div class="text-h6 font-weight-bold mt-4">Redirecting to login</div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
       </v-container>
     </v-main>
 
@@ -680,6 +703,7 @@ const isMobile = computed(() => smAndDown.value);
 const authLoading = computed(() => Boolean(appStore.loading));
 const isAuthenticated = computed(() => Boolean(appStore.isAuthenticated));
 const isAdmin = computed(() => Boolean(appStore.user?.is_admin));
+const canShowAdmin = computed(() => !authLoading.value && isAuthenticated.value && isAdmin.value);
 const userName = computed(() => appStore.user?.name || appStore.user?.email || "Guest");
 const currentUserEmail = computed(() => normalizeEmail(appStore.user?.email));
 const defaultAdminEmail = computed(() => DEFAULT_ADMIN_EMAIL);
@@ -1005,7 +1029,7 @@ watch(
 );
 
 watch(
-  isAdmin,
+  canShowAdmin,
   (canAccess) => {
     if (canAccess) {
       refreshAdminData();
@@ -1143,7 +1167,7 @@ function notify(message, color = "success") {
 }
 
 async function refreshAdminData() {
-  if (!isAdmin.value) {
+  if (!canShowAdmin.value) {
     return;
   }
 
@@ -1170,7 +1194,7 @@ async function fetchProducts() {
 }
 
 async function fetchUsers() {
-  if (!isAdmin.value) {
+  if (!canShowAdmin.value) {
     return;
   }
 
@@ -1190,7 +1214,7 @@ async function fetchUsers() {
 }
 
 async function fetchAdminAccess() {
-  if (!isAdmin.value) {
+  if (!canShowAdmin.value) {
     return;
   }
 

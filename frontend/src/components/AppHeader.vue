@@ -168,7 +168,7 @@
     >
       <v-sheet class="pa-4 border-b-sm">
         <v-text-field
-          v-model="searchQuery" 
+          v-model="searchQuery"
           clearable
           density="comfortable"
           hide-details

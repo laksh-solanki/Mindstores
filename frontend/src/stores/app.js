@@ -160,7 +160,7 @@ export const useAppStore = defineStore("app", {
 
       // Show user/avatar immediately while backend session is being validated.
       const firebaseProfile = mapFirebaseUser(firebaseUser);
-      this.user = { ...this.user, ...firebaseProfile };
+      this.user = { ...firebaseProfile, is_admin: false };
       this.isAuthenticated = true;
 
       if (backendSessionPromise && backendSessionUid === firebaseUser.uid) {
