@@ -249,12 +249,39 @@ function getSessionTokenFromRequest(request) {
   return null;
 }
 
-async function getCurrentUser(request) {
-  const token = getSessionTokenFromRequest(request);
-  if (!token) {
+function getBearerTokenFromRequest(request) {
+  const authorization = request.headers?.authorization || request.headers?.Authorization;
+  if (typeof authorization !== "string") {
     return null;
   }
 
+  const match = authorization.trim().match(/^Bearer\s+(.+)$/i);
+  const token = match ? match[1].trim() : "";
+  return token && token.length <= 8_000 ? token : null;
+}
+
+function normalizeTokenText(value, maxLength = 0) {
+  const normalized = value == null ? "" : String(value).trim();
+  if (!normalized) {
+    return "";
+  }
+  return maxLength > 0 && normalized.length > maxLength ? normalized.slice(0, maxLength) : normalized;
+}
+
+async function serializeAuthenticatedUser(user, fallbackEmail = "") {
+  if (!user) {
+    return null;
+  }
+
+  const normalizedEmail = normalizeTokenText(fallbackEmail || user.email, 320).toLowerCase();
+  return {
+    ...user,
+    email: normalizedEmail || user.email || null,
+    is_admin: await adminAccess.isAdminEmail(normalizedEmail),
+  };
+}
+
+async function getCurrentUserFromSessionToken(token) {
   const db = fastify.mongo.db;
   const tokenHash = await hashSessionToken(token);
   const session = await db.collection("user_sessions").findOne({
@@ -279,11 +306,67 @@ async function getCurrentUser(request) {
     return null;
   }
 
-  const normalizedEmail = String(user.email || "").toLowerCase().trim();
-  return {
-    ...user,
-    is_admin: await adminAccess.isAdminEmail(normalizedEmail),
-  };
+  return await serializeAuthenticatedUser(user);
+}
+
+async function getCurrentUserFromFirebaseBearer(request) {
+  const idToken = getBearerTokenFromRequest(request);
+  if (!idToken || idToken.length < 100) {
+    return null;
+  }
+
+  try {
+    const decodedToken = await firebaseAdmin.auth().verifyIdToken(idToken);
+    const uid = normalizeTokenText(decodedToken?.uid || decodedToken?.user_id || decodedToken?.sub, 200);
+    const normalizedEmail = normalizeTokenText(decodedToken?.email, 320).toLowerCase();
+    if (!uid || !normalizedEmail) {
+      return null;
+    }
+
+    const db = fastify.mongo.db;
+    const userId = `user_${uid}`;
+    let user = await db.collection("users").findOne({ user_id: userId }, { projection: { _id: 0 } });
+
+    if (!user) {
+      const now = new Date();
+      const profileName = normalizeTokenText(decodedToken?.name || decodedToken?.displayName, 120) || "User";
+      const profilePicture = normalizeTokenText(decodedToken?.picture, 2048) || null;
+      await db.collection("users").updateOne(
+        { user_id: userId },
+        {
+          $set: {
+            email: normalizedEmail,
+            name: profileName,
+            picture: profilePicture,
+            is_admin: await adminAccess.isAdminEmail(normalizedEmail),
+            updated_at: now,
+          },
+          $setOnInsert: {
+            user_id: userId,
+            created_at: now,
+          },
+        },
+        { upsert: true },
+      );
+      user = await db.collection("users").findOne({ user_id: userId }, { projection: { _id: 0 } });
+    }
+
+    return await serializeAuthenticatedUser(user || { user_id: userId, name: "User" }, normalizedEmail);
+  } catch {
+    return null;
+  }
+}
+
+async function getCurrentUser(request) {
+  const sessionToken = getSessionTokenFromRequest(request);
+  if (sessionToken) {
+    const sessionUser = await getCurrentUserFromSessionToken(sessionToken);
+    if (sessionUser) {
+      return sessionUser;
+    }
+  }
+
+  return await getCurrentUserFromFirebaseBearer(request);
 }
 
 async function requireAuth(request, reply) {

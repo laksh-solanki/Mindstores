@@ -595,7 +595,7 @@ import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
 import { useAppStore } from "@/stores/app";
-import { API_URL } from "@/utils/api";
+import { API_URL, buildAuthenticatedRequestConfig } from "@/utils/api";
 import { safeDisplayImageUrl } from "@/utils/images";
 import { clearProductsCache } from "@/utils/productCache";
 import Profile from "./Profile.vue";
@@ -1166,6 +1166,27 @@ function notify(message, color = "success") {
   snackbar.value = true;
 }
 
+async function runAdminRequest(requestFactory) {
+  try {
+    return await requestFactory(false);
+  } catch (error) {
+    if (error?.response?.status !== 401) {
+      throw error;
+    }
+
+    const sessionRefreshed = await appStore.ensureBackendSession();
+    if (!sessionRefreshed) {
+      throw error;
+    }
+
+    return await requestFactory(true);
+  }
+}
+
+async function buildAdminRequestConfig(config = {}, forceRefresh = false) {
+  return await buildAuthenticatedRequestConfig(config, { forceRefresh });
+}
+
 async function refreshAdminData() {
   if (!canShowAdmin.value) {
     return;
@@ -1200,10 +1221,12 @@ async function fetchUsers() {
 
   userLoading.value = true;
   try {
-    const response = await axios.get(`${API_URL}/admin/users`, {
-      params: { page_size: 100 },
-      withCredentials: true,
-    });
+    const response = await runAdminRequest(async (forceRefresh) =>
+      axios.get(
+        `${API_URL}/admin/users`,
+        await buildAdminRequestConfig({ params: { page_size: 100 } }, forceRefresh),
+      ),
+    );
     users.value = Array.isArray(response.data) ? response.data : response.data?.items || [];
   } catch (error) {
     console.error("Failed to fetch users:", error);
@@ -1220,9 +1243,9 @@ async function fetchAdminAccess() {
 
   accessLoading.value = true;
   try {
-    const response = await axios.get(`${API_URL}/admin/access`, {
-      withCredentials: true,
-    });
+    const response = await runAdminRequest(async (forceRefresh) =>
+      axios.get(`${API_URL}/admin/access`, await buildAdminRequestConfig({}, forceRefresh)),
+    );
     adminAccessEntries.value = Array.isArray(response.data) ? response.data : response.data?.items || [];
   } catch (error) {
     console.error("Failed to fetch admin access:", error);
@@ -1319,14 +1342,18 @@ async function saveProduct() {
   productSaving.value = true;
   try {
     if (editMode.value) {
-      await axios.put(`${API_URL}/products/${encodeURIComponent(currentProductId.value)}`, payload, {
-        withCredentials: true,
-      });
+      await runAdminRequest(async (forceRefresh) =>
+        axios.put(
+          `${API_URL}/products/${encodeURIComponent(currentProductId.value)}`,
+          payload,
+          await buildAdminRequestConfig({}, forceRefresh),
+        ),
+      );
       notify("Product updated");
     } else {
-      await axios.post(`${API_URL}/products`, payload, {
-        withCredentials: true,
-      });
+      await runAdminRequest(async (forceRefresh) =>
+        axios.post(`${API_URL}/products`, payload, await buildAdminRequestConfig({}, forceRefresh)),
+      );
       notify("Product added");
     }
 
@@ -1353,9 +1380,12 @@ async function deleteProduct(product) {
 
   productLoading.value = true;
   try {
-    await axios.delete(`${API_URL}/products/${encodeURIComponent(selectedProduct.product_id)}`, {
-      withCredentials: true,
-    });
+    await runAdminRequest(async (forceRefresh) =>
+      axios.delete(
+        `${API_URL}/products/${encodeURIComponent(selectedProduct.product_id)}`,
+        await buildAdminRequestConfig({}, forceRefresh),
+      ),
+    );
     notify("Product deleted");
     clearProductsCache();
     await fetchProducts();
@@ -1376,12 +1406,12 @@ async function addAdminAccess() {
 
   accessSaving.value = true;
   try {
-    await axios.post(
-      `${API_URL}/admin/access`,
-      { email },
-      {
-        withCredentials: true,
-      },
+    await runAdminRequest(async (forceRefresh) =>
+      axios.post(
+        `${API_URL}/admin/access`,
+        { email },
+        await buildAdminRequestConfig({}, forceRefresh),
+      ),
     );
     accessEmailInput.value = "";
     notify("Admin access added");
@@ -1414,12 +1444,12 @@ async function saveAdminAccessEdit() {
 
   accessSaving.value = true;
   try {
-    await axios.put(
-      `${API_URL}/admin/access/${encodeURIComponent(accessEditOriginalEmail.value)}`,
-      { email: nextEmail },
-      {
-        withCredentials: true,
-      },
+    await runAdminRequest(async (forceRefresh) =>
+      axios.put(
+        `${API_URL}/admin/access/${encodeURIComponent(accessEditOriginalEmail.value)}`,
+        { email: nextEmail },
+        await buildAdminRequestConfig({}, forceRefresh),
+      ),
     );
     accessEditDialog.value = false;
     notify("Admin access updated");
@@ -1443,9 +1473,12 @@ async function deleteAdminAccess(entry) {
 
   accessSaving.value = true;
   try {
-    await axios.delete(`${API_URL}/admin/access/${encodeURIComponent(entry.email)}`, {
-      withCredentials: true,
-    });
+    await runAdminRequest(async (forceRefresh) =>
+      axios.delete(
+        `${API_URL}/admin/access/${encodeURIComponent(entry.email)}`,
+        await buildAdminRequestConfig({}, forceRefresh),
+      ),
+    );
     notify("Admin access removed");
     await Promise.all([fetchAdminAccess(), fetchUsers()]);
   } catch (error) {
