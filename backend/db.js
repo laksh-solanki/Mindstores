@@ -535,142 +535,6 @@ class AtlasCursor {
   }
 }
 
-class NativeMongoClient {
-  constructor({ uri, database }) {
-    this.uri = uri;
-    this.database = database;
-    this.client = null;
-    this.connectPromise = null;
-  }
-
-  async getDb() {
-    if (this.client) {
-      return this.client.db(this.database);
-    }
-
-    if (!this.connectPromise) {
-      this.connectPromise = (async () => {
-        const { MongoClient } = await import("mongodb");
-        const client = new MongoClient(this.uri);
-        await client.connect();
-        this.client = client;
-        return client;
-      })();
-    }
-
-    const client = await this.connectPromise;
-    return client.db(this.database);
-  }
-
-  collection(name) {
-    return new NativeMongoCollection(this, name);
-  }
-}
-
-class NativeMongoCollection {
-  constructor(client, name) {
-    this.client = client;
-    this.name = name;
-  }
-
-  async getCollection() {
-    const db = await this.client.getDb();
-    return db.collection(this.name);
-  }
-
-  async findOne(filter, options = {}) {
-    const collection = await this.getCollection();
-    return await collection.findOne(filter || {}, options);
-  }
-
-  find(filter = {}, options = {}) {
-    return new NativeMongoCursor(this, filter, options);
-  }
-
-  async insertOne(document) {
-    const collection = await this.getCollection();
-    return await collection.insertOne(document);
-  }
-
-  async insertMany(documents) {
-    const collection = await this.getCollection();
-    return await collection.insertMany(documents);
-  }
-
-  async updateOne(filter, update, options = {}) {
-    const collection = await this.getCollection();
-    return await collection.updateOne(filter, update, options);
-  }
-
-  async updateMany(filter, update, options = {}) {
-    const collection = await this.getCollection();
-    return await collection.updateMany(filter, update, options);
-  }
-
-  async deleteOne(filter) {
-    const collection = await this.getCollection();
-    return await collection.deleteOne(filter);
-  }
-
-  async deleteMany(filter) {
-    const collection = await this.getCollection();
-    return await collection.deleteMany(filter);
-  }
-
-  async countDocuments(filter = {}) {
-    const collection = await this.getCollection();
-    return await collection.countDocuments(filter);
-  }
-
-  async aggregate(pipeline = []) {
-    const collection = await this.getCollection();
-    return await collection.aggregate(pipeline).toArray();
-  }
-}
-
-class NativeMongoCursor {
-  constructor(collection, filter = {}, options = {}) {
-    this.collection = collection;
-    this.filter = filter || {};
-    this.options = {
-      projection: options.projection || {},
-      sort: options.sort || {},
-      skip: Number(options.skip || 0),
-      limit: Number(options.limit || 0),
-    };
-  }
-
-  sort(sort) {
-    this.options.sort = sort || {};
-    return this;
-  }
-
-  skip(value) {
-    this.options.skip = Math.max(0, Number.parseInt(value, 10) || 0);
-    return this;
-  }
-
-  limit(value) {
-    this.options.limit = Math.max(0, Number.parseInt(value, 10) || 0);
-    return this;
-  }
-
-  async toArray() {
-    const collection = await this.collection.getCollection();
-    let cursor = collection.find(this.filter, { projection: this.options.projection });
-    if (Object.keys(this.options.sort || {}).length > 0) {
-      cursor = cursor.sort(this.options.sort);
-    }
-    if (this.options.skip > 0) {
-      cursor = cursor.skip(this.options.skip);
-    }
-    if (this.options.limit > 0) {
-      cursor = cursor.limit(this.options.limit);
-    }
-    return await cursor.toArray();
-  }
-}
-
 class MemoryCursor {
   constructor(items = []) {
     this.items = Array.isArray(items) ? items : [];
@@ -734,11 +598,7 @@ class MemoryCollection {
   async insertOne(document) {
     const candidate = deepClone(document || {});
     if (candidate._id === undefined || candidate._id === null) {
-      const generatedId =
-        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-          ? crypto.randomUUID()
-          : `mem_${Date.now()}_${Math.random().toString(16).slice(2, 10)}`;
-      candidate._id = generatedId;
+      candidate._id = crypto.randomUUID();
     }
 
     const key = normalizeObjectIdLike(candidate._id) || String(candidate._id);
@@ -908,14 +768,11 @@ export function createDbClient(env = {}) {
     });
   }
 
-  if (mongoUrl && typeof process !== "undefined" && process.versions?.node) {
-    return new NativeMongoClient({
-      uri: mongoUrl,
-      database: dbName,
-    });
+  if (mongoUrl) {
+    console.warn("MONGO_URL is not supported by the Worker-only runtime. Configure Mongo Atlas Data API secrets.");
   }
 
-  console.warn("No MongoDB connection detected. Falling back to empty in-memory database.");
+  console.warn("No Atlas Data API connection detected. Falling back to empty in-memory database.");
   return createMemoryStore();
 }
 

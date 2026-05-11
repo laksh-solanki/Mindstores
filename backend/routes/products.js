@@ -74,13 +74,7 @@ async function buildObjectId(value) {
     return null;
   }
 
-  try {
-    const { ObjectId } = await import("mongodb");
-    return new ObjectId(normalized);
-  } catch {
-    // Atlas Data API style fallback for Worker/memory clients.
-    return { $oid: normalized };
-  }
+  return { $oid: normalized };
 }
 
 function isSafeImageUrl(value) {

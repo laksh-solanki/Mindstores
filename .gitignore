@@ -1,6 +1,8 @@
 # Dependency/build outputs
 **/node_modules/
 frontend/dist/
+backend/dist/
+backend/.wrangler/tmp/
 
 # Local env and secrets
 backend/.env

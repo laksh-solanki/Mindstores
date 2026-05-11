@@ -2,39 +2,29 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "worker.js",
   "type": "module",
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild",
-      "workerd",
-      "sharp",
-      "@firebase/util",
-      "protobufjs"
+      "workerd"
     ]
   },
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
-    "worker:dev": "wrangler dev --env=\"\"",
+    "start": "wrangler dev --env=\"\" --port 8000",
+    "dev": "wrangler dev --env=\"\" --port 8000",
+    "worker:dev": "wrangler dev --env=\"\" --port 8000",
     "deploy:dry-run": "wrangler deploy --dry-run --env=\"\"",
     "deploy": "wrangler deploy --env=\"\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "check": "node --check worker.js && node --check db.js && node --check adminAccess.js && node --check routes/root.js && node --check routes/auth.js && node --check routes/admin.js && node --check routes/products.js && node --check routes/cart.js && node --check routes/checkout.js && node --check routes/orders.js",
+    "test": "pnpm run check && pnpm run deploy:dry-run"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.29.3",
   "dependencies": {
-    "@fastify/cookie": "^11.0.2",
-    "@fastify/cors": "^11.2.0",
-    "@fastify/mongodb": "^10.0.0",
-    "cookie": "^1.0.2",
-    "dotenv": "^17.3.1",
-    "fastify": "^5.7.4",
-    "firebase-admin": "^13.6.1",
-    "mongodb": "^7.1.0",
-    "uuid": "^13.0.0"
+    "cookie": "^1.0.2"
   },
   "devDependencies": {
     "wrangler": "^4.86.0"

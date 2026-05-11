@@ -59,7 +59,88 @@ function getRequestOrigin(request) {
   return null;
 }
 
-class FastifyLikeWorker {
+function getFetchRequestOrigin(request) {
+  const origin = request.headers.get("origin");
+  if (origin?.trim()) {
+    return origin.trim();
+  }
+
+  const referer = request.headers.get("referer");
+  if (referer?.trim()) {
+    try {
+      return new URL(referer).origin;
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}
+
+function getConfiguredCorsOrigins(env = {}) {
+  return String(
+    env.CORS_ORIGIN ||
+      env.CORS_ORIGINS ||
+      "http://localhost:3000,http://localhost:5173,https://mindstores.vercel.app,https://mindstores.onrender.com",
+  )
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
+
+function isOriginAllowedForEnv(env, origin) {
+  if (!origin) {
+    return true;
+  }
+  const allowedOrigins = getConfiguredCorsOrigins(env);
+  return allowedOrigins.includes("*") || allowedOrigins.includes(origin);
+}
+
+function shouldUseSecureCookies(env = {}) {
+  const isProductionEnv = String(env.ENVIRONMENT || "").toLowerCase() === "production";
+  return env.COOKIE_SECURE != null ? parseBooleanEnv(env.COOKIE_SECURE, true) : isProductionEnv;
+}
+
+function appendSecurityHeaders(headers, pathname, useSecureCookies) {
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("X-Frame-Options", "DENY");
+  headers.set("Referrer-Policy", "no-referrer");
+  headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  headers.set("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  headers.set("X-Permitted-Cross-Domain-Policies", "none");
+
+  if (isBackendApiRoute(pathname)) {
+    headers.set(
+      "Content-Security-Policy",
+      "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'",
+    );
+  }
+
+  if (useSecureCookies) {
+    headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+  }
+}
+
+function createJsonResponse(request, env, status, payload) {
+  const url = new URL(request.url);
+  const headers = new Headers({ "Content-Type": "application/json; charset=utf-8" });
+  const origin = getFetchRequestOrigin(request);
+
+  if (origin && isOriginAllowedForEnv(env, origin)) {
+    headers.set("Access-Control-Allow-Origin", origin);
+    headers.set("Access-Control-Allow-Credentials", "true");
+    headers.set("Vary", "Origin");
+  }
+
+  appendSecurityHeaders(headers, url.pathname, shouldUseSecureCookies(env));
+
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers,
+  });
+}
+
+class WorkerRouter {
   constructor(db) {
     this.routes = [];
     this.hooks = {
@@ -125,6 +206,12 @@ class FastifyLikeWorker {
     return this;
   }
 
+  async runOnSendHooks(request, reply) {
+    for (const hook of this.hooks.onSend) {
+      await hook(request, reply, reply.payload);
+    }
+  }
+
   async handle(request, reply) {
     for (const [name, value] of Object.entries(this.requestDecorations)) {
       if (!(name in request)) {
@@ -135,13 +222,16 @@ class FastifyLikeWorker {
     for (const hook of this.hooks.onRequest) {
       await hook(request, reply);
       if (reply.sent) {
+        await this.runOnSendHooks(request, reply);
         return reply;
       }
     }
 
     const pathname = getPathname(request.url);
     const route = this.routes.find((candidate) => {
-      if (candidate.method !== request.method) {
+      const methodMatches =
+        candidate.method === request.method || (request.method === "HEAD" && candidate.method === "GET");
+      if (!methodMatches) {
         return false;
       }
       return this.matchRoute(candidate.pattern, pathname);
@@ -149,6 +239,7 @@ class FastifyLikeWorker {
 
     if (!route) {
       await reply.code(404).send({ message: "Not found" });
+      await this.runOnSendHooks(request, reply);
       return reply;
     }
 
@@ -158,6 +249,7 @@ class FastifyLikeWorker {
     for (const hook of this.hooks.preHandler) {
       await hook(request, reply);
       if (reply.sent) {
+        await this.runOnSendHooks(request, reply);
         return reply;
       }
     }
@@ -165,6 +257,7 @@ class FastifyLikeWorker {
     for (const preHandler of route.preHandlers) {
       await preHandler(request, reply);
       if (reply.sent) {
+        await this.runOnSendHooks(request, reply);
         return reply;
       }
     }
@@ -178,9 +271,7 @@ class FastifyLikeWorker {
       reply.send(result === undefined ? null : result);
     }
 
-    for (const hook of this.hooks.onSend) {
-      await hook(request, reply, reply.payload);
-    }
+    await this.runOnSendHooks(request, reply);
 
     return reply;
   }
@@ -276,9 +367,9 @@ class Reply {
     return this;
   }
 
-  toResponse() {
+  toResponse(requestMethod = "GET") {
     const statusCode = this.statusCode;
-    const mustNotHaveBody = [204, 205, 304].includes(statusCode);
+    const mustNotHaveBody = requestMethod === "HEAD" || [204, 205, 304].includes(statusCode);
 
     if (!mustNotHaveBody && !this.headers.has("Content-Type")) {
       if (typeof this.payload === "string") {
@@ -414,39 +505,42 @@ function createWorkerFirebaseAdmin(env) {
   };
 }
 
-let appPromise = null;
+const EMPTY_ENV = Object.freeze({});
+const appPromisesByEnv = new WeakMap();
 
 async function getWorkerApp(env) {
-  if (appPromise) {
-    return appPromise;
+  const workerEnv = env && typeof env === "object" ? env : EMPTY_ENV;
+  const cachedAppPromise = appPromisesByEnv.get(workerEnv);
+  if (cachedAppPromise) {
+    return cachedAppPromise;
   }
 
-  appPromise = (async () => {
-    const db = createDbClient(env);
-    const fastify = new FastifyLikeWorker(db);
+  const appPromise = (async () => {
+    const db = createDbClient(workerEnv);
+    const fastify = new WorkerRouter(db);
 
-    const isProductionEnv = String(env.ENVIRONMENT || "").toLowerCase() === "production";
+    const isProductionEnv = String(workerEnv.ENVIRONMENT || "").toLowerCase() === "production";
     const useSecureCookies =
-      env.COOKIE_SECURE != null
-        ? parseBooleanEnv(env.COOKIE_SECURE, true)
+      workerEnv.COOKIE_SECURE != null
+        ? parseBooleanEnv(workerEnv.COOKIE_SECURE, true)
         : isProductionEnv;
 
-    const requestedCookieSameSite = String(env.COOKIE_SAMESITE || (useSecureCookies ? "none" : "lax"))
+    const requestedCookieSameSite = String(workerEnv.COOKIE_SAMESITE || (useSecureCookies ? "none" : "lax"))
       .trim()
       .toLowerCase();
 
     const cookieSameSite =
       requestedCookieSameSite === "none" && !useSecureCookies ? "lax" : requestedCookieSameSite;
 
-    const sessionDurationDays = parseIntegerEnv(env.SESSION_DURATION_DAYS, 7);
-    const mutationRateLimitMax = parseIntegerEnv(env.MUTATION_RATE_LIMIT_MAX, 120);
-    const enforceOriginCheck = parseBooleanEnv(env.ENFORCE_ORIGIN_CHECK, isProductionEnv);
-    const allowNullOriginOnMutations = parseBooleanEnv(env.ALLOW_NULL_ORIGIN_ON_MUTATIONS, false);
-    const allowHeaderSessionToken = parseBooleanEnv(env.ALLOW_HEADER_SESSION_TOKEN, false);
+    const sessionDurationDays = parseIntegerEnv(workerEnv.SESSION_DURATION_DAYS, 7);
+    const mutationRateLimitMax = parseIntegerEnv(workerEnv.MUTATION_RATE_LIMIT_MAX, 120);
+    const enforceOriginCheck = parseBooleanEnv(workerEnv.ENFORCE_ORIGIN_CHECK, isProductionEnv);
+    const allowNullOriginOnMutations = parseBooleanEnv(workerEnv.ALLOW_NULL_ORIGIN_ON_MUTATIONS, false);
+    const allowHeaderSessionToken = parseBooleanEnv(workerEnv.ALLOW_HEADER_SESSION_TOKEN, false);
 
     const configuredCorsOrigins =
-      env.CORS_ORIGIN ||
-      env.CORS_ORIGINS ||
+      workerEnv.CORS_ORIGIN ||
+      workerEnv.CORS_ORIGINS ||
       "http://localhost:3000,http://localhost:5173,https://mindstores.vercel.app,https://mindstores.onrender.com";
 
     const allowedOrigins = configuredCorsOrigins
@@ -458,7 +552,7 @@ async function getWorkerApp(env) {
     const isOriginAllowed = (origin) => !origin || allowedOriginSet.has("*") || allowedOriginSet.has(origin);
 
     const adminAccess = createAdminAccessService(db, {
-      bootstrapEmails: String(env.ADMIN_EMAILS || "")
+      bootstrapEmails: String(workerEnv.ADMIN_EMAILS || "")
         .split(",")
         .map((email) => email.trim())
         .filter(Boolean),
@@ -532,7 +626,7 @@ async function getWorkerApp(env) {
         .join("");
     };
 
-    const firebaseAdmin = createWorkerFirebaseAdmin(env);
+    const firebaseAdmin = createWorkerFirebaseAdmin(workerEnv);
 
     const getBearerTokenFromRequest = (request) => {
       const authorization = request.headers?.authorization || request.headers?.Authorization;
@@ -688,7 +782,11 @@ async function getWorkerApp(env) {
 
         reply.header("Access-Control-Allow-Credentials", "true");
         reply.header("Access-Control-Allow-Methods", "GET,HEAD,POST,PUT,PATCH,DELETE,OPTIONS");
-        reply.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Session-Token");
+        const allowedHeaders = ["Content-Type", "Authorization"];
+        if (allowHeaderSessionToken) {
+          allowedHeaders.push("X-Session-Token");
+        }
+        reply.header("Access-Control-Allow-Headers", allowedHeaders.join(", "));
         await reply.code(204).send("");
         return;
       }
@@ -724,23 +822,7 @@ async function getWorkerApp(env) {
     });
 
     fastify.addHook("onSend", async (request, reply, payload) => {
-      reply.header("X-Content-Type-Options", "nosniff");
-      reply.header("X-Frame-Options", "DENY");
-      reply.header("Referrer-Policy", "no-referrer");
-      reply.header("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-      reply.header("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
-      reply.header("X-Permitted-Cross-Domain-Policies", "none");
-
-      if (isBackendApiRoute(getPathname(request.url))) {
-        reply.header(
-          "Content-Security-Policy",
-          "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'",
-        );
-      }
-
-      if (useSecureCookies) {
-        reply.header("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
-      }
+      appendSecurityHeaders(reply.headers, getPathname(request.url), useSecureCookies);
 
       return payload;
     });
@@ -771,10 +853,27 @@ async function getWorkerApp(env) {
     return fastify;
   })();
 
+  appPromisesByEnv.set(workerEnv, appPromise);
   return appPromise;
 }
 
-async function parseRequestBody(request) {
+function getRequestBodyLimitBytes(env = {}) {
+  return parseIntegerEnv(env.REQUEST_BODY_LIMIT_BYTES, 1_048_576);
+}
+
+function getContentLength(headers) {
+  const contentLength = Number.parseInt(headers.get("content-length") || "", 10);
+  return Number.isFinite(contentLength) && contentLength >= 0 ? contentLength : null;
+}
+
+function assertBodyWithinLimit(rawText, maxBytes) {
+  const byteLength = new TextEncoder().encode(rawText).byteLength;
+  if (byteLength > maxBytes) {
+    throw new Error("BODY_TOO_LARGE");
+  }
+}
+
+async function parseRequestBody(request, maxBytes) {
   const method = request.method.toUpperCase();
   if (!["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
     return null;
@@ -785,8 +884,14 @@ async function parseRequestBody(request) {
     return null;
   }
 
+  const contentLength = getContentLength(request.headers);
+  if (contentLength != null && contentLength > maxBytes) {
+    throw new Error("BODY_TOO_LARGE");
+  }
+
   if (contentType.includes("application/json")) {
     const rawText = await request.text();
+    assertBodyWithinLimit(rawText, maxBytes);
     if (!rawText.trim()) {
       return {};
     }
@@ -799,6 +904,7 @@ async function parseRequestBody(request) {
 
   if (contentType.includes("application/x-www-form-urlencoded")) {
     const rawText = await request.text();
+    assertBodyWithinLimit(rawText, maxBytes);
     const params = new URLSearchParams(rawText);
     const output = {};
     for (const [key, value] of params.entries()) {
@@ -807,13 +913,16 @@ async function parseRequestBody(request) {
     return output;
   }
 
-  return await request.text();
+  const rawText = await request.text();
+  assertBodyWithinLimit(rawText, maxBytes);
+  return rawText;
 }
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const fastify = await getWorkerApp(env);
+    const requestBodyLimitBytes = getRequestBodyLimitBytes(env);
 
     const cookieHeader = request.headers.get("cookie") || "";
     const nodeLikeRequest = {
@@ -830,30 +939,24 @@ export default {
     const reply = new Reply();
 
     try {
-      nodeLikeRequest.body = await parseRequestBody(request);
+      nodeLikeRequest.body = await parseRequestBody(request, requestBodyLimitBytes);
     } catch (error) {
       if (String(error?.message || "") === "INVALID_JSON") {
-        return new Response(JSON.stringify({ message: "Invalid JSON body" }), {
-          status: 400,
-          headers: { "Content-Type": "application/json; charset=utf-8" },
-        });
+        return createJsonResponse(request, env, 400, { message: "Invalid JSON body" });
+      }
+      if (String(error?.message || "") === "BODY_TOO_LARGE") {
+        return createJsonResponse(request, env, 413, { message: "Request body too large" });
       }
 
-      return new Response(JSON.stringify({ message: "Unable to parse request body" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json; charset=utf-8" },
-      });
+      return createJsonResponse(request, env, 400, { message: "Unable to parse request body" });
     }
 
     try {
       await fastify.handle(nodeLikeRequest, reply);
-      return reply.toResponse();
+      return reply.toResponse(nodeLikeRequest.method);
     } catch (error) {
       console.error("Worker runtime error", error);
-      return new Response(JSON.stringify({ message: "Internal server error" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json; charset=utf-8" },
-      });
+      return createJsonResponse(request, env, 500, { message: "Internal server error" });
     }
   },
 };
