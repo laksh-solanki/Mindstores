@@ -62,7 +62,7 @@ function setByPath(target, path, value) {
   const segments = String(path || "").split(".").filter(Boolean);
   if (segments.length === 0) {
     return;
-  }
+  } 
 
   let current = target;
   for (let i = 0; i < segments.length - 1; i += 1) {
