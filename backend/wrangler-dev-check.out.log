@@ -1,0 +1,37 @@
+
+> backend@1.0.0 dev C:\Users\laksh\Documents\Mindstores\backend
+> wrangler dev --env="" --port 8000
+
+
+ ⛅️ wrangler 4.86.0 (update available 4.90.0)
+─────────────────────────────────────────────
+
+Cloudflare collects anonymous telemetry about your usage of Wrangler. Learn more at https://github.com/cloudflare/workers-sdk/tree/main/packages/wrangler/telemetry.md
+Using secrets defined in .env
+Your Worker has access to the following bindings:
+Binding                                                                              Resource                  Mode
+env.ENVIRONMENT ("production")                                                       Environment Variable      local
+env.DB_NAME ("(hidden)")                                                             Environment Variable      local
+env.FIREBASE_PROJECT_ID ("mindstore-2912")                                           Environment Variable      local
+env.CORS_ORIGINS ("http://localhost:3000,http://localhos...")                        Environment Variable      local
+env.MONGO_URL ("(hidden)")                                                           Environment Variable      local
+env.CORS_ORIGIN ("(hidden)")                                                         Environment Variable      local
+env.PORT ("(hidden)")                                                                Environment Variable      local
+env.ADMIN_EMAILS ("(hidden)")                                                        Environment Variable      local
+env.COOKIE_SECURE ("(hidden)")                                                       Environment Variable      local
+env.COOKIE_SAMESITE ("(hidden)")                                                     Environment Variable      local
+env.SESSION_DURATION_DAYS ("(hidden)")                                               Environment Variable      local
+env.ENFORCE_ORIGIN_CHECK ("(hidden)")                                                Environment Variable      local
+env.ALLOW_NULL_ORIGIN_ON_MUTATIONS ("(hidden)")                                      Environment Variable      local
+env.ALLOW_HEADER_SESSION_TOKEN ("(hidden)")                                          Environment Variable      local
+env.MUTATION_RATE_LIMIT_MAX ("(hidden)")                                             Environment Variable      local
+env.REQUEST_BODY_LIMIT_BYTES ("(hidden)")                                            Environment Variable      local
+env.TRUST_PROXY ("(hidden)")                                                         Environment Variable      local
+
+⎔ Starting local server...
+[wrangler:info] Ready on http://127.0.0.1:8000
+[wrangler:info] GET / 200 OK (38ms)
+[wrangler:info] GET / 200 OK (3ms)
+[wrangler:info] GET /products 200 OK (4ms)
+[wrangler:info] GET / 200 OK (5ms)
+[wrangler:info] GET /favicon.ico 404 Not Found (3ms)
