@@ -1,0 +1,20 @@
+{
+  "$schema": "https://unpkg.com/wrangler/config-schema.json",
+  "name": "mindstores-backend",
+  "main": "src/index.py",
+  "compatibility_date": "2026-05-13",
+  "compatibility_flags": ["python_workers", "disable_python_external_sdk"],
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "ENVIRONMENT": "production",
+    "DB_NAME": "mindstore",
+    "FIREBASE_PROJECT_ID": "mindstore-2912",
+    "CORS_ORIGINS": "http://localhost:3000,http://localhost:5173,https://mindstores.vercel.app",
+    "ADMIN_EMAILS": "lakshsolanki848@gmail.com",
+    "COOKIE_SECURE": "true",
+    "COOKIE_SAMESITE": "none",
+    "MONGO_ATLAS_DATA_SOURCE": "Cluster0"
+  }
+}

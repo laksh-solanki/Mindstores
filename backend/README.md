@@ -6,7 +6,7 @@ Python FastAPI backend for the Mindstores API contract.
 
 ```powershell
 py -m venv .venv
-.\.venv\Scripts\python -m pip install -r requirements.txt
+uv sync --all-groups
 .\.venv\Scripts\python run.py
 ```
 

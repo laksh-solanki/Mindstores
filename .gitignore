@@ -3,10 +3,11 @@
 **/__pycache__/
 *.py[cod]
 .venv/
+backend/.venv-workers/
+backend/python_modules/
 frontend/dist/
 backend/dist/
-backend/.wrangler/tmp/
-backend/.wrangler/logs/
+backend/.wrangler/
 
 # Local env and secrets
 backend/.env
