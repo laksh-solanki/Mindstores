@@ -31,6 +31,12 @@
         <v-spacer />
 
         <v-menu v-if="canShowAdmin" v-model="isQuickActionMenuOpen" location="bottom end">
+          <template #activator="{ props }">
+            <v-btn v-bind="props" icon rounded="lg" variant="tonal">
+              <v-icon>mdi-dots-vertical</v-icon>
+              <v-tooltip activator="parent" location="bottom">Quick actions</v-tooltip>
+            </v-btn>
+          </template>
 
           <v-list density="comfortable" min-width="240">
             <v-list-item v-for="item in navItems" :key="item.id" :prepend-icon="item.icon" :title="item.label"
@@ -602,7 +608,7 @@ import {
   extractProductItems,
   requestProductApi,
 } from "@/utils/products";
-import Profile from "./Profile.vue";
+
 
 const DEFAULT_ADMIN_EMAIL = "lakshsolanki848@gmail.com";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

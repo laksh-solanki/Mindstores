@@ -30,7 +30,7 @@ function normalizeCategoryName(value) {
   return normalizeText(value, 80);
 }
 
-function normalizeSubcategoryName(category, subcategory) {
+function normalizeSubcategoryName(subcategory) {
   return normalizeText(subcategory, 80);
 }
 
@@ -108,7 +108,7 @@ function buildCreateProductPayload(input) {
     company: normalizeText(input?.company, 80),
     description: normalizeText(input?.description, 5000),
     category: normalizeCategoryName(input?.category),
-    subcategory: normalizeSubcategoryName(input?.category, input?.subcategory),
+    subcategory: normalizeSubcategoryName(input?.subcategory),
     image_url: normalizeText(input?.image_url, 2048),
     price: Number(input?.price),
     stock: Number(input?.stock),
@@ -144,8 +144,8 @@ function buildUpdateProductPayload(input, existingProduct) {
     : existingCategory;
 
   const nextSubcategory = hasOwn(input, "subcategory")
-    ? normalizeSubcategoryName(nextCategory, input.subcategory)
-    : normalizeSubcategoryName(nextCategory, existingProduct?.subcategory);
+    ? normalizeSubcategoryName(input.subcategory)
+    : normalizeSubcategoryName(existingProduct?.subcategory);
 
   const updates = {};
 
@@ -237,10 +237,7 @@ export default async function registerProductRoutes(fastify, deps) {
     const queryParams = request.query || {};
 
     const normalizedCategory = normalizeCategoryName(queryParams.category);
-    const normalizedSubcategory = normalizeSubcategoryName(
-      normalizedCategory || queryParams.category,
-      queryParams.subcategory,
-    );
+    const normalizedSubcategory = normalizeSubcategoryName(queryParams.subcategory);
     const normalizedCompany = normalizeText(queryParams.company, 100);
     const normalizedSearch = normalizeText(queryParams.search, 80);
 

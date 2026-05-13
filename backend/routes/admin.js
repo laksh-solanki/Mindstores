@@ -152,6 +152,12 @@ export default async function registerAdminRoutes(fastify, deps) {
           ? filters[0]
           : { $and: filters };
 
+    if (normalizedRole === "admin") {
+      query.is_admin = true;
+    } else if (normalizedRole === "customer") {
+      query.is_admin = { $ne: true };
+    }
+
     const adminEntries = await adminAccess.list(request.user?.email);
     const usersCollection = fastify.mongo.db.collection("users");
     const [users, total] = await Promise.all([
@@ -161,16 +167,7 @@ export default async function registerAdminRoutes(fastify, deps) {
 
     const serializedUsers = users
       .map((user) => serializeUser(user, adminEntries))
-      .filter(Boolean)
-      .filter((user) => {
-        if (normalizedRole === "admin") {
-          return user.is_admin;
-        }
-        if (normalizedRole === "customer") {
-          return !user.is_admin;
-        }
-        return true;
-      });
+      .filter(Boolean);
 
     return {
       items: serializedUsers,

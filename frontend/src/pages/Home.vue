@@ -361,7 +361,6 @@
   position: relative;
   overflow: hidden;
   margin: 0 auto;
-  overflow: hidden;
   border: 1px solid rgba(13, 116, 106, 0.16);
   border-radius: 8px;
   background:
@@ -536,7 +535,7 @@
   font-weight: 850;
   line-height: 1.35;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .hero-price-wrap {
