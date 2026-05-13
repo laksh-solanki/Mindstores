@@ -8,12 +8,13 @@ importers:
 
   .:
     dependencies:
-      '@fastify/cookie':
-        specifier: ^11.0.2
-        version: 11.0.2
       cookie:
         specifier: ^1.1.1
         version: 1.1.1
+    devDependencies:
+      '@fastify/cookie':
+        specifier: ^11.0.2
+        version: 11.0.2
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
@@ -23,7 +24,6 @@ importers:
       mongodb:
         specifier: ^7.2.0
         version: 7.2.0
-    devDependencies:
       wrangler:
         specifier: ^4.90.0
         version: 4.90.0
