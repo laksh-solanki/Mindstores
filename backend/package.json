@@ -1,9 +1,10 @@
 {
-  "name": "backend",
-  "version": "1.0.0",
-  "description": "",
+  "name": "mindstores-backend",
+  "version": "2.0.0",
+  "description": "Mindstores backend — pure Cloudflare Worker, zero framework",
   "main": "worker.js",
   "type": "module",
+  "packageManager": "pnpm@11.0.9",
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild",
@@ -12,26 +13,17 @@
     ]
   },
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
-    "worker:dev": "node scripts/run-wrangler.mjs dev --env=\"\" --port 8000",
-    "deploy:dry-run": "node scripts/run-wrangler.mjs deploy --dry-run --env=\"\"",
-    "deploy": "node scripts/run-wrangler.mjs deploy --env=\"\"",
-    "check": "node --check app.js && node --check server.js && node --check worker.js && node --check workerAdapter.js && node --check nodeDb.js && node --check db.js && node --check adminAccess.js && node --check routes/root.js && node --check routes/auth.js && node --check routes/admin.js && node --check routes/products.js && node --check routes/cart.js && node --check routes/checkout.js && node --check routes/orders.js",
-    "test": "pnpm run check && pnpm run deploy:dry-run"
+    "dev":         "wrangler dev --port 8000",
+    "deploy":      "wrangler deploy",
+    "deploy:dry":  "wrangler deploy --dry-run",
+    "check":       "node --check worker.js src/utils.js src/db.js src/auth.js src/adminAccess.js src/middleware.js src/routes/root.js src/routes/auth.js src/routes/products.js src/routes/cart.js src/routes/checkout.js src/routes/orders.js src/routes/admin.js",
+    "test":        "pnpm run check && pnpm run deploy:dry"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@11.0.9",
-  "dependencies": {
-    "cookie": "^1.1.1"
-  },
+  "dependencies": {},
   "devDependencies": {
-    "@fastify/cookie": "^11.0.2",
-    "dotenv": "^17.4.2",
-    "fastify": "^5.8.5",
-    "mongodb": "^7.2.0",
     "wrangler": "^4.90.0"
   }
 }

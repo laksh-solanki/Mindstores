@@ -1,17 +1,22 @@
-name = "mindstores-backend"
-main = "worker.js"
-compatibility_date = "2026-04-29"
-compatibility_flags = ["nodejs_compat"]
+name                 = "mindstores-backend"
+main                 = "worker.js"
+compatibility_date   = "2026-04-29"
+compatibility_flags  = ["nodejs_compat"]
 
 [vars]
-ENVIRONMENT = "production"
-DB_NAME = "mindstore"
-FIREBASE_PROJECT_ID = "mindstore-2912"
-CORS_ORIGINS = "http://localhost:3000,http://localhost:5173,https://mindstores.vercel.app,https://mindstores.onrender.com"
+ENVIRONMENT          = "production"
+DB_NAME              = "mindstore"
+FIREBASE_PROJECT_ID  = "mindstore-2912"
+CORS_ORIGINS         = "http://localhost:3000,http://localhost:5173,https://mindstores.vercel.app,https://mindstores.onrender.com"
 
-# Environment variables
-[env.production]
-vars = { ENVIRONMENT = "production", DB_NAME = "mindstore", FIREBASE_PROJECT_ID = "mindstore-2912", CORS_ORIGINS = "http://localhost:3000,http://localhost:5173,https://mindstores.vercel.app,https://mindstores.onrender.com" }
+[env.production.vars]
+ENVIRONMENT          = "production"
+DB_NAME              = "mindstore"
+FIREBASE_PROJECT_ID  = "mindstore-2912"
+CORS_ORIGINS         = "http://localhost:3000,http://localhost:5173,https://mindstores.vercel.app,https://mindstores.onrender.com"
 
-[env.staging]
-vars = { ENVIRONMENT = "staging", DB_NAME = "mindstore", FIREBASE_PROJECT_ID = "mindstore-2912", CORS_ORIGINS = "http://localhost:3000,http://localhost:5173" }
+[env.staging.vars]
+ENVIRONMENT          = "staging"
+DB_NAME              = "mindstore"
+FIREBASE_PROJECT_ID  = "mindstore-2912"
+CORS_ORIGINS         = "http://localhost:3000,http://localhost:5173"
