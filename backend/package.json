@@ -2,7 +2,7 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "",
-  "main": "worker.js",
+  "main": "server.js",
   "type": "module",
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -11,22 +11,26 @@
     ]
   },
   "scripts": {
-    "start": "wrangler dev --env=\"\" --port 8000",
-    "dev": "wrangler dev --env=\"\" --port 8000",
-    "worker:dev": "wrangler dev --env=\"\" --port 8000",
-    "deploy:dry-run": "wrangler deploy --dry-run --env=\"\"",
-    "deploy": "wrangler deploy --env=\"\"",
-    "check": "node --check worker.js && node --check db.js && node --check adminAccess.js && node --check routes/root.js && node --check routes/auth.js && node --check routes/admin.js && node --check routes/products.js && node --check routes/cart.js && node --check routes/checkout.js && node --check routes/orders.js",
+    "start": "node server.js",
+    "dev": "node server.js",
+    "worker:dev": "node scripts/run-wrangler.mjs dev --env=\"\" --port 8000",
+    "deploy:dry-run": "node scripts/run-wrangler.mjs deploy --dry-run --env=\"\"",
+    "deploy": "node scripts/run-wrangler.mjs deploy --env=\"\"",
+    "check": "node --check app.js && node --check server.js && node --check worker.js && node --check workerAdapter.js && node --check nodeDb.js && node --check db.js && node --check adminAccess.js && node --check routes/root.js && node --check routes/auth.js && node --check routes/admin.js && node --check routes/products.js && node --check routes/cart.js && node --check routes/checkout.js && node --check routes/orders.js",
     "test": "pnpm run check && pnpm run deploy:dry-run"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.29.3",
+  "packageManager": "pnpm@11.0.9",
   "dependencies": {
-    "cookie": "^1.0.2"
+    "@fastify/cookie": "^11.0.2",
+    "cookie": "^1.1.1",
+    "dotenv": "^17.4.2",
+    "fastify": "^5.8.5",
+    "mongodb": "^7.2.0"
   },
   "devDependencies": {
-    "wrangler": "^4.86.0"
+    "wrangler": "^4.90.0"
   }
 }

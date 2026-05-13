@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { defineStore } from 'pinia'
-import { API_URL } from '@/utils/api'
-import { extractProductItems } from '@/utils/products'
+import { API_URL, buildAuthenticatedRequestConfig } from '@/utils/api'
+import { extractProductItems, fetchProductDetail, fetchProductList } from '@/utils/products'
 import { useAppStore } from './app'
 
 const pendingProductRequests = new Map()
@@ -50,8 +50,8 @@ export const useCartStore = defineStore('cart', {
 
     async fetchCart(options = {}) {
       try {
-        const response = await this.withAuthRetry(() =>
-          axios.get(`${API_URL}/cart`, { withCredentials: true })
+        const response = await this.withAuthRetry(async () =>
+          axios.get(`${API_URL}/cart`, await buildAuthenticatedRequestConfig())
         )
         this.items = response.data.items || []
         const forceProductRefresh = Boolean(options.forceProductRefresh)
@@ -96,7 +96,7 @@ export const useCartStore = defineStore('cart', {
       // For multiple items, a single products request is usually faster than N detail requests.
       if (missingProductIds.length > 1) {
         try {
-          const response = await axios.get(`${API_URL}/products`, { timeout: 8000 })
+          const response = await fetchProductList({ timeout: 8000 })
           const allProducts = extractProductItems(response.data)
           const productsById = new Map(allProducts.map((product) => [product.product_id, product]))
 
@@ -130,8 +130,7 @@ export const useCartStore = defineStore('cart', {
         return pendingProductRequests.get(productId)
       }
 
-      const request = axios
-        .get(`${API_URL}/products/${productId}`)
+      const request = fetchProductDetail(productId)
         .then((response) => {
           this.products[productId] = response.data
           return response.data
@@ -155,11 +154,11 @@ export const useCartStore = defineStore('cart', {
 
     async addToCart(productId, quantity = 1) {
       try {
-        await this.withAuthRetry(() =>
+        await this.withAuthRetry(async () =>
           axios.post(
             `${API_URL}/cart/add`,
             { product_id: productId, quantity },
-            { withCredentials: true }
+            await buildAuthenticatedRequestConfig()
           )
         )
         await this.fetchCart() // Refresh cart
@@ -171,11 +170,11 @@ export const useCartStore = defineStore('cart', {
 
     async removeFromCart(productId) {
       try {
-        await this.withAuthRetry(() =>
+        await this.withAuthRetry(async () =>
           axios.post(
             `${API_URL}/cart/remove`,
             { product_id: productId },
-            { withCredentials: true }
+            await buildAuthenticatedRequestConfig()
           )
         )
         await this.fetchCart()
@@ -187,11 +186,11 @@ export const useCartStore = defineStore('cart', {
 
     async updateCartQuantity(productId, quantity) {
       try {
-        await this.withAuthRetry(() =>
+        await this.withAuthRetry(async () =>
           axios.post(
             `${API_URL}/cart/update`,
             { product_id: productId, quantity },
-            { withCredentials: true }
+            await buildAuthenticatedRequestConfig()
           )
         )
 

@@ -3,6 +3,7 @@
 frontend/dist/
 backend/dist/
 backend/.wrangler/tmp/
+backend/.wrangler/logs/
 
 # Local env and secrets
 backend/.env

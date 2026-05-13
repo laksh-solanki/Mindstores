@@ -142,17 +142,16 @@
 </template>
 
 <script setup>
-import axios from 'axios'
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
-import { API_URL } from '@/utils/api'
 import { resolveCatalogEntryFromProducts } from '@/utils/catalog'
 import { useCurrency } from '@/utils/currency'
 import { safeDisplayImageUrl } from '@/utils/images'
 import {
   extractProductItems,
   extractProductsMeta,
+  fetchProductList,
 } from '@/utils/products'
 import { PRODUCTS_CACHE_INVALIDATED_EVENT } from '@/utils/productCache'
 
@@ -279,7 +278,7 @@ async function fetchSourceProducts() {
   loadingSource.value = true
 
   try {
-    const response = await axios.get(`${API_URL}/products`, {
+    const response = await fetchProductList({
       params: {
         limit: 250,
         sort: 'newest',
@@ -405,7 +404,7 @@ async function fetchProducts() {
       params.max_price = maxPrice
     }
 
-    const response = await axios.get(`${API_URL}/products`, { params })
+    const response = await fetchProductList({ params })
     if (requestId !== productsRequestVersion.value) return
 
     const payload = response.data

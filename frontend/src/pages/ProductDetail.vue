@@ -194,16 +194,15 @@
 </template>
 
 <script setup>
-  import axios from 'axios'
   import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import BaseAlert from '@/components/BaseAlert.vue'
   import { useAppStore } from '@/stores/app'
   import { useCartStore } from '@/stores/cart'
-  import { API_URL } from '@/utils/api'
   import { useCurrency } from '@/utils/currency'
   import { safeDisplayImageUrl } from '@/utils/images'
   import { PRODUCTS_CACHE_INVALIDATED_EVENT } from '@/utils/productCache'
+  import { fetchProductDetail } from '@/utils/products'
 
   const route = useRoute()
   const router = useRouter()
@@ -335,7 +334,7 @@
   async function fetchProduct(productId = route.params.id) {
     loading.value = true
     try {
-      const response = await axios.get(`${API_URL}/products/${productId}`)
+      const response = await fetchProductDetail(productId)
       product.value = response.data
       quantity.value = 1
     } catch (error) {

@@ -590,7 +590,7 @@
   import BaseAlert from '@/components/BaseAlert.vue'
   import { useAppStore } from '@/stores/app'
   import { useCartStore } from '@/stores/cart'
-  import { API_URL } from '@/utils/api'
+  import { API_URL, buildAuthenticatedRequestConfig } from '@/utils/api'
   import { fetchExchangeRates, formatCurrencyAmount } from '@/utils/currency'
   import { safeDisplayImageUrl } from '@/utils/images'
   import {
@@ -990,7 +990,7 @@
 
         loading.value = true
         try {
-          const response = await axios.get(`${API_URL}/orders`, { withCredentials: true })
+          const response = await axios.get(`${API_URL}/orders`, await buildAuthenticatedRequestConfig())
           const payload = Array.isArray(response.data) ? response.data : response.data?.orders || []
           orders.value = Array.isArray(payload) ? payload.map((order) => normalizeOrder(order)) : []
         } catch (error) {

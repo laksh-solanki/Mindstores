@@ -233,16 +233,14 @@
 </template>
 
 <script setup>
-  import axios from 'axios'
   import { computed, onMounted, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useAppStore } from '@/stores/app'
   import { useCartStore } from '@/stores/cart'
-  import { API_URL } from '@/utils/api'
   import { buildCatalogEntries, slugifyCatalogValue } from '@/utils/catalog'
   import { safeDisplayImageUrl } from '@/utils/images'
   import { clearProductsCache } from '@/utils/productCache'
-  import { extractProductItems } from '@/utils/products'
+  import { extractProductItems, fetchProductList } from '@/utils/products'
 
   const route = useRoute()
   const router = useRouter()
@@ -335,7 +333,7 @@
     categoriesLoading.value = true
     try {
       const force = Boolean(options.force)
-      const response = await axios.get(`${API_URL}/products`, {
+      const response = await fetchProductList({
         params: {
           limit: 250,
           sort: 'name_asc',

@@ -11,7 +11,7 @@ import {
 import { defineStore } from "pinia";
 // Import initialized firebase app
 import { app as firebaseApp } from "@/plugins/firebase";
-import { API_URL } from "@/utils/api";
+import { API_URL, buildAuthenticatedRequestConfig } from "@/utils/api";
 import {
   getCurrencyForCountry,
   loadUserSettings,
@@ -140,6 +140,19 @@ function syncCurrencyPreferenceFromUser(user) {
   });
 }
 
+function mergeBackendUser(firebaseProfile, backendUser = {}) {
+  return {
+    ...firebaseProfile,
+    ...backendUser,
+    picture:
+      backendUser.picture ||
+      backendUser.photo_url ||
+      backendUser.photoURL ||
+      firebaseProfile.picture ||
+      null,
+  };
+}
+
 export const useAppStore = defineStore("app", {
   state: () => ({
     user: null,
@@ -169,6 +182,13 @@ export const useAppStore = defineStore("app", {
 
       backendSessionUid = firebaseUser.uid;
       const sessionRequest = (async () => {
+        const applyBackendUser = (backendUser = {}) => {
+          this.user = mergeBackendUser(firebaseProfile, backendUser);
+          syncCurrencyPreferenceFromUser(this.user);
+          this.isAuthenticated = true;
+          return true;
+        };
+
         try {
           const idToken = await firebaseUser.getIdToken();
           let response = null;
@@ -182,7 +202,13 @@ export const useAppStore = defineStore("app", {
                   locale: getClientLocale(),
                   country_code: extractCountryCodeFromLocale(getClientLocale()),
                 },
-                { timeout: AUTH_REQUEST_TIMEOUT_MS, withCredentials: true },
+                {
+                  headers: {
+                    Authorization: `Bearer ${idToken}`,
+                  },
+                  timeout: AUTH_REQUEST_TIMEOUT_MS,
+                  withCredentials: true,
+                },
               );
               break;
             } catch (error) {
@@ -196,24 +222,27 @@ export const useAppStore = defineStore("app", {
           }
 
           const backendUser = response.data?.user || response.data || {};
-          this.user = {
-            ...firebaseProfile,
-            ...backendUser,
-            picture:
-              backendUser.picture ||
-              backendUser.photo_url ||
-              backendUser.photoURL ||
-              firebaseProfile.picture ||
-              null,
-          };
-          syncCurrencyPreferenceFromUser(this.user);
-          this.isAuthenticated = true;
-          return true;
+          return applyBackendUser(backendUser);
         } catch (error) {
-          console.error("Backend authentication failed:", error);
-          this.user = null;
-          this.isAuthenticated = false;
-          return false;
+          console.error("Backend session cookie authentication failed:", error);
+
+          try {
+            const response = await axios.get(
+              `${API_URL}/auth/me`,
+              await buildAuthenticatedRequestConfig(
+                { timeout: AUTH_REQUEST_TIMEOUT_MS },
+                { forceRefresh: true },
+              ),
+            );
+            const backendUser = response.data?.user || response.data || {};
+            console.warn("Using Firebase Bearer authentication for backend session.");
+            return applyBackendUser(backendUser);
+          } catch (fallbackError) {
+            console.error("Backend Bearer authentication failed:", fallbackError);
+            this.user = null;
+            this.isAuthenticated = false;
+            return false;
+          }
         }
       })();
 
@@ -349,20 +378,11 @@ export const useAppStore = defineStore("app", {
 
       try {
         const response = await axios.get(`${API_URL}/auth/me`, {
-          withCredentials: true,
           timeout: AUTH_REQUEST_TIMEOUT_MS,
+          ...(await buildAuthenticatedRequestConfig()),
         });
         const backendUser = response.data || {};
-        this.user = {
-          ...this.user,
-          ...backendUser,
-          picture:
-            backendUser.picture ||
-            backendUser.photo_url ||
-            backendUser.photoURL ||
-            this.user?.picture ||
-            null,
-        };
+        this.user = mergeBackendUser(this.user || {}, backendUser);
         syncCurrencyPreferenceFromUser(this.user);
         this.isAuthenticated = true;
         return this.user;
@@ -407,22 +427,23 @@ export const useAppStore = defineStore("app", {
           }
         }
 
-        const response = await axios.put(`${API_URL}/auth/profile`, payload, {
-          withCredentials: true,
-          timeout: AUTH_REQUEST_TIMEOUT_MS,
-        });
+        const response = await axios.put(
+          `${API_URL}/auth/profile`,
+          payload,
+          await buildAuthenticatedRequestConfig(
+            { timeout: AUTH_REQUEST_TIMEOUT_MS },
+            { forceRefresh: Boolean(auth.currentUser) },
+          ),
+        );
 
         const backendUser = response.data?.user || response.data || {};
-        this.user = {
-          ...this.user,
-          ...backendUser,
-          picture:
-            backendUser.picture ||
-            backendUser.photo_url ||
-            backendUser.photoURL ||
-            normalizedPicture ||
-            null,
-        };
+        this.user = mergeBackendUser(
+          {
+            ...(this.user || {}),
+            picture: normalizedPicture || this.user?.picture || null,
+          },
+          backendUser,
+        );
         syncCurrencyPreferenceFromUser(this.user);
         this.isAuthenticated = true;
         return this.user;

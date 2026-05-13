@@ -239,7 +239,7 @@
   import BaseAlert from '@/components/BaseAlert.vue'
   import { useAppStore } from '@/stores/app'
   import { useCartStore } from '@/stores/cart'
-  import { API_URL } from '@/utils/api'
+  import { API_URL, buildAuthenticatedRequestConfig } from '@/utils/api'
   import { useCurrency } from '@/utils/currency'
   import { clearProductsCache } from '@/utils/productCache'
   import { loadUserSettings } from '@/utils/userSettings'
@@ -437,7 +437,7 @@
               selected_product_ids: selectedProductIds.value,
               promo_code: selectedPromoCode.value && promoDiscount.value > 0 ? selectedPromoCode.value : undefined
             },
-            { withCredentials: true }
+            await buildAuthenticatedRequestConfig()
           )
 
           if (response.data?.success) {

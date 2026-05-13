@@ -598,6 +598,10 @@ import { useAppStore } from "@/stores/app";
 import { API_URL, buildAuthenticatedRequestConfig } from "@/utils/api";
 import { safeDisplayImageUrl } from "@/utils/images";
 import { clearProductsCache } from "@/utils/productCache";
+import {
+  extractProductItems,
+  requestProductApi,
+} from "@/utils/products";
 import Profile from "./Profile.vue";
 
 const DEFAULT_ADMIN_EMAIL = "lakshsolanki848@gmail.com";
@@ -1174,11 +1178,13 @@ async function runAdminRequest(requestFactory) {
       throw error;
     }
 
-    const sessionRefreshed = await appStore.ensureBackendSession();
-    if (!sessionRefreshed) {
-      throw error;
+    try {
+      await appStore.ensureBackendSession();
+    } catch (sessionError) {
+      console.warn("Backend session refresh failed. Retrying with a fresh Firebase token.", sessionError);
     }
 
+    // Cross-origin product writes rely on the Firebase Bearer token, not the local cookie.
     return await requestFactory(true);
   }
 }
@@ -1197,15 +1203,27 @@ async function refreshAdminData() {
 }
 
 async function fetchProducts() {
+  if (!canShowAdmin.value) {
+    return;
+  }
+
   productLoading.value = true;
   try {
-    const response = await axios.get(`${API_URL}/products`, {
-      params: {
-        limit: 250,
-        sort: "newest",
-      },
-    });
-    products.value = Array.isArray(response.data) ? response.data : response.data?.items || [];
+    const response = await runAdminRequest(async (forceRefresh) =>
+      requestProductApi(
+        "/products",
+        await buildAdminRequestConfig(
+          {
+            params: {
+              limit: 250,
+              sort: "newest",
+            },
+          },
+          forceRefresh,
+        ),
+      ),
+    );
+    products.value = extractProductItems(response.data);
   } catch (error) {
     console.error("Failed to fetch products:", error);
     notify(error.response?.data?.message || "Failed to fetch products", "error");
@@ -1343,16 +1361,26 @@ async function saveProduct() {
   try {
     if (editMode.value) {
       await runAdminRequest(async (forceRefresh) =>
-        axios.put(
-          `${API_URL}/products/${encodeURIComponent(currentProductId.value)}`,
-          payload,
-          await buildAdminRequestConfig({}, forceRefresh),
+        requestProductApi(
+          `/products/${encodeURIComponent(currentProductId.value)}`,
+          {
+            ...(await buildAdminRequestConfig({}, forceRefresh)),
+            method: "put",
+            data: payload,
+          },
         ),
       );
       notify("Product updated");
     } else {
       await runAdminRequest(async (forceRefresh) =>
-        axios.post(`${API_URL}/products`, payload, await buildAdminRequestConfig({}, forceRefresh)),
+        requestProductApi(
+          "/products",
+          {
+            ...(await buildAdminRequestConfig({}, forceRefresh)),
+            method: "post",
+            data: payload,
+          },
+        ),
       );
       notify("Product added");
     }
@@ -1381,9 +1409,12 @@ async function deleteProduct(product) {
   productLoading.value = true;
   try {
     await runAdminRequest(async (forceRefresh) =>
-      axios.delete(
-        `${API_URL}/products/${encodeURIComponent(selectedProduct.product_id)}`,
-        await buildAdminRequestConfig({}, forceRefresh),
+      requestProductApi(
+        `/products/${encodeURIComponent(selectedProduct.product_id)}`,
+        {
+          ...(await buildAdminRequestConfig({}, forceRefresh)),
+          method: "delete",
+        },
       ),
     );
     notify("Product deleted");

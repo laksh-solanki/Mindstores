@@ -183,14 +183,12 @@
 </template>
 
 <script setup>
-  import axios from 'axios'
   import { computed, onMounted, onUnmounted, ref } from 'vue'
   import { useRouter } from 'vue-router'
   import heroFallbackImage from '@/assets/DeskImg.jpg'
   import BaseAlert from '@/components/BaseAlert.vue'
   import { useAppStore } from '@/stores/app'
   import { useCartStore } from '@/stores/cart'
-  import { API_URL } from '@/utils/api'
   import { useCurrency } from '@/utils/currency'
   import { safeDisplayImageUrl } from '@/utils/images'
   import {
@@ -198,7 +196,7 @@
     readProductsCache,
     writeProductsCache,
   } from '@/utils/productCache'
-  import { extractProductItems } from '@/utils/products'
+  import { extractProductItems, fetchProductList } from '@/utils/products'
 
   const CACHE_TTL_MS = 60 * 1000
   const PRODUCT_REQUEST_TIMEOUT_MS = 20_000
@@ -272,7 +270,7 @@
     try {
       for (let attempt = 0; attempt <= PRODUCT_FETCH_RETRIES; attempt++) {
         try {
-          const response = await axios.get(`${API_URL}/products`, {
+          const response = await fetchProductList({
             params: { limit: 250 },
             timeout: PRODUCT_REQUEST_TIMEOUT_MS,
           })
