@@ -1,0 +1,1 @@
+"""Mindstores FastAPI backend."""
