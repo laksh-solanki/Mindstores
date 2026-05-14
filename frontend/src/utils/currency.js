@@ -162,6 +162,17 @@ function convertUsdAmount(amount, currency = DEFAULT_SETTINGS.currency) {
   return sourceAmount * rate
 }
 
+function convertAmountToUsd(amount, currency = BASE_CURRENCY) {
+  const sourceAmount = Number(amount || 0)
+  if (!Number.isFinite(sourceAmount)) {
+    return 0
+  }
+
+  const currencyCode = normalizeCurrencyCode(currency)
+  const rate = Number(exchangeRates.value[currencyCode] || 1)
+  return rate > 0 ? sourceAmount / rate : sourceAmount
+}
+
 function formatCurrencyAmount(amount, currency = DEFAULT_SETTINGS.currency) {
   const currencyCode = normalizeCurrencyCode(currency)
   const locale = CURRENCY_LOCALES[currencyCode] || 'en-US'
@@ -213,6 +224,7 @@ function useCurrency() {
 }
 
 export {
+  convertAmountToUsd,
   convertUsdAmount,
   fetchExchangeRates,
   formatCurrencyAmount,

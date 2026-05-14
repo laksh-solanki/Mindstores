@@ -75,7 +75,16 @@ async def place_order(request: Request, ctx: RequestContext = Depends(get_contex
             return error_response(400, f"Insufficient stock for {product.get('name') or cart_item['product_id']}")
         price = float(product.get("price") or 0)
         subtotal += price * cart_item["quantity"]
-        order_items.append({"product_id": cart_item["product_id"], "name": product.get("name") or "Product", "price": price, "quantity": cart_item["quantity"]})
+        order_items.append(
+            {
+                "product_id": cart_item["product_id"],
+                "name": product.get("name") or "Product",
+                "price": price,
+                "price_amount": product.get("price_amount", price),
+                "price_currency": product.get("price_currency") or product.get("currency") or "USD",
+                "quantity": cart_item["quantity"],
+            }
+        )
     applied_promo = None
     discount = 0.0
     if promo_code:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from fastapi import APIRouter, Depends, Request
@@ -17,6 +18,12 @@ from ..utils import (
 )
 
 router = APIRouter()
+MAX_PRODUCT_IMAGE_DATA_URL_LENGTH = 700_000
+ALLOWED_PRICE_CURRENCIES = {"USD", "EUR", "GBP", "INR"}
+DATA_IMAGE_URL_PATTERN = re.compile(
+    r"data:image/(png|jpeg|jpg|webp|gif);base64,[a-zA-Z0-9+/=]+",
+    re.IGNORECASE,
+)
 
 SORT_OPTIONS = {
     "newest": {"created_at": -1, "_id": -1},
@@ -28,9 +35,25 @@ SORT_OPTIONS = {
 }
 
 
-def is_safe_image_url(value: Any) -> bool:
+def normalize_product_image_url(value: Any) -> str:
+    text = normalize_text(value)
+    if not text:
+        return ""
+    if text.startswith("data:image/"):
+        if len(text) <= MAX_PRODUCT_IMAGE_DATA_URL_LENGTH and DATA_IMAGE_URL_PATTERN.fullmatch(text):
+            return text
+        return ""
     text = normalize_text(value, 2048)
-    return text.startswith("http://") or text.startswith("https://")
+    return text if text.startswith("http://") or text.startswith("https://") else ""
+
+
+def normalize_category_key(value: Any) -> str:
+    return normalize_text(value, 80).casefold()
+
+
+def normalize_price_currency(value: Any) -> str:
+    currency = normalize_text(value, 12).upper()
+    return currency if currency in ALLOWED_PRICE_CURRENCIES else "USD"
 
 
 def serialize_product(product: dict[str, Any] | None) -> dict[str, Any] | None:
@@ -50,14 +73,98 @@ def build_product_filter(product_id: Any) -> dict[str, Any] | None:
     return {"product_id": text}
 
 
+def serialize_category_record(record: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not record:
+        return None
+    category = normalize_text(record.get("category"), 80)
+    if not category:
+        return None
+    subcategories = [
+        normalize_text(subcategory, 80)
+        for subcategory in record.get("subcategories", [])
+        if normalize_text(subcategory, 80)
+    ]
+    return {
+        "category": category,
+        "subcategories": sorted(set(subcategories), key=str.casefold),
+    }
+
+
+def merge_category_record(
+    records: dict[str, dict[str, Any]],
+    category_value: Any,
+    subcategory_value: Any = "",
+) -> None:
+    category = normalize_text(category_value, 80)
+    if not category:
+        return
+    key = normalize_category_key(category)
+    records.setdefault(key, {"category": category, "subcategories": set()})
+    subcategory = normalize_text(subcategory_value, 80)
+    if subcategory:
+        records[key]["subcategories"].add(subcategory)
+
+
+def serialize_category_records(records: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        {"category": record["category"], "subcategories": sorted(record["subcategories"], key=str.casefold)}
+        for record in sorted(records.values(), key=lambda item: item["category"].casefold())
+    ]
+
+
+async def save_category_metadata(
+    ctx: RequestContext,
+    category_value: Any,
+    subcategory_value: Any = "",
+    updated_by: Any = "",
+) -> dict[str, Any] | None:
+    category = normalize_text(category_value, 80)
+    if not category:
+        return None
+
+    category_key = normalize_category_key(category)
+    subcategory = normalize_text(subcategory_value, 80)
+    collection = ctx.db.collection("product_categories")
+    existing = await collection.find_one({"category_key": category_key})
+    now = now_iso()
+    subcategories = set()
+    if existing:
+        for item in existing.get("subcategories", []):
+            normalized = normalize_text(item, 80)
+            if normalized:
+                subcategories.add(normalized)
+    if subcategory:
+        subcategories.add(subcategory)
+
+    payload = {
+        "category_key": category_key,
+        "category": category,
+        "subcategories": sorted(subcategories, key=str.casefold),
+        "updated_at": now,
+        "updated_by": normalize_text(updated_by, 320),
+    }
+    if existing:
+        await collection.update_one({"category_key": category_key}, {"$set": payload})
+        return payload
+
+    document = {**payload, "created_at": now}
+    await collection.insert_one(document)
+    return document
+
+
 def validate_create_payload(data: dict[str, Any]) -> tuple[dict[str, Any] | None, str | None]:
     name = normalize_text(data.get("name"), 120)
     category = normalize_text(data.get("category"), 80)
-    image_url = normalize_text(data.get("image_url"), 2048)
+    image_url = normalize_product_image_url(data.get("image_url"))
+    price_currency = normalize_price_currency(data.get("price_currency") or data.get("currency"))
     try:
         price = float(data.get("price"))
     except (TypeError, ValueError):
         price = float("nan")
+    try:
+        price_amount = float(data.get("price_amount", price))
+    except (TypeError, ValueError):
+        price_amount = float("nan")
     try:
         stock = float(data.get("stock"))
     except (TypeError, ValueError):
@@ -69,10 +176,12 @@ def validate_create_payload(data: dict[str, Any]) -> tuple[dict[str, Any] | None
         return None, "Category is required"
     if price != price or price < 0:
         return None, "Price must be a valid non-negative number"
+    if price_amount != price_amount or price_amount < 0:
+        return None, "Price amount must be a valid non-negative number"
     if stock != stock or not stock.is_integer() or stock < 0:
         return None, "Stock must be a non-negative integer"
-    if not image_url or not is_safe_image_url(image_url):
-        return None, "Image URL must be a valid http/https URL"
+    if not image_url:
+        return None, "Image must be a valid http/https URL or image upload"
 
     return {
         "name": name,
@@ -82,6 +191,9 @@ def validate_create_payload(data: dict[str, Any]) -> tuple[dict[str, Any] | None
         "subcategory": normalize_text(data.get("subcategory"), 80),
         "image_url": image_url,
         "price": price,
+        "price_amount": price_amount,
+        "price_currency": price_currency,
+        "currency": price_currency,
         "stock": int(stock),
     }, None
 
@@ -107,10 +219,22 @@ def validate_update_payload(data: dict[str, Any]) -> tuple[dict[str, Any] | None
     if "subcategory" in data:
         updates["subcategory"] = normalize_text(data.get("subcategory"), 80)
     if "image_url" in data:
-        image_url = normalize_text(data.get("image_url"), 2048)
-        if not image_url or not is_safe_image_url(image_url):
-            return None, "Image URL must be a valid http/https URL"
+        image_url = normalize_product_image_url(data.get("image_url"))
+        if not image_url:
+            return None, "Image must be a valid http/https URL or image upload"
         updates["image_url"] = image_url
+    if "price_currency" in data or "currency" in data:
+        price_currency = normalize_price_currency(data.get("price_currency") or data.get("currency"))
+        updates["price_currency"] = price_currency
+        updates["currency"] = price_currency
+    if "price_amount" in data:
+        try:
+            price_amount = float(data.get("price_amount"))
+        except (TypeError, ValueError):
+            price_amount = float("nan")
+        if price_amount != price_amount or price_amount < 0:
+            return None, "Price amount must be a valid non-negative number"
+        updates["price_amount"] = price_amount
     if "price" in data:
         try:
             price = float(data.get("price"))
@@ -211,6 +335,46 @@ async def get_products(ctx: RequestContext = Depends(get_context)):
     )
 
 
+@router.get("/products/categories")
+async def get_product_categories(ctx: RequestContext = Depends(get_context)):
+    records: dict[str, dict[str, Any]] = {}
+    category_documents = await ctx.db.collection("product_categories").find({}).to_array()
+    for document in category_documents:
+        category_record = serialize_category_record(document)
+        if not category_record:
+            continue
+        merge_category_record(records, category_record["category"])
+        for subcategory in category_record["subcategories"]:
+            merge_category_record(records, category_record["category"], subcategory)
+
+    products = await ctx.db.collection("products").find(
+        {},
+        {"projection": {"_id": 0, "category": 1, "subcategory": 1}},
+    ).to_array()
+    for product in products:
+        merge_category_record(records, product.get("category"), product.get("subcategory"))
+
+    return json_response({"items": serialize_category_records(records)}, headers={"Cache-Control": "no-store"})
+
+
+@router.post("/products/categories")
+async def create_product_category(request: Request, ctx: RequestContext = Depends(get_context)):
+    if not ctx.user:
+        return error_response(401, "Not authenticated")
+    if not ctx.user.get("is_admin"):
+        return error_response(403, "Admin access required")
+
+    body = await read_json_body(request, ctx.config.max_body_bytes)
+    data = body if isinstance(body, dict) else {}
+    category = normalize_text(data.get("category"), 80)
+    subcategory = normalize_text(data.get("subcategory"), 80)
+    if not category:
+        return error_response(400, "Category is required")
+
+    record = await save_category_metadata(ctx, category, subcategory, ctx.user.get("email"))
+    return json_response(serialize_category_record(record), 201, {"Cache-Control": "no-store"})
+
+
 @router.get("/products/{product_id}")
 async def get_product(product_id: str, ctx: RequestContext = Depends(get_context)):
     product_filter = build_product_filter(product_id)
@@ -242,6 +406,7 @@ async def create_product(request: Request, ctx: RequestContext = Depends(get_con
     now = now_iso()
     product = {**payload, "product_id": product_id, "created_at": now, "updated_at": now}
     await ctx.db.collection("products").insert_one(product)
+    await save_category_metadata(ctx, product.get("category"), product.get("subcategory"), ctx.user.get("email"))
     return json_response(serialize_product(product), 201)
 
 
@@ -264,6 +429,12 @@ async def update_product(product_id: str, request: Request, ctx: RequestContext 
     result = await ctx.db.collection("products").update_one(product_filter, {"$set": updates})
     if result.matchedCount == 0:
         return error_response(404, "Product not found")
+    await save_category_metadata(
+        ctx,
+        updates.get("category", existing.get("category")),
+        updates.get("subcategory", existing.get("subcategory")),
+        ctx.user.get("email"),
+    )
     updated = await ctx.db.collection("products").find_one(product_filter)
     return json_response(serialize_product(updated))
 

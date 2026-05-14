@@ -2,7 +2,9 @@
   <v-app>
     <AppHeader v-if="!isAdminPage" />
 
-    <v-main>
+    <router-view v-if="isAdminPage" />
+
+    <v-main v-else>
       <router-view />
     </v-main>
 

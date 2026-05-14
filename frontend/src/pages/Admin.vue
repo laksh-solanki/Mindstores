@@ -1,599 +1,661 @@
 <template>
-  <v-layout>
-    <v-app-bar border="b" color="teal-darken-2" flat>
-      <div class="d-flex align-center ga-3 px-3 px-md-6 w-100">
-        <v-btn v-if="isMobile && canShowAdmin" aria-label="Toggle admin navigation" icon="mdi-menu" rounded="lg"
-          variant="text" @click="drawer = !drawer" />
+  <v-app-bar border="b" color="teal-darken-2" flat height="64" location="top">
+    <div class="d-flex align-center ga-3 px-3 px-md-6 w-100">
+      <v-btn v-if="isMobile && canShowAdmin" aria-label="Toggle admin navigation" icon="mdi-menu" rounded="lg"
+        variant="text" @click="drawer = !drawer" />
 
-        <div class="d-inline-flex align-center ga-3 flex-shrink-0">
-          <v-avatar color="surface" rounded="lg" size="42" variant="flat">
-            <v-img alt="Mindstore logo" class="brand-logo" src="../assets/logo.svg" width="32" />
-          </v-avatar>
-          <div>
-            <p class="text-subtitle-1 font-weight-bold mb-0">Mindstores Admin</p>
-          </div>
+      <div class="d-inline-flex align-center ga-3 flex-shrink-0">
+        <v-avatar color="surface" rounded="lg" size="42" variant="flat">
+          <v-img alt="Mindstore logo" class="brand-logo" src="../assets/logo.svg" width="32" />
+        </v-avatar>
+        <div>
+          <p class="text-subtitle-1 font-weight-bold mb-0">Mindstores Admin</p>
         </div>
+      </div>
 
-        <v-spacer />
+      <v-spacer />
 
-        <div v-if="canShowAdmin" class="ml-4 align-center ga-2 d-none d-lg-flex">
-          <v-chip color="blue-lighten-4" size="small" variant="outlined">
-            {{ formatNumber(products.length) }} products
-          </v-chip>
-          <v-chip :color="lowStockCount > 0 ? 'yellow-darken-3' : 'teal-lighten-5'" size="small" variant="outlined">
-            {{ formatNumber(lowStockCount) }} low stock
-          </v-chip>
-          <v-chip color="light-blue-lighten-4" size="small" variant="outlined" border>
-            {{ lastSyncedLabel }}
-          </v-chip>
-        </div>
+      <div v-if="canShowAdmin" class="ml-4 align-center ga-2 d-none d-lg-flex">
+        <v-chip color="blue-lighten-4" size="small" variant="outlined">
+          {{ formatNumber(products.length) }} products
+        </v-chip>
+        <v-chip :color="lowStockCount > 0 ? 'yellow-darken-3' : 'teal-lighten-5'" size="small" variant="outlined">
+          {{ formatNumber(lowStockCount) }} low stock
+        </v-chip>
+        <v-chip color="light-blue-lighten-4" size="small" variant="outlined" border>
+          {{ lastSyncedLabel }}
+        </v-chip>
+      </div>
 
-        <v-spacer />
+      <v-spacer />
 
-        <v-menu location="bottom end" color="teal-darken-2" v-model="isUserMenuOpen">
-          <template #activator="{ props }">
-            <v-btn v-bind="props" icon rounded="xl" variant="tonal">
-              <v-avatar v-if="currentUserImage" size="38">
-                <v-img :alt="userName" cover :src="currentUserImage" />
-              </v-avatar>
-              <v-avatar v-else color="teal-accent-4" size="38">
-                <span class="text-white font-weight-light">{{ userInitials }}</span>
-              </v-avatar>
-              <span class="d-none d-xl-inline text-truncate">{{ userName }}</span>
-              <v-tooltip activator="parent" location="bottom">{{ userName }}</v-tooltip>
-            </v-btn>
-          </template>
-
-          <v-list density="compact" class="bg-yellow-lighten-5 pa-2" nav>
-            <v-list-item :subtitle="currentUserEmail" :title="userName" to="/profile" rounded="lg" class="mb-2">
-              <template #prepend>
-                <v-avatar v-if="currentUserImage" size="32">
+      <v-menu location="bottom end" color="teal-darken-2" v-model="isUserMenuOpen">
+        <template #activator="{ props: menuProps }">
+          <v-tooltip location="bottom">
+            <template #activator="{ props: tooltipProps }">
+              <v-btn v-bind="mergeProps(menuProps, tooltipProps)" icon rounded="xl" variant="tonal">
+                <v-avatar v-if="currentUserImage" size="38">
                   <v-img :alt="userName" cover :src="currentUserImage" />
                 </v-avatar>
-                <v-avatar v-else color="teal-accent-4" size="32">
+                <v-avatar v-else color="teal-accent-4" size="38">
                   <span class="text-white font-weight-light">{{ userInitials }}</span>
                 </v-avatar>
-              </template>
-            </v-list-item>
-            <v-divider />
-            <v-list-item to="/" rounded="lg">
-              <template #prepend>
-                <v-icon>mdi-store-outline</v-icon>
-              </template>
-              <v-list-item-title>Storefront</v-list-item-title>
-            </v-list-item>
-            <v-list-item v-if="isAuthenticated" @click="logout" rounded="lg">
-              <template #prepend>
-                <v-icon>mdi-logout</v-icon>
-              </template>
-              <v-list-item-title>Logout</v-list-item-title>
-            </v-list-item>
-            <v-list-item v-else to="/login">
-              <template #prepend>
-                <v-icon>mdi-login</v-icon>
-              </template>
-              <v-list-item-title>Login</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-menu>
-      </div>
-    </v-app-bar>
+                <span class="d-none d-xl-inline text-truncate">{{ userName }}</span>
+              </v-btn>
+            </template>
+            {{ userName }}
+          </v-tooltip>
+        </template>
 
-    <v-navigation-drawer v-if="canShowAdmin" v-model="drawer" border="e" color="yellow-lighten-5" elevation="0" expand-on-hover
-      :rail="!isMobile" rail-width="66" :temporary="isMobile" width="220">
-      <v-list class="bg-yellow-lighten-5 pa-3" density="comfortable" nav>
-        <v-list-item v-for="item in navItems" :key="item.id" :active="activePanel === item.id" color="teal-darken-3"
-          rounded="lg" @click="selectPanel(item.id)">
-          <template #prepend>
-            <v-icon>{{ item.icon }}</v-icon>
-          </template>
-          <v-list-item-title>{{ item.label }}</v-list-item-title>
-        </v-list-item>
-      </v-list>
-    </v-navigation-drawer>
+        <v-list density="compact" class="bg-yellow-lighten-5 pa-2" nav>
+          <v-list-item :subtitle="currentUserEmail" :title="userName" to="/profile" rounded="lg" class="mb-2">
+            <template #prepend>
+              <v-avatar v-if="currentUserImage" size="32">
+                <v-img :alt="userName" cover :src="currentUserImage" />
+              </v-avatar>
+              <v-avatar v-else color="teal-accent-4" size="32">
+                <span class="text-white font-weight-light">{{ userInitials }}</span>
+              </v-avatar>
+            </template>
+          </v-list-item>
+          <v-divider />
+          <v-list-item to="/" rounded="lg">
+            <template #prepend>
+              <v-icon>mdi-store-outline</v-icon>
+            </template>
+            <v-list-item-title>Storefront</v-list-item-title>
+          </v-list-item>
+          <v-list-item v-if="isAuthenticated" @click="logout" rounded="lg">
+            <template #prepend>
+              <v-icon>mdi-logout</v-icon>
+            </template>
+            <v-list-item-title>Logout</v-list-item-title>
+          </v-list-item>
+          <v-list-item v-else to="/login">
+            <template #prepend>
+              <v-icon>mdi-login</v-icon>
+            </template>
+            <v-list-item-title>Login</v-list-item-title>
+          </v-list-item>
+        </v-list>
+      </v-menu>
+    </div>
+  </v-app-bar>
 
-    <v-main class="bg-yellow-lighten-5">
-      <v-container class="pa-4 pa-md-5" fluid>
-        <v-row v-if="authLoading" align="center" justify="center">
-          <v-col cols="12" lg="5" md="7">
-            <v-card variant="outlined">
-              <v-card-text class="py-10 text-center">
-                <v-progress-circular color="teal-darken-3" indeterminate size="42" />
-                <div class="text-h6 font-weight-bold mt-4">Checking admin session</div>
-                <div class="text-body-2 text-medium-emphasis">Please wait while access is verified.</div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
+  <v-navigation-drawer v-if="canShowAdmin" v-model="drawer" border="e" color="yellow-lighten-5" elevation="0"
+    expand-on-hover :permanent="!isMobile" :rail="!isMobile" rail-width="66" :temporary="isMobile" width="220">
+    <v-list class="bg-yellow-lighten-5 pa-3" density="comfortable" nav>
+      <v-list-item v-for="item in navItems" :key="item.id" :active="activePanel === item.id" color="teal-darken-3"
+        rounded="lg" @click="selectPanel(item.id)">
+        <template #prepend>
+          <v-icon>{{ item.icon }}</v-icon>
+        </template>
+        <v-list-item-title>{{ item.label }}</v-list-item-title>
+      </v-list-item>
+    </v-list>
+  </v-navigation-drawer>
 
-        <v-row v-else-if="isAuthenticated && !isAdmin" align="center" justify="center">
-          <v-col cols="12" lg="6" md="8">
-            <v-card variant="outlined">
-              <v-card-text class="pa-6">
-                <v-alert title="Admin access denied" type="error" variant="tonal">
-                  {{ currentUserEmail || "This account" }} is not on the admin access list.
-                </v-alert>
-
-                <v-row class="mt-4" dense>
-                  <v-col cols="12" sm="6">
-                    <v-card color="surface" variant="outlined">
-                      <v-card-text>
-                        <div class="text-caption text-medium-emphasis">Default admin</div>
-                        <div class="text-body-1 font-weight-medium text-break">{{ defaultAdminEmail }}</div>
-                      </v-card-text>
-                    </v-card>
-                  </v-col>
-                  <v-col cols="12" sm="6">
-                    <v-card color="surface" variant="outlined">
-                      <v-card-text>
-                        <div class="text-caption text-medium-emphasis">Current session</div>
-                        <div class="text-body-1 font-weight-medium">Signed in</div>
-                      </v-card-text>
-                    </v-card>
-                  </v-col>
-                </v-row>
-
-                <v-card-actions class="px-0 pb-0 pt-5">
-                  <v-btn to="/" variant="text">
-                    <v-icon start>mdi-store-outline</v-icon>
-                    Storefront
-                  </v-btn>
-                </v-card-actions>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
-
-        <template v-else-if="canShowAdmin">
-          <v-row align="center" class="mb-5" dense>
-            <v-col cols="12" md="7">
-              <div class="text-h5 text-md-h4 font-weight-bold">{{ activePanelLabel }}</div>
-              <div class="text-body-2 text-medium-emphasis">{{ lastSyncedLabel }}</div>
-            </v-col>
-            <v-col cols="12" md="5">
-              <div class="d-flex flex-column flex-sm-row justify-md-end ga-2">
-                <v-btn color="teal-darken-1 " :loading="isRefreshing" rounded="lg" prepend-icon="mdi-refresh"
-                  variant="flat" text="Refresh" @click="refreshAdminData" />
-              </div>
-            </v-col>
-          </v-row>
-
-          <div v-if="activePanel === 'dashboard'">
-            <v-row dense>
-              <v-col v-for="metric in metricCards" :key="metric.label" cols="12" lg="3" sm="7">
-                <v-card variant="outlined" rounded="lg">
-                  <v-card-text class="d-flex align-center justify-space-between ga-4">
-                    <div class="overflow-hidden">
-                      <div class="text-caption text-medium-emphasis">{{ metric.label }}</div>
-                      <div class="text-h6 font-weight-bold text-truncate">{{ metric.value }}</div>
-                    </div>
-                    <v-avatar :color="metric.color" size="48" variant="tonal">
-                      <v-icon :color="metric.color">{{ metric.icon }}</v-icon>
-                    </v-avatar>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-            </v-row>
-
-            <v-row class="mt-2" dense>
-              <v-col cols="12" lg="8">
-                <v-card class="h-100" variant="outlined" rounded="lg">
-                  <v-card-title class="d-flex align-center justify-space-between ga-3 my-2">
-                    <span>Recent Inventory</span>
-                    <v-chip color="primary" size="small" variant="tonal">{{ filteredProducts.length }}</v-chip>
-                  </v-card-title>
-                  <v-card-text>
-                    <v-text-field v-model="productSearch" density="comfortable" hide-details label="Search products"
-                      prepend-inner-icon="mdi-magnify" variant="outlined" />
-                    <v-data-table class="bg-yellow-lighten-5 mt-4" density="comfortable" :headers="recentProductHeaders"
-                      :items="recentProducts" :items-per-page="5" :loading="productLoading">
-                      <template #item.name="{ item }">
-                        <div class="d-flex align-center ga-3 py-2">
-                          <v-avatar color="surface" rounded="lg" size="44">
-                            <v-img v-if="productImageUrl(resolveTableItem(item))" :alt="resolveTableItem(item)?.name"
-                              cover :src="productImageUrl(resolveTableItem(item))" />
-                            <v-icon v-else color="primary">mdi-image-off-outline</v-icon>
-                          </v-avatar>
-                          <div class="overflow-hidden">
-                            <div class="font-weight-medium text-truncate">{{ resolveTableItem(item)?.name }}</div>
-                            <div class="text-caption text-medium-emphasis">{{ resolveTableItem(item)?.company ||
-                              "Mindstores" }}</div>
-                          </div>
-                        </div>
-                      </template>
-                      <template #item.price="{ item }">
-                        {{ formatCurrency(resolveTableItem(item)?.price) }}
-                      </template>
-                      <template #item.stock="{ item }">
-                        <v-chip :color="stockStatus(resolveTableItem(item)).color" size="small" variant="tonal">
-                          {{ stockStatus(resolveTableItem(item)).label }}
-                        </v-chip>
-                      </template>
-                    </v-data-table>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-
-              <v-col cols="12" lg="4">
-                <v-card class="h-100" variant="outlined" rounded="lg">
-                  <v-card-title class="my-2">Operations</v-card-title>
-                  <v-list lines="two" density="comfortable" class="bg-yellow-lighten-5 ma-2 rounded-lg pa-1">
-                    <v-list-item v-for="item in operationsSummary" :key="item.title" :subtitle="item.subtitle"
-                      :title="item.title" rounded="lg">
-                      <template #prepend>
-                        <v-avatar :color="item.color" size="42" variant="tonal">
-                          <v-icon :color="item.color">{{ item.icon }}</v-icon>
-                        </v-avatar>
-                      </template>
-                      <template #append>
-                        <span class="font-weight-bold">{{ item.value }}</span>
-                      </template>
-                    </v-list-item>
-                  </v-list>
-                </v-card>
-              </v-col>
-            </v-row>
-
-            <v-row class="mt-2" dense>
-              <v-col cols="12" md="6">
-                <v-card class="h-100" variant="outlined" rounded="lg">
-                  <v-card-title class="my-2">Category Mix</v-card-title>
-                  <v-card-text class="d-flex flex-column ga-4">
-                    <div v-for="category in categoryStats" :key="category.name">
-                      <div class="d-flex justify-space-between mb-2">
-                        <span class="font-weight-medium">{{ category.name }}</span>
-                        <span class="text-medium-emphasis">{{ category.count }}</span>
-                      </div>
-                      <v-progress-linear color="primary" height="10" :model-value="category.percent" rounded />
-                    </div>
-                    <v-alert v-if="categoryStats.length === 0" type="info" variant="tonal">
-                      No category data
-                    </v-alert>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-
-              <v-col cols="12" md="6">
-                <v-card class="h-100" variant="outlined" rounded="lg">
-                  <v-card-title class="my-2">Access Snapshot</v-card-title>
-                  <v-list density="comfortable" lines="two" class="bg-yellow-lighten-5 ma-2 rounded-lg pa-1">
-                    <v-list-item v-for="entry in adminAccessEntries.slice(0, 5)" :key="entry.email"
-                      :subtitle="accessEntrySubtitle(entry)" :title="entry.email">
-                      <template #prepend>
-                        <v-avatar :color="entry.is_default ? 'success' : 'primary'" size="42" variant="tonal">
-                          <v-icon :color="entry.is_default ? 'success' : 'primary'">
-                            {{ entry.is_default ? "mdi-shield-star-outline" : "mdi-shield-account-outline" }}
-                          </v-icon>
-                        </v-avatar>
-                      </template>
-                      <template #append>
-                        <v-chip v-if="entry.is_current_user" color="info" size="small" variant="tonal">You</v-chip>
-                      </template>
-                    </v-list-item>
-                  </v-list>
-                </v-card>
-              </v-col>
-            </v-row>
-          </div>
-
-          <v-card v-else-if="activePanel === 'users'" variant="outlined" rounded="lg">
-            <v-card-title class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 my-2">
-              <span>User Management</span>
-              <v-btn color="teal-darken-1" rounded="lg" :loading="userLoading" prepend-icon="mdi-refresh" text="Users"
-                variant="flat" @click="fetchUsers" />
-            </v-card-title>
-            <v-card-text>
-              <v-row dense>
-                <v-col cols="12" md="8">
-                  <v-text-field v-model="userSearch" density="comfortable" hide-details label="Search users"
-                    prepend-inner-icon="mdi-magnify" variant="outlined" />
-                </v-col>
-                <v-col cols="12" md="4">
-                  <v-select v-model="userRoleFilter" density="comfortable" hide-details item-title="title"
-                    item-value="value" :items="userRoleOptions" label="Role" variant="outlined" />
-                </v-col>
-              </v-row>
-
-              <v-data-table class="bg-yellow-lighten-5 mt-4" density="comfortable" :headers="userHeaders" :items="filteredUsers"
-                :items-per-page="8" :loading="userLoading">
-                <template #item.name="{ item }">
-                  <div class="d-flex align-center ga-3 py-2">
-                    <v-avatar color="teal-darken-1" size="38" variant="tonal">
-                      <v-img v-if="userImageUrl(resolveTableItem(item))"
-                        :alt="resolveTableItem(item)?.name || resolveTableItem(item)?.email || 'User profile'"
-                        cover :src="userImageUrl(resolveTableItem(item))" />
-                      <span v-else class="font-weight-bold">{{ initialsFor(resolveTableItem(item)?.name ||
-                        resolveTableItem(item)?.email) }}</span>
-                    </v-avatar>
-                    <div class="overflow-hidden">
-                      <div class="font-weight-medium text-truncate">{{ resolveTableItem(item)?.name || "User" }}</div>
-                      <div class="text-caption text-medium-emphasis text-truncate">{{ resolveTableItem(item)?.email }}
-                      </div>
-                    </div>
-                  </div>
-                </template>
-                <template #item.is_admin="{ item }">
-                  <v-chip :color="resolveTableItem(item)?.is_admin ? 'success' : 'default'" size="small"
-                    variant="tonal">
-                    {{ resolveTableItem(item)?.is_admin ? "Admin" : "Customer" }}
-                  </v-chip>
-                </template>
-                <template #item.updated_at="{ item }">
-                  {{ formatDate(resolveTableItem(item)?.updated_at) }}
-                </template>
-              </v-data-table>
+  <v-main class="bg-yellow-lighten-5">
+    <v-container class="pa-4 pa-md-5" fluid>
+      <v-row v-if="authLoading" align="center" justify="center">
+        <v-col cols="12" lg="5" md="7">
+          <v-card variant="outlined">
+            <v-card-text class="py-10 text-center">
+              <v-progress-circular color="teal-darken-3" indeterminate size="42" />
+              <div class="text-h6 font-weight-bold mt-4">Checking admin session</div>
+              <div class="text-body-2 text-medium-emphasis">Please wait while access is verified.</div>
             </v-card-text>
           </v-card>
+        </v-col>
+      </v-row>
 
-          <v-card v-else-if="activePanel === 'products'" variant="outlined" rounded="lg">
-            <v-card-title class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 my-2">
-              <span>Product Management</span>
-              <v-btn color="teal-darken-1" variant="flat" rounded="lg" prepend-icon="mdi-plus" text="Add Product"
-                @click="openAddDialog" />
-            </v-card-title>
-            <v-card-text>
-              <v-row dense>
-                <v-col cols="12" md="6">
-                  <v-text-field v-model="productSearch" density="comfortable" hide-details label="Search products"
-                    prepend-inner-icon="mdi-magnify" variant="outlined" />
-                </v-col>
-                <v-col cols="12" md="3" sm="6">
-                  <v-select v-model="categoryFilter" density="comfortable" hide-details item-title="title"
-                    item-value="value" :items="categoryFilterOptions" label="Category" variant="outlined" />
-                </v-col>
-                <v-col cols="12" md="3" sm="6">
-                  <v-select v-model="stockFilter" density="comfortable" hide-details item-title="title"
-                    item-value="value" :items="stockFilterOptions" label="Stock" variant="outlined" />
-                </v-col>
-              </v-row>
+      <v-row v-else-if="isAuthenticated && !isAdmin" align="center" justify="center">
+        <v-col cols="12" lg="6" md="8">
+          <v-card variant="outlined">
+            <v-card-text class="pa-6">
+              <v-alert title="Admin access denied" type="error" variant="tonal">
+                {{ currentUserEmail || "This account" }} is not on the admin access list.
+              </v-alert>
 
-              <v-data-table class="bg-yellow-lighten-5 mt-4" density="comfortable" :headers="productHeaders" :items="filteredProducts"
-                :items-per-page="8" :loading="productLoading">
-                <template #item.name="{ item }">
-                  <div class="d-flex align-center ga-3 py-2">
-                    <v-avatar color="surface" rounded="lg" size="44">
-                      <v-img v-if="productImageUrl(resolveTableItem(item))" :alt="resolveTableItem(item)?.name" cover
-                        :src="productImageUrl(resolveTableItem(item))" />
-                      <v-icon v-else color="primary">mdi-image-off-outline</v-icon>
-                    </v-avatar>
-                    <div class="overflow-hidden">
-                      <div class="font-weight-medium text-truncate">{{ resolveTableItem(item)?.name }}</div>
-                      <div class="text-caption text-medium-emphasis">{{ resolveTableItem(item)?.product_id }}</div>
-                    </div>
-                  </div>
-                </template>
-                <template #item.category_display="{ item }">
-                  {{ formatCategory(resolveTableItem(item)) }}
-                </template>
-                <template #item.price="{ item }">
-                  {{ formatCurrency(resolveTableItem(item)?.price) }}
-                </template>
-                <template #item.stock="{ item }">
-                  <v-chip :color="stockStatus(resolveTableItem(item)).color" size="small" variant="tonal">
-                    {{ resolveTableItem(item)?.stock || 0 }}
-                  </v-chip>
-                </template>
-                <template #item.actions="{ item }">
-                  <div class="d-flex align-center">
-                    <v-btn icon size="small" variant="text" @click="editProduct(resolveTableItem(item))">
-                      <v-icon>mdi-pencil-outline</v-icon>
-                      <v-tooltip activator="parent" location="top">Edit</v-tooltip>
-                    </v-btn>
-                    <v-btn color="error" icon size="small" variant="text"
-                      @click="deleteProduct(resolveTableItem(item))">
-                      <v-icon>mdi-delete-outline</v-icon>
-                      <v-tooltip activator="parent" location="top">Delete</v-tooltip>
-                    </v-btn>
-                  </div>
-                </template>
-              </v-data-table>
-            </v-card-text>
-          </v-card>
-
-          <v-card v-else-if="activePanel === 'logs'" variant="outlined" rounded="lg">
-            <v-card-title class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 my-2">
-              <span>Notifications</span>
-              <v-select v-model="logTypeFilter" density="compact" hide-details item-title="title" item-value="value"
-                :items="logTypeOptions" max-width="220" variant="outlined" />
-            </v-card-title>
-            <v-card-text>
-              <v-row dense>
-                <v-col v-for="log in filteredActivityLogs" :key="log.id" cols="12" md="6">
-                  <v-card class="h-100" variant="outlined" rounded="lg">
-                    <v-card-text class="d-flex ga-4">
-                      <v-avatar :color="log.color" size="44" variant="tonal">
-                        <v-icon :color="log.color">{{ log.icon }}</v-icon>
-                      </v-avatar>
-                      <div>
-                        <div class="font-weight-medium">{{ log.title }}</div>
-                        <div class="text-body-2 text-medium-emphasis">{{ log.message }}</div>
-                        <div class="text-caption text-medium-emphasis mt-1">{{ log.time }}</div>
-                      </div>
+              <v-row class="mt-4" dense>
+                <v-col cols="12" sm="6">
+                  <v-card color="surface" variant="outlined">
+                    <v-card-text>
+                      <div class="text-caption text-medium-emphasis">Default admin</div>
+                      <div class="text-body-1 font-weight-medium text-break">{{ defaultAdminEmail }}</div>
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <v-card color="surface" variant="outlined">
+                    <v-card-text>
+                      <div class="text-caption text-medium-emphasis">Current session</div>
+                      <div class="text-body-1 font-weight-medium">Signed in</div>
                     </v-card-text>
                   </v-card>
                 </v-col>
               </v-row>
+
+              <v-card-actions class="px-0 pb-0 pt-5">
+                <v-btn to="/" variant="text">
+                  <v-icon start>mdi-store-outline</v-icon>
+                  Storefront
+                </v-btn>
+              </v-card-actions>
             </v-card-text>
           </v-card>
+        </v-col>
+      </v-row>
 
-          <v-row v-else dense>
-            <v-col cols="12" lg="4">
-              <v-card class="h-100" variant="outlined" rounded="lg">
-                <v-card-title class="my-2">Add Admin Email</v-card-title>
-                <v-card-text>
-                  <v-form @submit.prevent="addAdminAccess">
-                    <v-text-field v-model="accessEmailInput" autocomplete="email" density="comfortable"
-                      :error-messages="accessEmailError ? [accessEmailError] : []" label="Email"
-                      prepend-inner-icon="mdi-email-outline" variant="outlined" />
-                    <v-btn block color="teal-darken-1" :disabled="Boolean(accessEmailError) || !accessEmailInput"
-                      :loading="accessSaving" type="submit" rounded="lg" variant="flat" prepend-icon="mdi-shield-plus-outline"
-                      text="Add Access" />
-                  </v-form>
+      <template v-else-if="canShowAdmin">
+        <v-row align="center" class="mb-5" dense>
+          <v-col cols="12" md="7">
+            <div class="text-h5 text-md-h4 font-weight-bold">{{ activePanelLabel }}</div>
+            <div class="text-body-2 text-medium-emphasis">{{ lastSyncedLabel }}</div>
+          </v-col>
+          <v-col cols="12" md="5">
+            <div class="d-flex flex-column flex-sm-row justify-md-end ga-2">
+              <v-btn color="teal-darken-1 " :loading="isRefreshing" rounded="lg" prepend-icon="mdi-refresh"
+                variant="flat" text="Refresh" @click="refreshAdminData" />
+            </div>
+          </v-col>
+        </v-row>
+
+        <div v-if="activePanel === 'dashboard'">
+          <v-row dense>
+            <v-col v-for="metric in metricCards" :key="metric.label" cols="12" lg="3" sm="7">
+              <v-card variant="flat" border rounded="lg">
+                <v-card-text class="d-flex align-center justify-space-between ga-4">
+                  <div class="overflow-hidden">
+                    <div class="text-caption text-medium-emphasis">{{ metric.label }}</div>
+                    <div class="text-h6 font-weight-bold text-truncate">{{ metric.value }}</div>
+                  </div>
+                  <v-avatar :color="metric.color" size="48" variant="tonal">
+                    <v-icon :color="metric.color">{{ metric.icon }}</v-icon>
+                  </v-avatar>
                 </v-card-text>
               </v-card>
             </v-col>
+          </v-row>
 
+          <v-row class="mt-2" dense>
             <v-col cols="12" lg="8">
-              <v-card variant="outlined" rounded="lg">
-                <v-card-title class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 my-2">
-                  <span>Admin Access Control</span>
-                  <v-text-field v-model="accessSearch" density="compact" hide-details label="Search emails"
-                    max-width="320" prepend-inner-icon="mdi-magnify" variant="outlined" />
+              <v-card class="h-100" variant="flat" border rounded="lg">
+                <v-card-title class="d-flex align-center justify-space-between ga-3 my-2">
+                  <span>Recent Inventory</span>
+                  <v-chip color="teal-darken-1" size="small" variant="tonal">{{ filteredProducts.length }}</v-chip>
                 </v-card-title>
                 <v-card-text>
-                  <v-data-table class="bg-yellow-lighten-5" density="comfortable" :headers="accessHeaders" :items="filteredAdminAccess"
-                    :items-per-page="6" :loading="accessLoading">
-                    <template #item.email="{ item }">
-                      <div class="py-2">
-                        <div class="font-weight-medium text-break">{{ resolveTableItem(item)?.email }}</div>
-                        <div class="d-flex flex-wrap ga-2 mt-1">
-                          <v-chip v-if="resolveTableItem(item)?.is_default" color="success" size="x-small"
-                            variant="tonal">Default</v-chip>
-                          <v-chip v-if="resolveTableItem(item)?.is_current_user" color="info" size="x-small"
-                            variant="tonal">You</v-chip>
+                  <v-text-field v-model="productSearch" density="comfortable" hide-details label="Search products"
+                    prepend-inner-icon="mdi-magnify" variant="outlined" />
+                  <v-data-table class="mt-4" density="comfortable" :headers="recentProductHeaders"
+                    :items="recentProducts" :items-per-page="5" :loading="productLoading">
+                    <template #item.name="{ item }">
+                      <div class="d-flex align-center ga-3 py-2">
+                        <v-avatar color="surface" rounded="lg" size="44">
+                          <v-img v-if="productImageUrl(resolveTableItem(item))" :alt="resolveTableItem(item)?.name"
+                            cover :src="productImageUrl(resolveTableItem(item))" />
+                          <v-icon v-else color="primary">mdi-image-off-outline</v-icon>
+                        </v-avatar>
+                        <div class="overflow-hidden">
+                          <div class="font-weight-medium text-truncate">{{ resolveTableItem(item)?.name }}</div>
+                          <div class="text-caption text-medium-emphasis">{{ resolveTableItem(item)?.company ||
+                            "Mindstores" }}</div>
                         </div>
                       </div>
                     </template>
-                    <template #item.updated_at="{ item }">
-                      {{ formatDate(resolveTableItem(item)?.updated_at || resolveTableItem(item)?.created_at) }}
+                    <template #item.price="{ item }">
+                      {{ formatProductPrice(resolveTableItem(item)) }}
                     </template>
-                    <template #item.actions="{ item }">
-                      <div class="d-flex align-center">
-                        <v-btn icon size="small" variant="text" :disabled="!resolveTableItem(item)?.can_edit"
-                          @click="openEditAdminAccess(resolveTableItem(item))">
-                          <v-icon>mdi-pencil-outline</v-icon>
-                          <v-tooltip activator="parent" location="top">Edit</v-tooltip>
-                        </v-btn>
-                        <v-btn color="error" :disabled="!resolveTableItem(item)?.can_delete" icon size="small"
-                          variant="text" @click="deleteAdminAccess(resolveTableItem(item))">
-                          <v-icon>mdi-delete-outline</v-icon>
-                          <v-tooltip activator="parent" location="top">Delete</v-tooltip>
-                        </v-btn>
-                      </div>
+                    <template #item.stock="{ item }">
+                      <v-chip :color="stockStatus(resolveTableItem(item)).color" size="small" variant="tonal">
+                        {{ stockStatus(resolveTableItem(item)).label }}
+                      </v-chip>
                     </template>
                   </v-data-table>
                 </v-card-text>
               </v-card>
             </v-col>
 
-            <v-col cols="12">
-              <v-card variant="outlined" rounded="lg">
-                <v-card-title class="my-2">Security Rules</v-card-title>
-                <v-card-text>
-                  <v-row dense>
-                    <v-col v-for="rule in securityRules" :key="rule.title" cols="12" md="3" sm="6">
-                      <v-card class="h-100" variant="outlined" rounded="lg">
-                        <v-card-text>
-                          <v-avatar class="mb-3" :color="rule.color" size="42" variant="tonal">
-                            <v-icon :color="rule.color">{{ rule.icon }}</v-icon>
-                          </v-avatar>
-                          <div class="font-weight-medium">{{ rule.title }}</div>
-                          <div class="text-body-2 text-medium-emphasis">{{ rule.value }}</div>
-                        </v-card-text>
-                      </v-card>
-                    </v-col>
-                  </v-row>
-                </v-card-text>
+            <v-col cols="12" lg="4">
+              <v-card class="h-100" variant="flat" border rounded="lg">
+                <v-card-title class="my-2">Operations</v-card-title>
+                <v-list lines="two" density="comfortable" class=" ma-2 rounded-lg pa-1">
+                  <v-list-item v-for="item in operationsSummary" :key="item.title" :subtitle="item.subtitle"
+                    :title="item.title" rounded="lg">
+                    <template #prepend>
+                      <v-avatar :color="item.color" size="42" variant="tonal">
+                        <v-icon :color="item.color">{{ item.icon }}</v-icon>
+                      </v-avatar>
+                    </template>
+                    <template #append>
+                      <span class="font-weight-bold">{{ item.value }}</span>
+                    </template>
+                  </v-list-item>
+                </v-list>
               </v-card>
             </v-col>
           </v-row>
-        </template>
 
-        <v-row v-else align="center" justify="center">
-          <v-col cols="12" lg="5" md="7">
-            <v-card variant="outlined">
-              <v-card-text class="py-10 text-center">
-                <v-progress-circular color="teal-darken-3" indeterminate size="42" />
-                <div class="text-h6 font-weight-bold mt-4">Redirecting to login</div>
+          <v-row class="mt-2" dense>
+            <v-col cols="12" md="6">
+              <v-card class="h-100" variant="flat" border rounded="lg">
+                <v-card-title class="my-2">Category Mix</v-card-title>
+                <v-card-text class="d-flex flex-column ga-4">
+                  <div v-for="category in categoryStats" :key="category.name">
+                    <div class="d-flex justify-space-between mb-2">
+                      <span class="font-weight-medium">{{ category.name }}</span>
+                      <span class="text-medium-emphasis">{{ category.count }}</span>
+                    </div>
+                    <v-progress-linear color="primary" height="10" :model-value="category.percent" rounded />
+                  </div>
+                  <v-alert v-if="categoryStats.length === 0" type="info" variant="tonal">
+                    No category data
+                  </v-alert>
+                </v-card-text>
+              </v-card>
+            </v-col>
+
+            <v-col cols="12" md="6">
+              <v-card class="h-100" variant="flat" border rounded="lg">
+                <v-card-title class="my-2">Access Snapshot</v-card-title>
+                <v-list density="comfortable" lines="two" class=" ma-2 rounded-lg pa-1">
+                  <v-list-item v-for="entry in adminAccessEntries.slice(0, 5)" :key="entry.email"
+                    :subtitle="accessEntrySubtitle(entry)" :title="entry.email">
+                    <template #prepend>
+                      <v-avatar :color="entry.is_default ? 'success' : 'primary'" size="42" variant="tonal">
+                        <v-icon :color="entry.is_default ? 'success' : 'primary'">
+                          {{ entry.is_default ? "mdi-shield-star-outline" : "mdi-shield-account-outline" }}
+                        </v-icon>
+                      </v-avatar>
+                    </template>
+                    <template #append>
+                      <v-chip v-if="entry.is_current_user" color="info" size="small" variant="tonal">You</v-chip>
+                    </template>
+                  </v-list-item>
+                </v-list>
+              </v-card>
+            </v-col>
+          </v-row>
+        </div>
+
+        <v-card v-else-if="activePanel === 'users'" variant="flat" border rounded="lg">
+          <v-card-title class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 my-2">
+            <span>User Management</span>
+            <v-btn color="teal-darken-1" rounded="lg" :loading="userLoading" prepend-icon="mdi-refresh" text="Users"
+              variant="flat" @click="fetchUsers" />
+          </v-card-title>
+          <v-card-text>
+            <v-row dense>
+              <v-col cols="12" md="8">
+                <v-text-field v-model="userSearch" density="comfortable" hide-details label="Search users"
+                  prepend-inner-icon="mdi-magnify" variant="outlined" />
+              </v-col>
+              <v-col cols="12" md="4">
+                <v-select v-model="userRoleFilter" density="comfortable" hide-details item-title="title"
+                  item-value="value" :items="userRoleOptions" label="Role" variant="outlined" />
+              </v-col>
+            </v-row>
+
+            <v-data-table class="mt-4" density="comfortable" :headers="userHeaders"
+              :items="filteredUsers" :items-per-page="8" :loading="userLoading">
+              <template #item.name="{ item }">
+                <div class="d-flex align-center ga-3 py-2">
+                  <v-avatar color="teal-darken-1" size="38" variant="tonal">
+                    <v-img v-if="userImageUrl(resolveTableItem(item))"
+                      :alt="resolveTableItem(item)?.name || resolveTableItem(item)?.email || 'User profile'" cover
+                      :src="userImageUrl(resolveTableItem(item))" />
+                    <span v-else class="font-weight-bold">{{ initialsFor(resolveTableItem(item)?.name ||
+                      resolveTableItem(item)?.email) }}</span>
+                  </v-avatar>
+                  <div class="overflow-hidden">
+                    <div class="font-weight-medium text-truncate">{{ resolveTableItem(item)?.name || "User" }}</div>
+                    <div class="text-caption text-medium-emphasis text-truncate">{{ resolveTableItem(item)?.email }}
+                    </div>
+                  </div>
+                </div>
+              </template>
+              <template #item.is_admin="{ item }">
+                <v-chip :color="resolveTableItem(item)?.is_admin ? 'success' : 'default'" size="small" variant="tonal">
+                  {{ resolveTableItem(item)?.is_admin ? "Admin" : "Customer" }}
+                </v-chip>
+              </template>
+              <template #item.updated_at="{ item }">
+                {{ formatDate(resolveTableItem(item)?.updated_at) }}
+              </template>
+            </v-data-table>
+          </v-card-text>
+        </v-card>
+
+        <v-card v-else-if="activePanel === 'products'" variant="flat" border rounded="lg">
+          <v-card-title class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 my-2">
+            <span>Product Management</span>
+            <v-btn color="teal-darken-1" variant="flat" rounded="lg" prepend-icon="mdi-plus" text="Add Product"
+              @click="openAddDialog" />
+          </v-card-title>
+          <v-card-text>
+            <v-row dense>
+              <v-col cols="12" md="6">
+                <v-text-field v-model="productSearch" density="comfortable" hide-details label="Search products"
+                  prepend-inner-icon="mdi-magnify" variant="outlined" />
+              </v-col>
+              <v-col cols="12" md="3" sm="6">
+                <v-select v-model="categoryFilter" density="comfortable" hide-details item-title="title"
+                  item-value="value" :items="categoryFilterOptions" label="Category" variant="outlined" />
+              </v-col>
+              <v-col cols="12" md="3" sm="6">
+                <v-select v-model="stockFilter" density="comfortable" hide-details item-title="title" item-value="value"
+                  :items="stockFilterOptions" label="Stock" variant="outlined" />
+              </v-col>
+            </v-row>
+
+            <v-data-table class=" mt-4" density="comfortable" :headers="productHeaders"
+              :items="filteredProducts" :items-per-page="8" :loading="productLoading">
+              <template #item.name="{ item }">
+                <div class="d-flex align-center ga-3 py-2">
+                  <v-avatar color="surface" rounded="lg" size="44">
+                    <v-img v-if="productImageUrl(resolveTableItem(item))" :alt="resolveTableItem(item)?.name" cover
+                      :src="productImageUrl(resolveTableItem(item))" />
+                    <v-icon v-else color="primary">mdi-image-off-outline</v-icon>
+                  </v-avatar>
+                  <div class="overflow-hidden">
+                    <div class="font-weight-medium text-truncate">{{ resolveTableItem(item)?.name }}</div>
+                    <div class="text-caption text-medium-emphasis">{{ resolveTableItem(item)?.product_id }}</div>
+                  </div>
+                </div>
+              </template>
+              <template #item.category_display="{ item }">
+                {{ formatCategory(resolveTableItem(item)) }}
+              </template>
+              <template #item.price="{ item }">
+                {{ formatProductPrice(resolveTableItem(item)) }}
+              </template>
+              <template #item.stock="{ item }">
+                <v-chip :color="stockStatus(resolveTableItem(item)).color" size="small" variant="tonal">
+                  {{ resolveTableItem(item)?.stock || 0 }}
+                </v-chip>
+              </template>
+              <template #item.actions="{ item }">
+                <div class="d-flex align-center">
+                  <v-btn icon size="small" variant="text" @click="editProduct(resolveTableItem(item))">
+                    <v-icon>mdi-pencil-outline</v-icon>
+                    <v-tooltip activator="parent" location="top">Edit</v-tooltip>
+                  </v-btn>
+                  <v-btn color="error" icon size="small" variant="text" @click="deleteProduct(resolveTableItem(item))">
+                    <v-icon>mdi-delete-outline</v-icon>
+                    <v-tooltip activator="parent" location="top">Delete</v-tooltip>
+                  </v-btn>
+                </div>
+              </template>
+            </v-data-table>
+          </v-card-text>
+        </v-card>
+
+        <v-card v-else-if="activePanel === 'logs'" variant="flat" border rounded="lg">
+          <v-card-title class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 my-2">
+            <span>Notifications</span>
+            <v-select v-model="logTypeFilter" density="compact" hide-details item-title="title" item-value="value"
+              :items="logTypeOptions" max-width="220" variant="outlined" />
+          </v-card-title>
+          <v-card-text>
+            <v-row dense>
+              <v-col v-for="log in filteredActivityLogs" :key="log.id" cols="12" md="6">
+                <v-card class="h-100" variant="flat" border rounded="lg">
+                  <v-card-text class="d-flex ga-4">
+                    <v-avatar :color="log.color" size="44" variant="tonal">
+                      <v-icon :color="log.color">{{ log.icon }}</v-icon>
+                    </v-avatar>
+                    <div>
+                      <div class="font-weight-medium">{{ log.title }}</div>
+                      <div class="text-body-2 text-medium-emphasis">{{ log.message }}</div>
+                      <div class="text-caption text-medium-emphasis mt-1">{{ log.time }}</div>
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
+
+        <v-row v-else dense>
+          <v-col cols="12" lg="4">
+            <v-card class="h-100" variant="flat" border rounded="lg">
+              <v-card-title class="my-2">Add Admin Email</v-card-title>
+              <v-card-text>
+                <v-form @submit.prevent="addAdminAccess">
+                  <v-text-field v-model="accessEmailInput" autocomplete="email" density="comfortable"
+                    :error-messages="accessEmailError ? [accessEmailError] : []" label="Email"
+                    prepend-inner-icon="mdi-email-outline" variant="outlined" />
+                  <v-btn block color="teal-darken-1" :disabled="Boolean(accessEmailError) || !accessEmailInput"
+                    :loading="accessSaving" type="submit" rounded="lg" variant="flat"
+                    prepend-icon="mdi-shield-plus-outline" text="Add Access" />
+                </v-form>
+              </v-card-text>
+            </v-card>
+          </v-col>
+
+          <v-col cols="12" lg="8">
+            <v-card variant="flat" border rounded="lg">
+              <v-card-title class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 my-2">
+                <span>Admin Access Control</span>
+                <v-text-field v-model="accessSearch" density="compact" hide-details label="Search emails"
+                  max-width="320" prepend-inner-icon="mdi-magnify" variant="outlined" />
+              </v-card-title>
+              <v-card-text>
+                <v-data-table density="comfortable" :headers="accessHeaders"
+                  :items="filteredAdminAccess" :items-per-page="6" :loading="accessLoading">
+                  <template #item.email="{ item }">
+                    <div class="py-2">
+                      <div class="font-weight-medium text-break">{{ resolveTableItem(item)?.email }}</div>
+                      <div class="d-flex flex-wrap ga-2 mt-1">
+                        <v-chip v-if="resolveTableItem(item)?.is_default" color="success" size="x-small"
+                          variant="tonal">Default</v-chip>
+                        <v-chip v-if="resolveTableItem(item)?.is_current_user" color="info" size="x-small"
+                          variant="tonal">You</v-chip>
+                      </div>
+                    </div>
+                  </template>
+                  <template #item.updated_at="{ item }">
+                    {{ formatDate(resolveTableItem(item)?.updated_at || resolveTableItem(item)?.created_at) }}
+                  </template>
+                  <template #item.actions="{ item }">
+                    <div class="d-flex align-center">
+                      <v-btn icon size="small" variant="text" :disabled="!resolveTableItem(item)?.can_edit"
+                        @click="openEditAdminAccess(resolveTableItem(item))">
+                        <v-icon>mdi-pencil-outline</v-icon>
+                        <v-tooltip activator="parent" location="top">Edit</v-tooltip>
+                      </v-btn>
+                      <v-btn color="error" :disabled="!resolveTableItem(item)?.can_delete" icon size="small"
+                        variant="text" @click="deleteAdminAccess(resolveTableItem(item))">
+                        <v-icon>mdi-delete-outline</v-icon>
+                        <v-tooltip activator="parent" location="top">Delete</v-tooltip>
+                      </v-btn>
+                    </div>
+                  </template>
+                </v-data-table>
+              </v-card-text>
+            </v-card>
+          </v-col>
+
+          <v-col cols="12">
+            <v-card variant="flat" border rounded="lg">
+              <v-card-title class="my-2">Security Rules</v-card-title>
+              <v-card-text>
+                <v-row dense>
+                  <v-col v-for="rule in securityRules" :key="rule.title" cols="12" md="3" sm="6">
+                    <v-card class="h-100" variant="outlined" rounded="lg">
+                      <v-card-text>
+                        <v-avatar class="mb-3" :color="rule.color" size="42" variant="tonal">
+                          <v-icon :color="rule.color">{{ rule.icon }}</v-icon>
+                        </v-avatar>
+                        <div class="font-weight-medium">{{ rule.title }}</div>
+                        <div class="text-body-2 text-medium-emphasis">{{ rule.value }}</div>
+                      </v-card-text>
+                    </v-card>
+                  </v-col>
+                </v-row>
               </v-card-text>
             </v-card>
           </v-col>
         </v-row>
-      </v-container>
-    </v-main>
+      </template>
 
-    <v-dialog v-model="productDialog" max-width="760">
-      <v-card>
-        <v-card-title>{{ editMode ? "Edit Product" : "Add Product" }}</v-card-title>
-        <v-card-text>
-          <v-form @submit.prevent="saveProduct">
-            <v-row dense>
-              <v-col cols="12" md="8">
-                <v-text-field v-model="formData.name" density="comfortable" label="Product name" required
-                  variant="outlined" />
-              </v-col>
-              <v-col cols="12" md="4">
-                <v-text-field v-model="formData.company" density="comfortable" label="Brand" variant="outlined" />
-              </v-col>
-              <v-col cols="12">
-                <v-textarea v-model="formData.description" density="comfortable" label="Description" rows="3"
-                  variant="outlined" />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field v-model.number="formData.price" density="comfortable" label="Price" prefix="$" required
-                  type="number" variant="outlined" />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field v-model.number="formData.stock" density="comfortable" label="Stock" required type="number"
-                  variant="outlined" />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-combobox v-model="formData.category" density="comfortable" :items="categoryOptions" label="Category"
-                  required variant="outlined" />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-combobox v-model="formData.subcategory" density="comfortable" :items="availableSubcategories"
-                  label="Subcategory (optional)" variant="outlined" />
-              </v-col>
-              <v-col cols="12">
-                <v-text-field v-model="formData.image_url" density="comfortable" label="Image URL" required
-                  variant="outlined" />
-              </v-col>
-            </v-row>
-          </v-form>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="productDialog = false">Cancel</v-btn>
-          <v-btn color="primary" :loading="productSaving" variant="flat" @click="saveProduct">
-            {{ editMode ? "Update" : "Add" }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+      <v-row v-else align="center" justify="center">
+        <v-col cols="12" lg="5" md="7">
+          <v-card variant="outlined">
+            <v-card-text class="py-10 text-center">
+              <v-progress-circular color="teal-darken-3" indeterminate size="42" />
+              <div class="text-h6 font-weight-bold mt-4">Redirecting to login</div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
+  </v-main>
 
-    <v-dialog v-model="accessEditDialog" max-width="520">
-      <v-card>
-        <v-card-title>Edit Admin Email</v-card-title>
-        <v-card-text>
-          <v-text-field v-model="accessEditEmail" autocomplete="email" density="comfortable"
-            :error-messages="accessEditEmailError ? [accessEditEmailError] : []" label="Email"
-            prepend-inner-icon="mdi-email-outline" variant="outlined" />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="accessEditDialog = false">Cancel</v-btn>
-          <v-btn color="primary" :disabled="Boolean(accessEditEmailError)" :loading="accessSaving" variant="flat"
-            @click="saveAdminAccessEdit">
-            Update
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+  <v-dialog v-model="productDialog" max-width="1180" scrollable>
+    <v-card>
+      <v-card-title>{{ editMode ? "Edit Product" : "Add Product" }}</v-card-title>
+      <v-card-text>
+        <v-form @submit.prevent="saveProduct">
+          <v-row dense>
+            <v-col cols="12" md="8">
+              <v-row dense class="ga-4">
+                <v-col cols="12" md="12">
+                  <v-file-input v-model="productImageFile" accept="image/png,image/jpeg,image/webp,image/gif" clearable
+                    density="comfortable" label="Product image" placeholder="Select product image"
+                    prepend-icon="mdi-image-plus" chips variant="outlined" @click:clear="clearProductImageFile"
+                    @update:model-value="onProductImageSelected" />
+                </v-col>
+                <v-col cols="12" md="12">
+                  <v-text-field :model-value="productImageInputValue" density="comfortable"
+                    label="Image URL or selected image" prepend-icon="mdi-image-search-outline" hide-details required
+                    variant="outlined" @update:model-value="updateProductImageUrl" />
+                </v-col>
+              </v-row>
+            </v-col>
+            <v-col cols="12" md="4">
+              <v-sheet border class="d-flex align-center justify-center h-100 pa-3" rounded="lg"
+                color="blue-grey-lighten-5">
+                <v-avatar color="surface" rounded="lg" size="156" variant="outlined">
+                  <v-img v-if="productImagePreview" alt="Product image preview" cover :src="productImagePreview" />
+                  <v-icon v-else color="primary">mdi-image-off-outline</v-icon>
+                </v-avatar>
+              </v-sheet>
+            </v-col>
+            <v-col cols="12" md="8">
+              <v-text-field v-model="formData.name" density="comfortable" label="Product name" required
+                variant="outlined" />
+            </v-col>
+            <v-col cols="12" md="4">
+              <v-text-field v-model="formData.company" density="comfortable" label="Brand" variant="outlined" />
+            </v-col>
+            <v-col cols="12" md="1" class="d-flex flex-column ga-1">
+              <v-btn v-for="option in DESCRIPTION_BULLET_OPTIONS" :key="option.symbol" :aria-label="option.label"
+                min-width="54" rounded="lg" variant="outlined" @click="addDescriptionBullet(option.symbol)"
+                class="text-headline-large">
+                {{ option.symbol }}
+              </v-btn>
+            </v-col>
+            <v-col cols="12" md="11">
+              <v-textarea v-model="formData.description" auto-grow density="comfortable" label="Description" rows="7"
+                variant="outlined" />
+            </v-col>
+            <v-col cols="12" md="4">
+              <v-select v-model="formData.price_currency" density="comfortable" :items="PRICE_CURRENCY_OPTIONS"
+                label="Country currency" required variant="outlined" />
+            </v-col>
+            <v-col cols="12" md="4">
+              <v-text-field v-model.number="formData.price" density="comfortable" label="Price"
+                :prefix="selectedPriceCurrency" required type="number" variant="outlined" />
+            </v-col>
+            <v-col cols="12" md="4">
+              <v-text-field v-model.number="formData.stock" density="comfortable" label="Stock" required type="number"
+                variant="outlined" />
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-combobox v-model="formData.category" density="comfortable" :items="categoryOptions" label="Category"
+                required variant="outlined">
+                <template #append-item>
+                  <v-divider class="mt-2" />
+                  <v-list-item prepend-icon="mdi-plus" title="Add more" @mousedown.prevent
+                    @click="openCatalogOptionDialog('category')" />
+                </template>
+              </v-combobox>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-combobox v-model="formData.subcategory" density="comfortable" :items="availableSubcategories"
+                :disabled="!normalizeCategoryName(formData.category)" label="Subcategory (optional)" variant="outlined">
+                <template #append-item>
+                  <v-divider class="mt-2" />
+                  <v-list-item prepend-icon="mdi-plus" title="Add more"
+                    :disabled="!normalizeCategoryName(formData.category)" @mousedown.prevent
+                    @click="openCatalogOptionDialog('subcategory')" />
+                </template>
+              </v-combobox>
+            </v-col>
+          </v-row>
+        </v-form>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer />
+        <v-btn variant="text" @click="productDialog = false">Cancel</v-btn>
+        <v-btn color="teal-darken-1" :loading="productSaving" variant="flat" @click="saveProduct">
+          {{ editMode ? "Update" : "Add" }}
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 
-    <v-snackbar v-model="snackbar" :color="snackbarColor" location="top" timeout="3000">
-      {{ snackbarText }}
-    </v-snackbar>
-  </v-layout>
+  <v-dialog v-model="catalogOptionDialog" max-width="460">
+    <v-card>
+      <v-card-title>{{ catalogOptionDialogTitle }}</v-card-title>
+      <v-card-text>
+        <v-text-field v-model="catalogOptionInput" autofocus density="comfortable" :label="catalogOptionInputLabel"
+          variant="outlined" @keyup.enter="saveCatalogOption" />
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer />
+        <v-btn variant="text" @click="catalogOptionDialog = false">Cancel</v-btn>
+        <v-btn color="primary" :loading="catalogOptionSaving" variant="flat" @click="saveCatalogOption">
+          Save
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <v-dialog v-model="accessEditDialog" max-width="520">
+    <v-card>
+      <v-card-title>Edit Admin Email</v-card-title>
+      <v-card-text>
+        <v-text-field v-model="accessEditEmail" autocomplete="email" density="comfortable"
+          :error-messages="accessEditEmailError ? [accessEditEmailError] : []" label="Email"
+          prepend-inner-icon="mdi-email-outline" variant="outlined" />
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer />
+        <v-btn variant="text" @click="accessEditDialog = false">Cancel</v-btn>
+        <v-btn color="primary" :disabled="Boolean(accessEditEmailError)" :loading="accessSaving" variant="flat"
+          @click="saveAdminAccessEdit">
+          Update
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <v-snackbar v-model="snackbar" :color="snackbarColor" location="top" timeout="3000">
+    {{ snackbarText }}
+  </v-snackbar>
 </template>
 
 <script setup>
 import axios from "axios";
-import { computed, ref, watch } from "vue";
+import { computed, mergeProps, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
 import { useAppStore } from "@/stores/app";
 import { API_URL, buildAuthenticatedRequestConfig } from "@/utils/api";
+import { convertAmountToUsd, fetchExchangeRates } from "@/utils/currency";
 import { safeDisplayImageUrl } from "@/utils/images";
 import { clearProductsCache } from "@/utils/productCache";
 import {
@@ -604,6 +666,20 @@ import {
 
 const DEFAULT_ADMIN_EMAIL = "lakshsolanki848@gmail.com";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const DEFAULT_PRICE_CURRENCY = "USD";
+const MAX_PRODUCT_IMAGE_FILE_BYTES = 512 * 1024;
+const MAX_PRODUCT_IMAGE_DATA_URL_LENGTH = 700_000;
+const DESCRIPTION_BULLET_OPTIONS = [
+  { symbol: "-", label: "Add dash bullet" },
+  { symbol: "•", label: "Add dot bullet" },
+  { symbol: "‣", label: "Add triangle bullet" },
+];
+const PRICE_CURRENCY_OPTIONS = [
+  { title: "United States (USD)", value: "USD" },
+  { title: "India (INR)", value: "INR" },
+  { title: "United Kingdom (GBP)", value: "GBP" },
+  { title: "Europe (EUR)", value: "EUR" },
+];
 
 const router = useRouter();
 const appStore = useAppStore();
@@ -620,9 +696,11 @@ const accessLoading = ref(false);
 const productSaving = ref(false);
 const accessSaving = ref(false);
 const productDialog = ref(false);
+const catalogOptionDialog = ref(false);
 const accessEditDialog = ref(false);
 const editMode = ref(false);
 const currentProductId = ref(null);
+const categoryRecords = ref([]);
 const productSearch = ref("");
 const categoryFilter = ref("all");
 const stockFilter = ref("all");
@@ -635,7 +713,14 @@ const accessEditEmail = ref("");
 const logTypeFilter = ref("all");
 const lastSyncedAt = ref(null);
 const adminQuickSearch = ref("");
+const isUserMenuOpen = ref(false);
 const isQuickActionMenuOpen = ref(false);
+const productImageFile = ref(null);
+const selectedProductImageName = ref("");
+const productImageInputValue = ref("");
+const catalogOptionType = ref("category");
+const catalogOptionInput = ref("");
+const catalogOptionSaving = ref(false);
 const snackbar = ref(false);
 const snackbarText = ref("");
 const snackbarColor = ref("success");
@@ -645,6 +730,7 @@ const formData = ref({
   company: "",
   description: "",
   price: 0,
+  price_currency: DEFAULT_PRICE_CURRENCY,
   category: "",
   subcategory: "",
   stock: 0,
@@ -716,6 +802,14 @@ const activePanelLabel = computed(() => navItems.find((item) => item.id === acti
 const isRefreshing = computed(() => productLoading.value || userLoading.value || accessLoading.value);
 const lastSyncedLabel = computed(() => (lastSyncedAt.value ? `Synced ${formatDate(lastSyncedAt.value)}` : "Ready"));
 const userInitials = computed(() => initialsFor(userName.value));
+const selectedPriceCurrency = computed(() => normalizeProductCurrency(formData.value.price_currency));
+const productImagePreview = computed(() => safeDisplayImageUrl(formData.value.image_url));
+const catalogOptionDialogTitle = computed(() =>
+  catalogOptionType.value === "subcategory" ? "Add Subcategory" : "Add Category",
+);
+const catalogOptionInputLabel = computed(() =>
+  catalogOptionType.value === "subcategory" ? "Subcategory name" : "Category name",
+);
 
 const metricCards = computed(() => [
   {
@@ -795,11 +889,25 @@ const securityRules = computed(() => [
   },
 ]);
 
+const catalogCategoryRecords = computed(() => {
+  const records = new Map();
+  for (const record of categoryRecords.value) {
+    mergeCatalogRecord(records, record.category);
+    for (const subcategory of record.subcategories || []) {
+      mergeCatalogRecord(records, record.category, subcategory);
+    }
+  }
+  for (const product of products.value) {
+    mergeCatalogRecord(records, product.category, product.subcategory);
+  }
+  return serializeCatalogRecords(records);
+});
+
 const categoryOptions = computed(() => {
   const currentCategory = normalizeCategoryName(formData.value.category);
   const categories = new Set(
-    products.value
-      .map((product) => normalizeCategoryName(product.category))
+    catalogCategoryRecords.value
+      .map((record) => normalizeCategoryName(record.category))
       .filter(Boolean),
   );
   if (currentCategory) {
@@ -809,7 +917,7 @@ const categoryOptions = computed(() => {
 });
 
 const categoryFilterOptions = computed(() => {
-  const categories = new Set(products.value.map((product) => normalizeCategoryName(product.category)).filter(Boolean));
+  const categories = new Set(catalogCategoryRecords.value.map((record) => normalizeCategoryName(record.category)).filter(Boolean));
   return [
     { title: "All categories", value: "all" },
     ...[...categories].toSorted((left, right) => left.localeCompare(right)).map((category) => ({ title: category, value: category })),
@@ -819,13 +927,10 @@ const categoryFilterOptions = computed(() => {
 const availableSubcategories = computed(() => {
   const selectedCategory = normalizeCategoryName(formData.value.category);
   const matchedSubcategories = selectedCategory
-    ? products.value
-      .filter((product) => normalizeCategoryName(product.category) === selectedCategory)
-      .map((product) => normalizeSubcategoryName(product.category, product.subcategory))
-      .filter(Boolean)
-    : products.value
-      .map((product) => normalizeSubcategoryName(product.category, product.subcategory))
-      .filter(Boolean);
+    ? catalogCategoryRecords.value
+      .find((record) => normalizeCategoryName(record.category) === selectedCategory)
+      ?.subcategories || []
+    : catalogCategoryRecords.value.flatMap((record) => record.subcategories || []);
   const selectedSubcategory = normalizeSubcategoryName(formData.value.category, formData.value.subcategory);
   const subcategories = new Set(matchedSubcategories);
   if (selectedSubcategory) {
@@ -1092,6 +1197,56 @@ function normalizeSubcategoryName(category, subcategory) {
   return normalizeText(subcategory).slice(0, 80);
 }
 
+function normalizeProductCurrency(value) {
+  const code = normalizeText(value).toUpperCase();
+  return PRICE_CURRENCY_OPTIONS.some((option) => option.value === code) ? code : DEFAULT_PRICE_CURRENCY;
+}
+
+function catalogKey(value) {
+  return normalizeCategoryName(value).toLowerCase();
+}
+
+function mergeCatalogRecord(records, categoryValue, subcategoryValue = "") {
+  const category = normalizeCategoryName(categoryValue);
+  if (!category) {
+    return;
+  }
+
+  const key = catalogKey(category);
+  if (!records.has(key)) {
+    records.set(key, { category, subcategories: new Set() });
+  }
+
+  const subcategory = normalizeSubcategoryName(category, subcategoryValue);
+  if (subcategory) {
+    records.get(key).subcategories.add(subcategory);
+  }
+}
+
+function serializeCatalogRecords(records) {
+  return [...records.values()]
+    .map((record) => ({
+      category: record.category,
+      subcategories: [...record.subcategories].toSorted((left, right) => left.localeCompare(right)),
+    }))
+    .toSorted((left, right) => left.category.localeCompare(right.category));
+}
+
+function upsertLocalCategoryRecord(nextRecord) {
+  const records = new Map();
+  for (const record of categoryRecords.value) {
+    mergeCatalogRecord(records, record.category);
+    for (const subcategory of record.subcategories || []) {
+      mergeCatalogRecord(records, record.category, subcategory);
+    }
+  }
+  mergeCatalogRecord(records, nextRecord?.category);
+  for (const subcategory of nextRecord?.subcategories || []) {
+    mergeCatalogRecord(records, nextRecord.category, subcategory);
+  }
+  categoryRecords.value = serializeCatalogRecords(records);
+}
+
 function resolveTableItem(item) {
   return item?.raw || item?.item?.raw || item?.item || item || null;
 }
@@ -1108,12 +1263,30 @@ function initialsFor(value) {
   );
 }
 
-function formatCurrency(value) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  }).format(Number(value || 0));
+function formatCurrency(value, currency = DEFAULT_PRICE_CURRENCY) {
+  const normalizedCurrency = normalizeProductCurrency(currency);
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: normalizedCurrency,
+      maximumFractionDigits: 2,
+    }).format(Number(value || 0));
+  } catch {
+    return `${normalizedCurrency} ${Number(value || 0).toFixed(2)}`;
+  }
+}
+
+function productPriceCurrency(product) {
+  return normalizeProductCurrency(product?.price_currency || product?.currency);
+}
+
+function productPriceAmount(product) {
+  const amount = Number(product?.price_amount);
+  return Number.isFinite(amount) ? amount : Number(product?.price || 0);
+}
+
+function formatProductPrice(product) {
+  return formatCurrency(productPriceAmount(product), productPriceCurrency(product));
 }
 
 function formatNumber(value) {
@@ -1203,7 +1376,7 @@ async function refreshAdminData() {
     return;
   }
 
-  await Promise.allSettled([fetchProducts(), fetchUsers(), fetchAdminAccess()]);
+  await Promise.allSettled([fetchProducts(), fetchProductCategories(), fetchUsers(), fetchAdminAccess()]);
   lastSyncedAt.value = new Date();
 }
 
@@ -1234,6 +1407,33 @@ async function fetchProducts() {
     notify(error.response?.data?.message || "Failed to fetch products", "error");
   } finally {
     productLoading.value = false;
+  }
+}
+
+async function fetchProductCategories() {
+  if (!canShowAdmin.value) {
+    return;
+  }
+
+  try {
+    const response = await runAdminRequest(async (forceRefresh) =>
+      requestProductApi(
+        "/products/categories",
+        await buildAdminRequestConfig({}, forceRefresh),
+      ),
+    );
+    const items = Array.isArray(response.data) ? response.data : response.data?.items || [];
+    const records = new Map();
+    for (const item of items) {
+      mergeCatalogRecord(records, item.category);
+      for (const subcategory of item.subcategories || []) {
+        mergeCatalogRecord(records, item.category, subcategory);
+      }
+    }
+    categoryRecords.value = serializeCatalogRecords(records);
+  } catch (error) {
+    console.error("Failed to fetch product categories:", error);
+    notify(error.response?.data?.message || "Failed to fetch product categories", "error");
   }
 }
 
@@ -1278,12 +1478,163 @@ async function fetchAdminAccess() {
   }
 }
 
+function addDescriptionBullet(symbol) {
+  const bullet = DESCRIPTION_BULLET_OPTIONS.some((option) => option.symbol === symbol) ? symbol : "-";
+  const currentDescription = String(formData.value.description || "").trimEnd();
+  formData.value.description = currentDescription ? `${currentDescription}\n${bullet} ` : `${bullet} `;
+}
+
+function updateProductImageUrl(value) {
+  productImageFile.value = null;
+  selectedProductImageName.value = "";
+  productImageInputValue.value = normalizeText(value);
+  formData.value.image_url = productImageInputValue.value;
+}
+
+function resolveSelectedImageFile(value) {
+  if (Array.isArray(value)) {
+    return value[0] || null;
+  }
+  if (typeof FileList !== "undefined" && value instanceof FileList) {
+    return value[0] || null;
+  }
+  if (typeof File !== "undefined" && value instanceof File) {
+    return value;
+  }
+  if (typeof File !== "undefined") {
+    if (value?.file instanceof File) {
+      return value.file;
+    }
+    if (value?.raw instanceof File) {
+      return value.raw;
+    }
+    if (value?.rawFile instanceof File) {
+      return value.rawFile;
+    }
+  }
+  return value?.target?.files?.[0] || null;
+}
+
+function clearProductImageFile() {
+  productImageFile.value = null;
+  selectedProductImageName.value = "";
+  productImageInputValue.value = "";
+  formData.value.image_url = "";
+}
+
+function onProductImageSelected(value) {
+  const file = resolveSelectedImageFile(value);
+  if (!file) {
+    clearProductImageFile();
+    return;
+  }
+
+  selectedProductImageName.value = file.name || "Selected image";
+  productImageInputValue.value = "";
+  formData.value.image_url = "";
+
+  if (!file.type?.startsWith("image/")) {
+    productImageFile.value = null;
+    selectedProductImageName.value = "";
+    productImageInputValue.value = "";
+    notify("Please choose an image file", "warning");
+    return;
+  }
+
+  if (file.size > MAX_PRODUCT_IMAGE_FILE_BYTES) {
+    productImageFile.value = null;
+    selectedProductImageName.value = "";
+    productImageInputValue.value = "";
+    notify("Image too large. Maximum size is 512KB.", "warning");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.addEventListener("load", () => {
+    const result = String(reader.result || "");
+    if (!result.startsWith("data:image/") || result.length > MAX_PRODUCT_IMAGE_DATA_URL_LENGTH || !safeDisplayImageUrl(result)) {
+      productImageFile.value = null;
+      selectedProductImageName.value = "";
+      productImageInputValue.value = "";
+      notify("Unsupported image format or size", "warning");
+      return;
+    }
+    formData.value.image_url = result;
+    selectedProductImageName.value = file.name;
+  });
+  reader.addEventListener("error", () => {
+    productImageFile.value = null;
+    selectedProductImageName.value = "";
+    productImageInputValue.value = "";
+    notify("Unable to read image file", "error");
+  });
+  reader.readAsDataURL(file);
+}
+
+function openCatalogOptionDialog(type) {
+  if (type === "subcategory" && !normalizeCategoryName(formData.value.category)) {
+    notify("Select a category first", "warning");
+    return;
+  }
+  catalogOptionType.value = type === "subcategory" ? "subcategory" : "category";
+  catalogOptionInput.value = "";
+  catalogOptionDialog.value = true;
+}
+
+async function saveCatalogOption() {
+  const value = normalizeCategoryName(catalogOptionInput.value);
+  if (!value) {
+    notify(`${catalogOptionInputLabel.value} is required`, "warning");
+    return;
+  }
+
+  const isSubcategory = catalogOptionType.value === "subcategory";
+  const category = isSubcategory ? normalizeCategoryName(formData.value.category) : value;
+  const subcategory = isSubcategory ? normalizeSubcategoryName(category, value) : "";
+  if (!category) {
+    notify("Category is required", "warning");
+    return;
+  }
+
+  catalogOptionSaving.value = true;
+  try {
+    const response = await runAdminRequest(async (forceRefresh) =>
+      requestProductApi(
+        "/products/categories",
+        {
+          ...(await buildAdminRequestConfig({}, forceRefresh)),
+          method: "post",
+          data: { category, subcategory },
+        },
+      ),
+    );
+    upsertLocalCategoryRecord(response.data || { category, subcategories: subcategory ? [subcategory] : [] });
+    formData.value.category = category;
+    if (isSubcategory) {
+      formData.value.subcategory = subcategory;
+    } else {
+      formData.value.subcategory = "";
+    }
+    catalogOptionDialog.value = false;
+    notify(isSubcategory ? "Subcategory saved" : "Category saved");
+  } catch (error) {
+    console.error("Failed to save catalog option:", error);
+    notify(error.response?.data?.message || "Failed to save catalog option", "error");
+  } finally {
+    catalogOptionSaving.value = false;
+  }
+}
+
 function resetProductForm() {
+  productImageFile.value = null;
+  selectedProductImageName.value = "";
+  productImageInputValue.value = "";
   formData.value = {
     name: "",
     company: "",
     description: "",
     price: 0,
+    price_currency: DEFAULT_PRICE_CURRENCY,
     category: "",
     subcategory: "",
     stock: 0,
@@ -1308,11 +1659,17 @@ function editProduct(product) {
 
   editMode.value = true;
   currentProductId.value = selectedProduct.product_id;
+  productImageFile.value = null;
+  selectedProductImageName.value = "";
+  productImageInputValue.value = String(selectedProduct.image_url || "").startsWith("data:image/")
+    ? ""
+    : selectedProduct.image_url || "";
   formData.value = {
     name: selectedProduct.name || "",
     company: selectedProduct.company || "",
     description: selectedProduct.description || "",
-    price: Number(selectedProduct.price || 0),
+    price: productPriceAmount(selectedProduct),
+    price_currency: productPriceCurrency(selectedProduct),
     category: normalizeCategoryName(selectedProduct.category),
     subcategory: normalizeSubcategoryName(selectedProduct.category, selectedProduct.subcategory),
     stock: Number(selectedProduct.stock || 0),
@@ -1322,6 +1679,9 @@ function editProduct(product) {
 }
 
 function buildProductPayload() {
+  const priceCurrency = normalizeProductCurrency(formData.value.price_currency);
+  const priceAmount = Number(formData.value.price);
+  const basePrice = convertAmountToUsd(priceAmount, priceCurrency);
   const payload = {
     name: normalizeText(formData.value.name),
     company: normalizeText(formData.value.company),
@@ -1329,29 +1689,26 @@ function buildProductPayload() {
     category: normalizeCategoryName(formData.value.category),
     subcategory: normalizeSubcategoryName(formData.value.category, formData.value.subcategory),
     image_url: normalizeText(formData.value.image_url),
-    price: Number(formData.value.price),
+    price: Number(basePrice.toFixed(2)),
+    price_amount: priceAmount,
+    price_currency: priceCurrency,
+    currency: priceCurrency,
     stock: Math.max(0, Math.trunc(Number(formData.value.stock))),
   };
 
   if (!payload.name) return { error: "Product name is required" };
   if (!payload.category) return { error: "Category is required" };
-  if (!Number.isFinite(payload.price) || payload.price < 0) return { error: "Price must be valid" };
+  if (!Number.isFinite(payload.price_amount) || payload.price_amount < 0) return { error: "Price must be valid" };
+  if (!Number.isFinite(payload.price) || payload.price < 0) return { error: "Price conversion must be valid" };
   if (!Number.isFinite(payload.stock) || payload.stock < 0) return { error: "Stock must be valid" };
   if (!payload.image_url) return { error: "Image URL is required" };
-
-  try {
-    const imageUrl = new URL(payload.image_url);
-    if (!["http:", "https:"].includes(imageUrl.protocol)) {
-      return { error: "Image URL must use http or https" };
-    }
-  } catch {
-    return { error: "Image URL must be valid" };
-  }
+  if (!safeDisplayImageUrl(payload.image_url)) return { error: "Image must be a valid http/https URL or selected image" };
 
   return { payload };
 }
 
 async function saveProduct() {
+  await fetchExchangeRates();
   const { payload, error } = buildProductPayload();
   if (error) {
     notify(error, "warning");
@@ -1392,7 +1749,7 @@ async function saveProduct() {
 
     productDialog.value = false;
     clearProductsCache();
-    await fetchProducts();
+    await Promise.all([fetchProducts(), fetchProductCategories()]);
   } catch (error) {
     console.error("Failed to save product:", error);
     notify(error.response?.data?.message || "Failed to save product", "error");
