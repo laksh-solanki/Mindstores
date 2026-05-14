@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+service-account.json
+.venv/
+.venv-workers/
+.wrangler/
+python_modules/
+mindstores/
+__pycache__/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/

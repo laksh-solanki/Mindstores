@@ -2,67 +2,82 @@ from __future__ import annotations
 
 import json
 import time
+from base64 import urlsafe_b64decode
 from typing import Any
 
 import httpx
-import jwt
 
 from .admin_access import AdminAccessService
 from .config import AppConfig
 from .utils import create_session_token, normalize_text, now_iso, sha256_hex
 
-JWKS_URL = "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"
-_jwks_cache: dict[str, Any] | None = None
-_jwks_expiry = 0.0
+FIREBASE_LOOKUP_URL = "https://identitytoolkit.googleapis.com/v1/accounts:lookup"
 
 
-async def get_firebase_jwks() -> dict[str, Any]:
-    global _jwks_cache, _jwks_expiry
-    now = time.time()
-    if _jwks_cache and _jwks_expiry > now:
-        return _jwks_cache
-    async with httpx.AsyncClient(timeout=10) as client:
-        response = await client.get(JWKS_URL)
-    response.raise_for_status()
-    cache_control = response.headers.get("cache-control", "")
-    max_age = 3600
-    for part in cache_control.split(","):
-        part = part.strip()
-        if part.startswith("max-age="):
-            try:
-                max_age = int(part.split("=", 1)[1])
-            except ValueError:
-                max_age = 3600
-    _jwks_cache = response.json()
-    _jwks_expiry = now + max(60, max_age - 60)
-    return _jwks_cache
+def decode_unverified_jwt_payload(id_token: str) -> dict[str, Any]:
+    try:
+        parts = id_token.split(".")
+        if len(parts) != 3:
+            return {}
+        payload = parts[1] + "=" * (-len(parts[1]) % 4)
+        decoded = urlsafe_b64decode(payload.encode("ascii"))
+        data = json.loads(decoded.decode("utf-8"))
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
 
 
-async def verify_firebase_id_token(id_token: str, project_id: str) -> dict[str, Any]:
+async def verify_firebase_id_token(id_token: str, config: AppConfig | str) -> dict[str, Any]:
+    if isinstance(config, AppConfig):
+        project_id = config.firebase_project_id
+        web_api_key = config.firebase_web_api_key
+    else:
+        project_id = config
+        web_api_key = ""
+
     if not project_id:
         raise ValueError("FIREBASE_PROJECT_ID is required")
-    header = jwt.get_unverified_header(id_token)
-    if header.get("alg") != "RS256" or not header.get("kid"):
-        raise ValueError("Unsupported token header")
-    jwks = await get_firebase_jwks()
-    key = next((item for item in jwks.get("keys", []) if item.get("kid") == header["kid"]), None)
-    if not key:
-        global _jwks_expiry
-        _jwks_expiry = 0
-        raise ValueError("Signing key not found")
-    public_key = jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(key))
-    payload = jwt.decode(
-        id_token,
-        public_key,
-        algorithms=["RS256"],
-        audience=project_id,
-        issuer=f"https://securetoken.google.com/{project_id}",
-        leeway=300,
-    )
-    subject = payload.get("sub")
-    if not subject or len(str(subject)) > 128:
+    if not web_api_key:
+        raise ValueError("FIREBASE_WEB_API_KEY is required")
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.post(
+            f"{FIREBASE_LOOKUP_URL}?key={web_api_key}",
+            json={"idToken": id_token},
+        )
+    response.raise_for_status()
+    data = response.json()
+    users = data.get("users") if isinstance(data, dict) else None
+    if not isinstance(users, list) or not users:
         raise ValueError("Token validation failed")
-    return {**payload, "uid": payload.get("user_id") or subject}
+
+    account = users[0] if isinstance(users[0], dict) else {}
+    uid = normalize_text(account.get("localId"), 200)
+    email = normalize_text(account.get("email"), 320).lower()
+    if not uid or not email:
+        raise ValueError("Token validation failed")
+
+    payload = decode_unverified_jwt_payload(id_token)
+    if payload.get("aud") != project_id or payload.get("iss") != f"https://securetoken.google.com/{project_id}":
+        raise ValueError("Token project validation failed")
+
+    expires_at = int(payload.get("exp") or 0)
+    issued_at = int(payload.get("iat") or 0)
+    now = int(time.time())
+    if expires_at <= now - 300 or issued_at > now + 300:
+        raise ValueError("Token time validation failed")
+
+    return {
+        **payload,
+        "uid": uid,
+        "user_id": uid,
+        "sub": payload.get("sub") or uid,
+        "email": email,
+        "name": account.get("displayName") or payload.get("name"),
+        "picture": account.get("photoUrl") or payload.get("picture"),
+        "email_verified": bool(account.get("emailVerified")),
+        "firebase": payload.get("firebase"),
+    }
 
 
 def get_session_token_from_request(request: Any) -> str | None:
@@ -102,7 +117,7 @@ async def resolve_current_user(
     id_token = parts[1].strip() if len(parts) == 2 and parts[0].lower() == "bearer" else None
     if id_token and 100 <= len(id_token) <= 8000:
         try:
-            decoded = await verify_firebase_id_token(id_token, config.firebase_project_id)
+            decoded = await verify_firebase_id_token(id_token, config)
             uid = normalize_text(decoded.get("uid") or decoded.get("user_id") or decoded.get("sub"), 200)
             email = normalize_text(decoded.get("email") or "", 320).lower()
             if not uid or not email:

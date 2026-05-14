@@ -6,7 +6,8 @@ requires-python = ">=3.11"
 dependencies = [
   "fastapi==0.115.12",
   "httpx==0.28.1",
-  "PyJWT[crypto]==2.10.1",
+  "dnspython==2.8.0",
+  "pymongo==4.17.0",
   "python-dotenv==1.2.2",
 ]
 
@@ -16,7 +17,5 @@ target-version = "py311"
 
 [dependency-groups]
 dev = [
-    "pymongo[srv]==4.17.0",
     "uvicorn[standard]==0.34.2",
-    "workers-py>=1.6.1",
 ]

@@ -1,24 +1,37 @@
 # Mindstores Backend
 
-Python FastAPI backend for the Mindstores API contract.
+Python FastAPI backend for the Mindstores API contract, structured for Vercel.
 
-## Run locally
+## Entry Points
+
+- `server.py` exports the FastAPI `app` for Vercel.
+- `run.py` starts the same app locally with Uvicorn.
+- `src/app/main.py` owns the FastAPI app, middleware, and route registration.
+
+## Run Locally
 
 ```powershell
-py -m venv .venv
 uv sync --all-groups
-.\.venv\Scripts\python run.py
+uv run python run.py
 ```
 
-The service listens on `http://localhost:8000`, matching the frontend development API base URL.
+The service listens on `http://localhost:8000`.
+
+## Deploy On Vercel
+
+Create the backend project from the `backend/` directory and add the environment variables from `.env.example` in Vercel Project Settings.
+
+```powershell
+pnpm dlx vercel@latest --prod --yes
+```
 
 ## Environment
 
+Required:
+
 - `FIREBASE_PROJECT_ID`
+- `FIREBASE_WEB_API_KEY`
 - `DB_NAME`
-- `MONGO_ATLAS_DATA_API_URL`
-- `MONGO_ATLAS_DATA_API_KEY`
-- `MONGO_ATLAS_DATA_SOURCE`
 - `CORS_ORIGINS`
 - `ADMIN_EMAILS`
 - `ENVIRONMENT`
@@ -26,4 +39,9 @@ The service listens on `http://localhost:8000`, matching the frontend developmen
 - `COOKIE_SAMESITE`
 - `SESSION_DURATION_DAYS`
 
-Without Atlas Data API credentials, the app uses an in-memory store for local development.
+Database, choose one:
+
+- `MONGO_URL`
+- `MONGO_ATLAS_DATA_API_URL`, `MONGO_ATLAS_DATA_API_KEY`, `MONGO_ATLAS_DATA_SOURCE`
+
+Without database credentials, the app uses an in-memory store for local development.

@@ -41,6 +41,7 @@ class AppConfig:
     session_duration_days: int
     admin_emails: list[str]
     firebase_project_id: str
+    firebase_web_api_key: str
     db_name: str
     mongo_url: str
     mongo_data_api_url: str
@@ -76,6 +77,7 @@ def get_config() -> AppConfig:
         session_duration_days=parse_integer_env(read_env("SESSION_DURATION_DAYS"), 7),
         admin_emails=[item.strip() for item in (read_env("ADMIN_EMAILS") or "").split(",") if item.strip()],
         firebase_project_id=read_env("FIREBASE_PROJECT_ID", "") or "",
+        firebase_web_api_key=read_env("FIREBASE_WEB_API_KEY", "") or read_env("FIREBASE_API_KEY", "") or "",
         db_name=read_env("DB_NAME", "mindstores") or "mindstores",
         mongo_url=read_env("MONGO_URL", "") or read_env("MONGODB_URI", "") or "",
         mongo_data_api_url=(read_env("MONGO_ATLAS_DATA_API_URL", "") or "").rstrip("/"),

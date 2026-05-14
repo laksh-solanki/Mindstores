@@ -77,7 +77,7 @@ async def firebase_login(request: Request, ctx: RequestContext = Depends(get_con
         return error_response(400, "Valid ID Token required")
 
     try:
-        decoded = await verify_firebase_id_token(id_token, ctx.config.firebase_project_id)
+        decoded = await verify_firebase_id_token(id_token, ctx.config)
         uid = normalize_text(decoded.get("uid") or decoded.get("user_id"), 200)
         email = normalize_text(decoded.get("email") or "", 320).lower()
         if not uid or not email:
