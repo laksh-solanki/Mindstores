@@ -1,2 +1,10 @@
 [db] Connecting to MongoDB database 'mindstore' with MONGO_URL.
 INFO:     127.0.0.1:50786 - "GET /products?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50815 - "GET /products?limit=5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50886 - "GET /products?limit=2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50980 - "GET /products?limit=250&sort=name_asc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50982 - "GET /products?limit=250 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50983 - "OPTIONS /auth/firebase-login HTTP/1.1" 204 No Content
+INFO:     127.0.0.1:51024 - "POST /auth/firebase-login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51042 - "GET /products?limit=250&sort=newest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51042 - "GET /products?category=Clothing&sort=newest&include_meta=true&page=1&page_size=12 HTTP/1.1" 200 OK
