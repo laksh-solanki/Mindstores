@@ -243,3 +243,36 @@ INFO:     127.0.0.1:57140 - "GET /cart HTTP/1.1" 200 OK
 INFO:     127.0.0.1:57146 - "GET /auth/me HTTP/1.1" 200 OK
 INFO:     127.0.0.1:57146 - "GET /cart HTTP/1.1" 200 OK
 INFO:     127.0.0.1:57146 - "GET /orders HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57716 - "GET /products?limit=250&sort=name_asc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57722 - "GET /products?limit=250 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57722 - "GET /products?limit=250 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57722 - "GET /products?limit=250 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57721 - "GET /products?limit=250&sort=name_asc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57721 - "GET /products?limit=250 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57721 - "GET /products?limit=250 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57721 - "GET /products?limit=250 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58349 - "GET /products/prod_77aa2795-f7f HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58513 - "GET /products?limit=250&sort=name_asc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58513 - "GET /products?limit=250 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58513 - "GET /products?limit=250 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58353 - "GET /products?limit=250&sort=name_asc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58353 - "GET /products?limit=250 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58513 - "GET /products?limit=250 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58353 - "GET /products?limit=250 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58764 - "OPTIONS /cart/add HTTP/1.1" 204 No Content
+INFO:     127.0.0.1:58768 - "POST /cart/add HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58768 - "GET /cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58768 - "GET /cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58764 - "GET /products/prod_77aa2795-f7f HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58764 - "OPTIONS /cart/remove HTTP/1.1" 204 No Content
+INFO:     127.0.0.1:58768 - "POST /cart/remove HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58768 - "GET /cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58764 - "GET /products?limit=250&sort=newest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58764 - "GET /products?category=Electronics&sort=newest&include_meta=true&page=1&page_size=12 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58764 - "GET /products?category=Furniture&sort=newest&include_meta=true&page=1&page_size=12 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58764 - "GET /products?category=Clothing&sort=newest&include_meta=true&page=1&page_size=12 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58766 - "GET /products/prod_9cfeaf2474a7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59032 - "GET /cart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59033 - "GET /admin/access HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59032 - "GET /admin/users?page_size=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59033 - "GET /products?limit=250&sort=newest HTTP/1.1" 200 OK
