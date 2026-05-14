@@ -1,0 +1,2 @@
+[db] Connecting to MongoDB database 'mindstore' with MONGO_URL.
+INFO:     127.0.0.1:50786 - "GET /products?limit=5 HTTP/1.1" 200 OK

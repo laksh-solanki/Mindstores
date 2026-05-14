@@ -20,7 +20,7 @@ DEFAULT_CORS_ORIGINS = [
 ]
 
 if load_dotenv:
-    load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+    load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 
 def read_env(key: str, default: str | None = None) -> str | None:

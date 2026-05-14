@@ -1,0 +1,6 @@
+[db] No MongoDB config found - using in-memory store.
+INFO:     127.0.0.1:63937 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64065 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64092 - "GET /products?limit=250&sort=name_asc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64092 - "GET /products?limit=250 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64106 - "GET / HTTP/1.1" 200 OK
