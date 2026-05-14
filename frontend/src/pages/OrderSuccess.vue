@@ -36,10 +36,10 @@
             </v-timeline>
 
             <div class="d-flex flex-column flex-sm-row justify-center ga-3 mt-4">
-              <v-btn color="primary" rounded="lg" size="large" @click="$router.push('/profile')">
+              <v-btn color="teal-darken-2" rounded="lg" size="large" @click="$router.push('/profile')">
                 View Orders
               </v-btn>
-              <v-btn rounded="lg" size="large" variant="outlined" @click="$router.push('/')">
+              <v-btn color="teal-darken-1" rounded="lg" size="large" variant="outlined" @click="$router.push('/')">
                 Continue Shopping
               </v-btn>
             </div>

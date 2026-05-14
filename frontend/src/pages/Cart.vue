@@ -3,11 +3,11 @@
     <v-row v-if="cartStore.items.length === 0" justify="center">
       <v-col cols="12" md="8">
         <v-card class="pa-8 text-center" rounded="lg" variant="outlined">
-          <v-icon color="primary" size="58">mdi-cart-outline</v-icon>
+          <v-icon color="teal-darken-1" size="58">mdi-cart-outline</v-icon>
           <p class="text-h5 font-weight-bold mt-4">Your cart is currently empty</p>
           <p class="text-body-2 text-medium-emphasis mt-2">Explore our latest collection and add products you love.</p>
           <div class="mt-5">
-            <v-btn color="primary" rounded="lg" size="large" @click="$router.push('/')">
+            <v-btn color="teal-darken-1" rounded="lg" size="large" @click="$router.push('/')">
               Continue Shopping
             </v-btn>
           </div>
@@ -38,7 +38,7 @@
 
               <v-card-text class="d-flex flex-column flex-grow-1 pa-3">
                 <div class="d-flex align-start ga-2">
-                  <v-checkbox v-model="selectedProductIds" class="flex-shrink-0 mt-n1" color="primary" density="compact"
+                  <v-checkbox v-model="selectedProductIds" class="flex-shrink-0 mt-n1" color="teal-darken-1" density="compact"
                     :disabled="isItemUnavailable(item)" hide-details :value="item.product_id" />
 
                   <div class="overflow-hidden w-100">
@@ -89,7 +89,7 @@
           </v-card-subtitle>
           <v-divider />
           <v-card-text>
-            <v-checkbox v-model="selectAllChecked" color="primary" density="compact" hide-details
+            <v-checkbox v-model="selectAllChecked" color="teal-darken-1" density="compact" hide-details
               label="Select available products" />
 
             <v-alert v-if="selectedStockIssues.length > 0" class="my-3" density="compact" type="warning"

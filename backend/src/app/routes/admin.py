@@ -21,7 +21,7 @@ def serialize_user(user: dict[str, Any], admin_entries: list[dict[str, Any]]) ->
         "email": email or user.get("email"),
         "country_code": user.get("country_code"),
         "locale": user.get("locale"),
-        "picture": user.get("picture"),
+        "picture": user.get("picture") or user.get("photo_url") or user.get("photoURL"),
         "is_admin": bool(email and email in admin_emails),
         "created_at": user.get("created_at"),
         "updated_at": user.get("updated_at"),

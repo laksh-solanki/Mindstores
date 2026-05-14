@@ -1,6 +1,6 @@
 <template>
   <v-layout>
-    <v-app-bar border="b" color="teal-darken-3" flat>
+    <v-app-bar border="b" color="teal-darken-2" flat>
       <div class="d-flex align-center ga-3 px-3 px-md-6 w-100">
         <v-btn v-if="isMobile && canShowAdmin" aria-label="Toggle admin navigation" icon="mdi-menu" rounded="lg"
           variant="text" @click="drawer = !drawer" />
@@ -17,40 +17,26 @@
         <v-spacer />
 
         <div v-if="canShowAdmin" class="ml-4 align-center ga-2 d-none d-lg-flex">
-          <v-chip color="teal-lighten-1" size="small" variant="elevated" border>
+          <v-chip color="blue-lighten-4" size="small" variant="outlined">
             {{ formatNumber(products.length) }} products
           </v-chip>
-          <v-chip :color="lowStockCount > 0 ? 'yellow-darken-3' : 'success'" size="small" border variant="elevated">
+          <v-chip :color="lowStockCount > 0 ? 'yellow-darken-3' : 'teal-lighten-5'" size="small" variant="outlined">
             {{ formatNumber(lowStockCount) }} low stock
           </v-chip>
-          <v-chip color="blue-darken-1" size="small" variant="elevated" border>
+          <v-chip color="light-blue-lighten-4" size="small" variant="outlined" border>
             {{ lastSyncedLabel }}
           </v-chip>
         </div>
 
         <v-spacer />
 
-        <v-menu v-if="canShowAdmin" v-model="isQuickActionMenuOpen" location="bottom end">
-          <template #activator="{ props }">
-            <v-btn v-bind="props" icon rounded="lg" variant="tonal">
-              <v-icon>mdi-dots-vertical</v-icon>
-              <v-tooltip activator="parent" location="bottom">Quick actions</v-tooltip>
-            </v-btn>
-          </template>
-
-          <v-list density="comfortable" min-width="240">
-            <v-list-item v-for="item in navItems" :key="item.id" :prepend-icon="item.icon" :title="item.label"
-              @click="selectPanel(item.id)" />
-            <v-divider />
-            <v-list-item prepend-icon="mdi-refresh" title="Refresh data" @click="refreshAdminData" />
-            <v-list-item prepend-icon="mdi-plus" title="Add product" @click="openAddDialog" />
-          </v-list>
-        </v-menu>
-
-        <v-menu location="bottom end">
+        <v-menu location="bottom end" color="teal-darken-2" v-model="isUserMenuOpen">
           <template #activator="{ props }">
             <v-btn v-bind="props" icon rounded="xl" variant="tonal">
-              <v-avatar color="teal-accent-4" size="38">
+              <v-avatar v-if="currentUserImage" size="38">
+                <v-img :alt="userName" cover :src="currentUserImage" />
+              </v-avatar>
+              <v-avatar v-else color="teal-accent-4" size="38">
                 <span class="text-white font-weight-light">{{ userInitials }}</span>
               </v-avatar>
               <span class="d-none d-xl-inline text-truncate">{{ userName }}</span>
@@ -58,10 +44,13 @@
             </v-btn>
           </template>
 
-          <v-list density="compact" class="pa-2" nav>
+          <v-list density="compact" class="bg-yellow-lighten-5 pa-2" nav>
             <v-list-item :subtitle="currentUserEmail" :title="userName" to="/profile" rounded="lg" class="mb-2">
               <template #prepend>
-                <v-avatar color="teal-accent-4" size="32">
+                <v-avatar v-if="currentUserImage" size="32">
+                  <v-img :alt="userName" cover :src="currentUserImage" />
+                </v-avatar>
+                <v-avatar v-else color="teal-accent-4" size="32">
                   <span class="text-white font-weight-light">{{ userInitials }}</span>
                 </v-avatar>
               </template>
@@ -92,7 +81,7 @@
 
     <v-navigation-drawer v-if="canShowAdmin" v-model="drawer" border="e" color="yellow-lighten-5" elevation="0" expand-on-hover
       :rail="!isMobile" rail-width="66" :temporary="isMobile" width="220">
-      <v-list class="pa-3" density="comfortable" nav>
+      <v-list class="bg-yellow-lighten-5 pa-3" density="comfortable" nav>
         <v-list-item v-for="item in navItems" :key="item.id" :active="activePanel === item.id" color="teal-darken-3"
           rounded="lg" @click="selectPanel(item.id)">
           <template #prepend>
@@ -103,7 +92,7 @@
       </v-list>
     </v-navigation-drawer>
 
-    <v-main>
+    <v-main class="bg-yellow-lighten-5">
       <v-container class="pa-4 pa-md-5" fluid>
         <v-row v-if="authLoading" align="center" justify="center">
           <v-col cols="12" lg="5" md="7">
@@ -163,7 +152,7 @@
             </v-col>
             <v-col cols="12" md="5">
               <div class="d-flex flex-column flex-sm-row justify-md-end ga-2">
-                <v-btn color="teal-darken-3" :loading="isRefreshing" rounded="lg" prepend-icon="mdi-refresh"
+                <v-btn color="teal-darken-1 " :loading="isRefreshing" rounded="lg" prepend-icon="mdi-refresh"
                   variant="flat" text="Refresh" @click="refreshAdminData" />
               </div>
             </v-col>
@@ -196,7 +185,7 @@
                   <v-card-text>
                     <v-text-field v-model="productSearch" density="comfortable" hide-details label="Search products"
                       prepend-inner-icon="mdi-magnify" variant="outlined" />
-                    <v-data-table class="mt-4" density="comfortable" :headers="recentProductHeaders"
+                    <v-data-table class="bg-yellow-lighten-5 mt-4" density="comfortable" :headers="recentProductHeaders"
                       :items="recentProducts" :items-per-page="5" :loading="productLoading">
                       <template #item.name="{ item }">
                         <div class="d-flex align-center ga-3 py-2">
@@ -228,7 +217,7 @@
               <v-col cols="12" lg="4">
                 <v-card class="h-100" variant="outlined" rounded="lg">
                   <v-card-title class="my-2">Operations</v-card-title>
-                  <v-list lines="two" density="comfortable" class="ma-2 rounded-lg pa-1">
+                  <v-list lines="two" density="comfortable" class="bg-yellow-lighten-5 ma-2 rounded-lg pa-1">
                     <v-list-item v-for="item in operationsSummary" :key="item.title" :subtitle="item.subtitle"
                       :title="item.title" rounded="lg">
                       <template #prepend>
@@ -267,7 +256,7 @@
               <v-col cols="12" md="6">
                 <v-card class="h-100" variant="outlined" rounded="lg">
                   <v-card-title class="my-2">Access Snapshot</v-card-title>
-                  <v-list density="comfortable" lines="two" class="ma-2 rounded-lg pa-1">
+                  <v-list density="comfortable" lines="two" class="bg-yellow-lighten-5 ma-2 rounded-lg pa-1">
                     <v-list-item v-for="entry in adminAccessEntries.slice(0, 5)" :key="entry.email"
                       :subtitle="accessEntrySubtitle(entry)" :title="entry.email">
                       <template #prepend>
@@ -290,7 +279,7 @@
           <v-card v-else-if="activePanel === 'users'" variant="outlined" rounded="lg">
             <v-card-title class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 my-2">
               <span>User Management</span>
-              <v-btn color="teal-darken-3" rounded="lg" :loading="userLoading" prepend-icon="mdi-refresh" text="Users"
+              <v-btn color="teal-darken-1" rounded="lg" :loading="userLoading" prepend-icon="mdi-refresh" text="Users"
                 variant="flat" @click="fetchUsers" />
             </v-card-title>
             <v-card-text>
@@ -305,12 +294,15 @@
                 </v-col>
               </v-row>
 
-              <v-data-table class="mt-4" density="comfortable" :headers="userHeaders" :items="filteredUsers"
+              <v-data-table class="bg-yellow-lighten-5 mt-4" density="comfortable" :headers="userHeaders" :items="filteredUsers"
                 :items-per-page="8" :loading="userLoading">
                 <template #item.name="{ item }">
                   <div class="d-flex align-center ga-3 py-2">
-                    <v-avatar color="primary" size="38" variant="tonal">
-                      <span class="font-weight-bold">{{ initialsFor(resolveTableItem(item)?.name ||
+                    <v-avatar color="teal-darken-1" size="38" variant="tonal">
+                      <v-img v-if="userImageUrl(resolveTableItem(item))"
+                        :alt="resolveTableItem(item)?.name || resolveTableItem(item)?.email || 'User profile'"
+                        cover :src="userImageUrl(resolveTableItem(item))" />
+                      <span v-else class="font-weight-bold">{{ initialsFor(resolveTableItem(item)?.name ||
                         resolveTableItem(item)?.email) }}</span>
                     </v-avatar>
                     <div class="overflow-hidden">
@@ -336,7 +328,7 @@
           <v-card v-else-if="activePanel === 'products'" variant="outlined" rounded="lg">
             <v-card-title class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 my-2">
               <span>Product Management</span>
-              <v-btn color="teal-darken-3" variant="flat" rounded="lg" prepend-icon="mdi-plus" text="Add Product"
+              <v-btn color="teal-darken-1" variant="flat" rounded="lg" prepend-icon="mdi-plus" text="Add Product"
                 @click="openAddDialog" />
             </v-card-title>
             <v-card-text>
@@ -355,7 +347,7 @@
                 </v-col>
               </v-row>
 
-              <v-data-table class="mt-4" density="comfortable" :headers="productHeaders" :items="filteredProducts"
+              <v-data-table class="bg-yellow-lighten-5 mt-4" density="comfortable" :headers="productHeaders" :items="filteredProducts"
                 :items-per-page="8" :loading="productLoading">
                 <template #item.name="{ item }">
                   <div class="d-flex align-center ga-3 py-2">
@@ -433,7 +425,7 @@
                     <v-text-field v-model="accessEmailInput" autocomplete="email" density="comfortable"
                       :error-messages="accessEmailError ? [accessEmailError] : []" label="Email"
                       prepend-inner-icon="mdi-email-outline" variant="outlined" />
-                    <v-btn block color="teal-darken-3" :disabled="Boolean(accessEmailError) || !accessEmailInput"
+                    <v-btn block color="teal-darken-1" :disabled="Boolean(accessEmailError) || !accessEmailInput"
                       :loading="accessSaving" type="submit" rounded="lg" variant="flat" prepend-icon="mdi-shield-plus-outline"
                       text="Add Access" />
                   </v-form>
@@ -449,7 +441,7 @@
                     max-width="320" prepend-inner-icon="mdi-magnify" variant="outlined" />
                 </v-card-title>
                 <v-card-text>
-                  <v-data-table density="comfortable" :headers="accessHeaders" :items="filteredAdminAccess"
+                  <v-data-table class="bg-yellow-lighten-5" density="comfortable" :headers="accessHeaders" :items="filteredAdminAccess"
                     :items-per-page="6" :loading="accessLoading">
                     <template #item.email="{ item }">
                       <div class="py-2">
@@ -716,6 +708,9 @@ const isAdmin = computed(() => Boolean(appStore.user?.is_admin));
 const canShowAdmin = computed(() => !authLoading.value && isAuthenticated.value && isAdmin.value);
 const userName = computed(() => appStore.user?.name || appStore.user?.email || "Guest");
 const currentUserEmail = computed(() => normalizeEmail(appStore.user?.email));
+const currentUserImage = computed(() =>
+  safeDisplayImageUrl(appStore.user?.picture || appStore.user?.photoURL || appStore.user?.photo_url),
+);
 const defaultAdminEmail = computed(() => DEFAULT_ADMIN_EMAIL);
 const activePanelLabel = computed(() => navItems.find((item) => item.id === activePanel.value)?.label || "Admin");
 const isRefreshing = computed(() => productLoading.value || userLoading.value || accessLoading.value);
@@ -1147,6 +1142,10 @@ function formatCategory(product) {
 
 function productImageUrl(product) {
   return safeDisplayImageUrl(product?.image_url);
+}
+
+function userImageUrl(user) {
+  return safeDisplayImageUrl(user?.picture || user?.photo_url || user?.photoURL);
 }
 
 function stockStatus(product) {

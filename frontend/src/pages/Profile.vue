@@ -3,9 +3,8 @@
     <v-container class="profile-shell">
       <section class="profile-topbar">
         <div>
-          <p class="profile-kicker">Account</p>
-          <h1 class="page-title">Profile</h1>
-          <p class="profile-subtitle">Account details, delivery profile, preferences, and order history.</p>
+          <p class="profile-kicker ml-2">Account</p>
+          <h1 class="page-title ml-2">Profile</h1>
         </div>
 
         <div v-if="appStore.isAuthenticated" class="topbar-actions">
@@ -20,7 +19,7 @@
             Refresh
           </v-btn>
           <v-btn
-            color="primary"
+            color="teal-darken-1"
             :disabled="!isFormDirty"
             :loading="savingAll"
             rounded="lg"
@@ -44,7 +43,7 @@
             <strong>Sign in to view your profile.</strong>
             <p>Your orders, cart, and saved checkout details are connected to your account.</p>
           </div>
-          <v-btn color="primary" rounded="lg" to="/login" variant="flat">Login</v-btn>
+          <v-btn color="teal-darken-1" rounded="lg" to="/login" variant="flat">Login</v-btn>
         </div>
       </v-alert>
 
@@ -59,7 +58,7 @@
                   :image="profilePreviewImage"
                   size="104"
                 />
-                <v-avatar v-else class="profile-avatar initials-avatar" color="primary" size="104">
+                <v-avatar v-else class="profile-avatar initials-avatar" color="teal-darken-1" size="104">
                   {{ profileInitials }}
                 </v-avatar>
 
@@ -103,7 +102,7 @@
               <p v-if="selectedPhotoName" class="photo-name">{{ selectedPhotoName }}</p>
 
               <div class="profile-chip-row">
-                <v-chip color="primary" size="small" variant="tonal">{{ countryDisplayName }}</v-chip>
+                <v-chip color="teal-darken-1" size="small" variant="tonal">{{ countryDisplayName }}</v-chip>
                 <v-chip :color="isAdmin ? 'success' : undefined" size="small" variant="tonal">
                   {{ isAdmin ? 'Admin' : 'Customer' }}
                 </v-chip>
@@ -148,7 +147,7 @@
             <section class="profile-panel readiness-panel">
               <div class="readiness-head">
                 <v-progress-circular
-                  color="primary"
+                  color="teal-darken-1"
                   :model-value="profileCompletion"
                   size="74"
                   width="8"
@@ -255,7 +254,7 @@
                       </div>
                       <v-switch
                         v-model="settings.saveDeliveryDetails"
-                        color="primary"
+                        color="teal-darken-1"
                         density="compact"
                         hide-details
                         inset
@@ -342,28 +341,28 @@
                           <strong>Order updates</strong>
                           <small>Email order status changes</small>
                         </span>
-                        <v-switch v-model="settings.orderUpdates" color="primary" hide-details inset />
+                        <v-switch v-model="settings.orderUpdates" color="teal-darken-1" hide-details inset />
                       </label>
                       <label class="preference-row">
                         <span>
                           <strong>Promotional emails</strong>
                           <small>Offers and seasonal drops</small>
                         </span>
-                        <v-switch v-model="settings.promotionalEmails" color="primary" hide-details inset />
+                        <v-switch v-model="settings.promotionalEmails" color="teal-darken-1" hide-details inset />
                       </label>
                       <label class="preference-row">
                         <span>
                           <strong>Quick checkout</strong>
                           <small>Select cart items automatically</small>
                         </span>
-                        <v-switch v-model="settings.quickCheckout" color="primary" hide-details inset />
+                        <v-switch v-model="settings.quickCheckout" color="teal-darken-1" hide-details inset />
                       </label>
                       <label class="preference-row">
                         <span>
                           <strong>Low stock alerts</strong>
                           <small>Show inventory reminders</small>
                         </span>
-                        <v-switch v-model="settings.lowStockAlerts" color="primary" hide-details inset />
+                        <v-switch v-model="settings.lowStockAlerts" color="teal-darken-1" hide-details inset />
                       </label>
                     </div>
 
@@ -371,7 +370,7 @@
                       <span v-if="isFormDirty">Unsaved changes</span>
                       <span v-else>Profile is up to date</span>
                       <v-btn
-                        color="primary"
+                        color="teal-darken-1"
                         :disabled="!isFormDirty"
                         :loading="savingAll"
                         rounded="lg"
@@ -437,16 +436,16 @@
                     />
                   </div>
 
-                  <v-progress-linear v-if="loading" class="mt-4" color="primary" indeterminate />
+                  <v-progress-linear v-if="loading" class="mt-4" color="teal-darken-1" indeterminate />
 
                   <div v-else-if="filteredOrders.length === 0" class="empty-orders">
                     <v-icon size="48">mdi-package-variant</v-icon>
                     <h3>{{ orders.length === 0 ? 'No orders yet' : 'No matching orders' }}</h3>
                     <p>{{ orders.length === 0 ? 'Orders placed from your cart will appear here.' : 'Adjust search or status filters.' }}</p>
-                    <v-btn color="primary" rounded="lg" to="/" variant="flat">Shop Products</v-btn>
+                    <v-btn color="teal-darken-1" rounded="lg" to="/" variant="flat">Shop Products</v-btn>
                   </div>
 
-                  <v-expansion-panels v-else class="orders-list" variant="accordion">
+                  <v-expansion-panels v-else class="orders-list w-100" variant="accordion">
                     <v-expansion-panel
                       v-for="order in filteredOrders"
                       :key="order.order_id"
@@ -541,11 +540,11 @@
                     </div>
 
                     <div class="action-grid">
-                      <v-btn color="primary" rounded="lg" to="/cart" variant="flat">
+                      <v-btn color="teal-darken-1" rounded="lg" to="/cart" variant="flat">
                         <v-icon start>mdi-cart-outline</v-icon>
                         Open Cart
                       </v-btn>
-                      <v-btn rounded="lg" to="/" variant="tonal">
+                      <v-btn color="teal-darken-1" rounded="lg" to="/" variant="tonal">
                         <v-icon start>mdi-storefront-outline</v-icon>
                         Continue Shopping
                       </v-btn>
@@ -1357,7 +1356,7 @@
 }
 
 .check-row.complete {
-  color: #2e7d32;
+  color: #00897B;
 }
 
 .profile-tabs {
@@ -1466,7 +1465,6 @@
 
 .orders-list {
   margin-top: 14px;
-  display: grid;
   gap: 10px;
 }
 
@@ -1590,7 +1588,7 @@
 
 .action-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(1, minmax(0, 1fr));
   gap: 10px;
 }
 

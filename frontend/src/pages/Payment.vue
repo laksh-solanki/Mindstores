@@ -1,7 +1,7 @@
 <template>
   <v-container class="py-6 py-md-8">
     <v-sheet class="pa-4 pa-md-6 mb-6" border rounded="lg">
-      <v-chip color="primary" size="small" variant="tonal">Secure Checkout</v-chip>
+      <v-chip color="teal-darken-1" size="small" variant="tonal">Secure Checkout</v-chip>
       <h1 class="text-h4 text-md-h3 font-weight-bold mt-3">Personal Payment</h1>
       <p class="text-body-2 text-medium-emphasis mt-2">Finalize your order with encrypted payment and curated delivery details.</p>
     </v-sheet>
@@ -183,7 +183,7 @@
           <v-card-actions class="d-flex flex-column ga-2">
             <v-btn
               block
-              color="primary"
+              color="teal-darken-1"
               :disabled="selectedStockIssues.length > 0"
               :loading="submitting"
               rounded="lg"
@@ -216,7 +216,7 @@
           <h2 class="text-h5 mt-4">No Selected Items</h2>
           <p class="text-body-2 text-medium-emphasis mt-2">Go back to your cart and select products before payment.</p>
           <div class="mt-4">
-            <v-btn color="primary" rounded="lg" to="/cart" variant="flat">Back to Cart</v-btn>
+            <v-btn color="teal-darken-1" rounded="lg" to="/cart" variant="flat">Back to Cart</v-btn>
           </div>
         </v-card>
       </v-col>

@@ -13,7 +13,7 @@
       <h2 class="text-h5 mt-3">Category not found</h2>
       <p class="text-body-2 text-medium-emphasis mt-2">The requested category path is invalid.</p>
       <div class="mt-4">
-        <v-btn color="primary" rounded="lg" to="/" variant="flat">Back to Home</v-btn>
+        <v-btn color="teal-darken-1" rounded="lg" to="/" variant="flat">Back to Home</v-btn>
       </div>
     </v-card>
 
@@ -34,7 +34,7 @@
 
                 <v-sheet class="pa-3" border rounded="lg">
                   <p class="text-caption text-medium-emphasis mb-2">Price Range</p>
-                  <v-range-slider v-model="priceRange" color="primary" density="comfortable" hide-details
+                  <v-range-slider v-model="priceRange" color="teal-darken-1" density="comfortable" hide-details
                     :max="priceBounds.max" :min="priceBounds.min" step="1" thumb-label="always" />
                   <div class="d-flex justify-space-between text-caption mt-1">
                     <span>{{ formatAmount(priceRange[0] || 0) }}</span>
@@ -42,7 +42,7 @@
                   </div>
                 </v-sheet>
 
-                <v-checkbox v-model="filters.inStock" color="primary" density="comfortable" hide-details
+                <v-checkbox v-model="filters.inStock" color="teal-darken-1" density="comfortable" hide-details
                   label="In stock only" />
 
                 <v-select v-model="filters.sort" density="comfortable" hide-details item-title="label"
@@ -52,7 +52,7 @@
           </v-expansion-panel>
         </v-expansion-panels>
 
-        <v-card v-else rounded="lg" variant="elevated" class="border">
+        <v-card v-else rounded="lg" variant="flat" class="border">
           <v-card-title class="d-flex align-center justify-space-between ga-2">
             <span>Filters</span>
             <v-btn size="small" variant="text" @click="resetFilters">Reset</v-btn>
@@ -67,7 +67,7 @@
 
             <v-sheet class="pa-3" border rounded="lg">
               <p class="text-caption text-medium-emphasis mb-2">Price Range</p>
-              <v-range-slider v-model="priceRange" color="primary" density="comfortable" hide-details
+              <v-range-slider v-model="priceRange" color="teal-darken-1" density="comfortable" hide-details
                 :max="priceBounds.max" :min="priceBounds.min" step="1" thumb-label="always" />
               <div class="d-flex justify-space-between text-caption mt-1">
                 <span>{{ formatAmount(priceRange[0] || 0) }}</span>
@@ -75,7 +75,7 @@
               </div>
             </v-sheet>
 
-            <v-checkbox v-model="filters.inStock" color="primary" density="comfortable" hide-details
+            <v-checkbox v-model="filters.inStock" color="teal-darken-1" density="comfortable" hide-details
               label="In stock only" />
 
             <v-select v-model="filters.sort" density="comfortable" hide-details item-title="label" item-value="value"
@@ -101,7 +101,7 @@
 
         <v-row v-else-if="products.length > 0">
           <v-col v-for="product in products" :key="product.product_id" cols="12" lg="4" sm="6">
-            <v-card class="h-100" rounded="lg" variant="outlined" @click="openProduct(product.product_id)">
+            <v-card class="h-100" rounded="lg" variant="flat" border @click="openProduct(product.product_id)">
               <v-img v-if="productImageUrl(product)" :alt="product.name" aspect-ratio="1" cover
                 :src="productImageUrl(product)" />
               <v-sheet v-else class="d-flex align-center justify-center" height="220">

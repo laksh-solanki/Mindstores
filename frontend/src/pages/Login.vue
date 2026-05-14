@@ -4,7 +4,7 @@
       <v-col cols="12" md="8" lg="5">
         <v-card rounded="lg" variant="outlined">
           <v-card-text class="pa-6 pa-md-8">
-            <v-chip color="primary" size="small" variant="tonal">Account Login</v-chip>
+            <v-chip color="teal-darken-1" size="small" variant="tonal">Account Login</v-chip>
             <h1 class="text-h4 font-weight-bold mt-3">Welcome back</h1>
             <p class="text-body-2 text-medium-emphasis mt-2">Sign in to continue to your Mindstore account.</p>
 
@@ -41,14 +41,14 @@
                 @click:append-inner="showPassword = !showPassword"
               />
 
-              <v-alert class="mt-2" density="compact" type="info" variant="tonal">
+              <v-alert class="mt-2" density="compact" type="info" color="teal-darken-1" variant="tonal">
                 Secure login enabled and session guarded.
               </v-alert>
 
               <v-btn
                 block
                 class="mt-4"
-                color="primary"
+                color="teal-darken-1"
                 :disabled="isSubmitDisabled"
                 :loading="appStore.loading"
                 rounded="lg"
@@ -64,7 +64,7 @@
 
             <p class="text-body-2 text-medium-emphasis">
               New to Mindstore?
-              <router-link class="font-weight-bold text-primary text-decoration-none" to="/create-account">Create an account</router-link>
+              <router-link class="font-weight-bold text-teal-darken-1 text-decoration-none" to="/create-account">Create an account</router-link>
             </p>
           </v-card-text>
         </v-card>

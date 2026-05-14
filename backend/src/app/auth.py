@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import time
 from base64 import urlsafe_b64decode
 from typing import Any
@@ -12,6 +13,10 @@ from .config import AppConfig
 from .utils import create_session_token, normalize_text, now_iso, sha256_hex
 
 FIREBASE_LOOKUP_URL = "https://identitytoolkit.googleapis.com/v1/accounts:lookup"
+DATA_IMAGE_URL_PATTERN = re.compile(
+    r"data:image/(png|jpeg|jpg|webp|gif);base64,[a-zA-Z0-9+/=]+",
+    re.IGNORECASE,
+)
 
 
 def decode_unverified_jwt_payload(id_token: str) -> dict[str, Any]:
@@ -25,6 +30,17 @@ def decode_unverified_jwt_payload(id_token: str) -> dict[str, Any]:
         return data if isinstance(data, dict) else {}
     except Exception:
         return {}
+
+
+def normalize_profile_picture(value: Any) -> str | None:
+    text = normalize_text(value)
+    if not text:
+        return None
+    if text.startswith("data:image/"):
+        return text if len(text) <= 700_000 and DATA_IMAGE_URL_PATTERN.fullmatch(text) else None
+    if len(text) > 2048:
+        return None
+    return text if text.startswith(("http://", "https://")) else None
 
 
 async def verify_firebase_id_token(id_token: str, config: AppConfig | str) -> dict[str, Any]:
@@ -124,8 +140,18 @@ async def resolve_current_user(
                 return None
             user_id = f"user_{uid}"
             now = now_iso()
-            name = normalize_text(decoded.get("name") or decoded.get("displayName") or "", 120) or "User"
-            picture = normalize_text(decoded.get("picture") or "", 2048) or None
+            existing = await db.collection("users").find_one(
+                {"user_id": user_id},
+                {"projection": {"_id": 0}},
+            )
+            name = (
+                normalize_text(decoded.get("name") or decoded.get("displayName"), 120)
+                or normalize_text((existing or {}).get("name"), 120)
+                or "User"
+            )
+            picture = normalize_profile_picture(decoded.get("picture")) or normalize_profile_picture(
+                (existing or {}).get("picture"),
+            )
             await db.collection("users").update_one(
                 {"user_id": user_id},
                 {

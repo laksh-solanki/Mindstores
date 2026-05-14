@@ -9,7 +9,7 @@
     <div class="fullscreen-loader-center">
       <div class="fullscreen-loader-content">
         <v-progress-circular
-          color="primary"
+          color="teal-darken-1"
           indeterminate
           size="64"
           width="5"

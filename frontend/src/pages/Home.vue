@@ -132,7 +132,7 @@
             <div class="d-flex align-center justify-space-between ga-2 mb-2">
               <p class="text-caption text-medium-emphasis text-uppercase">{{ normalizeCategory(product.category) }}</p>
               <v-chip
-                :color="isProductSoldOut(product) ? 'error' : 'success'"
+                :color="isProductSoldOut(product) ? 'error' : 'teal-darken-1'"
                 size="small"
                 variant="flat"
               >
