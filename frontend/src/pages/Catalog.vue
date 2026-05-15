@@ -52,7 +52,7 @@
           </v-expansion-panel>
         </v-expansion-panels>
 
-        <v-card v-else rounded="lg" variant="flat" class="border">
+        <v-card v-else rounded="lg" variant="flat" class="border position-sticky" style="top: 4.5rem">
           <v-card-title class="d-flex align-center justify-space-between ga-2">
             <span>Filters</span>
             <v-btn size="small" variant="text" @click="resetFilters">Reset</v-btn>
@@ -85,7 +85,7 @@
       </v-col>
 
       <v-col cols="12" lg="9" md="8">
-        <v-sheet elevation="0"
+        <v-sheet
           class="d-flex flex-wrap align-center justify-space-between ga-3 pa-2 rounded-lg border mb-4">
           <p class="text-body-2 text-medium-emphasis font-weight-medium">{{ resultsLabel }}</p>
           <v-chip v-if="totalPages > 0" size="small" variant="outlined">

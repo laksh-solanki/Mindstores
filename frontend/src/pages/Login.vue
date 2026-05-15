@@ -60,6 +60,32 @@
               </v-btn>
             </v-form>
 
+            <v-row align="center" class="my-2">
+              <v-col>
+                <v-divider />
+              </v-col>
+              <v-col class="text-caption text-medium-emphasis" cols="auto">
+                or
+              </v-col>
+              <v-col>
+                <v-divider />
+              </v-col>
+            </v-row>
+
+            <v-btn
+              block
+              color="grey-darken-4"
+              :disabled="appStore.loading"
+              :loading="appStore.loading"
+              prepend-icon="mdi-google"
+              rounded="lg"
+              size="large"
+              variant="outlined"
+              @click="submitGoogleLogin"
+            >
+              Continue with Google
+            </v-btn>
+
             <v-divider class="my-4" />
 
             <p class="text-body-2 text-medium-emphasis">
@@ -125,6 +151,17 @@
         }
       }
 
+      const submitGoogleLogin = async () => {
+        errorMessage.value = ''
+
+        try {
+          await appStore.loginWithGooglePopup()
+          router.replace('/')
+        } catch (error) {
+          errorMessage.value = getAuthErrorMessage(error)
+        }
+      }
+
       return {
         appStore,
         email,
@@ -132,7 +169,8 @@
         showPassword,
         errorMessage,
         isSubmitDisabled,
-        submitLogin
+        submitLogin,
+        submitGoogleLogin
       }
     }
   }

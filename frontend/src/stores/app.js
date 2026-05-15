@@ -3,8 +3,10 @@ import axios from "axios";
 import {
   createUserWithEmailAndPassword,
   getAuth,
+  GoogleAuthProvider,
   onAuthStateChanged,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   updateProfile,
 } from "firebase/auth";
@@ -20,6 +22,10 @@ import {
 import { useCartStore } from "./cart";
 
 const auth = getAuth(firebaseApp);
+const googleAuthProvider = new GoogleAuthProvider();
+googleAuthProvider.setCustomParameters({
+  prompt: "select_account",
+});
 const AUTH_REQUEST_TIMEOUT_MS = 20_000;
 const AUTH_REQUEST_RETRIES = 1;
 const AUTH_BOOT_TIMEOUT_MS = 6000;
@@ -306,6 +312,23 @@ export const useAppStore = defineStore("app", {
         }
       } catch (error) {
         console.error("Email login failed:", error);
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async loginWithGooglePopup() {
+      this.loading = true;
+      try {
+        const credential = await signInWithPopup(auth, googleAuthProvider);
+        const isReady = await this.ensureBackendSession(credential.user);
+        if (!isReady) {
+          await signOut(auth);
+          throw new Error("Unable to establish backend session");
+        }
+      } catch (error) {
+        console.error("Google popup login failed:", error);
         throw error;
       } finally {
         this.loading = false;

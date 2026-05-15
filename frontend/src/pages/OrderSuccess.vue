@@ -2,15 +2,15 @@
   <v-container class="py-8">
     <v-row justify="center">
       <v-col cols="12" md="9" lg="7">
-        <v-card rounded="lg" variant="outlined">
-          <v-card-text class="pa-6 pa-md-8 text-center">
+        <v-card rounded="xl" variant="flat" border elevation="1">
+          <v-card-text class="d-flex flex-column align-center w-100 pa-6 pa-md-8 text-center">
             <v-chip class="mb-4" color="success" variant="tonal">
               <v-icon class="me-1" icon="mdi-check-circle" size="16" />
               Payment Confirmed
             </v-chip>
 
-            <v-avatar color="success" size="80" variant="tonal">
-              <v-icon icon="mdi-check-circle" size="52" />
+            <v-avatar color="success" size="40" variant="tonal">
+              <v-icon icon="mdi-check-circle" size="40" />
             </v-avatar>
 
             <h1 class="text-h4 text-md-h3 font-weight-bold mt-5">Order Confirmed</h1>
@@ -23,7 +23,7 @@
               <p class="text-subtitle-1 font-weight-bold mt-1">#{{ orderId }}</p>
             </v-sheet>
 
-            <v-timeline align="center" class="mt-6" density="compact" side="end" truncate-line="both">
+            <v-timeline align="center" class="mt-6" density="compact" side="end" direction="horizontal" truncate-line="both">
               <v-timeline-item dot-color="success" fill-dot size="small">
                 Confirmed
               </v-timeline-item>
@@ -35,7 +35,7 @@
               </v-timeline-item>
             </v-timeline>
 
-            <div class="d-flex flex-column flex-sm-row justify-center ga-3 mt-4">
+            <div class="d-flex flex-column flex-sm-row justify-center ga-3 mt-6">
               <v-btn color="teal-darken-2" rounded="lg" size="large" @click="$router.push('/profile')">
                 View Orders
               </v-btn>
@@ -51,22 +51,22 @@
 </template>
 
 <script>
-  import { onMounted, ref } from 'vue'
-  import { useRoute } from 'vue-router'
+import { onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 
-  export default {
-    name: 'OrderSuccess',
-    setup() {
-      const route = useRoute()
-      const orderId = ref('')
+export default {
+  name: 'OrderSuccess',
+  setup() {
+    const route = useRoute()
+    const orderId = ref('')
 
-      onMounted(() => {
-        orderId.value = route.query.order_id || ''
-      })
+    onMounted(() => {
+      orderId.value = route.query.order_id || ''
+    })
 
-      return {
-        orderId
-      }
+    return {
+      orderId
     }
   }
+}
 </script>
