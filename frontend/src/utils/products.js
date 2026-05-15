@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { API_URL } from '@/utils/api'
 
-const DEFAULT_PRODUCTS_FALLBACK_API_URL = 'https://mindstores-backend.audit29122006.workers.dev'
+const DEFAULT_PRODUCTS_FALLBACK_API_URL = 'https://backend-omega-fawn-91.vercel.app'
 
 function normalizeApiBaseUrl(value) {
   return String(value || '').trim().replace(/\/+$/, '')

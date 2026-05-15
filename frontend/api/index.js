@@ -1,4 +1,4 @@
-const DEFAULT_WORKER_API_URL = 'https://mindstores-backend.audit29122006.workers.dev'
+const DEFAULT_BACKEND_API_URL = 'https://backend-omega-fawn-91.vercel.app'
 
 const HOP_BY_HOP_HEADERS = new Set([
   'connection',
@@ -17,14 +17,14 @@ function normalizeApiBaseUrl(value) {
   return String(value || '').trim().replace(/\/+$/, '')
 }
 
-function getWorkerApiUrl() {
-  return normalizeApiBaseUrl(process.env.BACKEND_API_URL || DEFAULT_WORKER_API_URL)
+function getBackendApiUrl() {
+  return normalizeApiBaseUrl(process.env.BACKEND_API_URL || DEFAULT_BACKEND_API_URL)
 }
 
-function buildTargetUrl(req, workerApiUrl) {
+function buildTargetUrl(req, backendApiUrl) {
   const requestUrl = new URL(req.url || '/', `https://${req.headers.host || 'localhost'}`)
   const pathWithoutApiPrefix = requestUrl.pathname.replace(/^\/api(?=\/|$)/, '') || '/'
-  return `${workerApiUrl}${pathWithoutApiPrefix}${requestUrl.search}`
+  return `${backendApiUrl}${pathWithoutApiPrefix}${requestUrl.search}`
 }
 
 async function readRequestBody(req) {
@@ -51,7 +51,7 @@ function copyRequestHeaders(req) {
   return headers
 }
 
-function copyResponseHeaders(response, res, workerApiUrl) {
+function copyResponseHeaders(response, res, backendApiUrl) {
   for (const [key, value] of response.headers) {
     if (HOP_BY_HOP_HEADERS.has(key.toLowerCase()) || key.toLowerCase() === 'set-cookie') {
       continue
@@ -71,12 +71,12 @@ function copyResponseHeaders(response, res, workerApiUrl) {
     }
   }
 
-  res.setHeader('X-Proxy-Target', workerApiUrl)
+  res.setHeader('X-Proxy-Target', backendApiUrl)
 }
 
 export default async function handler(req, res) {
-  const workerApiUrl = getWorkerApiUrl()
-  const targetUrl = buildTargetUrl(req, workerApiUrl)
+  const backendApiUrl = getBackendApiUrl()
+  const targetUrl = buildTargetUrl(req, backendApiUrl)
   const method = String(req.method || 'GET').toUpperCase()
   const body = method === 'GET' || method === 'HEAD' ? undefined : await readRequestBody(req)
 
@@ -88,7 +88,7 @@ export default async function handler(req, res) {
       redirect: 'manual',
     })
 
-    copyResponseHeaders(response, res, workerApiUrl)
+    copyResponseHeaders(response, res, backendApiUrl)
     res.statusCode = response.status
 
     if ([204, 205, 304].includes(response.status) || method === 'HEAD') {
@@ -99,10 +99,10 @@ export default async function handler(req, res) {
     const responseBody = Buffer.from(await response.arrayBuffer())
     res.end(responseBody)
   } catch (error) {
-    console.error('Cloudflare Worker proxy failed', error)
+    console.error('Backend proxy failed', error)
     res.statusCode = 502
     res.setHeader('Content-Type', 'application/json; charset=utf-8')
-    res.setHeader('X-Proxy-Target', workerApiUrl)
+    res.setHeader('X-Proxy-Target', backendApiUrl)
     res.end(JSON.stringify({ message: 'Backend proxy unavailable' }))
   }
 }
