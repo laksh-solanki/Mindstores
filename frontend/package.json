@@ -10,6 +10,7 @@
     "lint": "eslint . --fix"
   },
   "dependencies": {
+    "@fontsource/open-sans": "^5.2.7",
     "@mdi/font": "^7.4.47",
     "@mdi/js": "7.4.47",
     "axios": "^1.13.5",
@@ -17,6 +18,7 @@
     "eslint-plugin-vue": "^10.8.0",
     "eslint-plugin-vuetify": "^2.5.3",
     "firebase": "^12.9.0",
+    "pdf-lib": "^1.17.1",
     "pinia": "^2.1.7",
     "vue": "^3.5.28",
     "vue-router": "^4.5.1",

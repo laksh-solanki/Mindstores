@@ -1,8 +1,8 @@
 <template>
   <v-app-bar border="b" color="teal-darken-2" flat height="64" location="top">
     <div class="d-flex align-center ga-3 px-3 px-md-6 w-100">
-      <v-btn v-if="isMobile && canShowAdmin" aria-label="Toggle admin navigation" icon="mdi-menu" rounded="lg"
-        variant="text" @click="drawer = !drawer" />
+      <v-btn v-if="canShowAdmin" :aria-label="navigationToggleLabel" icon="mdi-menu" rounded="lg"
+        variant="text" @click="toggleNavigation" />
 
       <div class="d-inline-flex align-center ga-3 flex-shrink-0">
         <v-avatar color="surface" rounded="lg" size="42" variant="flat">
@@ -83,7 +83,8 @@
   </v-app-bar>
 
   <v-navigation-drawer v-if="canShowAdmin" v-model="drawer" border="e" color="yellow-lighten-5" elevation="0"
-    expand-on-hover :permanent="!isMobile" :rail="!isMobile" rail-width="66" :temporary="isMobile" width="220">
+    :permanent="!isMobile" :rail="!isMobile && desktopDrawerRail" rail-width="66" :temporary="isMobile"
+    width="220">
     <v-list class="bg-yellow-lighten-5 pa-3" density="comfortable" nav>
       <v-list-item v-for="item in navItems" :key="item.id" :active="activePanel === item.id" color="teal-darken-3"
         rounded="lg" @click="selectPanel(item.id)">
@@ -391,6 +392,173 @@
           </v-card-text>
         </v-card>
 
+        <v-card v-else-if="activePanel === 'planner'" variant="flat" border rounded="lg">
+          <v-card-title class="d-flex flex-column flex-lg-row align-lg-center justify-space-between ga-3 my-2">
+            <div>
+              <div>Inventory Planner</div>
+              <div class="text-body-2 text-medium-emphasis">
+                Build a reorder plan from live stock, not guesswork.
+              </div>
+            </div>
+            <div class="d-flex flex-column flex-sm-row ga-2">
+              <v-btn color="teal-darken-1" prepend-icon="mdi-content-copy" rounded="lg" text="Copy brief"
+                variant="outlined" @click="copyRestockBrief" />
+              <v-btn color="teal-darken-1" prepend-icon="mdi-download-outline" rounded="lg" text="Export CSV"
+                variant="flat" @click="downloadRestockPlan" />
+            </div>
+          </v-card-title>
+          <v-card-text>
+            <v-row dense>
+              <v-col cols="12" lg="4">
+                <v-card class="h-100" variant="outlined" rounded="lg">
+                  <v-card-title class="my-2">Planning controls</v-card-title>
+                  <v-card-text class="d-flex flex-column ga-4">
+                    <div>
+                      <div class="d-flex align-center justify-space-between mb-2">
+                        <span class="font-weight-medium">Target stock per SKU</span>
+                        <v-chip color="teal-darken-1" size="small" variant="tonal">
+                          {{ formatNumber(restockTargetStock) }}
+                        </v-chip>
+                      </div>
+                      <v-slider v-model="restockTargetStock" color="teal-darken-1" hide-details max="50" min="5"
+                        step="1" thumb-label />
+                    </div>
+                    <v-text-field v-model="restockSearch" density="comfortable" hide-details label="Search products"
+                      prepend-inner-icon="mdi-magnify" variant="outlined" />
+                    <v-select v-model="restockUrgencyFilter" density="comfortable" hide-details item-title="title"
+                      item-value="value" :items="restockUrgencyOptions" label="Urgency" variant="outlined" />
+                    <v-alert color="teal-darken-1" icon="mdi-lightbulb-on-outline" variant="tonal">
+                      The planner uses retail shelf value, because supplier cost is not stored yet.
+                    </v-alert>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+
+              <v-col cols="12" lg="8">
+                <v-row dense>
+                  <v-col v-for="metric in restockMetricCards" :key="metric.label" cols="12" md="6">
+                    <v-card class="h-100" variant="outlined" rounded="lg">
+                      <v-card-text class="d-flex align-center justify-space-between ga-4">
+                        <div>
+                          <div class="text-caption text-medium-emphasis">{{ metric.label }}</div>
+                          <div class="text-h6 font-weight-bold">{{ metric.value }}</div>
+                          <div class="text-caption text-medium-emphasis">{{ metric.caption }}</div>
+                        </div>
+                        <v-avatar :color="metric.color" size="48" variant="tonal">
+                          <v-icon :color="metric.color">{{ metric.icon }}</v-icon>
+                        </v-avatar>
+                      </v-card-text>
+                    </v-card>
+                  </v-col>
+                </v-row>
+              </v-col>
+            </v-row>
+
+            <v-row class="mt-2" dense>
+              <v-col cols="12" lg="8">
+                <v-card class="h-100" variant="outlined" rounded="lg">
+                  <v-card-title class="d-flex align-center justify-space-between ga-3 my-2">
+                    <span>Recommended reorder queue</span>
+                    <v-chip color="teal-darken-1" size="small" variant="tonal">
+                      {{ formatNumber(filteredRestockPlan.length) }} SKUs
+                    </v-chip>
+                  </v-card-title>
+                  <v-card-text>
+                    <v-alert v-if="filteredRestockPlan.length === 0" type="success" variant="tonal">
+                      No matching products need restocking at the current target.
+                    </v-alert>
+                    <v-data-table v-else density="comfortable" :headers="restockHeaders"
+                      :items="filteredRestockPlan" :items-per-page="6">
+                      <template #item.name="{ item }">
+                        <div class="d-flex align-center ga-3 py-2">
+                          <v-avatar color="surface" rounded="lg" size="42">
+                            <v-img v-if="productImageUrl(resolveTableItem(item))"
+                              :alt="resolveTableItem(item)?.name" cover
+                              :src="productImageUrl(resolveTableItem(item))" />
+                            <v-icon v-else color="primary">mdi-image-off-outline</v-icon>
+                          </v-avatar>
+                          <div>
+                            <div class="font-weight-medium">{{ resolveTableItem(item)?.name }}</div>
+                            <div class="text-caption text-medium-emphasis">
+                              {{ resolveTableItem(item)?.category_display }}
+                            </div>
+                          </div>
+                        </div>
+                      </template>
+                      <template #item.urgency_label="{ item }">
+                        <v-chip :color="resolveTableItem(item)?.urgency_color" size="small" variant="tonal">
+                          {{ resolveTableItem(item)?.urgency_label }}
+                        </v-chip>
+                      </template>
+                      <template #item.reorder_quantity="{ item }">
+                        {{ formatNumber(resolveTableItem(item)?.reorder_quantity) }}
+                      </template>
+                      <template #item.reorder_value="{ item }">
+                        {{ formatCurrency(resolveTableItem(item)?.reorder_value) }}
+                      </template>
+                      <template #item.actions="{ item }">
+                        <v-btn icon size="small" variant="text" @click="editProduct(resolveTableItem(item))">
+                          <v-icon>mdi-pencil-outline</v-icon>
+                          <v-tooltip activator="parent" location="top">Edit product</v-tooltip>
+                        </v-btn>
+                      </template>
+                    </v-data-table>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+
+              <v-col cols="12" lg="4">
+                <v-card class="mb-2" variant="outlined" rounded="lg">
+                  <v-card-title class="my-2">Category pressure</v-card-title>
+                  <v-card-text class="d-flex flex-column ga-4">
+                    <div v-for="category in restockCategorySummary" :key="category.name">
+                      <div class="d-flex justify-space-between mb-2">
+                        <span class="font-weight-medium">{{ category.name }}</span>
+                        <span class="text-medium-emphasis">{{ formatNumber(category.units) }} units</span>
+                      </div>
+                      <v-progress-linear color="warning" height="10" :model-value="category.percent" rounded />
+                      <div class="text-caption text-medium-emphasis mt-1">
+                        {{ formatCurrency(category.value) }} shelf value
+                      </div>
+                    </div>
+                    <v-alert v-if="restockCategorySummary.length === 0" type="success" variant="tonal">
+                      No pressure by category.
+                    </v-alert>
+                  </v-card-text>
+                </v-card>
+
+                <v-card variant="outlined" rounded="lg">
+                  <v-card-title class="my-2">Next best action</v-card-title>
+                  <v-card-text>
+                    <template v-if="topRestockRecommendation">
+                      <div class="d-flex align-center ga-3 mb-4">
+                        <v-avatar :color="topRestockRecommendation.urgency_color" size="44" variant="tonal">
+                          <v-icon :color="topRestockRecommendation.urgency_color">mdi-clipboard-alert-outline</v-icon>
+                        </v-avatar>
+                        <div>
+                          <div class="font-weight-medium">{{ topRestockRecommendation.name }}</div>
+                          <div class="text-body-2 text-medium-emphasis">
+                            Add {{ formatNumber(topRestockRecommendation.reorder_quantity) }} units now
+                          </div>
+                        </div>
+                      </div>
+                      <v-list density="compact">
+                        <v-list-item title="Current stock" :subtitle="formatNumber(topRestockRecommendation.stock)" />
+                        <v-list-item title="Urgency" :subtitle="topRestockRecommendation.urgency_label" />
+                        <v-list-item title="Shelf value to recover"
+                          :subtitle="formatCurrency(topRestockRecommendation.reorder_value)" />
+                      </v-list>
+                    </template>
+                    <v-alert v-else type="success" variant="tonal">
+                      Inventory is already at the selected target.
+                    </v-alert>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
+
         <v-card v-else-if="activePanel === 'logs'" variant="flat" border rounded="lg">
           <v-card-title class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 my-2">
             <span>Notifications</span>
@@ -669,6 +837,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DEFAULT_PRICE_CURRENCY = "USD";
 const MAX_PRODUCT_IMAGE_FILE_BYTES = 512 * 1024;
 const MAX_PRODUCT_IMAGE_DATA_URL_LENGTH = 700_000;
+const DEFAULT_RESTOCK_TARGET = 12;
 const DESCRIPTION_BULLET_OPTIONS = [
   { symbol: "-", label: "Add dash bullet" },
   { symbol: "•", label: "Add dot bullet" },
@@ -686,6 +855,7 @@ const appStore = useAppStore();
 const { smAndDown } = useDisplay();
 
 const drawer = ref(!smAndDown.value);
+const desktopDrawerRail = ref(true);
 const activePanel = ref("dashboard");
 const products = ref([]);
 const users = ref([]);
@@ -711,6 +881,9 @@ const accessEmailInput = ref("");
 const accessEditOriginalEmail = ref("");
 const accessEditEmail = ref("");
 const logTypeFilter = ref("all");
+const restockTargetStock = ref(DEFAULT_RESTOCK_TARGET);
+const restockSearch = ref("");
+const restockUrgencyFilter = ref("all");
 const lastSyncedAt = ref(null);
 const adminQuickSearch = ref("");
 const isUserMenuOpen = ref(false);
@@ -741,6 +914,7 @@ const navItems = [
   { id: "dashboard", label: "Dashboard", icon: "mdi-view-dashboard-outline" },
   { id: "users", label: "Users", icon: "mdi-account-group-outline" },
   { id: "products", label: "Products", icon: "mdi-package-variant-closed" },
+  { id: "planner", label: "Planner", icon: "mdi-clipboard-list-outline" },
   { id: "logs", label: "Logs", icon: "mdi-bell-outline" },
   { id: "settings", label: "Settings", icon: "mdi-cog-outline" },
 ];
@@ -769,6 +943,15 @@ const accessHeaders = [
   { title: "Updated", key: "updated_at" },
   { title: "Actions", key: "actions", sortable: false },
 ];
+const restockHeaders = [
+  { title: "Product", key: "name" },
+  { title: "Urgency", key: "urgency_label" },
+  { title: "Stock", key: "stock" },
+  { title: "Target", key: "target_stock" },
+  { title: "Add", key: "reorder_quantity" },
+  { title: "Shelf value", key: "reorder_value" },
+  { title: "Actions", key: "actions", sortable: false },
+];
 const stockFilterOptions = [
   { title: "All stock", value: "all" },
   { title: "Active", value: "active" },
@@ -786,8 +969,20 @@ const logTypeOptions = [
   { title: "Access", value: "access" },
   { title: "System", value: "system" },
 ];
+const restockUrgencyOptions = [
+  { title: "All urgency", value: "all" },
+  { title: "Critical", value: "critical" },
+  { title: "High", value: "high" },
+  { title: "Planned", value: "planned" },
+];
 
 const isMobile = computed(() => smAndDown.value);
+const navigationToggleLabel = computed(() => {
+  if (isMobile.value) {
+    return drawer.value ? "Close admin navigation" : "Open admin navigation";
+  }
+  return desktopDrawerRail.value ? "Expand admin navigation" : "Collapse admin navigation";
+});
 const authLoading = computed(() => Boolean(appStore.loading));
 const isAuthenticated = computed(() => Boolean(appStore.isAuthenticated));
 const isAdmin = computed(() => Boolean(appStore.user?.is_admin));
@@ -859,6 +1054,13 @@ const operationsSummary = computed(() => [
     value: formatCurrency(averagePrice.value),
     icon: "mdi-tag-outline",
     color: "primary",
+  },
+  {
+    title: "Restock queue",
+    subtitle: `Target ${formatNumber(restockTargetStock.value)} units`,
+    value: formatNumber(restockPlan.value.length),
+    icon: "mdi-clipboard-list-outline",
+    color: restockPlan.value.length > 0 ? "warning" : "success",
   },
 ]);
 
@@ -1008,6 +1210,99 @@ const lowStockProducts = computed(() =>
     .slice(0, 6),
 );
 
+const restockPlan = computed(() =>
+  products.value
+    .map((product) => buildRestockPlanItem(product))
+    .filter((item) => item.reorder_quantity > 0)
+    .toSorted((left, right) => {
+      if (left.urgency_rank !== right.urgency_rank) {
+        return left.urgency_rank - right.urgency_rank;
+      }
+      if (left.reorder_quantity !== right.reorder_quantity) {
+        return right.reorder_quantity - left.reorder_quantity;
+      }
+      return left.name.localeCompare(right.name);
+    }),
+);
+
+const filteredRestockPlan = computed(() =>
+  restockPlan.value.filter((item) => {
+    const query = normalizeText(restockSearch.value).toLowerCase();
+    const matchesSearch =
+      !query ||
+      [item.name, item.company, item.category, item.subcategory, item.product_id]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(query);
+    const matchesUrgency =
+      restockUrgencyFilter.value === "all" || item.urgency_key === restockUrgencyFilter.value;
+    return matchesSearch && matchesUrgency;
+  }),
+);
+
+const restockUnitsNeeded = computed(() =>
+  filteredRestockPlan.value.reduce((total, item) => total + item.reorder_quantity, 0),
+);
+const restockShelfValue = computed(() =>
+  filteredRestockPlan.value.reduce((total, item) => total + item.reorder_value, 0),
+);
+const restockCriticalCount = computed(() =>
+  filteredRestockPlan.value.filter((item) => item.urgency_key === "critical").length,
+);
+const topRestockRecommendation = computed(() => filteredRestockPlan.value[0] || null);
+
+const restockMetricCards = computed(() => [
+  {
+    label: "SKUs in plan",
+    value: formatNumber(filteredRestockPlan.value.length),
+    caption: "Products below target",
+    icon: "mdi-package-variant-minus",
+    color: "primary",
+  },
+  {
+    label: "Units to replenish",
+    value: formatNumber(restockUnitsNeeded.value),
+    caption: `Target ${formatNumber(restockTargetStock.value)} units each`,
+    icon: "mdi-counter",
+    color: "info",
+  },
+  {
+    label: "Critical SKUs",
+    value: formatNumber(restockCriticalCount.value),
+    caption: "Currently out of stock",
+    icon: "mdi-alert-octagon-outline",
+    color: restockCriticalCount.value > 0 ? "error" : "success",
+  },
+  {
+    label: "Shelf value to recover",
+    value: formatCurrency(restockShelfValue.value),
+    caption: "Retail value represented by gaps",
+    icon: "mdi-cash-sync",
+    color: "success",
+  },
+]);
+
+const restockCategorySummary = computed(() => {
+  const categories = new Map();
+  for (const item of filteredRestockPlan.value) {
+    const category = normalizeCategoryName(item.category) || "Other";
+    const existing = categories.get(category) || { name: category, units: 0, value: 0, percent: 0 };
+    existing.units += item.reorder_quantity;
+    existing.value += item.reorder_value;
+    categories.set(category, existing);
+  }
+
+  const maxUnits = Math.max(1, ...[...categories.values()].map((item) => item.units));
+  return [...categories.values()]
+    .map((item) => ({
+      ...item,
+      percent: Math.max(8, Math.round((item.units / maxUnits) * 100)),
+    }))
+    .toSorted((left, right) => right.units - left.units)
+    .slice(0, 5);
+});
+
 const categoryStats = computed(() => {
   const stats = new Map();
   for (const product of products.value) {
@@ -1156,6 +1451,16 @@ function selectPanel(panel) {
   }
 }
 
+function toggleNavigation() {
+  if (isMobile.value) {
+    drawer.value = !drawer.value;
+    return;
+  }
+
+  drawer.value = true;
+  desktopDrawerRail.value = !desktopDrawerRail.value;
+}
+
 function runAdminSearch() {
   const query = normalizeText(adminQuickSearch.value);
   if (!query) {
@@ -1169,6 +1474,11 @@ function runAdminSearch() {
 
   if (activePanel.value === "settings") {
     accessSearch.value = query;
+    return;
+  }
+
+  if (activePanel.value === "planner") {
+    restockSearch.value = query;
     return;
   }
 
@@ -1313,6 +1623,48 @@ function formatCategory(product) {
   return subcategory ? `${mainCategory} / ${subcategory}` : mainCategory;
 }
 
+function buildRestockPlanItem(product) {
+  const stock = Math.max(0, Math.trunc(Number(product?.stock || 0)));
+  const targetStock = Math.max(5, Math.trunc(Number(restockTargetStock.value || DEFAULT_RESTOCK_TARGET)));
+  const reorderQuantity = Math.max(0, targetStock - stock);
+  const price = Number(product?.price || 0);
+
+  let urgency = {
+    key: "planned",
+    label: "Planned",
+    color: "info",
+    rank: 2,
+  };
+  if (stock <= 0) {
+    urgency = {
+      key: "critical",
+      label: "Critical",
+      color: "error",
+      rank: 0,
+    };
+  } else if (stock < 5) {
+    urgency = {
+      key: "high",
+      label: "High",
+      color: "warning",
+      rank: 1,
+    };
+  }
+
+  return {
+    ...product,
+    category_display: formatCategory(product),
+    stock,
+    target_stock: targetStock,
+    reorder_quantity: reorderQuantity,
+    reorder_value: reorderQuantity * price,
+    urgency_key: urgency.key,
+    urgency_label: urgency.label,
+    urgency_color: urgency.color,
+    urgency_rank: urgency.rank,
+  };
+}
+
 function productImageUrl(product) {
   return safeDisplayImageUrl(product?.image_url);
 }
@@ -1346,6 +1698,66 @@ function notify(message, color = "success") {
   snackbarText.value = message;
   snackbarColor.value = color;
   snackbar.value = true;
+}
+
+async function copyRestockBrief() {
+  if (filteredRestockPlan.value.length === 0) {
+    notify("No matching products need restocking", "info");
+    return;
+  }
+
+  const lines = [
+    `Mindstores reorder brief - target ${formatNumber(restockTargetStock.value)} units per SKU`,
+    `SKUs in plan: ${formatNumber(filteredRestockPlan.value.length)}`,
+    `Units to replenish: ${formatNumber(restockUnitsNeeded.value)}`,
+    `Shelf value to recover: ${formatCurrency(restockShelfValue.value)}`,
+    "",
+    ...filteredRestockPlan.value.slice(0, 10).map((item) =>
+      `- ${item.name}: add ${formatNumber(item.reorder_quantity)} units (${item.urgency_label}, stock ${formatNumber(item.stock)})`,
+    ),
+  ];
+
+  try {
+    await navigator.clipboard.writeText(lines.join("\n"));
+    notify("Reorder brief copied");
+  } catch (error) {
+    console.warn("Unable to copy reorder brief:", error);
+    notify("Clipboard unavailable. Use CSV export instead.", "warning");
+  }
+}
+
+function downloadRestockPlan() {
+  if (filteredRestockPlan.value.length === 0) {
+    notify("No matching products need restocking", "info");
+    return;
+  }
+
+  const rows = [
+    ["Product", "Product ID", "Category", "Urgency", "Current Stock", "Target Stock", "Units To Add", "Shelf Value"],
+    ...filteredRestockPlan.value.map((item) => [
+      item.name,
+      item.product_id || "",
+      item.category_display,
+      item.urgency_label,
+      item.stock,
+      item.target_stock,
+      item.reorder_quantity,
+      item.reorder_value.toFixed(2),
+    ]),
+  ];
+  const csv = rows.map((row) => row.map((value) => escapeCsv(value)).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `mindstores-restock-plan-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+  notify("Restock plan exported");
+}
+
+function escapeCsv(value) {
+  return `"${String(value ?? "").replace(/"/g, '""')}"`;
 }
 
 async function runAdminRequest(requestFactory) {

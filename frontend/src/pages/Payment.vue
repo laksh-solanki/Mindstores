@@ -435,7 +435,16 @@
             `${API_URL}/checkout/place-order`,
             {
               selected_product_ids: selectedProductIds.value,
-              promo_code: selectedPromoCode.value && promoDiscount.value > 0 ? selectedPromoCode.value : undefined
+              promo_code: selectedPromoCode.value && promoDiscount.value > 0 ? selectedPromoCode.value : undefined,
+              billing_profile: {
+                name: `${form.value.firstName} ${form.value.lastName}`.trim(),
+                email: form.value.email,
+                phone: form.value.phone,
+                address: form.value.address,
+                city: form.value.city,
+                state: form.value.state,
+                postal_code: form.value.zip
+              }
             },
             await buildAuthenticatedRequestConfig()
           )

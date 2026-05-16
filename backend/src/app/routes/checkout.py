@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, Request
 
 from ..context import RequestContext, error_response, get_context, json_response, read_json_body
-from ..utils import now_iso, random_compact_id
+from ..utils import normalize_text, now_iso, random_compact_id
 from .cart import normalize_product_id, sanitize_items
 
 router = APIRouter()
@@ -32,6 +32,19 @@ def calc_discount(subtotal: float, promo: dict[str, Any] | None) -> float:
     if promo["type"] == "percent":
         return round((subtotal * promo["value"]) / 100, 2)
     return min(subtotal, promo["value"])
+
+
+def normalize_billing_profile(value: Any) -> dict[str, str]:
+    profile = value if isinstance(value, dict) else {}
+    return {
+        "name": normalize_text(profile.get("name"), 120),
+        "email": normalize_text(profile.get("email"), 320),
+        "phone": normalize_text(profile.get("phone"), 32),
+        "address": normalize_text(profile.get("address"), 220),
+        "city": normalize_text(profile.get("city"), 96),
+        "state": normalize_text(profile.get("state"), 96),
+        "postal_code": normalize_text(profile.get("postal_code") or profile.get("postalCode") or profile.get("zip"), 32),
+    }
 
 
 @router.post("/checkout/place-order")
@@ -61,6 +74,7 @@ async def place_order(request: Request, ctx: RequestContext = Depends(get_contex
     promo_code = normalize_promo_code(data.get("promo_code"))
     if promo_code is None:
         return error_response(400, "Invalid promo code format")
+    billing_profile = normalize_billing_profile(data.get("billing_profile"))
     product_ids = list({item["product_id"] for item in items_to_checkout})
     products = await ctx.db.collection("products").find({"product_id": {"$in": product_ids}}, {"projection": {"_id": 0}}).to_array()
     product_map = {product.get("product_id"): product for product in products}
@@ -116,6 +130,7 @@ async def place_order(request: Request, ctx: RequestContext = Depends(get_contex
                 "subtotal_amount": round(subtotal, 2),
                 "discount_amount": round(discount, 2),
                 "promo_code": applied_promo,
+                "billing_profile": billing_profile,
                 "total_amount": total,
                 "status": "completed",
                 "created_at": now,

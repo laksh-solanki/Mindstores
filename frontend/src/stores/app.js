@@ -14,6 +14,7 @@ import { defineStore } from "pinia";
 // Import initialized firebase app
 import { app as firebaseApp } from "@/plugins/firebase";
 import { API_URL, buildAuthenticatedRequestConfig } from "@/utils/api";
+import { safeDisplayImageUrl } from "@/utils/images";
 import {
   getCurrencyForCountry,
   loadUserSettings,
@@ -29,6 +30,7 @@ googleAuthProvider.setCustomParameters({
 const AUTH_REQUEST_TIMEOUT_MS = 20_000;
 const AUTH_REQUEST_RETRIES = 1;
 const AUTH_BOOT_TIMEOUT_MS = 6000;
+const PROFILE_IMAGE_CACHE_PREFIX = "mindstores.profile-image.";
 let backendSessionPromise = null;
 let backendSessionUid = null;
 
@@ -108,6 +110,42 @@ function mapFirebaseUser (firebaseUser) {
   };
 }
 
+function getProfileImageCacheKey(uid) {
+  return uid ? `${PROFILE_IMAGE_CACHE_PREFIX}${uid}` : "";
+}
+
+function loadCachedProfilePicture(uid) {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const cached = window.localStorage.getItem(getProfileImageCacheKey(uid));
+    return safeDisplayImageUrl(cached) || null;
+  } catch {
+    return null;
+  }
+}
+
+function saveCachedProfilePicture(uid, picture) {
+  if (typeof window === "undefined" || !uid) {
+    return;
+  }
+
+  const key = getProfileImageCacheKey(uid);
+  const normalized = safeDisplayImageUrl(picture);
+
+  try {
+    if (normalized) {
+      window.localStorage.setItem(key, normalized);
+    } else {
+      window.localStorage.removeItem(key);
+    }
+  } catch {
+    // Storage may be unavailable or full; the backend path still works.
+  }
+}
+
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function isRetryableAuthError(error) {
@@ -147,15 +185,17 @@ function syncCurrencyPreferenceFromUser(user) {
 }
 
 function mergeBackendUser(firebaseProfile, backendUser = {}) {
+  const backendPictureKey = ["picture", "photo_url", "photoURL"].find((key) =>
+    Object.prototype.hasOwnProperty.call(backendUser, key),
+  );
+  const picture = backendPictureKey
+    ? backendUser[backendPictureKey] || null
+    : firebaseProfile.picture || firebaseProfile.photoURL || null;
+
   return {
     ...firebaseProfile,
     ...backendUser,
-    picture:
-      backendUser.picture ||
-      backendUser.photo_url ||
-      backendUser.photoURL ||
-      firebaseProfile.picture ||
-      null,
+    picture,
   };
 }
 
@@ -179,7 +219,12 @@ export const useAppStore = defineStore("app", {
 
       // Show user/avatar immediately while backend session is being validated.
       const firebaseProfile = mapFirebaseUser(firebaseUser);
-      this.user = { ...firebaseProfile, is_admin: false };
+      const cachedPicture = loadCachedProfilePicture(firebaseUser.uid);
+      this.user = {
+        ...firebaseProfile,
+        picture: firebaseProfile.picture || cachedPicture || null,
+        is_admin: false,
+      };
       this.isAuthenticated = true;
 
       if (backendSessionPromise && backendSessionUid === firebaseUser.uid) {
@@ -189,7 +234,14 @@ export const useAppStore = defineStore("app", {
       backendSessionUid = firebaseUser.uid;
       const sessionRequest = (async () => {
         const applyBackendUser = (backendUser = {}) => {
-          this.user = mergeBackendUser(firebaseProfile, backendUser);
+          this.user = mergeBackendUser(
+            {
+              ...firebaseProfile,
+              picture: firebaseProfile.picture || cachedPicture || null,
+            },
+            backendUser,
+          );
+          saveCachedProfilePicture(firebaseUser.uid, this.user.picture);
           syncCurrencyPreferenceFromUser(this.user);
           this.isAuthenticated = true;
           return true;
@@ -406,6 +458,7 @@ export const useAppStore = defineStore("app", {
         });
         const backendUser = response.data || {};
         this.user = mergeBackendUser(this.user || {}, backendUser);
+        saveCachedProfilePicture(this.user?.uid || auth.currentUser?.uid, this.user?.picture);
         syncCurrencyPreferenceFromUser(this.user);
         this.isAuthenticated = true;
         return this.user;
@@ -463,10 +516,14 @@ export const useAppStore = defineStore("app", {
         this.user = mergeBackendUser(
           {
             ...(this.user || {}),
-            picture: normalizedPicture || this.user?.picture || null,
+            picture:
+              typeof picture === "string"
+                ? normalizedPicture || null
+                : this.user?.picture || null,
           },
           backendUser,
         );
+        saveCachedProfilePicture(this.user?.uid || auth.currentUser?.uid, this.user?.picture);
         syncCurrencyPreferenceFromUser(this.user);
         this.isAuthenticated = true;
         return this.user;
