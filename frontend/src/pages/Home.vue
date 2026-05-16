@@ -1,35 +1,32 @@
 <template>
   <v-container class="home-page" fluid>
-    <section class="home-hero-shell">
-      <v-row align="center" class="home-hero-grid">
-        <v-col cols="12" md="6">
-          <div class="hero-copy">
-            <div class="hero-kicker">
-              <v-icon icon="mdi-storefront-outline" size="18" />
-              Mindstore
-            </div>
+    <v-card border class="mb-8 overflow-hidden" rounded="lg" variant="flat">
+      <v-row align="center" class="ma-0">
+        <v-col class="pa-5 pa-md-7" cols="12" md="5">
+          <div class="d-flex h-100 flex-column justify-center">
+            <h1 class="text-h5 text-md-h4 font-weight-bold mb-3">
+              Premium products, kept simple.
+            </h1>
 
-            <h1 class="hero-title">Premium products, kept simple.</h1>
-
-            <p class="hero-subtitle">
+            <p class="text-body-2 text-medium-emphasis mb-5">
               Browse curated essentials with live stock, secure checkout, and fast access to every category.
             </p>
 
-            <div class="hero-actions">
+            <div class="d-flex flex-wrap ga-2 mb-5">
               <v-btn
-                class="hero-action"
                 color="teal-darken-1"
+                density="comfortable"
                 rounded="lg"
-                size="large"
+                size="small"
                 to="/products"
                 variant="flat"
               >
                 Browse all
               </v-btn>
               <v-btn
-                class="hero-action"
+                density="comfortable"
                 rounded="lg"
-                size="large"
+                size="small"
                 variant="outlined"
                 @click="scrollToProducts"
               >
@@ -38,59 +35,62 @@
               </v-btn>
             </div>
 
-            <div aria-label="Store highlights" class="hero-metrics">
-              <div class="hero-metric">
-                <strong>{{ products.length > 0 ? products.length : 'Live' }}</strong>
-                <span>Products synced</span>
+            <v-divider class="mb-4" />
+
+            <div aria-label="Store highlights" class="d-flex flex-wrap ga-5">
+              <div>
+                <p class="text-subtitle-2 font-weight-bold mb-1">{{ products.length > 0 ? products.length : 'Live' }}</p>
+                <p class="text-caption text-medium-emphasis mb-0">Products synced</p>
               </div>
-              <div class="hero-metric">
-                <strong>Secure</strong>
-                <span>Checkout flow</span>
+              <div>
+                <p class="text-subtitle-2 font-weight-bold mb-1">Secure</p>
+                <p class="text-caption text-medium-emphasis mb-0">Checkout flow</p>
               </div>
-              <div class="hero-metric">
-                <strong>Fast</strong>
-                <span>Category access</span>
+              <div>
+                <p class="text-subtitle-2 font-weight-bold mb-1">Fast</p>
+                <p class="text-caption text-medium-emphasis mb-0">Category access</p>
               </div>
             </div>
           </div>
         </v-col>
 
-        <v-col cols="12" md="6">
-          <v-card class="hero-feature-card" rounded="lg" variant="outlined" @click="goToProduct(curatedProduct?.product_id)">
-            <div class="hero-image-wrap">
+        <v-col class="pa-4 pa-md-5" cols="12" md="7">
+          <v-card border rounded="lg" variant="flat" @click="goToProduct(curatedProduct?.product_id)">
+            <v-sheet class="pa-4 pa-md-6" color="grey-lighten-5">
               <v-img
                 :alt="curatedProduct?.name || 'Mindstore product'"
-                aspect-ratio="1.45"
-                class="hero-product-image"
-                cover
+                aspect-ratio="1.55"
+                contain
+                height="340"
                 :src="heroImageUrl"
               />
-              <div class="hero-floating-badge">
-                <v-icon icon="mdi-star-four-points-outline" size="16" />
-                Featured pick
-              </div>
-            </div>
+            </v-sheet>
 
-            <v-card-text class="hero-product-details">
-              <div class="hero-product-copy">
-                <p class="hero-product-category">
-                  {{ curatedProduct ? normalizeCategory(curatedProduct.category) : 'Featured' }}
+            <v-divider />
+
+            <v-card-text class="d-flex align-center justify-space-between flex-wrap ga-3 pa-4">
+              <div class="flex-grow-1">
+                <p class="text-caption text-teal-darken-2 text-uppercase mb-1">
+                  {{ curatedProduct ? normalizeCategory(curatedProduct.category) : 'Featured product' }}
                 </p>
-                <p class="hero-product-name">
+                <p class="text-body-2 font-weight-medium mb-0">
                   {{ curatedProduct?.name || 'Curated product' }}
                 </p>
               </div>
-              <div class="hero-price-wrap">
-                <strong>{{ curatedProduct ? formatAmount(curatedProduct.price) : formatAmount(0) }}</strong>
-                <span>
+
+              <div class="text-right">
+                <p class="text-subtitle-2 font-weight-bold mb-1">
+                  {{ curatedProduct ? formatAmount(curatedProduct.price) : formatAmount(0) }}
+                </p>
+                <p class="text-caption text-medium-emphasis mb-0">
                   {{ curatedProduct ? (isProductSoldOut(curatedProduct) ? 'Sold out' : `${Number(curatedProduct.stock || 0)} left`) : 'Loading' }}
-                </span>
+                </p>
               </div>
             </v-card-text>
           </v-card>
         </v-col>
       </v-row>
-    </section>
+    </v-card>
 
     <div ref="productsSection" class="products-anchor" />
 
@@ -107,7 +107,7 @@
       </v-col>
     </v-row>
 
-    <v-row v-else-if="products.length > 0" class="mt-8" dense>
+    <v-row v-else-if="products.length > 0" class="mt-8" no-gutters>
       <v-col
         v-for="product in products"
         :key="product.product_id"
@@ -116,7 +116,7 @@
         md="4"
         sm="6"
       >
-        <v-card class="h-100 border" rounded="lg" variant="elevated" @click="goToProduct(product.product_id)">
+        <v-card class="h-100 border" rounded="0" variant="flat" @click="goToProduct(product.product_id)">
           <v-img
             v-if="productImageUrl(product)"
             :alt="product.name"
@@ -357,207 +357,6 @@
     linear-gradient(180deg, #f7fbfa 0%, #ffffff 46%, #f8faf9 100%);
 }
 
-.home-hero-shell {
-  position: relative;
-  overflow: hidden;
-  margin: 0 auto;
-  border: 1px solid rgba(13, 116, 106, 0.16);
-  border-radius: 8px;
-  background:
-    linear-gradient(135deg, rgba(232, 247, 242, 0.96) 0%, rgba(255, 255, 255, 0.98) 50%, rgba(255, 246, 225, 0.96) 100%);
-  box-shadow: 0 18px 48px rgba(15, 82, 79, 0.12);
-}
-
-.home-hero-shell::before {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  content: "";
-  background:
-    linear-gradient(90deg, rgba(13, 148, 136, 0.1), transparent 45%),
-    linear-gradient(180deg, transparent 62%, rgba(245, 158, 11, 0.12));
-}
-
-.home-hero-grid {
-  position: relative;
-  padding: 28px;
-  row-gap: 28px;
-}
-
-.hero-copy {
-  display: flex;
-  max-width: 560px;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.hero-kicker {
-  display: inline-flex;
-  width: fit-content;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border: 1px solid rgba(13, 116, 106, 0.16);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.76);
-  color: #0f766e;
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0;
-  text-transform: uppercase;
-}
-
-.hero-title {
-  max-width: 11ch;
-  margin: 0;
-  color: #10231f;
-  font-size: 3.35rem;
-  font-weight: 900;
-  letter-spacing: 0;
-  line-height: 1.04;
-}
-
-.hero-subtitle {
-  max-width: 54ch;
-  margin: 0;
-  color: #47615c;
-  font-size: 1.08rem;
-  line-height: 1.7;
-}
-
-.hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.hero-action {
-  min-height: 48px;
-  font-weight: 800;
-}
-
-.hero-metrics {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 4px;
-}
-
-.hero-metric {
-  min-width: 0;
-  padding: 12px;
-  border: 1px solid rgba(15, 35, 31, 0.08);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.68);
-}
-
-.hero-metric strong,
-.hero-metric span {
-  display: block;
-  min-width: 0;
-}
-
-.hero-metric strong {
-  color: #10231f;
-  font-size: 1rem;
-  line-height: 1.3;
-}
-
-.hero-metric span {
-  color: #60736f;
-  font-size: 0.78rem;
-  line-height: 1.35;
-}
-
-.hero-feature-card {
-  overflow: hidden;
-  border-color: rgba(15, 35, 31, 0.12) !important;
-  background: rgba(255, 255, 255, 0.9) !important;
-  box-shadow: 0 16px 34px rgba(15, 82, 79, 0.14);
-  cursor: pointer;
-}
-
-.hero-image-wrap {
-  position: relative;
-  background: #e8f0ec;
-}
-
-.hero-product-image {
-  min-height: 300px;
-}
-
-.hero-floating-badge {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  max-width: calc(100% - 24px);
-  padding: 8px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  border-radius: 8px;
-  background: rgba(16, 35, 31, 0.78);
-  color: #ffffff;
-  font-size: 0.8rem;
-  font-weight: 800;
-  line-height: 1.2;
-}
-
-.hero-product-details {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 18px !important;
-}
-
-.hero-product-copy {
-  min-width: 0;
-}
-
-.hero-product-category {
-  margin: 0 0 4px;
-  color: #0f766e;
-  font-size: 0.74rem;
-  font-weight: 800;
-  letter-spacing: 0;
-  line-height: 1.3;
-  text-transform: uppercase;
-}
-
-.hero-product-name {
-  display: -webkit-box;
-  margin: 0;
-  overflow: hidden;
-  color: #10231f;
-  font-size: 1.08rem;
-  font-weight: 850;
-  line-height: 1.35;
-  -webkit-box-orient: vertical;
-  line-clamp: 2;
-}
-
-.hero-price-wrap {
-  display: flex;
-  flex-shrink: 0;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-  text-align: right;
-}
-
-.hero-price-wrap strong {
-  color: #10231f;
-  font-size: 1.12rem;
-}
-
-.hero-price-wrap span {
-  color: #60736f;
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-
 .products-anchor {
   height: 1px;
   scroll-margin-top: 84px;
@@ -571,80 +370,4 @@
   opacity: 1;
 }
 
-@media (max-width: 959px) {
-  .home-page {
-    padding: 14px 12px 30px;
-  }
-
-  .home-hero-grid {
-    padding: 24px;
-  }
-
-  .hero-copy {
-    max-width: none;
-  }
-
-  .hero-title {
-    max-width: 13ch;
-    font-size: 2.55rem;
-  }
-
-  .hero-product-image {
-    min-height: 260px;
-  }
-
-}
-
-@media (max-width: 599px) {
-  .home-page {
-    padding: 10px 8px 24px;
-  }
-
-  .home-hero-grid {
-    padding: 18px;
-    row-gap: 20px;
-  }
-
-  .hero-kicker {
-    font-size: 0.72rem;
-  }
-
-  .hero-title {
-    max-width: 100%;
-    font-size: 2rem;
-    line-height: 1.1;
-  }
-
-  .hero-subtitle {
-    font-size: 0.98rem;
-    line-height: 1.6;
-  }
-
-  .hero-actions {
-    flex-direction: column;
-  }
-
-  .hero-action {
-    width: 100%;
-  }
-
-  .hero-metrics {
-    grid-template-columns: 1fr;
-  }
-
-  .hero-product-image {
-    min-height: 220px;
-  }
-
-  .hero-product-details {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .hero-price-wrap {
-    align-items: flex-start;
-    text-align: left;
-  }
-
-}
 </style>

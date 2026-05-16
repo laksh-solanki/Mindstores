@@ -690,26 +690,46 @@
             <v-col cols="12" md="8">
               <v-row dense class="ga-4">
                 <v-col cols="12" md="12">
-                  <v-file-input v-model="productImageFile" accept="image/png,image/jpeg,image/webp,image/gif" clearable
-                    density="comfortable" label="Product image" placeholder="Select product image"
-                    prepend-icon="mdi-image-plus" chips variant="outlined" @click:clear="clearProductImageFile"
-                    @update:model-value="onProductImageSelected" />
+                  <v-file-input v-model="productImageFiles" accept="image/png,image/jpeg,image/webp,image/gif" chips
+                    clearable density="comfortable" label="Product images" multiple
+                    placeholder="Select product images" prepend-icon="mdi-image-plus" variant="outlined"
+                    @click:clear="clearProductImageFiles" @update:model-value="onProductImagesSelected" />
                 </v-col>
                 <v-col cols="12" md="12">
-                  <v-text-field :model-value="productImageInputValue" density="comfortable"
-                    label="Image URL or selected image" prepend-icon="mdi-image-search-outline" hide-details required
-                    variant="outlined" @update:model-value="updateProductImageUrl" />
+                  <v-textarea :model-value="productImageInputValue" auto-grow density="comfortable"
+                    hide-details label="Image URLs (one per line)" prepend-icon="mdi-image-search-outline" rows="2"
+                    variant="outlined" @update:model-value="updateProductImageUrls" />
                 </v-col>
               </v-row>
             </v-col>
             <v-col cols="12" md="4">
               <v-sheet border class="d-flex align-center justify-center h-100 pa-3" rounded="lg"
                 color="blue-grey-lighten-5">
-                <v-avatar color="surface" rounded="lg" size="156" variant="outlined">
-                  <v-img v-if="productImagePreview" alt="Product image preview" cover :src="productImagePreview" />
-                  <v-icon v-else color="primary">mdi-image-off-outline</v-icon>
+                <v-carousel v-if="productImageGallery.length > 0" height="180" hide-delimiter-background
+                  :hide-delimiters="productImageGallery.length <= 1"
+                  :show-arrows="productImageGallery.length > 1 ? 'hover' : false">
+                  <v-carousel-item v-for="(imageUrl, index) in productImageGallery" :key="`${imageUrl}-${index}`">
+                    <v-img :alt="`Product preview ${index + 1}`" cover height="180" :src="imageUrl" />
+                  </v-carousel-item>
+                </v-carousel>
+                <v-avatar v-else color="surface" rounded="lg" size="156" variant="outlined">
+                  <v-icon color="primary">mdi-image-off-outline</v-icon>
                 </v-avatar>
               </v-sheet>
+            </v-col>
+            <v-col v-if="productImageGallery.length > 0" cols="12">
+              <div class="d-flex flex-wrap ga-2">
+                <v-chip
+                  v-for="(imageUrl, index) in productImageGallery"
+                  :key="`${imageUrl}-${index}`"
+                  closable
+                  size="small"
+                  variant="outlined"
+                  @click:close="removeProductImage(index)"
+                >
+                  {{ index === 0 ? "Primary image" : `Image ${index + 1}` }}
+                </v-chip>
+              </div>
             </v-col>
             <v-col cols="12" md="8">
               <v-text-field v-model="formData.name" density="comfortable" label="Product name" required
@@ -824,7 +844,7 @@ import { useDisplay } from "vuetify";
 import { useAppStore } from "@/stores/app";
 import { API_URL, buildAuthenticatedRequestConfig } from "@/utils/api";
 import { convertAmountToUsd, fetchExchangeRates } from "@/utils/currency";
-import { safeDisplayImageUrl } from "@/utils/images";
+import { safeDisplayImageUrl, safeDisplayImageUrls } from "@/utils/images";
 import { clearProductsCache } from "@/utils/productCache";
 import {
   extractProductItems,
@@ -837,6 +857,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DEFAULT_PRICE_CURRENCY = "USD";
 const MAX_PRODUCT_IMAGE_FILE_BYTES = 512 * 1024;
 const MAX_PRODUCT_IMAGE_DATA_URL_LENGTH = 700_000;
+const MAX_PRODUCT_IMAGE_COUNT = 6;
 const DEFAULT_RESTOCK_TARGET = 12;
 const DESCRIPTION_BULLET_OPTIONS = [
   { symbol: "-", label: "Add dash bullet" },
@@ -888,8 +909,7 @@ const lastSyncedAt = ref(null);
 const adminQuickSearch = ref("");
 const isUserMenuOpen = ref(false);
 const isQuickActionMenuOpen = ref(false);
-const productImageFile = ref(null);
-const selectedProductImageName = ref("");
+const productImageFiles = ref([]);
 const productImageInputValue = ref("");
 const catalogOptionType = ref("category");
 const catalogOptionInput = ref("");
@@ -908,6 +928,7 @@ const formData = ref({
   subcategory: "",
   stock: 0,
   image_url: "",
+  image_urls: [],
 });
 
 const navItems = [
@@ -998,7 +1019,7 @@ const isRefreshing = computed(() => productLoading.value || userLoading.value ||
 const lastSyncedLabel = computed(() => (lastSyncedAt.value ? `Synced ${formatDate(lastSyncedAt.value)}` : "Ready"));
 const userInitials = computed(() => initialsFor(userName.value));
 const selectedPriceCurrency = computed(() => normalizeProductCurrency(formData.value.price_currency));
-const productImagePreview = computed(() => safeDisplayImageUrl(formData.value.image_url));
+const productImageGallery = computed(() => safeDisplayImageUrls(formData.value.image_urls, formData.value.image_url));
 const catalogOptionDialogTitle = computed(() =>
   catalogOptionType.value === "subcategory" ? "Add Subcategory" : "Add Category",
 );
@@ -1666,7 +1687,7 @@ function buildRestockPlanItem(product) {
 }
 
 function productImageUrl(product) {
-  return safeDisplayImageUrl(product?.image_url);
+  return safeDisplayImageUrls(product?.image_urls, product?.image_url)[0] || "";
 }
 
 function userImageUrl(user) {
@@ -1896,91 +1917,118 @@ function addDescriptionBullet(symbol) {
   formData.value.description = currentDescription ? `${currentDescription}\n${bullet} ` : `${bullet} `;
 }
 
-function updateProductImageUrl(value) {
-  productImageFile.value = null;
-  selectedProductImageName.value = "";
-  productImageInputValue.value = normalizeText(value);
-  formData.value.image_url = productImageInputValue.value;
+function splitProductImageInput(value) {
+  return String(value || "")
+    .split(/\r?\n/)
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
-function resolveSelectedImageFile(value) {
+function syncPrimaryProductImage() {
+  formData.value.image_url = formData.value.image_urls[0] || "";
+}
+
+function updateProductImageUrls(value) {
+  productImageInputValue.value = String(value || "");
+  const urls = splitProductImageInput(productImageInputValue.value);
+  const existingDataImages = formData.value.image_urls.filter((imageUrl) => imageUrl.startsWith("data:image/"));
+  formData.value.image_urls = safeDisplayImageUrls([...existingDataImages, ...urls]).slice(0, MAX_PRODUCT_IMAGE_COUNT);
+  syncPrimaryProductImage();
+}
+
+function resolveSelectedImageFiles(value) {
   if (Array.isArray(value)) {
-    return value[0] || null;
+    return value.filter(Boolean);
   }
   if (typeof FileList !== "undefined" && value instanceof FileList) {
-    return value[0] || null;
+    return Array.from(value);
   }
   if (typeof File !== "undefined" && value instanceof File) {
-    return value;
+    return [value];
   }
   if (typeof File !== "undefined") {
-    if (value?.file instanceof File) {
-      return value.file;
-    }
-    if (value?.raw instanceof File) {
-      return value.raw;
-    }
-    if (value?.rawFile instanceof File) {
-      return value.rawFile;
+    const wrappedFile = value?.file || value?.raw || value?.rawFile;
+    if (wrappedFile instanceof File) {
+      return [wrappedFile];
     }
   }
-  return value?.target?.files?.[0] || null;
+  return value?.target?.files ? Array.from(value.target.files) : [];
 }
 
-function clearProductImageFile() {
-  productImageFile.value = null;
-  selectedProductImageName.value = "";
-  productImageInputValue.value = "";
-  formData.value.image_url = "";
+function clearProductImageFiles() {
+  productImageFiles.value = [];
 }
 
-function onProductImageSelected(value) {
-  const file = resolveSelectedImageFile(value);
-  if (!file) {
-    clearProductImageFile();
+function removeProductImage(index) {
+  formData.value.image_urls = formData.value.image_urls.filter((_, imageIndex) => imageIndex !== index);
+  syncPrimaryProductImage();
+  productImageInputValue.value = formData.value.image_urls
+    .filter((imageUrl) => imageUrl.startsWith("http://") || imageUrl.startsWith("https://"))
+    .join("\n");
+}
+
+function readImageFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => resolve(String(reader.result || "")));
+    reader.addEventListener("error", () => reject(new Error("Unable to read image file")));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function onProductImagesSelected(value) {
+  const files = resolveSelectedImageFiles(value);
+  if (files.length === 0) {
+    clearProductImageFiles();
     return;
   }
 
-  selectedProductImageName.value = file.name || "Selected image";
-  productImageInputValue.value = "";
-  formData.value.image_url = "";
-
-  if (!file.type?.startsWith("image/")) {
-    productImageFile.value = null;
-    selectedProductImageName.value = "";
-    productImageInputValue.value = "";
-    notify("Please choose an image file", "warning");
+  const availableSlots = MAX_PRODUCT_IMAGE_COUNT - formData.value.image_urls.length;
+  if (availableSlots <= 0) {
+    clearProductImageFiles();
+    notify(`Maximum ${MAX_PRODUCT_IMAGE_COUNT} images allowed`, "warning");
     return;
   }
 
-  if (file.size > MAX_PRODUCT_IMAGE_FILE_BYTES) {
-    productImageFile.value = null;
-    selectedProductImageName.value = "";
-    productImageInputValue.value = "";
-    notify("Image too large. Maximum size is 512KB.", "warning");
-    return;
+  const selectedFiles = files.slice(0, availableSlots);
+  if (files.length > availableSlots) {
+    notify(`Only ${availableSlots} more image${availableSlots === 1 ? "" : "s"} can be added`, "warning");
   }
 
-  const reader = new FileReader();
-  reader.addEventListener("load", () => {
-    const result = String(reader.result || "");
-    if (!result.startsWith("data:image/") || result.length > MAX_PRODUCT_IMAGE_DATA_URL_LENGTH || !safeDisplayImageUrl(result)) {
-      productImageFile.value = null;
-      selectedProductImageName.value = "";
-      productImageInputValue.value = "";
-      notify("Unsupported image format or size", "warning");
-      return;
+  const validFiles = selectedFiles.filter((file) => {
+    if (!file.type?.startsWith("image/")) {
+      notify("Please choose image files only", "warning");
+      return false;
     }
-    formData.value.image_url = result;
-    selectedProductImageName.value = file.name;
+    if (file.size > MAX_PRODUCT_IMAGE_FILE_BYTES) {
+      notify("Each image must be 512KB or smaller.", "warning");
+      return false;
+    }
+    return true;
   });
-  reader.addEventListener("error", () => {
-    productImageFile.value = null;
-    selectedProductImageName.value = "";
-    productImageInputValue.value = "";
-    notify("Unable to read image file", "error");
-  });
-  reader.readAsDataURL(file);
+
+  if (validFiles.length === 0) {
+    clearProductImageFiles();
+    return;
+  }
+
+  try {
+    const results = await Promise.all(validFiles.map((file) => readImageFileAsDataUrl(file)));
+    const safeImages = results.filter((result) => (
+      result.startsWith("data:image/")
+      && result.length <= MAX_PRODUCT_IMAGE_DATA_URL_LENGTH
+      && Boolean(safeDisplayImageUrl(result))
+    ));
+    if (safeImages.length !== results.length) {
+      notify("One or more selected images are unsupported or too large", "warning");
+    }
+    formData.value.image_urls = safeDisplayImageUrls([...formData.value.image_urls, ...safeImages]).slice(0, MAX_PRODUCT_IMAGE_COUNT);
+    syncPrimaryProductImage();
+    productImageFiles.value = [];
+  } catch {
+    clearProductImageFiles();
+    notify("Unable to read one or more image files", "error");
+  }
 }
 
 function openCatalogOptionDialog(type) {
@@ -2038,8 +2086,7 @@ async function saveCatalogOption() {
 }
 
 function resetProductForm() {
-  productImageFile.value = null;
-  selectedProductImageName.value = "";
+  productImageFiles.value = [];
   productImageInputValue.value = "";
   formData.value = {
     name: "",
@@ -2051,6 +2098,7 @@ function resetProductForm() {
     subcategory: "",
     stock: 0,
     image_url: "",
+    image_urls: [],
   };
 }
 
@@ -2071,11 +2119,11 @@ function editProduct(product) {
 
   editMode.value = true;
   currentProductId.value = selectedProduct.product_id;
-  productImageFile.value = null;
-  selectedProductImageName.value = "";
-  productImageInputValue.value = String(selectedProduct.image_url || "").startsWith("data:image/")
-    ? ""
-    : selectedProduct.image_url || "";
+  productImageFiles.value = [];
+  const selectedProductImages = safeDisplayImageUrls(selectedProduct.image_urls, selectedProduct.image_url);
+  productImageInputValue.value = selectedProductImages
+    .filter((imageUrl) => !imageUrl.startsWith("data:image/"))
+    .join("\n");
   formData.value = {
     name: selectedProduct.name || "",
     company: selectedProduct.company || "",
@@ -2085,7 +2133,8 @@ function editProduct(product) {
     category: normalizeCategoryName(selectedProduct.category),
     subcategory: normalizeSubcategoryName(selectedProduct.category, selectedProduct.subcategory),
     stock: Number(selectedProduct.stock || 0),
-    image_url: selectedProduct.image_url || "",
+    image_url: selectedProductImages[0] || "",
+    image_urls: selectedProductImages,
   };
   productDialog.value = true;
 }
@@ -2094,13 +2143,17 @@ function buildProductPayload() {
   const priceCurrency = normalizeProductCurrency(formData.value.price_currency);
   const priceAmount = Number(formData.value.price);
   const basePrice = convertAmountToUsd(priceAmount, priceCurrency);
+  const manualImageUrls = splitProductImageInput(productImageInputValue.value);
+  const safeManualImageUrls = safeDisplayImageUrls(manualImageUrls);
+  const imageUrls = safeDisplayImageUrls(formData.value.image_urls, formData.value.image_url).slice(0, MAX_PRODUCT_IMAGE_COUNT);
   const payload = {
     name: normalizeText(formData.value.name),
     company: normalizeText(formData.value.company),
     description: normalizeText(formData.value.description),
     category: normalizeCategoryName(formData.value.category),
     subcategory: normalizeSubcategoryName(formData.value.category, formData.value.subcategory),
-    image_url: normalizeText(formData.value.image_url),
+    image_url: imageUrls[0] || "",
+    image_urls: imageUrls,
     price: Number(basePrice.toFixed(2)),
     price_amount: priceAmount,
     price_currency: priceCurrency,
@@ -2113,8 +2166,9 @@ function buildProductPayload() {
   if (!Number.isFinite(payload.price_amount) || payload.price_amount < 0) return { error: "Price must be valid" };
   if (!Number.isFinite(payload.price) || payload.price < 0) return { error: "Price conversion must be valid" };
   if (!Number.isFinite(payload.stock) || payload.stock < 0) return { error: "Stock must be valid" };
-  if (!payload.image_url) return { error: "Image URL is required" };
-  if (!safeDisplayImageUrl(payload.image_url)) return { error: "Image must be a valid http/https URL or selected image" };
+  if (manualImageUrls.length > MAX_PRODUCT_IMAGE_COUNT) return { error: `Maximum ${MAX_PRODUCT_IMAGE_COUNT} images allowed` };
+  if (manualImageUrls.length !== safeManualImageUrls.length) return { error: "Every image URL must be valid" };
+  if (payload.image_urls.length === 0) return { error: "At least one product image is required" };
 
   return { payload };
 }

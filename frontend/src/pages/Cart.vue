@@ -22,9 +22,9 @@
           <v-chip size="small" variant="outlined">{{ cartStore.items.length }} items</v-chip>
         </v-sheet>
 
-        <v-row dense>
+        <v-row no-gutters>
           <v-col v-for="item in cartStore.items" :key="item.product_id" cols="12" sm="6" lg="4">
-            <v-card class="h-100 d-flex flex-column pa-2 border" rounded="lg" variant="flat">
+            <v-card class="h-100 d-flex flex-column pa-2 border" rounded="0" variant="flat">
               <v-sheet class="position-relative d-flex align-center justify-center rounded-lg overflow-hidden"
                 color="grey-lighten-4" height="220" role="button" tabindex="0" @click="goToProduct(item.product_id)"
                 @keyup.enter="goToProduct(item.product_id)">

@@ -19,6 +19,7 @@ from ..utils import (
 
 router = APIRouter()
 MAX_PRODUCT_IMAGE_DATA_URL_LENGTH = 700_000
+MAX_PRODUCT_IMAGE_COUNT = 6
 ALLOWED_PRICE_CURRENCIES = {"USD", "EUR", "GBP", "INR"}
 DATA_IMAGE_URL_PATTERN = re.compile(
     r"data:image/(png|jpeg|jpg|webp|gif);base64,[a-zA-Z0-9+/=]+",
@@ -47,6 +48,30 @@ def normalize_product_image_url(value: Any) -> str:
     return text if text.startswith("http://") or text.startswith("https://") else ""
 
 
+def normalize_product_image_urls(values: Any, fallback: Any = "") -> list[str]:
+    if isinstance(values, list):
+        candidates = values
+    elif values not in (None, ""):
+        candidates = [values]
+    else:
+        candidates = []
+
+    normalized_images: list[str] = []
+    for candidate in candidates:
+        normalized = normalize_product_image_url(candidate)
+        if normalized and normalized not in normalized_images:
+            normalized_images.append(normalized)
+        if len(normalized_images) >= MAX_PRODUCT_IMAGE_COUNT:
+            break
+
+    if not normalized_images:
+        fallback_image = normalize_product_image_url(fallback)
+        if fallback_image:
+            normalized_images.append(fallback_image)
+
+    return normalized_images
+
+
 def normalize_category_key(value: Any) -> str:
     return normalize_text(value, 80).casefold()
 
@@ -61,6 +86,10 @@ def serialize_product(product: dict[str, Any] | None) -> dict[str, Any] | None:
         return None
     output = {key: value for key, value in product.items() if key != "_id"}
     output["product_id"] = output.get("product_id") or str(product.get("_id"))
+    image_urls = normalize_product_image_urls(output.get("image_urls"), output.get("image_url"))
+    output["image_urls"] = image_urls
+    if image_urls:
+        output["image_url"] = image_urls[0]
     return output
 
 
@@ -155,7 +184,7 @@ async def save_category_metadata(
 def validate_create_payload(data: dict[str, Any]) -> tuple[dict[str, Any] | None, str | None]:
     name = normalize_text(data.get("name"), 120)
     category = normalize_text(data.get("category"), 80)
-    image_url = normalize_product_image_url(data.get("image_url"))
+    image_urls = normalize_product_image_urls(data.get("image_urls"), data.get("image_url"))
     price_currency = normalize_price_currency(data.get("price_currency") or data.get("currency"))
     try:
         price = float(data.get("price"))
@@ -180,8 +209,8 @@ def validate_create_payload(data: dict[str, Any]) -> tuple[dict[str, Any] | None
         return None, "Price amount must be a valid non-negative number"
     if stock != stock or not stock.is_integer() or stock < 0:
         return None, "Stock must be a non-negative integer"
-    if not image_url:
-        return None, "Image must be a valid http/https URL or image upload"
+    if not image_urls:
+        return None, "At least one image must be a valid http/https URL or image upload"
 
     return {
         "name": name,
@@ -189,7 +218,8 @@ def validate_create_payload(data: dict[str, Any]) -> tuple[dict[str, Any] | None
         "description": normalize_text(data.get("description"), 5000),
         "category": category,
         "subcategory": normalize_text(data.get("subcategory"), 80),
-        "image_url": image_url,
+        "image_url": image_urls[0],
+        "image_urls": image_urls,
         "price": price,
         "price_amount": price_amount,
         "price_currency": price_currency,
@@ -218,11 +248,18 @@ def validate_update_payload(data: dict[str, Any]) -> tuple[dict[str, Any] | None
         updates["category"] = category
     if "subcategory" in data:
         updates["subcategory"] = normalize_text(data.get("subcategory"), 80)
-    if "image_url" in data:
+    if "image_urls" in data:
+        image_urls = normalize_product_image_urls(data.get("image_urls"), data.get("image_url"))
+        if not image_urls:
+            return None, "At least one image must be a valid http/https URL or image upload"
+        updates["image_url"] = image_urls[0]
+        updates["image_urls"] = image_urls
+    elif "image_url" in data:
         image_url = normalize_product_image_url(data.get("image_url"))
         if not image_url:
             return None, "Image must be a valid http/https URL or image upload"
         updates["image_url"] = image_url
+        updates["image_urls"] = [image_url]
     if "price_currency" in data or "currency" in data:
         price_currency = normalize_price_currency(data.get("price_currency") or data.get("currency"))
         updates["price_currency"] = price_currency

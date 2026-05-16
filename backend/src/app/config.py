@@ -72,7 +72,7 @@ def get_config() -> AppConfig:
             read_env("ALLOW_NULL_ORIGIN_ON_MUTATIONS"),
             False,
         ),
-        max_body_bytes=parse_integer_env(read_env("REQUEST_BODY_LIMIT_BYTES"), 1_048_576),
+        max_body_bytes=parse_integer_env(read_env("REQUEST_BODY_LIMIT_BYTES"), 5_242_880),
         mutation_rate_limit_max=parse_integer_env(read_env("MUTATION_RATE_LIMIT_MAX"), 120),
         session_duration_days=parse_integer_env(read_env("SESSION_DURATION_DAYS"), 7),
         admin_emails=[item.strip() for item in (read_env("ADMIN_EMAILS") or "").split(",") if item.strip()],

@@ -20,3 +20,22 @@ export function safeDisplayImageUrl(value) {
     return ''
   }
 }
+
+export function safeDisplayImageUrls(value, fallback = '') {
+  let candidates = []
+  if (Array.isArray(value)) {
+    candidates = value
+  } else if (typeof value === 'string') {
+    candidates = [value]
+  }
+  const safeImages = candidates
+    .map((candidate) => safeDisplayImageUrl(candidate))
+    .filter(Boolean)
+
+  const fallbackImage = safeDisplayImageUrl(fallback)
+  if (fallbackImage) {
+    safeImages.push(fallbackImage)
+  }
+
+  return [...new Set(safeImages)]
+}

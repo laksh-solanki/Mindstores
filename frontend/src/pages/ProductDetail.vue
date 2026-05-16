@@ -25,18 +25,29 @@
       <v-row dense>
         <v-col cols="12" md="5">
           <v-card border rounded="lg" variant="flat">
-            <v-img
-              v-if="productImageUrl"
-              :alt="product.name"
-              aspect-ratio="1"
-              cover
-              decoding="async"
-              fetchpriority="high"
-              loading="eager"
-              max-height="420"
-              sizes="(max-width: 768px) 100vw, 42vw"
-              :src="productImageUrl"
-            />
+            <v-carousel
+              v-if="productImageUrls.length > 0"
+              height="470"
+              :hide-delimiters="productImageUrls.length <= 1"
+              :show-arrows="productImageUrls.length > 1 ? 'hover' : false"
+            >
+              <v-carousel-item
+                v-for="(imageUrl, index) in productImageUrls"
+                :key="`${imageUrl}-${index}`"
+              >
+                <v-img
+                  :alt="`${product.name} image ${index + 1}`"
+                  aspect-ratio="1"
+                  cover
+                  decoding="async"
+                  :fetchpriority="index === 0 ? 'high' : 'auto'"
+                  :loading="index === 0 ? 'eager' : 'lazy'"
+                  max-height="420"
+                  sizes="(max-width: 768px) 100vw, 42vw"
+                  :src="imageUrl"
+                />
+              </v-carousel-item>
+            </v-carousel>
             <v-sheet v-else class="d-flex align-center justify-center" color="grey-lighten-4" height="360">
               <v-icon color="primary" size="56">mdi-image-off-outline</v-icon>
             </v-sheet>
@@ -168,12 +179,18 @@
 
         <v-col cols="12">
           <v-card border rounded="lg" variant="flat">
-            <v-card-title class="text-subtitle-1 font-weight-bold">Description</v-card-title>
+            <v-card-title class="text-subtitle-1 font-weight-bold">Product Details</v-card-title>
             <v-divider />
             <v-card-text>
-              <p class="text-body-2 text-medium-emphasis mb-0">
-                {{ isTruncated ? truncatedDescription : fullDescription }}
-              </p>
+              <div class="d-flex flex-column ga-2">
+                <p
+                  v-for="(line, index) in visibleDescriptionLines"
+                  :key="`${line}-${index}`"
+                  class="text-body-2 text-medium-emphasis mb-0"
+                >
+                  {{ line }}
+                </p>
+              </div>
               <v-btn
                 v-if="showSeeMore"
                 class="px-0 mt-2"
@@ -231,7 +248,7 @@
   import { useAppStore } from '@/stores/app'
   import { useCartStore } from '@/stores/cart'
   import { useCurrency } from '@/utils/currency'
-  import { safeDisplayImageUrl } from '@/utils/images'
+  import { safeDisplayImageUrls } from '@/utils/images'
   import { PRODUCTS_CACHE_INVALIDATED_EVENT } from '@/utils/productCache'
   import { fetchProductDetail } from '@/utils/products'
 
@@ -249,7 +266,7 @@
   const snackbarColor = ref('success')
 
   const fallbackDescription = 'A design-first piece crafted to blend visual calm with daily utility.'
-  const productImageUrl = computed(() => safeDisplayImageUrl(product.value?.image_url))
+  const productImageUrls = computed(() => safeDisplayImageUrls(product.value?.image_urls, product.value?.image_url))
 
   // Description truncation logic
   const isTruncated = ref(true)
@@ -271,6 +288,14 @@
     return fullDescription.value.length > (LINES_THRESHOLD * CHARS_PER_LINE)
   })
 
+  const visibleDescriptionLines = computed(() => {
+    const description = isTruncated.value ? truncatedDescription.value : fullDescription.value
+    return description
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+  })
+
   function toggleDescription() {
     isTruncated.value = !isTruncated.value
   }
@@ -285,8 +310,17 @@
     return value.length > 0 ? value.toUpperCase() : 'CURATED COLLECTION'
   })
 
+  function stableProductSeed(value) {
+    const text = String(value || '')
+    let hash = 0
+    for (const character of text) {
+      hash = ((hash * 31) + character.codePointAt(0)) >>> 0
+    }
+    return hash
+  }
+
   const ratingScore = computed(() => {
-    const seed = Number(product.value?.product_id || route.params.id || 0)
+    const seed = stableProductSeed(product.value?.product_id || route.params.id || '')
     const score = 4.1 + ((seed % 7) / 10)
     return Math.min(score, 4.9)
   })
@@ -299,7 +333,7 @@
   })
 
   const reviewCount = computed(() => {
-    const seed = Number(product.value?.product_id || route.params.id || 1)
+    const seed = stableProductSeed(product.value?.product_id || route.params.id || '')
     return 148 + (seed % 91)
   })
 

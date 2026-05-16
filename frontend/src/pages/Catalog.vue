@@ -99,9 +99,9 @@
           </v-col>
         </v-row>
 
-        <v-row v-else-if="products.length > 0">
+        <v-row v-else-if="products.length > 0" no-gutters>
           <v-col v-for="product in products" :key="product.product_id" cols="12" lg="4" sm="6">
-            <v-card class="h-100" rounded="lg" variant="flat" border @click="openProduct(product.product_id)">
+            <v-card class="h-100" rounded="0" variant="flat" border @click="openProduct(product.product_id)">
               <v-img v-if="productImageUrl(product)" :alt="product.name" aspect-ratio="1" cover
                 :src="productImageUrl(product)" />
               <v-sheet v-else class="d-flex align-center justify-center" height="220">
