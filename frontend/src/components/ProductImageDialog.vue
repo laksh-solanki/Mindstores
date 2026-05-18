@@ -595,8 +595,8 @@ onBeforeUnmount(() => {
 }
 
 .zoom-stage {
-  min-height: min(90vh, 860px);
-  max-height: min(91vh, 860px);
+  min-height: min(91.8vh, 860px);
+  max-height: min(90vh, 860px);
   overflow: auto;
   padding: 22px;
   background:
