@@ -27,7 +27,7 @@
           <v-card border rounded="lg" variant="flat">
             <v-carousel
               v-if="productImageUrls.length > 0"
-              height="470"
+              height="auto"
               :hide-delimiters="productImageUrls.length <= 1"
               :show-arrows="productImageUrls.length > 1 ? 'hover' : false"
             >
