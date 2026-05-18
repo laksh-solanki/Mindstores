@@ -2,54 +2,76 @@
   <v-container class="py-4 py-md-6" fluid>
     <v-row v-if="loading" dense>
       <v-col cols="12" md="5">
-        <v-skeleton-loader class="rounded-lg" height="420" type="image" />
+        <v-skeleton-loader class="rounded-xl" height="460" type="image" />
       </v-col>
       <v-col cols="12" md="7">
-        <v-skeleton-loader class="rounded-lg" type="article, list-item-three-line, actions" />
+        <v-skeleton-loader class="rounded-xl" type="article, list-item-three-line, actions" />
       </v-col>
     </v-row>
 
     <template v-else-if="product">
       <div class="d-flex align-center justify-space-between flex-wrap ga-3 mb-4">
-
-        <v-chip
-          :color="stockReady ? 'success' : 'error'"
-          prepend-icon="mdi-circle"
-          size="small"
-          variant="tonal"
+        <v-btn
+          prepend-icon="mdi-arrow-left"
+          rounded="lg"
+          variant="text"
+          @click="goBack"
         >
-          {{ stockText }}
-        </v-chip>
+          Back
+        </v-btn>
+
+        <div class="d-flex align-center flex-wrap justify-end ga-2">
+          <v-chip color="teal-darken-1" size="small" variant="tonal">
+            {{ categoryLabel }}
+          </v-chip>
+          <v-chip
+            :color="stockReady ? 'success' : 'error'"
+            prepend-icon="mdi-circle"
+            size="small"
+            variant="tonal"
+          >
+            {{ stockText }}
+          </v-chip>
+        </div>
       </div>
 
       <v-row dense>
-        <v-col cols="12" md="5">
-          <v-card border rounded="lg" variant="flat">
-            <v-carousel
-              v-if="productImageUrls.length > 0"
-              height="auto"
-              :hide-delimiters="productImageUrls.length <= 1"
-              :show-arrows="productImageUrls.length > 1 ? 'hover' : false"
-            >
-              <v-carousel-item
-                v-for="(imageUrl, index) in productImageUrls"
-                :key="`${imageUrl}-${index}`"
+        <v-col cols="12" lg="5">
+          <v-card border rounded="xl" variant="flat">
+            <v-sheet class="pa-3 pa-md-4" color="grey-lighten-5" rounded="xl">
+              <v-carousel
+                v-if="productImageUrls.length > 0"
+                height="auto"
+                :hide-delimiters="productImageUrls.length <= 1"
+                :show-arrows="productImageUrls.length > 1 ? 'hover' : false"
               >
-                <v-img
-                  :alt="`${product.name} image ${index + 1}`"
-                  aspect-ratio="1"
-                  cover
-                  decoding="async"
-                  :fetchpriority="index === 0 ? 'high' : 'auto'"
-                  :loading="index === 0 ? 'eager' : 'lazy'"
-                  max-height="420"
-                  sizes="(max-width: 768px) 100vw, 42vw"
-                  :src="imageUrl"
-                />
-              </v-carousel-item>
-            </v-carousel>
-            <v-sheet v-else class="d-flex align-center justify-center" color="grey-lighten-4" height="360">
-              <v-icon color="primary" size="56">mdi-image-off-outline</v-icon>
+                <v-carousel-item
+                  v-for="(imageUrl, index) in productImageUrls"
+                  :key="`${imageUrl}-${index}`"
+                >
+                  <v-img
+                    :alt="`${product.name} image ${index + 1}`"
+                    aspect-ratio="1"
+                    cover
+                    decoding="async"
+                    :fetchpriority="index === 0 ? 'high' : 'auto'"
+                    :loading="index === 0 ? 'eager' : 'lazy'"
+                    max-height="440"
+                    sizes="(max-width: 768px) 100vw, 42vw"
+                    :src="imageUrl"
+                    @click="openImageDialog(index)"
+                  />
+                </v-carousel-item>
+              </v-carousel>
+              <v-sheet
+                v-else
+                class="d-flex align-center justify-center"
+                color="grey-lighten-4"
+                height="380"
+                rounded="lg"
+              >
+                <v-icon color="primary" size="56">mdi-image-off-outline</v-icon>
+              </v-sheet>
             </v-sheet>
           </v-card>
 
@@ -58,54 +80,60 @@
               v-for="panel in visualPanels"
               :key="panel.title"
               cols="12"
-              lg="4"
-              md="12"
-              sm="4"
+              md="4"
             >
-              <v-sheet border class="pa-3 h-100" rounded="lg">
-                <p class="text-caption text-medium-emphasis text-uppercase font-weight-medium mb-1">
-                  {{ panel.title }}
-                </p>
-                <p class="text-body-2 font-weight-medium">{{ panel.value }}</p>
-              </v-sheet>
+              <v-card border class="h-100" rounded="lg" variant="flat">
+                <v-card-text class="pa-3">
+                  <p class="text-caption text-medium-emphasis text-uppercase font-weight-medium mb-1">
+                    {{ panel.title }}
+                  </p>
+                  <p class="text-body-2 font-weight-medium mb-0">{{ panel.value }}</p>
+                </v-card-text>
+              </v-card>
             </v-col>
           </v-row>
         </v-col>
 
-        <v-col cols="12" md="7">
-          <v-card border rounded="lg" variant="flat">
-            <v-card-text class="pa-4 pa-md-5">
+        <v-col cols="12" lg="7">
+          <v-card border rounded="xl" variant="flat">
+            <v-card-text class="pa-4 pa-md-6">
               <div class="d-flex align-center flex-wrap ga-2">
-                <v-chip color="teal-darken-1" size="small" variant="tonal">
-                  {{ categoryLabel }}
-                </v-chip>
                 <span class="text-caption text-medium-emphasis">Inclusive of all taxes</span>
+                <v-divider vertical />
+                <span class="text-caption text-medium-emphasis">Curated by Mindstores</span>
               </div>
 
-              <h1 class="text-h5 font-weight-bold mt-3 mb-2 text-break">
+              <h1 class="text-h5 text-md-h4 font-weight-bold mt-3 mb-3 text-break">
                 {{ product.name }}
               </h1>
 
               <div class="d-flex align-center flex-wrap ga-3">
-                <p class="text-h5 font-weight-bold">{{ formattedPrice }}</p>
-                <div class="d-flex align-center ga-1">
-                  <v-icon
-                    v-for="(filled, index) in ratingStars"
-                    :key="index"
-                    :color="filled ? 'amber-darken-2' : 'grey-lighten-1'"
-                    size="18"
-                  >
-                    {{ filled ? 'mdi-star' : 'mdi-star-outline' }}
-                  </v-icon>
-                </div>
+                <p class="text-h5 text-md-h4 font-weight-bold mb-0">{{ formattedPrice }}</p>
+
+                <v-chip color="amber-lighten-5" size="small" variant="flat">
+                  <v-icon color="amber-darken-2" start>mdi-star</v-icon>
+                  {{ ratingLabel }}
+                </v-chip>
+
                 <span class="text-body-2 text-medium-emphasis">
-                  {{ ratingLabel }} / 5 - {{ reviewCount }} reviews
+                  {{ reviewCount }} reviews
                 </span>
               </div>
 
-              <v-divider class="my-4" />
+              <div class="d-flex align-center ga-1 mt-3">
+                <v-icon
+                  v-for="(filled, index) in ratingStars"
+                  :key="index"
+                  :color="filled ? 'amber-darken-2' : 'grey-lighten-1'"
+                  size="18"
+                >
+                  {{ filled ? 'mdi-star' : 'mdi-star-outline' }}
+                </v-icon>
+              </div>
 
-              <div class="d-flex flex-wrap ga-2 mb-4">
+              <v-divider class="my-5" />
+
+              <div class="d-flex flex-wrap ga-2 mb-5">
                 <v-chip
                   v-for="chip in trustChips"
                   :key="chip.label"
@@ -117,68 +145,70 @@
                 </v-chip>
               </div>
 
-              <v-sheet border class="pa-4" rounded="lg">
-                <div class="d-flex align-center justify-space-between flex-wrap ga-3">
-                  <div>
-                    <p class="text-body-2 font-weight-medium">Quantity</p>
-                    <p class="text-caption text-medium-emphasis">{{ stockText }}</p>
+              <v-card color="grey-lighten-5" rounded="lg" variant="flat">
+                <v-card-text class="pa-4">
+                  <div class="d-flex align-center justify-space-between flex-wrap ga-3">
+                    <div>
+                      <p class="text-body-2 font-weight-medium mb-1">Quantity</p>
+                      <p class="text-caption text-medium-emphasis mb-0">{{ stockText }}</p>
+                    </div>
+
+                    <div class="d-flex align-center ga-2">
+                      <v-btn
+                        density="comfortable"
+                        :disabled="quantity <= 1"
+                        icon="mdi-minus"
+                        size="small"
+                        variant="outlined"
+                        @click="decreaseQuantity"
+                      />
+                      <v-chip class="px-5" variant="outlined">Qty {{ quantity }}</v-chip>
+                      <v-btn
+                        density="comfortable"
+                        :disabled="!stockReady || quantity >= product.stock"
+                        icon="mdi-plus"
+                        size="small"
+                        variant="outlined"
+                        @click="increaseQuantity"
+                      />
+                    </div>
                   </div>
 
-                  <div class="d-flex align-center ga-2">
+                  <div class="d-flex flex-column flex-sm-row ga-3 mt-4">
                     <v-btn
-                      density="comfortable"
-                      :disabled="quantity <= 1"
-                      icon="mdi-minus"
-                      size="small"
-                      variant="outlined"
-                      @click="decreaseQuantity"
-                    />
-                    <v-chip class="px-5" variant="outlined">Qty {{ quantity }}</v-chip>
+                      class="flex-grow-1"
+                      color="teal-darken-1"
+                      :disabled="!stockReady"
+                      prepend-icon="mdi-cart"
+                      rounded="lg"
+                      size="large"
+                      variant="flat"
+                      @click="addToCart"
+                    >
+                      {{ stockReady ? 'Add to Cart' : 'Sold Out' }}
+                    </v-btn>
+
                     <v-btn
-                      density="comfortable"
-                      :disabled="!stockReady || quantity >= product.stock"
-                      icon="mdi-plus"
-                      size="small"
-                      variant="outlined"
-                      @click="increaseQuantity"
-                    />
+                      class="flex-grow-1"
+                      color="primary"
+                      :disabled="!stockReady"
+                      prepend-icon="mdi-lightning-bolt"
+                      rounded="lg"
+                      size="large"
+                      variant="tonal"
+                      @click="buyNow"
+                    >
+                      Buy Now
+                    </v-btn>
                   </div>
-                </div>
-
-                <div class="d-flex flex-column flex-sm-row ga-3 mt-4">
-                  <v-btn
-                    class="flex-grow-1"
-                    color="teal-darken-1"
-                    :disabled="!stockReady"
-                    prepend-icon="mdi-cart"
-                    rounded="lg"
-                    size="large"
-                    variant="flat"
-                    @click="addToCart"
-                  >
-                    {{ stockReady ? 'Add to Cart' : 'Sold Out' }}
-                  </v-btn>
-
-                  <v-btn
-                    class="flex-grow-1"
-                    color="primary"
-                    :disabled="!stockReady"
-                    prepend-icon="mdi-lightning-bolt"
-                    rounded="lg"
-                    size="large"
-                    variant="tonal"
-                    @click="buyNow"
-                  >
-                    Buy Now
-                  </v-btn>
-                </div>
-              </v-sheet>
+                </v-card-text>
+              </v-card>
             </v-card-text>
           </v-card>
         </v-col>
 
-        <v-col cols="12">
-          <v-card border rounded="lg" variant="flat">
+        <v-col cols="12" lg="8">
+          <v-card border rounded="xl" variant="flat">
             <v-card-title class="text-subtitle-1 font-weight-bold">Product Details</v-card-title>
             <v-divider />
             <v-card-text>
@@ -205,12 +235,23 @@
           </v-card>
         </v-col>
 
-        <v-col v-for="detail in atelierDetails" :key="detail.title" cols="12" md="4">
-          <v-card border class="h-100" rounded="lg" variant="flat">
-            <v-card-text>
-              <p class="text-subtitle-2 font-weight-bold mb-2">{{ detail.title }}</p>
-              <p class="text-body-2 text-medium-emphasis mb-0">{{ detail.copy }}</p>
-            </v-card-text>
+        <v-col cols="12" lg="4">
+          <v-card border class="h-100" rounded="xl" variant="flat">
+            <v-card-title class="text-subtitle-1 font-weight-bold">Service Promise</v-card-title>
+            <v-divider />
+            <v-list lines="three">
+              <template
+                v-for="(detail, index) in atelierDetails"
+                :key="detail.title"
+              >
+                <v-list-item :title="detail.title">
+                  <template #subtitle>
+                    <span class="text-body-2 text-medium-emphasis">{{ detail.copy }}</span>
+                  </template>
+                </v-list-item>
+                <v-divider v-if="index < atelierDetails.length - 1" />
+              </template>
+            </v-list>
           </v-card>
         </v-col>
       </v-row>
@@ -218,7 +259,7 @@
 
     <v-row v-else justify="center">
       <v-col cols="12" md="7">
-        <v-card class="pa-8 text-center" rounded="lg" variant="outlined">
+        <v-card class="pa-8 text-center" rounded="xl" variant="outlined">
           <v-icon color="primary" size="48">mdi-package-variant-remove</v-icon>
           <h2 class="text-h5 mt-3">Product not found</h2>
           <p class="text-body-2 text-medium-emphasis mt-2">
@@ -239,12 +280,43 @@
     :timeout="2200"
     :type="snackbarColor"
   />
+
+  <ProductImageDialog
+    v-model="imageDialog"
+    :alt="selectedImageName"
+    :content-height="760"
+    content-mode="custom"
+    :content-width="980"
+    :dialog-title="selectedImageName"
+    hide-trigger
+  >
+    <v-carousel
+      v-model="selectedImageIndex"
+      class="h-100"
+      height="100%"
+      :hide-delimiters="productImageUrls.length <= 1"
+      :show-arrows="productImageUrls.length > 1 ? 'hover' : false"
+    >
+      <v-carousel-item
+        v-for="(imageUrl, index) in productImageUrls"
+        :key="`${imageUrl}-${index}`"
+      >
+        <v-img
+          :alt="`${product.name} image ${index + 1}`"
+          class="h-100"
+          contain
+          :src="imageUrl"
+        />
+      </v-carousel-item>
+    </v-carousel>
+  </ProductImageDialog>
 </template>
 
 <script setup>
   import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import BaseAlert from '@/components/BaseAlert.vue'
+  import ProductImageDialog from '@/components/ProductImageDialog.vue'
   import { useAppStore } from '@/stores/app'
   import { useCartStore } from '@/stores/cart'
   import { useCurrency } from '@/utils/currency'
@@ -264,6 +336,8 @@
   const snackbar = ref(false)
   const snackbarText = ref('')
   const snackbarColor = ref('success')
+  const imageDialog = ref(false)
+  const selectedImageIndex = ref(0)
 
   const fallbackDescription = 'A design-first piece crafted to blend visual calm with daily utility.'
   const productImageUrls = computed(() => safeDisplayImageUrls(product.value?.image_urls, product.value?.image_url))
@@ -298,6 +372,37 @@
 
   function toggleDescription() {
     isTruncated.value = !isTruncated.value
+  }
+
+  function getImageName(imageUrl, index) {
+    try {
+      const pathName = new URL(imageUrl).pathname
+      const fileName = pathName.split('/').findLast((segment) => segment.length > 0)
+      if (fileName) {
+        return decodeURIComponent(fileName)
+      }
+    } catch {
+      const fallbackName = String(imageUrl || '').split('/').findLast((segment) => segment.length > 0)
+      if (fallbackName) {
+        return fallbackName.split('?')[0]
+      }
+    }
+
+    return `${product.value?.name || 'Product'} image ${index + 1}`
+  }
+
+  const selectedImageName = computed(() => {
+    const imageUrl = productImageUrls.value[selectedImageIndex.value]
+    if (!imageUrl) {
+      return product.value?.name || 'Product image'
+    }
+
+    return getImageName(imageUrl, selectedImageIndex.value)
+  })
+
+  function openImageDialog(index) {
+    selectedImageIndex.value = index
+    imageDialog.value = true
   }
 
   const formattedPrice = computed(() => {
@@ -402,6 +507,8 @@
       const response = await fetchProductDetail(productId)
       product.value = response.data
       quantity.value = 1
+      imageDialog.value = false
+      selectedImageIndex.value = 0
     } catch (error) {
       console.error('Failed to fetch product:', error)
       product.value = null
