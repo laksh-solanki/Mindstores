@@ -28,6 +28,39 @@ def serialize_user(user: dict[str, Any], admin_entries: list[dict[str, Any]]) ->
     }
 
 
+def user_identity_key(user: dict[str, Any]) -> str:
+    email = normalize_admin_email(user.get("email"))
+    if email:
+        return f"email:{email}"
+    return f"user:{user.get('user_id') or ''}"
+
+
+def merge_user_record(current: dict[str, Any], duplicate: dict[str, Any]) -> dict[str, Any]:
+    merged = {**current}
+    for key in ("name", "email", "country_code", "locale", "picture", "created_at", "updated_at"):
+        if not merged.get(key) and duplicate.get(key):
+            merged[key] = duplicate[key]
+    if duplicate.get("created_at") and (
+        not merged.get("created_at") or str(duplicate["created_at"]) < str(merged["created_at"])
+    ):
+        merged["created_at"] = duplicate["created_at"]
+    return merged
+
+
+def unique_users_by_email(users: list[dict[str, Any]], admin_entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    by_identity: dict[str, dict[str, Any]] = {}
+    for user in users:
+        if not user:
+            continue
+        serialized = serialize_user(user, admin_entries)
+        identity_key = user_identity_key(serialized)
+        if identity_key not in by_identity:
+            by_identity[identity_key] = serialized
+            continue
+        by_identity[identity_key] = merge_user_record(by_identity[identity_key], serialized)
+    return list(by_identity.values())
+
+
 def require_admin(ctx: RequestContext):
     if not ctx.user:
         return error_response(401, "Not authenticated")
@@ -101,17 +134,19 @@ async def get_admin_users(ctx: RequestContext = Depends(get_context)):
             {"user_id": {"$regex": escaped, "$options": "i"}},
         ]})
     db_query: dict[str, Any] = {} if not filters else filters[0] if len(filters) == 1 else {"$and": filters}
-    if role == "admin":
-        db_query["is_admin"] = True
-    if role == "customer":
-        db_query["is_admin"] = {"$ne": True}
     admin_entries = await ctx.admin_access.list(ctx.user.get("email"))
     collection = ctx.db.collection("users")
-    users = await collection.find(db_query, {"projection": {"_id": 0}}).sort({"updated_at": -1}).skip(skip).limit(page_size).to_array()
-    total = await collection.count_documents(db_query)
+    users = await collection.find(db_query, {"projection": {"_id": 0}}).sort({"updated_at": -1}).to_array()
+    unique_users = unique_users_by_email(users, admin_entries)
+    if role == "admin":
+        unique_users = [user for user in unique_users if user.get("is_admin")]
+    if role == "customer":
+        unique_users = [user for user in unique_users if not user.get("is_admin")]
+    total = len(unique_users)
+    page_items = unique_users[skip : skip + page_size]
     return json_response(
         {
-            "items": [serialize_user(user, admin_entries) for user in users if user],
+            "items": page_items,
             "meta": {"page": page, "page_size": page_size, "total": total, "total_pages": max(1, (total + page_size - 1) // page_size)},
         },
         200,

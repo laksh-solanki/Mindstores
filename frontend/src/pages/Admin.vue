@@ -1,8 +1,8 @@
 <template>
   <v-app-bar border="b" color="teal-darken-2" flat height="64" location="top">
     <div class="d-flex align-center ga-3 px-3 px-md-6 w-100">
-      <v-btn v-if="canShowAdmin" :aria-label="navigationToggleLabel" icon="mdi-menu" rounded="lg"
-        variant="text" @click="toggleNavigation" />
+      <v-btn v-if="canShowAdmin" :aria-label="navigationToggleLabel" icon="mdi-menu" rounded="lg" variant="text"
+        @click="toggleNavigation" />
 
       <div class="d-inline-flex align-center ga-3 flex-shrink-0">
         <v-avatar color="surface" rounded="lg" size="42" variant="flat">
@@ -22,14 +22,14 @@
         <v-chip :color="lowStockCount > 0 ? 'yellow-darken-3' : 'teal-lighten-5'" size="small" variant="outlined">
           {{ formatNumber(lowStockCount) }} low stock
         </v-chip>
-        <v-chip color="light-blue-lighten-4" size="small" variant="outlined" border>
+        <v-chip border color="light-blue-lighten-4" size="small" variant="outlined">
           {{ lastSyncedLabel }}
         </v-chip>
       </div>
 
       <v-spacer />
 
-      <v-menu location="bottom end" color="teal-darken-2" v-model="isUserMenuOpen">
+      <v-menu v-model="isUserMenuOpen" color="teal-darken-2" location="bottom end">
         <template #activator="{ props: menuProps }">
           <v-tooltip location="bottom">
             <template #activator="{ props: tooltipProps }">
@@ -47,8 +47,8 @@
           </v-tooltip>
         </template>
 
-        <v-list density="compact" class="bg-yellow-lighten-5 pa-2" nav>
-          <v-list-item :subtitle="currentUserEmail" :title="userName" to="/profile" rounded="lg" class="mb-2">
+        <v-list class="bg-yellow-lighten-5 pa-2" density="compact" nav>
+          <v-list-item class="mb-2" rounded="lg" :subtitle="currentUserEmail" :title="userName" to="/profile">
             <template #prepend>
               <v-avatar v-if="currentUserImage" size="32">
                 <v-img :alt="userName" cover :src="currentUserImage" />
@@ -59,13 +59,13 @@
             </template>
           </v-list-item>
           <v-divider />
-          <v-list-item to="/" rounded="lg">
+          <v-list-item rounded="lg" to="/">
             <template #prepend>
               <v-icon>mdi-store-outline</v-icon>
             </template>
             <v-list-item-title>Storefront</v-list-item-title>
           </v-list-item>
-          <v-list-item v-if="isAuthenticated" @click="logout" rounded="lg">
+          <v-list-item v-if="isAuthenticated" rounded="lg" @click="logout">
             <template #prepend>
               <v-icon>mdi-logout</v-icon>
             </template>
@@ -81,11 +81,9 @@
       </v-menu>
     </div>
   </v-app-bar>
-
   <v-navigation-drawer v-if="canShowAdmin" v-model="drawer" border="e" color="yellow-lighten-5" elevation="0"
-    :permanent="!isMobile" :rail="!isMobile && desktopDrawerRail" rail-width="66" :temporary="isMobile"
-    width="220">
-    <v-list class="bg-yellow-lighten-5 pa-3" density="comfortable" nav>
+    :permanent="!isMobile" :rail="!isMobile && desktopDrawerRail" rail-width="60" :temporary="isMobile" width="220">
+    <v-list class="bg-yellow-lighten-5" density="comfortable" nav>
       <v-list-item v-for="item in navItems" :key="item.id" :active="activePanel === item.id" color="teal-darken-3"
         rounded="lg" @click="selectPanel(item.id)">
         <template #prepend>
@@ -95,7 +93,6 @@
       </v-list-item>
     </v-list>
   </v-navigation-drawer>
-
   <v-main class="bg-yellow-lighten-5">
     <v-container class="pa-4 pa-md-5" fluid>
       <v-row v-if="authLoading" align="center" justify="center">
@@ -150,22 +147,37 @@
 
       <template v-else-if="canShowAdmin">
         <v-row align="center" class="mb-5" dense>
-          <v-col cols="12" md="7">
-            <div class="text-h5 text-md-h4 font-weight-bold">{{ activePanelLabel }}</div>
+          <v-col cols="12" lg="5" md="6">
+            <div class="d-flex align-center flex-wrap ga-2">
+              <div class="text-h5 text-md-h4 font-weight-bold">{{ activePanelLabel }}</div>
+              <v-chip v-if="adminSearchResult" color="teal-darken-1" size="small" variant="tonal">
+                {{ adminSearchResult }}
+              </v-chip>
+            </div>
             <div class="text-body-2 text-medium-emphasis">{{ lastSyncedLabel }}</div>
           </v-col>
-          <v-col cols="12" md="5">
-            <div class="d-flex flex-column flex-sm-row justify-md-end ga-2">
-              <v-btn color="teal-darken-1 " :loading="isRefreshing" rounded="lg" prepend-icon="mdi-refresh"
-                variant="flat" text="Refresh" @click="refreshAdminData" />
-            </div>
+          <v-col cols="12" lg="7" md="6">
+            <v-form class="d-flex flex-column flex-lg-row justify-md-end ga-2" @submit.prevent="runAdminSearch">
+              <v-text-field v-model="adminQuickSearch" clearable density="comfortable" hide-details
+                label="Search admin" max-width="360" prepend-inner-icon="mdi-magnify" rounded="lg" variant="outlined"
+                @click:clear="clearAdminQuickSearch" @keydown.enter.prevent="runAdminSearch" />
+              <div class="d-flex ga-2 justify-end">
+                <v-btn aria-label="Run admin search" color="teal-darken-1" height="48" min-width="48" rounded="lg"
+                  type="submit" variant="tonal">
+                  <v-icon icon="mdi-magnify" />
+                  <v-tooltip activator="parent" location="bottom">Search</v-tooltip>
+                </v-btn>
+                <v-btn color="teal-darken-1" height="48" :loading="isRefreshing" prepend-icon="mdi-refresh" rounded="lg"
+                  text="Refresh" variant="flat" @click="refreshAdminData" />
+              </div>
+            </v-form>
           </v-col>
         </v-row>
 
         <div v-if="activePanel === 'dashboard'">
           <v-row dense>
             <v-col v-for="metric in metricCards" :key="metric.label" cols="12" lg="3" sm="7">
-              <v-card variant="flat" border rounded="lg">
+              <v-card border rounded="lg" variant="flat">
                 <v-card-text class="d-flex align-center justify-space-between ga-4">
                   <div class="overflow-hidden">
                     <div class="text-caption text-medium-emphasis">{{ metric.label }}</div>
@@ -180,8 +192,70 @@
           </v-row>
 
           <v-row class="mt-2" dense>
+            <v-col cols="12" lg="4" md="6">
+              <v-card border class="h-100" rounded="lg" variant="flat">
+                <v-card-title class="my-2">Inventory Health</v-card-title>
+                <v-card-text class="d-flex flex-column ga-4">
+                  <div v-for="segment in inventoryHealthSegments" :key="segment.key">
+                    <div class="d-flex align-center justify-space-between mb-2">
+                      <div class="d-flex align-center ga-2">
+                        <v-icon :color="segment.color" size="18">{{ segment.icon }}</v-icon>
+                        <span class="font-weight-medium">{{ segment.label }}</span>
+                      </div>
+                      <span class="text-medium-emphasis">{{ formatNumber(segment.count) }}</span>
+                    </div>
+                    <v-progress-linear :color="segment.color" height="10" :model-value="segment.percent" rounded />
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+
+            <v-col cols="12" lg="4" md="6">
+              <v-card border class="h-100" rounded="lg" variant="flat">
+                <v-card-title class="my-2">Price Spread</v-card-title>
+                <v-card-text class="d-flex flex-column ga-4">
+                  <div v-for="band in priceBandStats" :key="band.key">
+                    <div class="d-flex align-center justify-space-between mb-2">
+                      <span class="font-weight-medium">{{ band.label }}</span>
+                      <span class="text-medium-emphasis">{{ formatNumber(band.count) }}</span>
+                    </div>
+                    <v-progress-linear :color="band.color" height="10" :model-value="band.percent" rounded />
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+
+            <v-col cols="12" lg="4" md="12">
+              <v-card border class="h-100" rounded="lg" variant="flat">
+                <v-card-title class="my-2">Catalog Readiness</v-card-title>
+                <v-card-text>
+                  <div class="d-flex align-center ga-5 flex-wrap">
+                    <v-progress-circular color="teal-darken-1" :model-value="productImageCoverage" size="92" width="10">
+                      {{ productImageCoverage }}%
+                    </v-progress-circular>
+                    <div class="flex-grow-1">
+                      <div class="text-body-1 font-weight-medium">Image coverage</div>
+                      <div class="text-body-2 text-medium-emphasis">
+                        {{ formatNumber(productsWithImagesCount) }} of {{ formatNumber(products.length) }} products
+                      </div>
+                    </div>
+                  </div>
+                  <v-row class="mt-4" dense>
+                    <v-col v-for="stat in catalogReadinessStats" :key="stat.label" cols="12" sm="4">
+                      <v-sheet border class="pa-3 h-100" rounded="lg">
+                        <div class="text-caption text-medium-emphasis">{{ stat.label }}</div>
+                        <div class="text-body-1 font-weight-bold">{{ stat.value }}</div>
+                      </v-sheet>
+                    </v-col>
+                  </v-row>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+
+          <v-row class="mt-2" dense>
             <v-col cols="12" lg="8">
-              <v-card class="h-100" variant="flat" border rounded="lg">
+              <v-card border class="h-100" rounded="lg" variant="flat">
                 <v-card-title class="d-flex align-center justify-space-between ga-3 my-2">
                   <span>Recent Inventory</span>
                   <v-chip color="teal-darken-1" size="small" variant="tonal">{{ filteredProducts.length }}</v-chip>
@@ -193,10 +267,12 @@
                     :items="recentProducts" :items-per-page="5" :loading="productLoading">
                     <template #item.name="{ item }">
                       <div class="d-flex align-center ga-3 py-2">
-                        <v-avatar color="surface" rounded="lg" size="44">
-                          <v-img v-if="productImageUrl(resolveTableItem(item))" :alt="resolveTableItem(item)?.name"
-                            cover :src="productImageUrl(resolveTableItem(item))" />
-                          <v-icon v-else color="primary">mdi-image-off-outline</v-icon>
+                        <ProductImageDialog v-if="productImageUrl(resolveTableItem(item))"
+                          :alt="`${resolveTableItem(item)?.name || 'Product'} image`" avatar-class="rounded-lg"
+                          :dialog-title="resolveTableItem(item)?.name || 'Product image'" :size="44"
+                          :src="productImageUrl(resolveTableItem(item))" />
+                        <v-avatar v-else color="surface" rounded="lg" size="44">
+                          <v-icon color="primary">mdi-image-off-outline</v-icon>
                         </v-avatar>
                         <div class="overflow-hidden">
                           <div class="font-weight-medium text-truncate">{{ resolveTableItem(item)?.name }}</div>
@@ -219,11 +295,11 @@
             </v-col>
 
             <v-col cols="12" lg="4">
-              <v-card class="h-100" variant="flat" border rounded="lg">
+              <v-card border class="h-100" rounded="lg" variant="flat">
                 <v-card-title class="my-2">Operations</v-card-title>
-                <v-list lines="two" density="comfortable" class=" ma-2 rounded-lg pa-1">
-                  <v-list-item v-for="item in operationsSummary" :key="item.title" :subtitle="item.subtitle"
-                    :title="item.title" rounded="lg">
+                <v-list class=" ma-2 rounded-lg pa-1" density="comfortable" lines="two">
+                  <v-list-item v-for="item in operationsSummary" :key="item.title" rounded="lg"
+                    :subtitle="item.subtitle" :title="item.title">
                     <template #prepend>
                       <v-avatar :color="item.color" size="42" variant="tonal">
                         <v-icon :color="item.color">{{ item.icon }}</v-icon>
@@ -239,8 +315,8 @@
           </v-row>
 
           <v-row class="mt-2" dense>
-            <v-col cols="12" md="6">
-              <v-card class="h-100" variant="flat" border rounded="lg">
+            <v-col cols="12" lg="4" md="6">
+              <v-card border class="h-100" rounded="lg" variant="flat">
                 <v-card-title class="my-2">Category Mix</v-card-title>
                 <v-card-text class="d-flex flex-column ga-4">
                   <div v-for="category in categoryStats" :key="category.name">
@@ -257,10 +333,38 @@
               </v-card>
             </v-col>
 
-            <v-col cols="12" md="6">
-              <v-card class="h-100" variant="flat" border rounded="lg">
+            <v-col cols="12" lg="4" md="6">
+              <v-card border class="h-100" rounded="lg" variant="flat">
+                <v-card-title class="my-2">Top Shelf Value</v-card-title>
+                <v-list class="ma-2 rounded-lg pa-1" density="comfortable" lines="two">
+                  <v-list-item v-for="product in topCatalogValueProducts" :key="product.product_id || product.name"
+                    rounded="lg" :subtitle="product.category_display" :title="product.name">
+                    <template #prepend>
+                      <ProductImageDialog v-if="productImageUrl(product)" :alt="`${product.name || 'Product'} image`"
+                        avatar-class="rounded-lg" :dialog-title="product.name || 'Product image'" :size="42"
+                        :src="productImageUrl(product)" />
+                      <v-avatar v-else color="surface" rounded="lg" size="42">
+                        <v-icon color="primary">mdi-image-off-outline</v-icon>
+                      </v-avatar>
+                    </template>
+                    <template #append>
+                      <div class="text-right">
+                        <div class="font-weight-bold">{{ formatCurrency(product.shelf_value) }}</div>
+                        <div class="text-caption text-medium-emphasis">{{ formatNumber(product.stock) }} units</div>
+                      </div>
+                    </template>
+                  </v-list-item>
+                </v-list>
+                <v-card-text v-if="topCatalogValueProducts.length === 0">
+                  <v-alert type="info" variant="tonal">No product value data</v-alert>
+                </v-card-text>
+              </v-card>
+            </v-col>
+
+            <v-col cols="12" lg="4" md="12">
+              <v-card border class="h-100" rounded="lg" variant="flat">
                 <v-card-title class="my-2">Access Snapshot</v-card-title>
-                <v-list density="comfortable" lines="two" class=" ma-2 rounded-lg pa-1">
+                <v-list class=" ma-2 rounded-lg pa-1" density="comfortable" lines="two">
                   <v-list-item v-for="entry in adminAccessEntries.slice(0, 5)" :key="entry.email"
                     :subtitle="accessEntrySubtitle(entry)" :title="entry.email">
                     <template #prepend>
@@ -280,10 +384,62 @@
           </v-row>
         </div>
 
-        <v-card v-else-if="activePanel === 'users'" variant="flat" border rounded="lg">
+        <v-card v-else-if="activePanel === 'search'" border rounded="lg" variant="flat">
+          <v-card-title class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 my-2">
+            <div>
+              <div>Search Results</div>
+              <div class="text-body-2 text-medium-emphasis">
+                <HighlightText :query="globalSearchQuery" :text="globalSearchQuery" />
+              </div>
+            </div>
+            <v-chip color="teal-darken-1" variant="tonal">
+              {{ formatNumber(globalSearchResultCount) }} matches
+            </v-chip>
+          </v-card-title>
+          <v-card-text>
+            <v-alert v-if="globalSearchGroups.length === 0" type="info" variant="tonal">
+              No matching admin records found.
+            </v-alert>
+            <v-row v-else dense>
+              <v-col v-for="group in globalSearchGroups" :key="group.id" cols="12" lg="6">
+                <v-card border class="h-100" rounded="lg" variant="flat">
+                  <v-card-title class="d-flex align-center justify-space-between ga-3 my-2">
+                    <span>{{ group.label }}</span>
+                    <v-chip size="small" variant="tonal">{{ formatNumber(group.items.length) }}</v-chip>
+                  </v-card-title>
+                  <v-list class="pa-2" density="comfortable" lines="two">
+                    <v-list-item
+                      v-for="result in group.items"
+                      :key="result.id"
+                      rounded="lg"
+                      @click="openGlobalSearchResult(result)"
+                    >
+                      <template #prepend>
+                        <v-avatar :color="result.color" size="40" variant="tonal">
+                          <v-icon :color="result.color">{{ result.icon }}</v-icon>
+                        </v-avatar>
+                      </template>
+                      <v-list-item-title>
+                        <HighlightText :query="globalSearchQuery" :text="result.title" />
+                      </v-list-item-title>
+                      <v-list-item-subtitle>
+                        <HighlightText :query="globalSearchQuery" :text="result.subtitle" />
+                      </v-list-item-subtitle>
+                      <template #append>
+                        <v-chip size="x-small" variant="tonal">{{ result.meta }}</v-chip>
+                      </template>
+                    </v-list-item>
+                  </v-list>
+                </v-card>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
+
+        <v-card v-else-if="activePanel === 'users'" border rounded="lg" variant="flat">
           <v-card-title class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 my-2">
             <span>User Management</span>
-            <v-btn color="teal-darken-1" rounded="lg" :loading="userLoading" prepend-icon="mdi-refresh" text="Users"
+            <v-btn color="teal-darken-1" :loading="userLoading" prepend-icon="mdi-refresh" rounded="lg" text="Users"
               variant="flat" @click="fetchUsers" />
           </v-card-title>
           <v-card-text>
@@ -298,8 +454,8 @@
               </v-col>
             </v-row>
 
-            <v-data-table class="mt-4" density="comfortable" :headers="userHeaders"
-              :items="filteredUsers" :items-per-page="8" :loading="userLoading">
+            <v-data-table class="mt-4" density="comfortable" :headers="userHeaders" :items="filteredUsers"
+              :items-per-page="8" :loading="userLoading">
               <template #item.name="{ item }">
                 <div class="d-flex align-center ga-3 py-2">
                   <v-avatar color="teal-darken-1" size="38" variant="tonal">
@@ -310,8 +466,11 @@
                       resolveTableItem(item)?.email) }}</span>
                   </v-avatar>
                   <div class="overflow-hidden">
-                    <div class="font-weight-medium text-truncate">{{ resolveTableItem(item)?.name || "User" }}</div>
-                    <div class="text-caption text-medium-emphasis text-truncate">{{ resolveTableItem(item)?.email }}
+                    <div class="font-weight-medium text-truncate">
+                      <HighlightText :query="activeHighlightQuery" :text="resolveTableItem(item)?.name || 'User'" />
+                    </div>
+                    <div class="text-caption text-medium-emphasis text-truncate">
+                      <HighlightText :query="activeHighlightQuery" :text="resolveTableItem(item)?.email" />
                     </div>
                   </div>
                 </div>
@@ -328,11 +487,15 @@
           </v-card-text>
         </v-card>
 
-        <v-card v-else-if="activePanel === 'products'" variant="flat" border rounded="lg">
+        <v-card v-else-if="activePanel === 'products'" border rounded="lg" variant="flat">
           <v-card-title class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 my-2">
             <span>Product Management</span>
-            <v-btn color="teal-darken-1" variant="flat" rounded="lg" prepend-icon="mdi-plus" text="Add Product"
-              @click="openAddDialog" />
+            <div class="d-flex flex-column flex-sm-row ga-2">
+              <v-btn color="teal-darken-1" prepend-icon="mdi-download-outline" rounded="lg" text="Export CSV"
+                variant="outlined" @click="downloadFilteredProducts" />
+              <v-btn color="teal-darken-1" prepend-icon="mdi-plus" rounded="lg" text="Add Product" variant="flat"
+                @click="openAddDialog" />
+            </div>
           </v-card-title>
           <v-card-text>
             <v-row dense>
@@ -350,23 +513,29 @@
               </v-col>
             </v-row>
 
-            <v-data-table class=" mt-4" density="comfortable" :headers="productHeaders"
-              :items="filteredProducts" :items-per-page="8" :loading="productLoading">
+            <v-data-table class=" mt-4" density="comfortable" :headers="productHeaders" :items="filteredProducts"
+              :items-per-page="8" :loading="productLoading">
               <template #item.name="{ item }">
                 <div class="d-flex align-center ga-3 py-2">
-                  <v-avatar color="surface" rounded="lg" size="44">
-                    <v-img v-if="productImageUrl(resolveTableItem(item))" :alt="resolveTableItem(item)?.name" cover
-                      :src="productImageUrl(resolveTableItem(item))" />
-                    <v-icon v-else color="primary">mdi-image-off-outline</v-icon>
+                  <ProductImageDialog v-if="productImageUrl(resolveTableItem(item))"
+                    :alt="`${resolveTableItem(item)?.name || 'Product'} image`" avatar-class="rounded-lg"
+                    :dialog-title="resolveTableItem(item)?.name || 'Product image'" :size="44"
+                    :src="productImageUrl(resolveTableItem(item))" />
+                  <v-avatar v-else color="surface" rounded="lg" size="44">
+                    <v-icon color="primary">mdi-image-off-outline</v-icon>
                   </v-avatar>
                   <div class="overflow-hidden">
-                    <div class="font-weight-medium text-truncate">{{ resolveTableItem(item)?.name }}</div>
-                    <div class="text-caption text-medium-emphasis">{{ resolveTableItem(item)?.product_id }}</div>
+                    <div class="font-weight-medium text-truncate">
+                      <HighlightText :query="activeHighlightQuery" :text="resolveTableItem(item)?.name" />
+                    </div>
+                    <div class="text-caption text-medium-emphasis">
+                      <HighlightText :query="activeHighlightQuery" :text="resolveTableItem(item)?.product_id" />
+                    </div>
                   </div>
                 </div>
               </template>
               <template #item.category_display="{ item }">
-                {{ formatCategory(resolveTableItem(item)) }}
+                <HighlightText :query="activeHighlightQuery" :text="formatCategory(resolveTableItem(item))" />
               </template>
               <template #item.price="{ item }">
                 {{ formatProductPrice(resolveTableItem(item)) }}
@@ -378,12 +547,14 @@
               </template>
               <template #item.actions="{ item }">
                 <div class="d-flex align-center">
-                  <v-btn icon size="small" variant="text" @click="editProduct(resolveTableItem(item))">
-                    <v-icon>mdi-pencil-outline</v-icon>
+                  <v-btn aria-label="Edit product" icon size="small" variant="text"
+                    @click="editProduct(resolveTableItem(item))">
+                    <v-icon icon="mdi-pencil-outline" />
                     <v-tooltip activator="parent" location="top">Edit</v-tooltip>
                   </v-btn>
-                  <v-btn color="error" icon size="small" variant="text" @click="deleteProduct(resolveTableItem(item))">
-                    <v-icon>mdi-delete-outline</v-icon>
+                  <v-btn aria-label="Delete product" color="error" icon size="small" variant="text"
+                    @click="deleteProduct(resolveTableItem(item))">
+                    <v-icon icon="mdi-delete-outline" />
                     <v-tooltip activator="parent" location="top">Delete</v-tooltip>
                   </v-btn>
                 </div>
@@ -392,7 +563,7 @@
           </v-card-text>
         </v-card>
 
-        <v-card v-else-if="activePanel === 'planner'" variant="flat" border rounded="lg">
+        <v-card v-else-if="activePanel === 'planner'" border rounded="lg" variant="flat">
           <v-card-title class="d-flex flex-column flex-lg-row align-lg-center justify-space-between ga-3 my-2">
             <div>
               <div>Inventory Planner</div>
@@ -410,7 +581,7 @@
           <v-card-text>
             <v-row dense>
               <v-col cols="12" lg="4">
-                <v-card class="h-100" variant="outlined" rounded="lg">
+                <v-card class="h-100" rounded="lg" variant="outlined">
                   <v-card-title class="my-2">Planning controls</v-card-title>
                   <v-card-text class="d-flex flex-column ga-4">
                     <div>
@@ -437,7 +608,7 @@
               <v-col cols="12" lg="8">
                 <v-row dense>
                   <v-col v-for="metric in restockMetricCards" :key="metric.label" cols="12" md="6">
-                    <v-card class="h-100" variant="outlined" rounded="lg">
+                    <v-card class="h-100" rounded="lg" variant="outlined">
                       <v-card-text class="d-flex align-center justify-space-between ga-4">
                         <div>
                           <div class="text-caption text-medium-emphasis">{{ metric.label }}</div>
@@ -456,7 +627,7 @@
 
             <v-row class="mt-2" dense>
               <v-col cols="12" lg="8">
-                <v-card class="h-100" variant="outlined" rounded="lg">
+                <v-card class="h-100" rounded="lg" variant="outlined">
                   <v-card-title class="d-flex align-center justify-space-between ga-3 my-2">
                     <span>Recommended reorder queue</span>
                     <v-chip color="teal-darken-1" size="small" variant="tonal">
@@ -467,20 +638,23 @@
                     <v-alert v-if="filteredRestockPlan.length === 0" type="success" variant="tonal">
                       No matching products need restocking at the current target.
                     </v-alert>
-                    <v-data-table v-else density="comfortable" :headers="restockHeaders"
-                      :items="filteredRestockPlan" :items-per-page="6">
+                    <v-data-table v-else density="comfortable" :headers="restockHeaders" :items="filteredRestockPlan"
+                      :items-per-page="6">
                       <template #item.name="{ item }">
                         <div class="d-flex align-center ga-3 py-2">
-                          <v-avatar color="surface" rounded="lg" size="42">
-                            <v-img v-if="productImageUrl(resolveTableItem(item))"
-                              :alt="resolveTableItem(item)?.name" cover
-                              :src="productImageUrl(resolveTableItem(item))" />
-                            <v-icon v-else color="primary">mdi-image-off-outline</v-icon>
+                          <ProductImageDialog v-if="productImageUrl(resolveTableItem(item))"
+                            :alt="`${resolveTableItem(item)?.name || 'Product'} image`" avatar-class="rounded-lg"
+                            :dialog-title="resolveTableItem(item)?.name || 'Product image'" :size="42"
+                            :src="productImageUrl(resolveTableItem(item))" />
+                          <v-avatar v-else color="surface" rounded="lg" size="42">
+                            <v-icon color="primary">mdi-image-off-outline</v-icon>
                           </v-avatar>
                           <div>
-                            <div class="font-weight-medium">{{ resolveTableItem(item)?.name }}</div>
+                            <div class="font-weight-medium">
+                              <HighlightText :query="activeHighlightQuery" :text="resolveTableItem(item)?.name" />
+                            </div>
                             <div class="text-caption text-medium-emphasis">
-                              {{ resolveTableItem(item)?.category_display }}
+                              <HighlightText :query="activeHighlightQuery" :text="resolveTableItem(item)?.category_display" />
                             </div>
                           </div>
                         </div>
@@ -497,8 +671,9 @@
                         {{ formatCurrency(resolveTableItem(item)?.reorder_value) }}
                       </template>
                       <template #item.actions="{ item }">
-                        <v-btn icon size="small" variant="text" @click="editProduct(resolveTableItem(item))">
-                          <v-icon>mdi-pencil-outline</v-icon>
+                        <v-btn aria-label="Edit restock product" icon size="small" variant="text"
+                          @click="editProduct(resolveTableItem(item))">
+                          <v-icon icon="mdi-pencil-outline" />
                           <v-tooltip activator="parent" location="top">Edit product</v-tooltip>
                         </v-btn>
                       </template>
@@ -508,7 +683,7 @@
               </v-col>
 
               <v-col cols="12" lg="4">
-                <v-card class="mb-2" variant="outlined" rounded="lg">
+                <v-card class="mb-2" rounded="lg" variant="outlined">
                   <v-card-title class="my-2">Category pressure</v-card-title>
                   <v-card-text class="d-flex flex-column ga-4">
                     <div v-for="category in restockCategorySummary" :key="category.name">
@@ -527,7 +702,7 @@
                   </v-card-text>
                 </v-card>
 
-                <v-card variant="outlined" rounded="lg">
+                <v-card rounded="lg" variant="outlined">
                   <v-card-title class="my-2">Next best action</v-card-title>
                   <v-card-text>
                     <template v-if="topRestockRecommendation">
@@ -543,10 +718,10 @@
                         </div>
                       </div>
                       <v-list density="compact">
-                        <v-list-item title="Current stock" :subtitle="formatNumber(topRestockRecommendation.stock)" />
-                        <v-list-item title="Urgency" :subtitle="topRestockRecommendation.urgency_label" />
-                        <v-list-item title="Shelf value to recover"
-                          :subtitle="formatCurrency(topRestockRecommendation.reorder_value)" />
+                        <v-list-item :subtitle="formatNumber(topRestockRecommendation.stock)" title="Current stock" />
+                        <v-list-item :subtitle="topRestockRecommendation.urgency_label" title="Urgency" />
+                        <v-list-item :subtitle="formatCurrency(topRestockRecommendation.reorder_value)"
+                          title="Shelf value to recover" />
                       </v-list>
                     </template>
                     <v-alert v-else type="success" variant="tonal">
@@ -559,7 +734,7 @@
           </v-card-text>
         </v-card>
 
-        <v-card v-else-if="activePanel === 'logs'" variant="flat" border rounded="lg">
+        <v-card v-else-if="activePanel === 'logs'" border rounded="lg" variant="flat">
           <v-card-title class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 my-2">
             <span>Notifications</span>
             <v-select v-model="logTypeFilter" density="compact" hide-details item-title="title" item-value="value"
@@ -568,15 +743,21 @@
           <v-card-text>
             <v-row dense>
               <v-col v-for="log in filteredActivityLogs" :key="log.id" cols="12" md="6">
-                <v-card class="h-100" variant="flat" border rounded="lg">
+                <v-card border class="h-100" rounded="lg" variant="flat">
                   <v-card-text class="d-flex ga-4">
                     <v-avatar :color="log.color" size="44" variant="tonal">
                       <v-icon :color="log.color">{{ log.icon }}</v-icon>
                     </v-avatar>
                     <div>
-                      <div class="font-weight-medium">{{ log.title }}</div>
-                      <div class="text-body-2 text-medium-emphasis">{{ log.message }}</div>
-                      <div class="text-caption text-medium-emphasis mt-1">{{ log.time }}</div>
+                      <div class="font-weight-medium">
+                        <HighlightText :query="activeHighlightQuery" :text="log.title" />
+                      </div>
+                      <div class="text-body-2 text-medium-emphasis">
+                        <HighlightText :query="activeHighlightQuery" :text="log.message" />
+                      </div>
+                      <div class="text-caption text-medium-emphasis mt-1">
+                        <HighlightText :query="activeHighlightQuery" :text="log.time" />
+                      </div>
                     </div>
                   </v-card-text>
                 </v-card>
@@ -587,7 +768,7 @@
 
         <v-row v-else dense>
           <v-col cols="12" lg="4">
-            <v-card class="h-100" variant="flat" border rounded="lg">
+            <v-card border class="h-100" rounded="lg" variant="flat">
               <v-card-title class="my-2">Add Admin Email</v-card-title>
               <v-card-text>
                 <v-form @submit.prevent="addAdminAccess">
@@ -595,26 +776,28 @@
                     :error-messages="accessEmailError ? [accessEmailError] : []" label="Email"
                     prepend-inner-icon="mdi-email-outline" variant="outlined" />
                   <v-btn block color="teal-darken-1" :disabled="Boolean(accessEmailError) || !accessEmailInput"
-                    :loading="accessSaving" type="submit" rounded="lg" variant="flat"
-                    prepend-icon="mdi-shield-plus-outline" text="Add Access" />
+                    :loading="accessSaving" prepend-icon="mdi-shield-plus-outline" rounded="lg" text="Add Access"
+                    type="submit" variant="flat" />
                 </v-form>
               </v-card-text>
             </v-card>
           </v-col>
 
           <v-col cols="12" lg="8">
-            <v-card variant="flat" border rounded="lg">
+            <v-card border rounded="lg" variant="flat">
               <v-card-title class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 my-2">
                 <span>Admin Access Control</span>
                 <v-text-field v-model="accessSearch" density="compact" hide-details label="Search emails"
                   max-width="320" prepend-inner-icon="mdi-magnify" variant="outlined" />
               </v-card-title>
               <v-card-text>
-                <v-data-table density="comfortable" :headers="accessHeaders"
-                  :items="filteredAdminAccess" :items-per-page="6" :loading="accessLoading">
+                <v-data-table density="comfortable" :headers="accessHeaders" :items="filteredAdminAccess"
+                  :items-per-page="6" :loading="accessLoading">
                   <template #item.email="{ item }">
                     <div class="py-2">
-                      <div class="font-weight-medium text-break">{{ resolveTableItem(item)?.email }}</div>
+                      <div class="font-weight-medium text-break">
+                        <HighlightText :query="activeHighlightQuery" :text="resolveTableItem(item)?.email" />
+                      </div>
                       <div class="d-flex flex-wrap ga-2 mt-1">
                         <v-chip v-if="resolveTableItem(item)?.is_default" color="success" size="x-small"
                           variant="tonal">Default</v-chip>
@@ -628,14 +811,15 @@
                   </template>
                   <template #item.actions="{ item }">
                     <div class="d-flex align-center">
-                      <v-btn icon size="small" variant="text" :disabled="!resolveTableItem(item)?.can_edit"
-                        @click="openEditAdminAccess(resolveTableItem(item))">
-                        <v-icon>mdi-pencil-outline</v-icon>
+                      <v-btn aria-label="Edit admin access" :disabled="!resolveTableItem(item)?.can_edit" icon
+                        size="small" variant="text" @click="openEditAdminAccess(resolveTableItem(item))">
+                        <v-icon icon="mdi-pencil-outline" />
                         <v-tooltip activator="parent" location="top">Edit</v-tooltip>
                       </v-btn>
-                      <v-btn color="error" :disabled="!resolveTableItem(item)?.can_delete" icon size="small"
-                        variant="text" @click="deleteAdminAccess(resolveTableItem(item))">
-                        <v-icon>mdi-delete-outline</v-icon>
+                      <v-btn aria-label="Delete admin access" color="error"
+                        :disabled="!resolveTableItem(item)?.can_delete" icon size="small" variant="text"
+                        @click="deleteAdminAccess(resolveTableItem(item))">
+                        <v-icon icon="mdi-delete-outline" />
                         <v-tooltip activator="parent" location="top">Delete</v-tooltip>
                       </v-btn>
                     </div>
@@ -646,12 +830,12 @@
           </v-col>
 
           <v-col cols="12">
-            <v-card variant="flat" border rounded="lg">
+            <v-card border rounded="lg" variant="flat">
               <v-card-title class="my-2">Security Rules</v-card-title>
               <v-card-text>
                 <v-row dense>
                   <v-col v-for="rule in securityRules" :key="rule.title" cols="12" md="3" sm="6">
-                    <v-card class="h-100" variant="outlined" rounded="lg">
+                    <v-card class="h-100" rounded="lg" variant="outlined">
                       <v-card-text>
                         <v-avatar class="mb-3" :color="rule.color" size="42" variant="tonal">
                           <v-icon :color="rule.color">{{ rule.icon }}</v-icon>
@@ -688,23 +872,23 @@
         <v-form @submit.prevent="saveProduct">
           <v-row dense>
             <v-col cols="12" md="8">
-              <v-row dense class="ga-4">
+              <v-row class="ga-4" dense>
                 <v-col cols="12" md="12">
                   <v-file-input v-model="productImageFiles" accept="image/png,image/jpeg,image/webp,image/gif" chips
-                    clearable density="comfortable" label="Product images" multiple
-                    placeholder="Select product images" prepend-icon="mdi-image-plus" variant="outlined"
-                    @click:clear="clearProductImageFiles" @update:model-value="onProductImagesSelected" />
+                    clearable density="comfortable" label="Product images" multiple placeholder="Select product images"
+                    prepend-icon="mdi-image-plus" variant="outlined" @click:clear="clearProductImageFiles"
+                    @update:model-value="onProductImagesSelected" />
                 </v-col>
                 <v-col cols="12" md="12">
-                  <v-textarea :model-value="productImageInputValue" auto-grow density="comfortable"
-                    hide-details label="Image URLs (one per line)" prepend-icon="mdi-image-search-outline" rows="2"
+                  <v-textarea auto-grow density="comfortable" hide-details label="Image URLs (one per line)"
+                    :model-value="productImageInputValue" prepend-icon="mdi-image-search-outline" rows="2"
                     variant="outlined" @update:model-value="updateProductImageUrls" />
                 </v-col>
               </v-row>
             </v-col>
             <v-col cols="12" md="4">
-              <v-sheet border class="d-flex align-center justify-center h-100 pa-3" rounded="lg"
-                color="blue-grey-lighten-5">
+              <v-sheet border class="d-flex align-center justify-center h-100 pa-3" color="blue-grey-lighten-5"
+                rounded="lg">
                 <v-carousel v-if="productImageGallery.length > 0" height="180" hide-delimiter-background
                   :hide-delimiters="productImageGallery.length <= 1"
                   :show-arrows="productImageGallery.length > 1 ? 'hover' : false">
@@ -719,14 +903,8 @@
             </v-col>
             <v-col v-if="productImageGallery.length > 0" cols="12">
               <div class="d-flex flex-wrap ga-2">
-                <v-chip
-                  v-for="(imageUrl, index) in productImageGallery"
-                  :key="`${imageUrl}-${index}`"
-                  closable
-                  size="small"
-                  variant="outlined"
-                  @click:close="removeProductImage(index)"
-                >
+                <v-chip v-for="(imageUrl, index) in productImageGallery" :key="`${imageUrl}-${index}`" closable
+                  size="small" variant="outlined" @click:close="removeProductImage(index)">
                   {{ index === 0 ? "Primary image" : `Image ${index + 1}` }}
                 </v-chip>
               </div>
@@ -738,10 +916,10 @@
             <v-col cols="12" md="4">
               <v-text-field v-model="formData.company" density="comfortable" label="Brand" variant="outlined" />
             </v-col>
-            <v-col cols="12" md="1" class="d-flex flex-column ga-1">
+            <v-col class="d-flex flex-column ga-1" cols="12" md="1">
               <v-btn v-for="option in DESCRIPTION_BULLET_OPTIONS" :key="option.symbol" :aria-label="option.label"
-                min-width="54" rounded="lg" variant="outlined" @click="addDescriptionBullet(option.symbol)"
-                class="text-headline-large">
+                class="text-headline-large" min-width="54" rounded="lg" variant="outlined"
+                @click="addDescriptionBullet(option.symbol)">
                 {{ option.symbol }}
               </v-btn>
             </v-col>
@@ -766,19 +944,19 @@
                 required variant="outlined">
                 <template #append-item>
                   <v-divider class="mt-2" />
-                  <v-list-item prepend-icon="mdi-plus" title="Add more" @mousedown.prevent
-                    @click="openCatalogOptionDialog('category')" />
+                  <v-list-item prepend-icon="mdi-plus" title="Add more" @click="openCatalogOptionDialog('category')"
+                    @mousedown.prevent />
                 </template>
               </v-combobox>
             </v-col>
             <v-col cols="12" md="6">
-              <v-combobox v-model="formData.subcategory" density="comfortable" :items="availableSubcategories"
-                :disabled="!normalizeCategoryName(formData.category)" label="Subcategory (optional)" variant="outlined">
+              <v-combobox v-model="formData.subcategory" density="comfortable"
+                :disabled="!normalizeCategoryName(formData.category)" :items="availableSubcategories"
+                label="Subcategory (optional)" variant="outlined">
                 <template #append-item>
                   <v-divider class="mt-2" />
-                  <v-list-item prepend-icon="mdi-plus" title="Add more"
-                    :disabled="!normalizeCategoryName(formData.category)" @mousedown.prevent
-                    @click="openCatalogOptionDialog('subcategory')" />
+                  <v-list-item :disabled="!normalizeCategoryName(formData.category)" prepend-icon="mdi-plus"
+                    title="Add more" @click="openCatalogOptionDialog('subcategory')" @mousedown.prevent />
                 </template>
               </v-combobox>
             </v-col>
@@ -838,9 +1016,10 @@
 
 <script setup>
 import axios from "axios";
-import { computed, mergeProps, ref, watch } from "vue";
+import { computed, h, mergeProps, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
+import ProductImageDialog from "@/components/ProductImageDialog.vue";
 import { useAppStore } from "@/stores/app";
 import { API_URL, buildAuthenticatedRequestConfig } from "@/utils/api";
 import { convertAmountToUsd, fetchExchangeRates } from "@/utils/currency";
@@ -850,6 +1029,35 @@ import {
   extractProductItems,
   requestProductApi,
 } from "@/utils/products";
+
+const HighlightText = {
+  props: {
+    query: {
+      type: String,
+      default: "",
+    },
+    text: {
+      type: [String, Number],
+      default: "",
+    },
+  },
+  setup(props) {
+    return () =>
+      h(
+        "span",
+        highlightTextSegments(props.text, props.query).map((segment, index) =>
+          h(
+            "span",
+            {
+              key: `${index}-${segment.text}`,
+              class: segment.match ? "bg-yellow-lighten-3 text-teal-darken-4 font-weight-bold rounded px-1" : undefined,
+            },
+            segment.text,
+          ),
+        ),
+      );
+  },
+};
 
 
 const DEFAULT_ADMIN_EMAIL = "lakshsolanki848@gmail.com";
@@ -902,13 +1110,15 @@ const accessEmailInput = ref("");
 const accessEditOriginalEmail = ref("");
 const accessEditEmail = ref("");
 const logTypeFilter = ref("all");
+const activitySearch = ref("");
 const restockTargetStock = ref(DEFAULT_RESTOCK_TARGET);
 const restockSearch = ref("");
 const restockUrgencyFilter = ref("all");
 const lastSyncedAt = ref(null);
 const adminQuickSearch = ref("");
+const adminSearchResult = ref("");
+const globalSearchQuery = ref("");
 const isUserMenuOpen = ref(false);
-const isQuickActionMenuOpen = ref(false);
 const productImageFiles = ref([]);
 const productImageInputValue = ref("");
 const catalogOptionType = ref("category");
@@ -936,7 +1146,7 @@ const navItems = [
   { id: "users", label: "Users", icon: "mdi-account-group-outline" },
   { id: "products", label: "Products", icon: "mdi-package-variant-closed" },
   { id: "planner", label: "Planner", icon: "mdi-clipboard-list-outline" },
-  { id: "logs", label: "Logs", icon: "mdi-bell-outline" },
+  { id: "logs", label: "Notifications", icon: "mdi-bell-outline" },
   { id: "settings", label: "Settings", icon: "mdi-cog-outline" },
 ];
 
@@ -996,6 +1206,38 @@ const restockUrgencyOptions = [
   { title: "High", value: "high" },
   { title: "Planned", value: "planned" },
 ];
+const adminSearchTargets = [
+  {
+    panel: "dashboard",
+    label: "Dashboard",
+    keywords: ["dashboard", "overview", "home"],
+  },
+  {
+    panel: "users",
+    label: "Users",
+    keywords: ["users", "user", "customers", "customer", "accounts", "roles"],
+  },
+  {
+    panel: "products",
+    label: "Products",
+    keywords: ["products", "product", "productes", "catalog", "stock", "price", "category"],
+  },
+  {
+    panel: "planner",
+    label: "Planner",
+    keywords: ["planner", "plan", "restock", "reorder", "inventory planner"],
+  },
+  {
+    panel: "logs",
+    label: "Notifications",
+    keywords: ["notifications", "notification", "logs", "activity", "warnings", "warning", "system", "api"],
+  },
+  {
+    panel: "settings",
+    label: "Settings",
+    keywords: ["settings", "admin access", "access control", "email access", "security"],
+  },
+];
 
 const isMobile = computed(() => smAndDown.value);
 const navigationToggleLabel = computed(() => {
@@ -1014,7 +1256,33 @@ const currentUserImage = computed(() =>
   safeDisplayImageUrl(appStore.user?.picture || appStore.user?.photoURL || appStore.user?.photo_url),
 );
 const defaultAdminEmail = computed(() => DEFAULT_ADMIN_EMAIL);
-const activePanelLabel = computed(() => navItems.find((item) => item.id === activePanel.value)?.label || "Admin");
+const activePanelLabel = computed(() => {
+  if (activePanel.value === "search") {
+    return "Search Results";
+  }
+  return navItems.find((item) => item.id === activePanel.value)?.label || "Admin";
+});
+const activeHighlightQuery = computed(() => {
+  if (activePanel.value === "search") {
+    return globalSearchQuery.value;
+  }
+  if (activePanel.value === "products") {
+    return productSearch.value;
+  }
+  if (activePanel.value === "users") {
+    return userSearch.value;
+  }
+  if (activePanel.value === "settings") {
+    return accessSearch.value;
+  }
+  if (activePanel.value === "planner") {
+    return restockSearch.value;
+  }
+  if (activePanel.value === "logs") {
+    return activitySearch.value;
+  }
+  return "";
+});
 const isRefreshing = computed(() => productLoading.value || userLoading.value || accessLoading.value);
 const lastSyncedLabel = computed(() => (lastSyncedAt.value ? `Synced ${formatDate(lastSyncedAt.value)}` : "Ready"));
 const userInitials = computed(() => initialsFor(userName.value));
@@ -1165,13 +1433,7 @@ const availableSubcategories = computed(() => {
 const filteredProducts = computed(() =>
   products.value.filter((product) => {
     const query = normalizeText(productSearch.value).toLowerCase();
-    const matchesSearch =
-      !query ||
-      [product.name, product.company, product.category, product.subcategory, product.product_id]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase()
-        .includes(query);
+    const matchesSearch = !query || productMatchesQuery(product, query);
 
     const matchesCategory = categoryFilter.value === "all" || normalizeCategoryName(product.category) === categoryFilter.value;
     const status = stockStatus(product).key;
@@ -1190,13 +1452,7 @@ const recentProducts = computed(() =>
 const filteredUsers = computed(() =>
   users.value.filter((user) => {
     const query = normalizeText(userSearch.value).toLowerCase();
-    const matchesSearch =
-      !query ||
-      [user.name, user.email, user.user_id, user.country_code]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase()
-        .includes(query);
+    const matchesSearch = !query || userMatchesQuery(user, query);
     const matchesRole =
       userRoleFilter.value === "all" ||
       (userRoleFilter.value === "admin" && user.is_admin) ||
@@ -1210,7 +1466,7 @@ const filteredAdminAccess = computed(() => {
   if (!query) {
     return adminAccessEntries.value;
   }
-  return adminAccessEntries.value.filter((entry) => entry.email.toLowerCase().includes(query));
+  return adminAccessEntries.value.filter((entry) => adminAccessMatchesQuery(entry, query));
 });
 
 const totalInventoryUnits = computed(() => products.value.reduce((total, product) => total + Number(product.stock || 0), 0));
@@ -1229,6 +1485,71 @@ const lowStockProducts = computed(() =>
     .filter((product) => Number(product.stock || 0) < 5)
     .toSorted((left, right) => Number(left.stock || 0) - Number(right.stock || 0))
     .slice(0, 6),
+);
+const inventoryHealthSegments = computed(() => {
+  const rows = [
+    { key: "active", label: "Active stock", icon: "mdi-check-circle-outline", color: "success" },
+    { key: "low", label: "Low stock", icon: "mdi-alert-outline", color: "warning" },
+    { key: "out", label: "Out of stock", icon: "mdi-close-octagon-outline", color: "error" },
+  ];
+  const totalProducts = products.value.length;
+  return rows.map((row) => {
+    const count = products.value.filter((product) => stockStatus(product).key === row.key).length;
+    return {
+      ...row,
+      count,
+      percent: totalProducts > 0 ? Math.round((count / totalProducts) * 100) : 0,
+    };
+  });
+});
+const priceBandStats = computed(() => {
+  const bands = [
+    { key: "budget", label: "Under $25", color: "success", matches: (price) => price < 25 },
+    { key: "core", label: "$25 - $99", color: "primary", matches: (price) => price >= 25 && price < 100 },
+    { key: "premium", label: "$100+", color: "warning", matches: (price) => price >= 100 },
+  ];
+  const totalProducts = products.value.length;
+  return bands.map((band) => {
+    const count = products.value.filter((product) => band.matches(Number(product.price || 0))).length;
+    return {
+      key: band.key,
+      label: band.label,
+      color: band.color,
+      count,
+      percent: totalProducts > 0 ? Math.round((count / totalProducts) * 100) : 0,
+    };
+  });
+});
+const productsWithImagesCount = computed(() =>
+  products.value.filter((product) => safeDisplayImageUrls(product.image_urls, product.image_url).length > 0).length,
+);
+const productImageCoverage = computed(() =>
+  products.value.length > 0 ? Math.round((productsWithImagesCount.value / products.value.length) * 100) : 0,
+);
+const catalogReadinessStats = computed(() => [
+  {
+    label: "Categories",
+    value: formatNumber(catalogCategoryRecords.value.length),
+  },
+  {
+    label: "Missing images",
+    value: formatNumber(Math.max(0, products.value.length - productsWithImagesCount.value)),
+  },
+  {
+    label: "Low stock",
+    value: formatNumber(lowStockCount.value),
+  },
+]);
+const topCatalogValueProducts = computed(() =>
+  products.value
+    .map((product) => ({
+      ...product,
+      category_display: formatCategory(product),
+      shelf_value: Number(product.price || 0) * Number(product.stock || 0),
+      stock: Math.max(0, Math.trunc(Number(product.stock || 0))),
+    }))
+    .toSorted((left, right) => right.shelf_value - left.shelf_value)
+    .slice(0, 5),
 );
 
 const restockPlan = computed(() =>
@@ -1249,13 +1570,7 @@ const restockPlan = computed(() =>
 const filteredRestockPlan = computed(() =>
   restockPlan.value.filter((item) => {
     const query = normalizeText(restockSearch.value).toLowerCase();
-    const matchesSearch =
-      !query ||
-      [item.name, item.company, item.category, item.subcategory, item.product_id]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase()
-        .includes(query);
+    const matchesSearch = !query || restockMatchesQuery(item, query);
     const matchesUrgency =
       restockUrgencyFilter.value === "all" || item.urgency_key === restockUrgencyFilter.value;
     return matchesSearch && matchesUrgency;
@@ -1417,11 +1732,32 @@ const activityLogs = computed(() => {
 });
 
 const filteredActivityLogs = computed(() => {
-  if (logTypeFilter.value === "all") {
-    return activityLogs.value;
-  }
-  return activityLogs.value.filter((log) => log.type === logTypeFilter.value);
+  const query = normalizeText(activitySearch.value).toLowerCase();
+  return activityLogs.value.filter((log) => {
+    const matchesType = logTypeFilter.value === "all" || log.type === logTypeFilter.value;
+    const matchesSearch = !query || activityLogMatchesQuery(log, query);
+    return matchesType && matchesSearch;
+  });
 });
+
+const globalSearchGroups = computed(() => {
+  const query = normalizeText(globalSearchQuery.value).toLowerCase();
+  if (!query) {
+    return [];
+  }
+
+  return [
+    buildSearchGroup("sections", "Admin sections", adminSectionSearchResults(query)),
+    buildSearchGroup("products", "Products", productSearchResults(query)),
+    buildSearchGroup("users", "Users", userSearchResults(query)),
+    buildSearchGroup("settings", "Settings", settingsSearchResults(query)),
+    buildSearchGroup("planner", "Planner", plannerSearchResults(query)),
+    buildSearchGroup("logs", "Notifications", notificationSearchResults(query)),
+  ].filter((group) => group.items.length > 0);
+});
+const globalSearchResultCount = computed(() =>
+  globalSearchGroups.value.reduce((total, group) => total + group.items.length, 0),
+);
 
 watch(
   smAndDown,
@@ -1465,8 +1801,9 @@ watch(
 );
 
 function selectPanel(panel) {
+  adminSearchResult.value = "";
+  globalSearchQuery.value = "";
   activePanel.value = panel;
-  isQuickActionMenuOpen.value = false;
   if (isMobile.value) {
     drawer.value = false;
   }
@@ -1485,26 +1822,363 @@ function toggleNavigation() {
 function runAdminSearch() {
   const query = normalizeText(adminQuickSearch.value);
   if (!query) {
+    clearAdminQuickSearch();
     return;
   }
 
-  if (activePanel.value === "users") {
-    userSearch.value = query;
+  globalSearchQuery.value = query;
+  clearSearchFilters();
+  openPanelFromSearch("search", `Searching all admin: ${query}`);
+}
+
+function clearAdminQuickSearch() {
+  adminQuickSearch.value = "";
+  adminSearchResult.value = "";
+  globalSearchQuery.value = "";
+  clearSearchFilters();
+  if (activePanel.value === "search") {
+    activePanel.value = "dashboard";
+  }
+}
+
+function openPanelFromSearch(panel, resultLabel) {
+  activePanel.value = panel;
+  adminSearchResult.value = resultLabel;
+  if (isMobile.value) {
+    drawer.value = false;
+  }
+}
+
+function openGlobalSearchResult(result) {
+  const query = result.applyQuery ? globalSearchQuery.value : "";
+  if (result.panel === "products") {
+    openProductsSearch(query);
+    return;
+  }
+  if (result.panel === "users") {
+    openUsersSearch(query);
+    return;
+  }
+  if (result.panel === "settings") {
+    openSettingsSearch(query);
+    return;
+  }
+  if (result.panel === "planner") {
+    openPlannerSearch(query);
+    return;
+  }
+  if (result.panel === "logs") {
+    openLogsSearch(query, result.logType || "");
     return;
   }
 
-  if (activePanel.value === "settings") {
-    accessSearch.value = query;
-    return;
-  }
+  clearSearchFilters();
+  openPanelFromSearch(result.panel, `Opened ${result.title}`);
+}
 
-  if (activePanel.value === "planner") {
-    restockSearch.value = query;
-    return;
-  }
-
+function openProductsSearch(query) {
   productSearch.value = query;
-  activePanel.value = "products";
+  categoryFilter.value = "all";
+  stockFilter.value = "all";
+  openPanelFromSearch("products", query ? `Searching products: ${query}` : "Opened Products");
+}
+
+function openUsersSearch(query) {
+  userSearch.value = query;
+  userRoleFilter.value = "all";
+  openPanelFromSearch("users", query ? `Searching users: ${query}` : "Opened Users");
+}
+
+function openSettingsSearch(query) {
+  accessSearch.value = query;
+  openPanelFromSearch("settings", query ? `Searching access: ${query}` : "Opened Settings");
+}
+
+function openPlannerSearch(query) {
+  restockSearch.value = query;
+  restockUrgencyFilter.value = "all";
+  openPanelFromSearch("planner", query ? `Searching planner: ${query}` : "Opened Planner");
+}
+
+function openLogsSearch(query, forcedType = "") {
+  const resolvedType = forcedType || resolveLogTypeSearch(query);
+  logTypeFilter.value = resolvedType || "all";
+  activitySearch.value = forcedType ? query : resolvedType ? "" : query;
+  openPanelFromSearch("logs", query ? `Searching notifications: ${query}` : "Opened Notifications");
+}
+
+function clearSearchFilters() {
+  productSearch.value = "";
+  userSearch.value = "";
+  accessSearch.value = "";
+  restockSearch.value = "";
+  activitySearch.value = "";
+  categoryFilter.value = "all";
+  stockFilter.value = "all";
+  userRoleFilter.value = "all";
+  restockUrgencyFilter.value = "all";
+  logTypeFilter.value = "all";
+}
+
+function buildSearchGroup(id, label, items) {
+  return { id, label, items };
+}
+
+function adminSectionSearchResults(query) {
+  return adminSearchTargets
+    .filter((target) => searchMatchesValues([target.label, ...target.keywords], query))
+    .map((target) => {
+      const navItem = navItems.find((item) => item.id === target.panel);
+      return {
+        id: `section-${target.panel}`,
+        panel: target.panel,
+        icon: navItem?.icon || "mdi-view-dashboard-outline",
+        color: "teal-darken-1",
+        title: target.label,
+        subtitle: `Open ${target.label} section`,
+        meta: "Section",
+        applyQuery: false,
+      };
+    });
+}
+
+function productSearchResults(query) {
+  return products.value
+    .filter((product) => productMatchesQuery(product, query))
+    .map((product, index) => ({
+      id: `product-${product.product_id || index}`,
+      panel: "products",
+      icon: "mdi-package-variant-closed",
+      color: stockStatus(product).color,
+      title: product.name || "Product",
+      subtitle: [product.company, formatCategory(product), product.product_id].filter(Boolean).join(" | "),
+      meta: "Product",
+      applyQuery: true,
+    }));
+}
+
+function userSearchResults(query) {
+  return users.value
+    .filter((user) => userMatchesQuery(user, query))
+    .map((user, index) => ({
+      id: `user-${user.user_id || user.email || index}`,
+      panel: "users",
+      icon: user.is_admin ? "mdi-shield-account-outline" : "mdi-account-outline",
+      color: user.is_admin ? "success" : "primary",
+      title: user.name || user.email || "User",
+      subtitle: [user.email, user.country_code, user.is_admin ? "Admin" : "Customer"].filter(Boolean).join(" | "),
+      meta: user.is_admin ? "Admin" : "User",
+      applyQuery: true,
+    }));
+}
+
+function settingsSearchResults(query) {
+  const staticResults = [
+    {
+      id: "settings-access-control",
+      panel: "settings",
+      icon: "mdi-shield-account-outline",
+      color: "primary",
+      title: "Admin Access Control",
+      subtitle: "Settings for admin emails, protected access, default admin, and security rules",
+      meta: "Settings",
+      applyQuery: false,
+    },
+    {
+      id: "settings-add-email",
+      panel: "settings",
+      icon: "mdi-email-plus-outline",
+      color: "success",
+      title: "Add Admin Email",
+      subtitle: "Settings form for adding a new admin access email",
+      meta: "Settings",
+      applyQuery: false,
+    },
+  ].filter((result) => searchMatchesValues([result.title, result.subtitle, result.meta], query));
+
+  const accessResults = adminAccessEntries.value
+    .filter((entry) => adminAccessMatchesQuery(entry, query))
+    .map((entry, index) => ({
+      id: `access-${entry.email || index}`,
+      panel: "settings",
+      icon: entry.is_default ? "mdi-shield-star-outline" : "mdi-shield-account-outline",
+      color: entry.is_default ? "success" : "primary",
+      title: entry.email || "Admin access",
+      subtitle: accessEntrySubtitle(entry),
+      meta: entry.is_default ? "Default admin" : "Admin access",
+      applyQuery: true,
+    }));
+
+  return [...staticResults, ...accessResults];
+}
+
+function plannerSearchResults(query) {
+  return restockPlan.value
+    .filter((item) => restockMatchesQuery(item, query))
+    .map((item, index) => ({
+      id: `planner-${item.product_id || index}`,
+      panel: "planner",
+      icon: "mdi-clipboard-list-outline",
+      color: item.urgency_color,
+      title: item.name || "Restock item",
+      subtitle: `${item.category_display} | ${item.urgency_label} | add ${formatNumber(item.reorder_quantity)}`,
+      meta: "Planner",
+      applyQuery: true,
+    }));
+}
+
+function notificationSearchResults(query) {
+  return activityLogs.value
+    .filter((log) => activityLogMatchesQuery(log, query))
+    .map((log) => ({
+      id: `log-${log.id}`,
+      panel: "logs",
+      icon: log.icon,
+      color: log.color,
+      title: log.title,
+      subtitle: `${log.message} | ${log.time}`,
+      meta: "Notification",
+      logType: log.type,
+      applyQuery: true,
+    }));
+}
+
+function resolveLogTypeSearch(query) {
+  const normalizedQuery = normalizeText(query).toLowerCase();
+  const matchedOption = logTypeOptions.find((option) => {
+    const title = normalizeText(option.title).toLowerCase();
+    return option.value === normalizedQuery || title === normalizedQuery || title.includes(normalizedQuery);
+  });
+  return matchedOption?.value || "";
+}
+
+function productMatchesQuery(product, query) {
+  return searchMatchesValues([
+    product?.name,
+    product?.company,
+    product?.category,
+    product?.subcategory,
+    product?.category_display,
+    formatCategory(product),
+    productPriceCurrency(product),
+    productPriceAmount(product),
+    formatProductPrice(product),
+    product?.stock,
+    `${stockStatus(product).label} stock`,
+    product?.product_id,
+  ], query);
+}
+
+function userMatchesQuery(user, query) {
+  return searchMatchesValues([
+    user?.name,
+    user?.email,
+    user?.user_id,
+    user?.country_code,
+    user?.is_admin ? "admin" : "customer",
+    user?.is_admin ? "admin user" : "customer user",
+  ], query);
+}
+
+function adminAccessMatchesQuery(entry, query) {
+  return searchMatchesValues([
+    entry?.email,
+    entry?.is_default ? "default" : "",
+    entry?.is_current_user ? "you current user" : "",
+  ], query);
+}
+
+function restockMatchesQuery(item, query) {
+  return searchMatchesValues([
+    item?.name,
+    item?.company,
+    item?.category,
+    item?.subcategory,
+    item?.category_display,
+    item?.product_id,
+    item?.urgency_label,
+    `${item?.urgency_label || ""} restock`,
+  ], query);
+}
+
+function activityLogMatchesQuery(log, query) {
+  return searchMatchesValues([
+    log?.title,
+    log?.message,
+    log?.type,
+    log?.time,
+  ], query);
+}
+
+function highlightTextSegments(value, query) {
+  const text = normalizeText(value);
+  const terms = splitSearchTerms(query);
+  if (!text || terms.length === 0) {
+    return [{ text, match: false }];
+  }
+
+  const lowerText = text.toLowerCase();
+  const ranges = [];
+  for (const term of terms) {
+    let start = lowerText.indexOf(term);
+    while (start !== -1) {
+      ranges.push({ start, end: start + term.length });
+      start = lowerText.indexOf(term, start + term.length);
+    }
+  }
+
+  if (ranges.length === 0) {
+    return [{ text, match: false }];
+  }
+
+  const mergedRanges = ranges
+    .toSorted((left, right) => left.start - right.start || right.end - left.end)
+    .reduce((merged, range) => {
+      const previous = merged.at(-1);
+      if (!previous || range.start > previous.end) {
+        merged.push({ ...range });
+        return merged;
+      }
+      previous.end = Math.max(previous.end, range.end);
+      return merged;
+    }, []);
+
+  const segments = [];
+  let cursor = 0;
+  for (const range of mergedRanges) {
+    if (range.start > cursor) {
+      segments.push({ text: text.slice(cursor, range.start), match: false });
+    }
+    segments.push({ text: text.slice(range.start, range.end), match: true });
+    cursor = range.end;
+  }
+  if (cursor < text.length) {
+    segments.push({ text: text.slice(cursor), match: false });
+  }
+  return segments;
+}
+
+function searchMatchesValues(values, query) {
+  const terms = splitSearchTerms(query);
+  if (terms.length === 0) {
+    return true;
+  }
+
+  const text = searchableText(values);
+  return terms.every((term) => text.includes(term));
+}
+
+function splitSearchTerms(query) {
+  return [...new Set(normalizeText(query).toLowerCase().split(/\s+/).filter(Boolean))]
+    .toSorted((left, right) => right.length - left.length);
+}
+
+function searchableText(values) {
+  return values
+    .filter((value) => value != null && value !== "")
+    .map((value) => normalizeText(value))
+    .join(" ")
+    .toLowerCase();
 }
 
 function normalizeText(value) {
@@ -1775,6 +2449,37 @@ function downloadRestockPlan() {
   link.click();
   URL.revokeObjectURL(url);
   notify("Restock plan exported");
+}
+
+function downloadFilteredProducts() {
+  if (filteredProducts.value.length === 0) {
+    notify("No matching products to export", "info");
+    return;
+  }
+
+  const rows = [
+    ["Product", "Product ID", "Brand", "Category", "Subcategory", "Price", "Currency", "Stock", "Image Count"],
+    ...filteredProducts.value.map((product) => [
+      product.name,
+      product.product_id || "",
+      product.company || "",
+      normalizeCategoryName(product.category) || "Other",
+      normalizeSubcategoryName(product.category, product.subcategory),
+      productPriceAmount(product),
+      productPriceCurrency(product),
+      Math.max(0, Math.trunc(Number(product.stock || 0))),
+      safeDisplayImageUrls(product.image_urls, product.image_url).length,
+    ]),
+  ];
+  const csv = rows.map((row) => row.map((value) => escapeCsv(value)).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `mindstores-products-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+  notify("Product CSV exported");
 }
 
 function escapeCsv(value) {
@@ -2070,11 +2775,7 @@ async function saveCatalogOption() {
     );
     upsertLocalCategoryRecord(response.data || { category, subcategories: subcategory ? [subcategory] : [] });
     formData.value.category = category;
-    if (isSubcategory) {
-      formData.value.subcategory = subcategory;
-    } else {
-      formData.value.subcategory = "";
-    }
+    formData.value.subcategory = isSubcategory ? subcategory : "";
     catalogOptionDialog.value = false;
     notify(isSubcategory ? "Subcategory saved" : "Category saved");
   } catch (error) {
@@ -2103,7 +2804,6 @@ function resetProductForm() {
 }
 
 function openAddDialog() {
-  isQuickActionMenuOpen.value = false;
   editMode.value = false;
   currentProductId.value = null;
   resetProductForm();

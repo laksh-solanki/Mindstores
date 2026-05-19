@@ -11,15 +11,6 @@
 
     <template v-else-if="product">
       <div class="d-flex align-center justify-space-between flex-wrap ga-3 mb-4">
-        <v-btn
-          prepend-icon="mdi-arrow-left"
-          rounded="lg"
-          variant="text"
-          @click="goBack"
-        >
-          Back
-        </v-btn>
-
         <div class="d-flex align-center flex-wrap justify-end ga-2">
           <v-chip color="teal-darken-1" size="small" variant="tonal">
             {{ categoryLabel }}
