@@ -9,9 +9,9 @@ from starlette.responses import JSONResponse, Response
 
 from .config import get_config
 from .context import build_state, error_response
-from .routes import admin, auth, cart, checkout, orders, products, root
+from .routes import admin, auth, cart, checkout, orders, products, root, user_admin
 
-API_PREFIXES = ["/admin", "/auth", "/cart", "/checkout", "/orders", "/products"]
+API_PREFIXES = ["/admin", "/auth", "/cart", "/checkout", "/orders", "/products", "/user-admin"]
 MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 rate_limit_store: dict[str, dict[str, float]] = {}
 
@@ -166,3 +166,4 @@ app.include_router(cart.router)
 app.include_router(checkout.router)
 app.include_router(orders.router)
 app.include_router(admin.router)
+app.include_router(user_admin.router)

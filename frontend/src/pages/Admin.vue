@@ -16,13 +16,13 @@
       <v-spacer />
 
       <div v-if="canShowAdmin" class="ml-4 align-center ga-2 d-none d-lg-flex">
-        <v-chip color="blue-lighten-4" size="small" variant="outlined">
+        <v-chip color="blue-lighten-4" variant="outlined">
           {{ formatNumber(products.length) }} products
         </v-chip>
-        <v-chip :color="lowStockCount > 0 ? 'yellow-darken-3' : 'teal-lighten-5'" size="small" variant="outlined">
+        <v-chip :color="lowStockCount > 0 ? 'yellow-darken-3' : 'teal-lighten-5'" variant="outlined">
           {{ formatNumber(lowStockCount) }} low stock
         </v-chip>
-        <v-chip border color="light-blue-lighten-4" size="small" variant="outlined">
+        <v-chip border color="light-blue-lighten-4" variant="outlined">
           {{ lastSyncedLabel }}
         </v-chip>
       </div>
@@ -47,8 +47,8 @@
           </v-tooltip>
         </template>
 
-        <v-list class="bg-yellow-lighten-5 pa-2" density="compact" nav>
-          <v-list-item class="mb-2" rounded="lg" :subtitle="currentUserEmail" :title="userName" to="/profile">
+        <v-list class="pa-2" rounded="lg" density="compact" nav>
+          <v-list-item class="mb-2" rounded="lg" :subtitle="currentUserEmail" :title="userName">
             <template #prepend>
               <v-avatar v-if="currentUserImage" size="32">
                 <v-img :alt="userName" cover :src="currentUserImage" />
@@ -81,9 +81,9 @@
       </v-menu>
     </div>
   </v-app-bar>
-  <v-navigation-drawer v-if="canShowAdmin" v-model="drawer" border="e" color="yellow-lighten-5" elevation="0"
-    :permanent="!isMobile" :rail="!isMobile && desktopDrawerRail" rail-width="60" :temporary="isMobile" width="220">
-    <v-list class="bg-yellow-lighten-5" density="comfortable" nav>
+  <v-navigation-drawer v-if="canShowAdmin" v-model="drawer" border="e" style="background-color: #FFFFFF;" elevation="0"
+    :permanent="!isMobile" :rail="!isMobile && desktopDrawerRail" rail-width="61" :temporary="isMobile" width="220">
+    <v-list density="compact" nav>
       <v-list-item v-for="item in navItems" :key="item.id" :active="activePanel === item.id" color="teal-darken-3"
         rounded="lg" @click="selectPanel(item.id)">
         <template #prepend>
@@ -93,7 +93,7 @@
       </v-list-item>
     </v-list>
   </v-navigation-drawer>
-  <v-main class="bg-yellow-lighten-5">
+  <v-main style="background-color: #F5F7FA;">
     <v-container class="pa-4 pa-md-5" fluid>
       <v-row v-if="authLoading" align="center" justify="center">
         <v-col cols="12" lg="5" md="7">
@@ -158,8 +158,8 @@
           </v-col>
           <v-col cols="12" lg="7" md="6">
             <v-form class="d-flex flex-column flex-lg-row justify-md-end ga-2" @submit.prevent="runAdminSearch">
-              <v-text-field v-model="adminQuickSearch" clearable density="comfortable" hide-details
-                label="Search admin" max-width="360" prepend-inner-icon="mdi-magnify" rounded="lg" variant="outlined"
+              <v-text-field v-model="adminQuickSearch" clearable density="comfortable" hide-details label="Search admin"
+                max-width="360" prepend-inner-icon="mdi-magnify" rounded="lg" variant="outlined"
                 @click:clear="clearAdminQuickSearch" @keydown.enter.prevent="runAdminSearch" />
               <div class="d-flex ga-2 justify-end">
                 <v-btn aria-label="Run admin search" color="teal-darken-1" height="48" min-width="48" rounded="lg"
@@ -176,7 +176,7 @@
 
         <div v-if="activePanel === 'dashboard'">
           <v-row dense>
-            <v-col v-for="metric in metricCards" :key="metric.label" cols="12" lg="3" sm="7">
+            <v-col v-for="metric in metricCards" :key="metric.label" cols="12" lg="3" md="6" sm="6">
               <v-card border rounded="lg" variant="flat">
                 <v-card-text class="d-flex align-center justify-space-between ga-4">
                   <div class="overflow-hidden">
@@ -408,12 +408,8 @@
                     <v-chip size="small" variant="tonal">{{ formatNumber(group.items.length) }}</v-chip>
                   </v-card-title>
                   <v-list class="pa-2" density="comfortable" lines="two">
-                    <v-list-item
-                      v-for="result in group.items"
-                      :key="result.id"
-                      rounded="lg"
-                      @click="openGlobalSearchResult(result)"
-                    >
+                    <v-list-item v-for="result in group.items" :key="result.id" rounded="lg"
+                      @click="openGlobalSearchResult(result)">
                       <template #prepend>
                         <v-avatar :color="result.color" size="40" variant="tonal">
                           <v-icon :color="result.color">{{ result.icon }}</v-icon>
@@ -537,6 +533,19 @@
               <template #item.category_display="{ item }">
                 <HighlightText :query="activeHighlightQuery" :text="formatCategory(resolveTableItem(item))" />
               </template>
+              <template #item.owner_email="{ item }">
+                <div class="text-body-2">
+                  <HighlightText :query="activeHighlightQuery" :text="formatProductOwner(resolveTableItem(item))" />
+                </div>
+                <v-chip
+                  v-if="resolveTableItem(item)?.catalog_source === 'user_admin'"
+                  color="info"
+                  size="x-small"
+                  variant="tonal"
+                >
+                  User Admin
+                </v-chip>
+              </template>
               <template #item.price="{ item }">
                 {{ formatProductPrice(resolveTableItem(item)) }}
               </template>
@@ -654,7 +663,8 @@
                               <HighlightText :query="activeHighlightQuery" :text="resolveTableItem(item)?.name" />
                             </div>
                             <div class="text-caption text-medium-emphasis">
-                              <HighlightText :query="activeHighlightQuery" :text="resolveTableItem(item)?.category_display" />
+                              <HighlightText :query="activeHighlightQuery"
+                                :text="resolveTableItem(item)?.category_display" />
                             </div>
                           </div>
                         </div>
@@ -1153,6 +1163,7 @@ const navItems = [
 const productHeaders = [
   { title: "Product", key: "name" },
   { title: "Brand", key: "company" },
+  { title: "Added By", key: "owner_email" },
   { title: "Category", key: "category_display" },
   { title: "Price", key: "price" },
   { title: "Stock", key: "stock" },
@@ -1951,7 +1962,9 @@ function productSearchResults(query) {
       icon: "mdi-package-variant-closed",
       color: stockStatus(product).color,
       title: product.name || "Product",
-      subtitle: [product.company, formatCategory(product), product.product_id].filter(Boolean).join(" | "),
+      subtitle: [product.company, formatProductOwner(product), formatCategory(product), product.product_id]
+        .filter(Boolean)
+        .join(" | "),
       meta: "Product",
       applyQuery: true,
     }));
@@ -2066,6 +2079,10 @@ function productMatchesQuery(product, query) {
     product?.stock,
     `${stockStatus(product).label} stock`,
     product?.product_id,
+    product?.owner_email,
+    product?.source_label,
+    product?.catalog_source,
+    formatProductOwner(product),
   ], query);
 }
 
@@ -2294,6 +2311,10 @@ function formatProductPrice(product) {
   return formatCurrency(productPriceAmount(product), productPriceCurrency(product));
 }
 
+function formatProductOwner(product) {
+  return normalizeEmail(product?.owner_email || product?.created_by || product?.updated_by) || "Private admin";
+}
+
 function formatNumber(value) {
   return new Intl.NumberFormat("en-US").format(Number(value || 0));
 }
@@ -2458,11 +2479,25 @@ function downloadFilteredProducts() {
   }
 
   const rows = [
-    ["Product", "Product ID", "Brand", "Category", "Subcategory", "Price", "Currency", "Stock", "Image Count"],
+    [
+      "Product",
+      "Product ID",
+      "Brand",
+      "Added By",
+      "Source",
+      "Category",
+      "Subcategory",
+      "Price",
+      "Currency",
+      "Stock",
+      "Image Count",
+    ],
     ...filteredProducts.value.map((product) => [
       product.name,
       product.product_id || "",
       product.company || "",
+      formatProductOwner(product),
+      product.source_label || product.catalog_source || "Private Admin",
       normalizeCategoryName(product.category) || "Other",
       normalizeSubcategoryName(product.category, product.subcategory),
       productPriceAmount(product),
@@ -2531,6 +2566,7 @@ async function fetchProducts() {
         await buildAdminRequestConfig(
           {
             params: {
+              include_user_products: true,
               limit: 250,
               sort: "newest",
             },

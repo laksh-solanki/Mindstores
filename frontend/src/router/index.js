@@ -14,6 +14,7 @@ const routes = [
   { path: '/privacy', component: () => import('@/pages/Privacy.vue'), name: 'Privacy'},
   { path: '/terms', component: () => import('@/pages/Terms-or-Service.vue'), name: 'Terms-or-Service'},
   { path: '/admin', component: () => import('@/pages/Admin.vue'), name: 'Admin' },
+  { path: '/user-admin', component: () => import('@/pages/UserAdmin.vue'), name: 'UserAdmin' },
   { path: '/products', component: () => import('@/pages/Catalog.vue'), name: 'CatalogAll' },
   { path: '/:category', component: () => import('@/pages/Catalog.vue'), name: 'CatalogCategory' },
   { path: '/:category/:subcategory', component: () => import('@/pages/Catalog.vue'), name: 'Catalog' },

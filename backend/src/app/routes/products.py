@@ -93,6 +93,16 @@ def serialize_product(product: dict[str, Any] | None) -> dict[str, Any] | None:
     return output
 
 
+def serialize_user_admin_product(product: dict[str, Any] | None) -> dict[str, Any] | None:
+    output = serialize_product(product)
+    if not output:
+        return None
+    output["catalog_source"] = "user_admin"
+    output["source_label"] = "User Admin"
+    output["owner_email"] = normalize_text(output.get("owner_email"), 320)
+    return output
+
+
 def build_product_filter(product_id: Any) -> dict[str, Any] | None:
     text = normalize_text(product_id, 160)
     if not text:
@@ -342,13 +352,32 @@ async def get_products(ctx: RequestContext = Depends(get_context)):
     page_input = parse_int_param(query.get("page"))
     page_size_input = parse_int_param(query.get("page_size") or query.get("pageSize"))
     limit_input = parse_int_param(query.get("limit"))
+    include_user_products = (
+        parse_bool_param(query.get("include_user_products") or query.get("includeUserProducts")) is True
+        and bool(ctx.user and ctx.user.get("is_admin"))
+    )
     should_paginate = include_meta or page_size_input is not None or page_input is not None
     collection = ctx.db.collection("products")
 
     if not should_paginate:
         limit = min(max(limit_input or 150, 1), 250)
         products = await collection.find(db_query).sort(sort_clause).limit(limit).to_array()
-        return json_response([serialize_product(item) for item in products], headers={"Cache-Control": "public, max-age=60, stale-while-revalidate=300"})
+        items = [serialize_product(item) for item in products]
+        if include_user_products:
+            user_products = await ctx.db.collection("user_products").find(db_query).sort(sort_clause).limit(limit).to_array()
+            items.extend(serialize_user_admin_product(item) for item in user_products)
+            reverse = list(sort_clause.values())[0] < 0 if sort_clause else True
+            items = sorted(
+                [item for item in items if item],
+                key=lambda item: str(item.get("updated_at") or item.get("created_at") or ""),
+                reverse=reverse,
+            )[:limit]
+        cache_header = (
+            {"Cache-Control": "no-store"}
+            if include_user_products
+            else {"Cache-Control": "public, max-age=60, stale-while-revalidate=300"}
+        )
+        return json_response(items, headers=cache_header)
 
     page = max(1, page_input or 1)
     page_size = min(max(page_size_input or limit_input or 24, 1), 250)
@@ -441,7 +470,14 @@ async def create_product(request: Request, ctx: RequestContext = Depends(get_con
     if existing:
         return error_response(409, "product_id already exists")
     now = now_iso()
-    product = {**payload, "product_id": product_id, "created_at": now, "updated_at": now}
+    product = {
+        **payload,
+        "product_id": product_id,
+        "owner_email": normalize_text(ctx.user.get("email"), 320),
+        "catalog_source": "admin",
+        "created_at": now,
+        "updated_at": now,
+    }
     await ctx.db.collection("products").insert_one(product)
     await save_category_metadata(ctx, product.get("category"), product.get("subcategory"), ctx.user.get("email"))
     return json_response(serialize_product(product), 201)
@@ -457,13 +493,18 @@ async def update_product(product_id: str, request: Request, ctx: RequestContext 
     if not product_filter:
         return error_response(400, "Invalid product id")
     existing = await ctx.db.collection("products").find_one(product_filter)
+    user_product_collection = False
+    if not existing:
+        existing = await ctx.db.collection("user_products").find_one(product_filter)
+        user_product_collection = bool(existing)
     if not existing:
         return error_response(404, "Product not found")
     body = await read_json_body(request, ctx.config.max_body_bytes)
     updates, error = validate_update_payload(body if isinstance(body, dict) else {})
     if error:
         return error_response(400, error)
-    result = await ctx.db.collection("products").update_one(product_filter, {"$set": updates})
+    collection = ctx.db.collection("user_products" if user_product_collection else "products")
+    result = await collection.update_one(product_filter, {"$set": updates})
     if result.matchedCount == 0:
         return error_response(404, "Product not found")
     await save_category_metadata(
@@ -472,8 +513,8 @@ async def update_product(product_id: str, request: Request, ctx: RequestContext 
         updates.get("subcategory", existing.get("subcategory")),
         ctx.user.get("email"),
     )
-    updated = await ctx.db.collection("products").find_one(product_filter)
-    return json_response(serialize_product(updated))
+    updated = await collection.find_one(product_filter)
+    return json_response(serialize_user_admin_product(updated) if user_product_collection else serialize_product(updated))
 
 
 @router.delete("/products/{product_id}")
@@ -486,6 +527,8 @@ async def delete_product(product_id: str, ctx: RequestContext = Depends(get_cont
     if not product_filter:
         return error_response(400, "Invalid product id")
     result = await ctx.db.collection("products").delete_one(product_filter)
+    if result.deletedCount == 0:
+        result = await ctx.db.collection("user_products").delete_one(product_filter)
     if result.deletedCount == 0:
         return error_response(404, "Product not found")
     return json_response({"message": "Product deleted successfully"})

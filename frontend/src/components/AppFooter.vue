@@ -1,6 +1,6 @@
 <template>
   <v-footer class="app-footer">
-    <v-container class="footer-container" fluid >
+    <v-container class="footer-container" fluid>
       <div class="footer-row">
         <div>
           <p class="text-subtitle-2 font-weight-medium">Mindstore</p>

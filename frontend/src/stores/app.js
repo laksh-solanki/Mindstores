@@ -515,7 +515,7 @@ export const useAppStore = defineStore("app", {
         const backendUser = response.data?.user || response.data || {};
         this.user = mergeBackendUser(
           {
-            ...(this.user || {}),
+            ...this.user,
             picture:
               typeof picture === "string"
                 ? normalizedPicture || null
@@ -529,6 +529,35 @@ export const useAppStore = defineStore("app", {
         return this.user;
       } catch (error) {
         console.error("Failed to update profile:", error);
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async verifyUserAdminMobile({ mobileCountryCode, mobileNumber, otp }) {
+      this.loading = true;
+      try {
+        const response = await axios.post(
+          `${API_URL}/user-admin/mobile`,
+          {
+            mobile_country_code: mobileCountryCode,
+            mobile_number: mobileNumber,
+            otp,
+          },
+          await buildAuthenticatedRequestConfig(
+            { timeout: AUTH_REQUEST_TIMEOUT_MS },
+            { forceRefresh: Boolean(auth.currentUser) },
+          ),
+        );
+
+        const backendUser = response.data?.user || response.data?.profile || {};
+        this.user = mergeBackendUser(this.user || {}, backendUser);
+        syncCurrencyPreferenceFromUser(this.user);
+        this.isAuthenticated = true;
+        return response.data;
+      } catch (error) {
+        console.error("Failed to verify user admin mobile:", error);
         throw error;
       } finally {
         this.loading = false;

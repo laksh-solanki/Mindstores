@@ -50,13 +50,13 @@
 
         <div class="header-actions">
           <v-btn aria-label="Cart" icon rounded="lg" to="/cart" variant="text">
-            <v-badge v-if="cartStore.itemCount > 0" color="orange" :content="cartStore.itemCount" floating>
+            <v-badge v-if="cartStore.itemCount > 0" location="top right" color="indigo-lighten-5" :content="cartStore.itemCount" floating>
               <v-icon>mdi-cart-outline</v-icon>
             </v-badge>
             <v-icon v-else>mdi-cart-outline</v-icon>
           </v-btn>
 
-          <v-menu v-if="appStore.isAuthenticated" location="bottom end" offset="8">
+          <v-menu v-if="appStore.isAuthenticated" location="bottom end" offset="3">
             <template #activator="{ props }">
               <v-btn v-bind="props" class="account-action" rounded="xl" icon variant="text">
                 <v-avatar v-if="profileImage" :image="profileImage" size="37" />
@@ -66,22 +66,28 @@
               </v-btn>
             </template>
 
-            <v-card min-width="280" rounded="lg">
-              <v-list density="comfortable">
-                <v-list-item :subtitle="appStore.user?.email" :title="userName">
-                  <template #prepend>
-                    <v-avatar v-if="profileImage" :image="profileImage" size="40" />
-                    <v-avatar v-else color="teal-darken-1" size="40">
-                      <span class="text-white font-weight-bold">{{ userInitials }}</span>
-                    </v-avatar>
-                  </template>
+            <v-card width="340" border rounded="lg">
+              <v-sheet class="profile-menu-cover" color="teal-lighten-5" height="95" />
+              <div class="profile-menu-identity">
+                <v-avatar v-if="profileImage" class="profile-menu-avatar" :image="profileImage" size="88" />
+                <v-avatar v-else class="profile-menu-avatar" color="teal-darken-1" size="88">
+                  <span class="text-white text-h5 font-weight-bold">{{ userInitials }}</span>
+                </v-avatar>
+                <div class="text-h6 font-weight-bold text-center mt-3">
+                  {{ userName }}
+                </div>
+              </div>
+              <v-divider />
+              <v-list density="comfortable" class="pa-1">
+                <v-list-item prepend-icon="mdi-account-outline" title="Profile" to="/profile" rounded="lg" />
+                <v-list-item prepend-icon="mdi-cart-outline" title="Cart" to="/cart" rounded="lg" />
+                <v-list-item v-if="canAccessAdmin" prepend-icon="mdi-shield-star-outline" class="mb-1" title="Admin" to="/admin" rounded="lg" />
+                <v-divider />
+                <v-list-item  class="mt-1">
+                  <v-btn text="Logout" prepend-icon="mdi-logout" color="red-lighten-1" width="100%" rounded="lg" @click="logout" variant="text">
+                    Logout
+                  </v-btn>
                 </v-list-item>
-                <v-divider />
-                <v-list-item prepend-icon="mdi-account-outline" title="Profile" to="/profile" />
-                <v-list-item prepend-icon="mdi-cart-outline" title="Cart" to="/cart" />
-                <v-list-item v-if="canAccessAdmin" prepend-icon="mdi-shield-star-outline" title="Admin" to="/admin" />
-                <v-divider />
-                <v-list-item prepend-icon="mdi-logout" title="Logout" @click="logout" />
               </v-list>
             </v-card>
           </v-menu>
@@ -156,7 +162,7 @@ const profileImage = computed(() =>
   safeDisplayImageUrl(appStore.user?.picture || appStore.user?.photoURL || appStore.user?.photo_url),
 )
 const canAccessAdmin = computed(() => Boolean(appStore.user?.is_admin))
-const userName = computed(() => appStore.user?.name || appStore.user?.email || 'Account')
+const userName = computed(() => appStore.user?.name || 'Account')
 const userInitials = computed(() => {
   return (
     String(userName.value || 'MS')
@@ -366,6 +372,25 @@ onMounted(() => {
 .account-action {
   min-width: 44px;
   padding-inline: 6px;
+}
+
+.profile-menu-cover {
+  border-bottom: 1px solid rgba(15, 118, 110, 0.12);
+}
+
+.profile-menu-identity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 20px 22px;
+  margin-top: -44px;
+}
+
+.profile-menu-avatar {
+  border: 4px solid #ffffff;
+  box-shadow:
+    0 0 0 1px rgba(15, 118, 110, 0.14),
+    0 10px 24px rgba(15, 23, 42, 0.12);
 }
 
 .login-action {
