@@ -107,7 +107,7 @@
                 </v-chip>
 
                 <span class="text-body-2 text-medium-emphasis">
-                  {{ reviewCount }} reviews
+                  {{ reviewCountLabel }}
                 </span>
               </div>
 
@@ -245,6 +245,126 @@
             </v-list>
           </v-card>
         </v-col>
+
+        <v-col cols="12">
+          <v-card border rounded="xl" variant="flat">
+            <v-card-title class="d-flex align-center justify-space-between flex-wrap ga-3">
+              <div>
+                <div class="text-subtitle-1 font-weight-bold">Public Reviews</div>
+                <div class="text-body-2 text-medium-emphasis">Shared by logged-in Mindstores customers.</div>
+              </div>
+              <v-chip color="amber-darken-2" prepend-icon="mdi-star" variant="tonal">
+                {{ ratingLabel }} · {{ reviewCountLabel }}
+              </v-chip>
+            </v-card-title>
+            <v-divider />
+            <v-card-text>
+              <v-row dense>
+                <v-col cols="12" md="5">
+                  <v-sheet class="pa-4 h-100" color="grey-lighten-5" rounded="lg">
+                    <div class="d-flex align-center ga-3 mb-4">
+                      <v-avatar color="amber-lighten-5" size="56">
+                        <v-icon color="amber-darken-2" icon="mdi-star" size="28" />
+                      </v-avatar>
+                      <div>
+                        <div class="text-h5 font-weight-bold">{{ ratingLabel }}</div>
+                        <div class="text-body-2 text-medium-emphasis">{{ reviewCountLabel }}</div>
+                      </div>
+                    </div>
+
+                    <v-alert
+                      v-if="!appStore.isAuthenticated"
+                      color="teal-darken-1"
+                      icon="mdi-login"
+                      rounded="lg"
+                      variant="tonal"
+                    >
+                      <div class="d-flex flex-column flex-sm-row align-sm-center justify-space-between ga-3">
+                        <span>Login first before adding your review.</span>
+                        <v-btn color="teal-darken-1" rounded="lg" to="/login" variant="flat">Login</v-btn>
+                      </div>
+                    </v-alert>
+
+                    <v-form v-else @submit.prevent="submitReview">
+                      <div class="text-body-2 font-weight-medium mb-2">Your rating</div>
+                      <v-rating
+                        v-model="reviewForm.rating"
+                        active-color="amber-darken-2"
+                        color="grey-lighten-1"
+                        density="comfortable"
+                        hover
+                        length="5"
+                        size="32"
+                      />
+                      <v-textarea
+                        v-model="reviewForm.comment"
+                        auto-grow
+                        class="mt-3"
+                        counter
+                        density="comfortable"
+                        label="Write public review"
+                        :maxlength="reviewCommentMaxLength"
+                        rows="3"
+                        variant="outlined"
+                      />
+                      <v-btn
+                        block
+                        color="teal-darken-1"
+                        :disabled="!canSubmitReview"
+                        :loading="reviewSaving"
+                        prepend-icon="mdi-message-draw"
+                        rounded="lg"
+                        type="submit"
+                        variant="flat"
+                      >
+                        Save Review
+                      </v-btn>
+                    </v-form>
+                  </v-sheet>
+                </v-col>
+
+                <v-col cols="12" md="7">
+                  <v-progress-linear v-if="reviewsLoading" color="teal-darken-1" indeterminate />
+                  <v-alert v-else-if="reviews.length === 0" type="info" variant="tonal">
+                    No public reviews yet.
+                  </v-alert>
+                  <v-list v-else bg-color="transparent" lines="three">
+                    <template
+                      v-for="(review, index) in reviews"
+                      :key="review.review_id || `${review.created_at}-${index}`"
+                    >
+                      <v-list-item>
+                        <template #prepend>
+                          <v-avatar color="teal-lighten-5" size="42">
+                            <span class="text-teal-darken-2 font-weight-bold">{{ reviewerInitial(review) }}</span>
+                          </v-avatar>
+                        </template>
+                        <template #title>
+                          <div class="d-flex align-center flex-wrap ga-2">
+                            <span class="font-weight-medium">{{ review.reviewer_name || 'Mindstores user' }}</span>
+                            <v-rating
+                              active-color="amber-darken-2"
+                              color="grey-lighten-1"
+                              density="compact"
+                              :model-value="Number(review.rating || 0)"
+                              readonly
+                              size="16"
+                            />
+                          </div>
+                        </template>
+                        <template #subtitle>
+                          <div class="text-body-2 text-medium-emphasis mt-1">{{ review.comment }}</div>
+                          <div class="text-caption text-medium-emphasis mt-1">{{ formatReviewDate(review.created_at) }}</div>
+                        </template>
+                      </v-list-item>
+                      <v-divider v-if="index < reviews.length - 1" />
+                    </template>
+                  </v-list>
+                </v-col>
+              </v-row>
+            </v-card-text>
+          </v-card>
+        </v-col>
       </v-row>
     </template>
 
@@ -313,7 +433,7 @@
   import { useCurrency } from '@/utils/currency'
   import { safeDisplayImageUrls } from '@/utils/images'
   import { PRODUCTS_CACHE_INVALIDATED_EVENT } from '@/utils/productCache'
-  import { fetchProductDetail } from '@/utils/products'
+  import { createProductReview, fetchProductDetail, fetchProductReviews } from '@/utils/products'
 
   const route = useRoute()
   const router = useRouter()
@@ -329,8 +449,16 @@
   const snackbarColor = ref('success')
   const imageDialog = ref(false)
   const selectedImageIndex = ref(0)
+  const reviews = ref([])
+  const reviewsLoading = ref(false)
+  const reviewSaving = ref(false)
+  const reviewForm = ref({
+    rating: 5,
+    comment: ''
+  })
 
   const fallbackDescription = 'A design-first piece crafted to blend visual calm with daily utility.'
+  const reviewCommentMaxLength = 1000
   const productImageUrls = computed(() => safeDisplayImageUrls(product.value?.image_urls, product.value?.image_url))
 
   // Description truncation logic
@@ -406,31 +534,31 @@
     return value.length > 0 ? value.toUpperCase() : 'CURATED COLLECTION'
   })
 
-  function stableProductSeed(value) {
-    const text = String(value || '')
-    let hash = 0
-    for (const character of text) {
-      hash = ((hash * 31) + character.codePointAt(0)) >>> 0
-    }
-    return hash
-  }
-
   const ratingScore = computed(() => {
-    const seed = stableProductSeed(product.value?.product_id || route.params.id || '')
-    const score = 4.1 + ((seed % 7) / 10)
-    return Math.min(score, 4.9)
+    if (reviews.value.length === 0) {
+      return 0
+    }
+    const total = reviews.value.reduce((sum, review) => sum + Number(review.rating || 0), 0)
+    return total / reviews.value.length
   })
 
-  const ratingLabel = computed(() => ratingScore.value.toFixed(1))
+  const ratingLabel = computed(() => ratingScore.value > 0 ? ratingScore.value.toFixed(1) : 'New')
 
   const ratingStars = computed(() => {
     const filledCount = Math.round(ratingScore.value)
     return Array.from({ length: 5 }, (_, index) => index < filledCount)
   })
 
-  const reviewCount = computed(() => {
-    const seed = stableProductSeed(product.value?.product_id || route.params.id || '')
-    return 148 + (seed % 91)
+  const reviewCount = computed(() => reviews.value.length)
+
+  const reviewCountLabel = computed(() =>
+    `${reviewCount.value} ${reviewCount.value === 1 ? 'review' : 'reviews'}`
+  )
+
+  const canSubmitReview = computed(() => {
+    const rating = Number(reviewForm.value.rating || 0)
+    const comment = String(reviewForm.value.comment || '').trim()
+    return !reviewSaving.value && rating >= 1 && rating <= 5 && comment.length > 0
   })
 
   const stockReady = computed(() => Number(product.value?.stock || 0) > 0)
@@ -500,11 +628,105 @@
       quantity.value = 1
       imageDialog.value = false
       selectedImageIndex.value = 0
+      await fetchReviews(product.value?.product_id || productId)
     } catch (error) {
       console.error('Failed to fetch product:', error)
       product.value = null
+      reviews.value = []
     } finally {
       loading.value = false
+    }
+  }
+
+  async function fetchReviews(productId = route.params.id) {
+    const normalizedProductId = String(productId || '').trim()
+    if (!normalizedProductId) {
+      reviews.value = []
+      return
+    }
+
+    reviewsLoading.value = true
+    try {
+      const response = await fetchProductReviews(normalizedProductId)
+      reviews.value = Array.isArray(response.data?.items) ? response.data.items : []
+    } catch (error) {
+      console.error('Failed to fetch product reviews:', error)
+      reviews.value = []
+    } finally {
+      reviewsLoading.value = false
+    }
+  }
+
+  function reviewerInitial(review) {
+    const name = String(review?.reviewer_name || 'M').trim()
+    return (name[0] || 'M').toUpperCase()
+  }
+
+  function formatReviewDate(value) {
+    if (!value) {
+      return 'Just now'
+    }
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) {
+      return 'Recently'
+    }
+    return new Intl.DateTimeFormat('en-US', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    }).format(date)
+  }
+
+  async function submitReview() {
+    if (!appStore.isAuthenticated) {
+      await router.push('/login')
+      return
+    }
+
+    const productId = product.value?.product_id || route.params.id
+    const rating = Math.trunc(Number(reviewForm.value.rating || 0))
+    const comment = String(reviewForm.value.comment || '').trim()
+    if (!productId) {
+      snackbarText.value = 'Product not found.'
+      snackbarColor.value = 'error'
+      snackbar.value = true
+      return
+    }
+    if (rating < 1 || rating > 5) {
+      snackbarText.value = 'Select a rating between 1 and 5.'
+      snackbarColor.value = 'warning'
+      snackbar.value = true
+      return
+    }
+    if (!comment) {
+      snackbarText.value = 'Write a review before saving.'
+      snackbarColor.value = 'warning'
+      snackbar.value = true
+      return
+    }
+
+    reviewSaving.value = true
+    try {
+      const response = await createProductReview(productId, { rating, comment })
+      const savedReview = response.data
+      reviews.value = [savedReview, ...reviews.value].filter(Boolean)
+      reviewForm.value = {
+        rating: 5,
+        comment: ''
+      }
+      snackbarText.value = 'Review saved'
+      snackbarColor.value = 'success'
+      snackbar.value = true
+    } catch (error) {
+      if (error?.response?.status === 401) {
+        await router.push('/login')
+        return
+      }
+      snackbarText.value = error?.response?.data?.message || 'Failed to save review'
+      snackbarColor.value = 'error'
+      snackbar.value = true
+    } finally {
+      reviewSaving.value = false
     }
   }
 

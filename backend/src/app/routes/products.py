@@ -20,6 +20,7 @@ from ..utils import (
 router = APIRouter()
 MAX_PRODUCT_IMAGE_DATA_URL_LENGTH = 700_000
 MAX_PRODUCT_IMAGE_COUNT = 6
+MAX_REVIEW_COMMENT_LENGTH = 1000
 ALLOWED_PRICE_CURRENCIES = {"USD", "EUR", "GBP", "INR"}
 DATA_IMAGE_URL_PATTERN = re.compile(
     r"data:image/(png|jpeg|jpg|webp|gif);base64,[a-zA-Z0-9+/=]+",
@@ -103,6 +104,39 @@ def serialize_user_admin_product(product: dict[str, Any] | None) -> dict[str, An
     return output
 
 
+def normalize_review_rating(value: Any) -> int | None:
+    try:
+        rating = int(float(value))
+    except (TypeError, ValueError):
+        return None
+    return rating if 1 <= rating <= 5 else None
+
+
+def resolve_reviewer_name(user: dict[str, Any] | None) -> str:
+    user = user or {}
+    name = normalize_text(user.get("name"), 120)
+    if name:
+        return name
+    email = normalize_text(user.get("email"), 320)
+    if email:
+        return email.split("@", 1)[0] or "Mindstores user"
+    return "Mindstores user"
+
+
+def serialize_public_review(review: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not review:
+        return None
+    return {
+        "review_id": review.get("review_id"),
+        "product_id": review.get("product_id"),
+        "rating": review.get("rating"),
+        "comment": review.get("comment"),
+        "reviewer_name": review.get("reviewer_name") or "Mindstores user",
+        "created_at": review.get("created_at"),
+        "updated_at": review.get("updated_at"),
+    }
+
+
 def build_product_filter(product_id: Any) -> dict[str, Any] | None:
     text = normalize_text(product_id, 160)
     if not text:
@@ -110,6 +144,26 @@ def build_product_filter(product_id: Any) -> dict[str, Any] | None:
     if is_object_id_like(text):
         return {"$or": [{"product_id": text}, {"_id": {"$oid": text}}]}
     return {"product_id": text}
+
+
+async def find_catalog_product(ctx: RequestContext, product_id: Any) -> tuple[dict[str, Any] | None, str]:
+    product_filter = build_product_filter(product_id)
+    if not product_filter:
+        return None, ""
+    product = await ctx.db.collection("products").find_one(product_filter)
+    if product:
+        return product, "admin"
+    product = await ctx.db.collection("user_products").find_one(product_filter)
+    if product:
+        return product, "user_admin"
+    return None, ""
+
+
+def build_review_summary(reviews: list[dict[str, Any]]) -> dict[str, Any]:
+    ratings = [int(review.get("rating") or 0) for review in reviews if review.get("rating")]
+    count = len(ratings)
+    average = round(sum(ratings) / count, 2) if count else 0
+    return {"count": count, "average_rating": average}
 
 
 def serialize_category_record(record: dict[str, Any] | None) -> dict[str, Any] | None:
@@ -443,13 +497,81 @@ async def create_product_category(request: Request, ctx: RequestContext = Depend
 
 @router.get("/products/{product_id}")
 async def get_product(product_id: str, ctx: RequestContext = Depends(get_context)):
-    product_filter = build_product_filter(product_id)
-    if not product_filter:
+    product, product_source = await find_catalog_product(ctx, product_id)
+    if not product and not build_product_filter(product_id):
         return error_response(400, "Invalid product id")
-    product = await ctx.db.collection("products").find_one(product_filter)
     if not product:
         return error_response(404, "Product not found")
+    if product_source == "user_admin":
+        return json_response(
+            serialize_user_admin_product(product),
+            headers={"Cache-Control": "public, max-age=60, stale-while-revalidate=300"},
+        )
     return json_response(serialize_product(product), headers={"Cache-Control": "public, max-age=60, stale-while-revalidate=300"})
+
+
+@router.get("/products/{product_id}/reviews")
+async def get_product_reviews(product_id: str, ctx: RequestContext = Depends(get_context)):
+    product, _product_source = await find_catalog_product(ctx, product_id)
+    if not product and not build_product_filter(product_id):
+        return error_response(400, "Invalid product id")
+    if not product:
+        return error_response(404, "Product not found")
+    canonical_product_id = normalize_text(product.get("product_id") or product_id, 160)
+    reviews = await ctx.db.collection("product_reviews").find(
+        {"product_id": canonical_product_id},
+        {"projection": {"_id": 0}, "sort": {"created_at": -1}},
+    ).to_array()
+    public_reviews = [item for item in (serialize_public_review(review) for review in reviews) if item]
+    return json_response(
+        {
+            "items": public_reviews,
+            "summary": build_review_summary(public_reviews),
+        },
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@router.post("/products/{product_id}/reviews")
+async def create_product_review(product_id: str, request: Request, ctx: RequestContext = Depends(get_context)):
+    if not ctx.user:
+        return error_response(401, "Not authenticated")
+    product, product_source = await find_catalog_product(ctx, product_id)
+    if not product and not build_product_filter(product_id):
+        return error_response(400, "Invalid product id")
+    if not product:
+        return error_response(404, "Product not found")
+
+    body = await read_json_body(request, ctx.config.max_body_bytes)
+    data = body if isinstance(body, dict) else {}
+    rating = normalize_review_rating(data.get("rating"))
+    comment = normalize_text(data.get("comment") or data.get("review") or data.get("body"), MAX_REVIEW_COMMENT_LENGTH)
+    if rating is None:
+        return error_response(400, "Rating must be between 1 and 5")
+    if not comment:
+        return error_response(400, "Review is required")
+
+    canonical_product_id = normalize_text(product.get("product_id") or product_id, 160)
+    now = now_iso()
+    image_urls = normalize_product_image_urls(product.get("image_urls"), product.get("image_url"))
+    review = {
+        "review_id": random_compact_id("review"),
+        "product_id": canonical_product_id,
+        "product_source": product_source,
+        "product_name": normalize_text(product.get("name"), 120),
+        "product_image_url": image_urls[0] if image_urls else "",
+        "product_owner_user_id": normalize_text(product.get("owner_user_id"), 200),
+        "product_owner_email": normalize_text(product.get("owner_email"), 320),
+        "rating": rating,
+        "comment": comment,
+        "reviewer_user_id": normalize_text(ctx.user.get("user_id"), 200),
+        "reviewer_name": resolve_reviewer_name(ctx.user),
+        "reviewer_email": normalize_text(ctx.user.get("email"), 320),
+        "created_at": now,
+        "updated_at": now,
+    }
+    await ctx.db.collection("product_reviews").insert_one(review)
+    return json_response(serialize_public_review(review), 201, {"Cache-Control": "no-store"})
 
 
 @router.post("/products")
@@ -473,6 +595,7 @@ async def create_product(request: Request, ctx: RequestContext = Depends(get_con
     product = {
         **payload,
         "product_id": product_id,
+        "owner_user_id": normalize_text(ctx.user.get("user_id"), 200),
         "owner_email": normalize_text(ctx.user.get("email"), 320),
         "catalog_source": "admin",
         "created_at": now,

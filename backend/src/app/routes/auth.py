@@ -10,6 +10,7 @@ from ..context import RequestContext, error_response, get_context, json_response
 from ..utils import normalize_text, now_iso
 
 router = APIRouter()
+PRIVATE_USER_RESPONSE_FIELDS = {"user_admin_pin_hash", "user_admin_pin_salt"}
 
 
 def normalize_locale(value: Any) -> str | None:
@@ -47,7 +48,9 @@ async def build_user_response(user: dict[str, Any] | None, ctx: RequestContext) 
     if not user:
         return None
     email = str(user.get("email") or "").lower().strip()
-    return {**user, "is_admin": await ctx.admin_access.is_admin_email(email)}
+    safe_user = {key: value for key, value in user.items() if key not in PRIVATE_USER_RESPONSE_FIELDS}
+    safe_user["has_user_admin_pin"] = bool(user.get("user_admin_pin_hash") and user.get("user_admin_pin_salt"))
+    return {**safe_user, "is_admin": await ctx.admin_access.is_admin_email(email)}
 
 
 def resolve_country_code(decoded: dict[str, Any], body: dict[str, Any], locale: str | None, existing: dict[str, Any] | None) -> str | None:

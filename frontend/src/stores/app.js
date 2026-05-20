@@ -535,15 +535,15 @@ export const useAppStore = defineStore("app", {
       }
     },
 
-    async verifyUserAdminMobile({ mobileCountryCode, mobileNumber, otp }) {
+    async submitUserAdminPin({ mobileCountryCode, mobileNumber, pin }) {
       this.loading = true;
       try {
         const response = await axios.post(
-          `${API_URL}/user-admin/mobile`,
+          `${API_URL}/user-admin/pin`,
           {
             mobile_country_code: mobileCountryCode,
             mobile_number: mobileNumber,
-            otp,
+            pin,
           },
           await buildAuthenticatedRequestConfig(
             { timeout: AUTH_REQUEST_TIMEOUT_MS },
@@ -557,7 +557,36 @@ export const useAppStore = defineStore("app", {
         this.isAuthenticated = true;
         return response.data;
       } catch (error) {
-        console.error("Failed to verify user admin mobile:", error);
+        console.error("Failed to submit user admin PIN:", error);
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async resetUserAdminPin({ mobileCountryCode, mobileNumber, pin }) {
+      this.loading = true;
+      try {
+        const response = await axios.post(
+          `${API_URL}/user-admin/pin/reset`,
+          {
+            mobile_country_code: mobileCountryCode,
+            mobile_number: mobileNumber,
+            pin,
+          },
+          await buildAuthenticatedRequestConfig(
+            { timeout: AUTH_REQUEST_TIMEOUT_MS },
+            { forceRefresh: Boolean(auth.currentUser) },
+          ),
+        );
+
+        const backendUser = response.data?.user || response.data?.profile || {};
+        this.user = mergeBackendUser(this.user || {}, backendUser);
+        syncCurrencyPreferenceFromUser(this.user);
+        this.isAuthenticated = true;
+        return response.data;
+      } catch (error) {
+        console.error("Failed to reset user admin PIN:", error);
         throw error;
       } finally {
         this.loading = false;

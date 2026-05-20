@@ -5,7 +5,7 @@
         <v-col cols="12" md="7">
           <div class="text-h5 text-md-h4 font-weight-bold">User Admin</div>
           <div class="text-body-2 text-medium-emphasis">
-            Manage your product drafts from your verified mobile account.
+            Manage your product drafts from your PIN-protected account.
           </div>
         </v-col>
         <v-col cols="12" md="5">
@@ -46,19 +46,19 @@
       </v-alert>
 
       <v-alert
-        v-else-if="!loading && !hasMobileAccess"
+        v-else-if="!loading && !hasPinAccess"
         class="mb-4"
         rounded="lg"
         type="warning"
         variant="tonal"
       >
         <div class="d-flex flex-column flex-sm-row align-sm-center justify-space-between ga-3">
-          <span>Verify your mobile number from Profile before using User Admin.</span>
+          <span>Create or enter your User Admin PIN from Profile before using User Admin.</span>
           <v-btn color="teal-darken-1" rounded="lg" to="/profile" variant="flat">Open Profile</v-btn>
         </div>
       </v-alert>
 
-      <template v-if="appStore.isAuthenticated && hasMobileAccess">
+      <template v-if="appStore.isAuthenticated && hasPinAccess">
         <v-row align="start" dense>
           <v-col cols="12" lg="2" md="3">
             <v-card border rounded="lg" variant="flat">
@@ -185,7 +185,7 @@
               </v-row>
             </template>
 
-            <v-card v-else border rounded="lg" variant="flat">
+            <v-card v-else-if="activePanel === 'products'" border rounded="lg" variant="flat">
               <v-card-title class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3">
                 <div>
                   <div>Products</div>
@@ -271,6 +271,70 @@
                     </div>
                   </template>
                 </v-data-table>
+              </v-card-text>
+            </v-card>
+
+            <v-card v-else-if="activePanel === 'reviews'" border rounded="lg" variant="flat">
+              <v-card-title class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3">
+                <div>
+                  <div>Reviews</div>
+                  <div class="text-body-2 text-medium-emphasis">{{ reviews.length }} public reviews on your products.</div>
+                </div>
+                <v-btn
+                  color="teal-darken-1"
+                  prepend-icon="mdi-refresh"
+                  rounded="lg"
+                  variant="tonal"
+                  @click="loadConsole"
+                >
+                  Refresh
+                </v-btn>
+              </v-card-title>
+              <v-divider />
+              <v-card-text>
+                <v-progress-linear v-if="reviewsLoading" color="teal-darken-1" indeterminate />
+                <v-alert v-else-if="reviews.length === 0" type="info" variant="tonal">
+                  No product reviews yet.
+                </v-alert>
+                <v-list v-else bg-color="transparent" lines="three">
+                  <template
+                    v-for="(review, index) in reviews"
+                    :key="review.review_id || `${review.product_id}-${index}`"
+                  >
+                    <v-list-item>
+                      <template #prepend>
+                        <v-avatar v-if="review.product_image_url" rounded="lg" size="48">
+                          <v-img cover :src="review.product_image_url" />
+                        </v-avatar>
+                        <v-avatar v-else color="surface" rounded="lg" size="48">
+                          <v-icon color="primary" icon="mdi-image-off-outline" />
+                        </v-avatar>
+                      </template>
+                      <template #title>
+                        <div class="d-flex align-center flex-wrap ga-2">
+                          <span class="font-weight-medium">{{ review.product_name || review.product_id }}</span>
+                          <v-rating
+                            active-color="amber-darken-2"
+                            color="grey-lighten-1"
+                            density="compact"
+                            :model-value="Number(review.rating || 0)"
+                            readonly
+                            size="16"
+                          />
+                        </div>
+                      </template>
+                      <template #subtitle>
+                        <div class="text-body-2 text-medium-emphasis mt-1">{{ review.comment }}</div>
+                        <div class="d-flex flex-wrap ga-2 mt-2 text-caption text-medium-emphasis">
+                          <span>{{ review.reviewer_name || 'Mindstores user' }}</span>
+                          <span v-if="review.reviewer_email">{{ review.reviewer_email }}</span>
+                          <span>{{ formatReviewDate(review.created_at) }}</span>
+                        </div>
+                      </template>
+                    </v-list-item>
+                    <v-divider v-if="index < reviews.length - 1" />
+                  </template>
+                </v-list>
               </v-card-text>
             </v-card>
           </v-col>
@@ -553,6 +617,7 @@
     deleteUserAdminProduct,
     fetchUserAdminProducts,
     fetchUserAdminProfile,
+    fetchUserAdminReviews,
     updateUserAdminProduct
   } from '@/utils/userAdmin'
 
@@ -575,7 +640,7 @@
   const MAX_PRODUCT_IMAGE_COUNT = 6
   const DESCRIPTION_BULLET_OPTIONS = [
     { symbol: '-', label: 'Add dash bullet' },
-    { symbol: '*', label: 'Add star bullet' },
+    { symbol: '•', label: 'Add dot bullet' },
     { symbol: '>', label: 'Add angle bullet' }
   ]
   const PRICE_CURRENCY_OPTIONS = [
@@ -594,7 +659,8 @@
 
   const userAdminNavItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'mdi-view-dashboard-outline' },
-    { id: 'products', label: 'Products', icon: 'mdi-package-variant-closed' }
+    { id: 'products', label: 'Products', icon: 'mdi-package-variant-closed' },
+    { id: 'reviews', label: 'Reviews', icon: 'mdi-message-star-outline' }
   ]
 
   function normalizeText(value, maxLength = 5000) {
@@ -629,6 +695,7 @@
       const activePanel = ref('dashboard')
       const profile = ref({})
       const products = ref([])
+      const reviews = ref([])
       const productSearch = ref('')
       const productForm = ref({ ...EMPTY_FORM })
       const productImageFiles = ref([])
@@ -639,6 +706,7 @@
       const catalogOptionType = ref('category')
       const catalogOptionInput = ref('')
       const catalogOptionSaving = ref(false)
+      const reviewsLoading = ref(false)
       const snackbar = ref(false)
       const snackbarText = ref('')
       const snackbarColor = ref('success')
@@ -646,8 +714,8 @@
       const priceCurrencyOptions = PRICE_CURRENCY_OPTIONS
       const descriptionBulletOptions = DESCRIPTION_BULLET_OPTIONS
 
-      const hasMobileAccess = computed(() =>
-        Boolean(profile.value?.has_mobile_access || appStore.user?.mobile_verified_at)
+      const hasPinAccess = computed(() =>
+        Boolean(profile.value?.has_pin_access)
       )
 
       const selectedPriceCurrency = computed(() => normalizeProductCurrency(productForm.value.price_currency))
@@ -766,15 +834,15 @@
           color: 'primary'
         },
         {
-          label: 'Mobile',
-          value: profile.value?.mobile_full_number || appStore.user?.mobile_full_number || 'Verified',
-          icon: 'mdi-cellphone-check',
+          label: 'PIN',
+          value: 'Unlocked',
+          icon: 'mdi-lock-check-outline',
           color: 'success'
         },
         {
-          label: 'Status',
-          value: 'User access',
-          icon: 'mdi-account-key-outline',
+          label: 'Reviews',
+          value: reviews.value.length,
+          icon: 'mdi-message-star-outline',
           color: 'info'
         }
       ])
@@ -959,9 +1027,20 @@
         }
 
         loading.value = true
+        reviewsLoading.value = true
         try {
           profile.value = await fetchUserAdminProfile()
-          products.value = profile.value?.has_mobile_access ? await fetchUserAdminProducts() : []
+          if (profile.value?.has_pin_access) {
+            const [nextProducts, nextReviews] = await Promise.all([
+              fetchUserAdminProducts(),
+              fetchUserAdminReviews()
+            ])
+            products.value = nextProducts
+            reviews.value = nextReviews
+          } else {
+            products.value = []
+            reviews.value = []
+          }
         } catch (error) {
           if (error?.response?.status === 401) {
             await router.push('/login')
@@ -969,13 +1048,15 @@
           }
           if (error?.response?.status === 403) {
             products.value = []
-            showMessage('Mobile verification required from Profile.', 'warning')
+            reviews.value = []
+            showMessage('User Admin PIN required from Profile.', 'warning')
             return
           }
           console.error('Failed to load user admin:', error)
           showMessage(error?.response?.data?.message || 'Failed to load user admin', 'error')
         } finally {
           loading.value = false
+          reviewsLoading.value = false
         }
       }
 
@@ -1106,6 +1187,21 @@
         style: 'currency'
       }).format(Number(value || 0))
 
+      const formatReviewDate = (value) => {
+        if (!value) {
+          return 'Just now'
+        }
+        const date = new Date(value)
+        if (Number.isNaN(date.getTime())) {
+          return 'Recently'
+        }
+        return new Intl.DateTimeFormat('en-US', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        }).format(date)
+      }
+
       const formatDraftCategory = (product) => {
         const category = normalizeCategoryName(product?.category) || 'Other'
         const subcategory = normalizeSubcategoryName(category, product?.subcategory)
@@ -1144,6 +1240,7 @@
         activePanel,
         profile,
         products,
+        reviews,
         productSearch,
         productForm,
         productImageFiles,
@@ -1156,6 +1253,7 @@
         catalogOptionInput,
         catalogOptionInputLabel,
         catalogOptionSaving,
+        reviewsLoading,
         snackbar,
         snackbarText,
         snackbarColor,
@@ -1166,7 +1264,7 @@
         selectedPriceCurrency,
         categoryOptions,
         availableSubcategories,
-        hasMobileAccess,
+        hasPinAccess,
         filteredProducts,
         lowStockCount,
         productsWithImagesCount,
@@ -1191,6 +1289,7 @@
         resolveItem,
         formatDraftPrice,
         formatMoney,
+        formatReviewDate,
         draftImageUrl,
         formatDraftCategory
       }

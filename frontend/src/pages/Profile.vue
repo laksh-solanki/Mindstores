@@ -754,10 +754,20 @@
       :type="snackbarColor"
     />
 
-    <v-dialog v-model="userAdminDialog" max-width="680">
-      <v-card rounded="lg">
-        <v-card-title class="d-flex align-center justify-space-between ga-3">
-          <span>User Admin Access</span>
+    <v-dialog
+      v-model="userAdminDialog"
+      :fullscreen="xs"
+      :max-width="userAdminDialogMaxWidth"
+      scrollable
+      width="100%"
+    >
+      <v-card
+        class="d-flex flex-column"
+        :class="{ 'h-100': xs }"
+        :rounded="xs ? 0 : 'lg'"
+      >
+        <v-card-title class="d-flex align-start align-sm-center justify-space-between ga-3 px-4 px-sm-6 py-3 py-sm-4">
+          <span class="text-subtitle-1 text-sm-h6 font-weight-bold text-wrap">User Admin Access</span>
           <v-btn
             aria-label="Close user admin dialog"
             icon
@@ -768,137 +778,93 @@
             <v-icon icon="mdi-close" />
           </v-btn>
         </v-card-title>
-        <v-card-text>
-          <v-stepper
-            v-model="userAdminStep"
-            flat
-          >
-            <v-stepper-header>
-              <v-stepper-item
-                :complete="userAdminStep > 1"
-                title="Mobile"
-                :value="1"
-              />
-              <v-divider />
-              <v-stepper-item
-                :complete="userAdminStep > 2"
-                title="OTP Submit"
-                :value="2"
-              />
-              <v-divider />
-              <v-stepper-item
-                title="Agreement"
-                :value="3"
-              />
-            </v-stepper-header>
-
-            <v-stepper-window>
-              <v-stepper-window-item :value="1">
-                <v-form @submit.prevent="continueUserAdminMobile">
-                  <v-row dense>
-                    <v-col cols="12">
-                      <v-alert color="teal-darken-1" icon="mdi-cellphone-check" variant="tonal">
-                        Add your mobile number. This request uses your Firebase login session before saving access.
-                      </v-alert>
-                    </v-col>
-                    <v-col cols="12" sm="5">
-                      <v-select
-                        v-model="userAdminMobileForm.mobileCountryCode"
-                        density="comfortable"
-                        item-title="label"
-                        item-value="code"
-                        :items="mobileCountryOptions"
-                        label="Country Code"
-                        rounded="lg"
-                        variant="outlined"
-                      />
-                    </v-col>
-                    <v-col cols="12" sm="7">
-                      <v-text-field
-                        v-model="userAdminMobileForm.mobileNumber"
-                        density="comfortable"
-                        label="Mobile Number"
-                        maxlength="15"
-                        rounded="lg"
-                        variant="outlined"
-                      />
-                    </v-col>
-                  </v-row>
-                </v-form>
-              </v-stepper-window-item>
-
-              <v-stepper-window-item :value="2">
-                <v-alert color="teal-darken-1" icon="mdi-shield-key-outline" variant="tonal">
-                  Enter the 6 digit OTP to continue.
-                </v-alert>
-                <v-otp-input
-                  v-model="userAdminMobileForm.otp"
-                  class="mt-4"
-                  :disabled="userAdminMobileSaving"
-                  :length="userAdminOtpLength"
-                  type="number"
-                  variant="outlined"
-                  @finish="verifyUserAdminOtpStep"
-                />
-              </v-stepper-window-item>
-
-              <v-stepper-window-item :value="3">
-                <v-alert color="info" icon="mdi-file-document-check-outline" variant="tonal">
-                  Your verified mobile number will be saved in MongoDB and shown in the Delivery Profile phone field.
-                </v-alert>
-                <v-checkbox
-                  v-model="userAdminAgreement"
-                  color="teal-darken-1"
-                  density="comfortable"
-                  hide-details
-                  label="I agree to use user admin controls for my own product drafts and profile data."
-                />
-              </v-stepper-window-item>
-            </v-stepper-window>
-          </v-stepper>
-        </v-card-text>
-        <v-card-actions class="px-6 pb-5">
-          <v-btn rounded="lg" variant="text" @click="userAdminDialog = false">Cancel</v-btn>
-          <v-spacer />
-          <v-btn
-            v-if="userAdminStep > 1"
-            :disabled="userAdminMobileSaving"
-            rounded="lg"
+        <v-card-text class="flex-grow-1 overflow-y-auto px-4 px-sm-6 py-3 py-sm-4">
+          <v-alert
+            color="teal-darken-1"
+            :density="smAndDown ? 'compact' : 'default'"
+            :icon="userAdminPinIcon"
             variant="tonal"
-            @click="goUserAdminStep(userAdminStep - 1)"
           >
-            Back
-          </v-btn>
+            {{ userAdminPinHelpText }}
+          </v-alert>
+
+          <v-row v-if="userAdminRequiresMobile" class="mt-4" dense>
+            <v-col cols="12" sm="5">
+              <v-select
+                v-model="userAdminPinForm.mobileCountryCode"
+                :density="smAndDown ? 'compact' : 'comfortable'"
+                item-title="label"
+                item-value="code"
+                :items="mobileCountryOptions"
+                label="Country Code"
+                rounded="lg"
+                variant="outlined"
+              />
+            </v-col>
+            <v-col cols="12" sm="7">
+              <v-text-field
+                v-model="userAdminPinForm.mobileNumber"
+                :density="smAndDown ? 'compact' : 'comfortable'"
+                label="Mobile Number"
+                maxlength="15"
+                rounded="lg"
+                variant="outlined"
+              />
+            </v-col>
+          </v-row>
+          <div v-if="canRecoverUserAdminMobile" class="d-flex justify-center justify-sm-end mt-1">
+            <v-btn
+              color="teal-darken-1"
+              :disabled="userAdminPinSaving"
+              rounded="lg"
+              variant="text"
+              @click="recoverUserAdminMobile"
+            >
+              Forgot mobile?
+            </v-btn>
+          </div>
+
+          <v-otp-input
+            v-model="userAdminPinForm.pin"
+            class="mt-4"
+            :density="smAndDown ? 'compact' : 'comfortable'"
+            :disabled="userAdminPinSaving"
+            :length="userAdminPinLength"
+            type="number"
+            variant="outlined"
+            @finish="submitUserAdminPin"
+          />
+          <div v-if="canResetUserAdminPin" class="d-flex justify-center justify-sm-end mt-2">
+            <v-btn
+              color="teal-darken-1"
+              :disabled="userAdminPinSaving"
+              rounded="lg"
+              variant="text"
+              @click="startUserAdminPinReset"
+            >
+              Forgot PIN?
+            </v-btn>
+          </div>
+        </v-card-text>
+        <v-card-actions class="px-4 px-sm-6 pb-4 pb-sm-5 d-flex flex-column flex-md-row align-stretch align-md-center ga-2">
           <v-btn
-            v-if="userAdminStep === 1"
+            :block="smAndDown"
+            rounded="lg"
+            variant="text"
+            @click="userAdminDialog = false"
+          >
+            Cancel
+          </v-btn>
+          <v-spacer class="d-none d-md-flex" />
+          <v-btn
+            :block="smAndDown"
             color="teal-darken-1"
-            :loading="userAdminMobileSaving"
+            :loading="userAdminPinSaving"
             rounded="lg"
             variant="flat"
-            @click="continueUserAdminMobile"
+            @click="submitUserAdminPin"
           >
-            Continue
-          </v-btn>
-          <v-btn
-            v-else-if="userAdminStep === 2"
-            color="teal-darken-1"
-            :loading="userAdminMobileSaving"
-            rounded="lg"
-            variant="flat"
-            @click="verifyUserAdminOtpStep"
-          >
-            Verify OTP
-          </v-btn>
-          <v-btn
-            v-else
-            color="teal-darken-1"
-            :disabled="!userAdminAgreement"
-            :loading="userAdminMobileSaving"
-            rounded="lg"
-            variant="flat"
-            @click="submitUserAdminAgreement"
-          >
-            Open User Admin
+            {{ userAdminPinActionLabel }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -910,6 +876,7 @@
   import axios from 'axios'
   import { computed, onMounted, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
+  import { useDisplay } from 'vuetify'
   import BaseAlert from '@/components/BaseAlert.vue'
   import { useAppStore } from '@/stores/app'
   import { useCartStore } from '@/stores/cart'
@@ -952,7 +919,7 @@
 
   const DEFAULT_COUNTRY_CODE = 'US'
   const DEFAULT_MOBILE_COUNTRY_CODE = '+1'
-  const USER_ADMIN_OTP_LENGTH = 6
+  const USER_ADMIN_PIN_LENGTH = 6
   const COUNTRY_TO_MOBILE_CODE = {
     US: '+1',
     CA: '+1',
@@ -1053,6 +1020,7 @@
     },
     setup() {
       const router = useRouter()
+      const { smAndDown, xs } = useDisplay()
       const appStore = useAppStore()
       const cartStore = useCartStore()
       const orders = ref([])
@@ -1072,14 +1040,12 @@
       const orderStatusFilter = ref('all')
       const orderSort = ref('newest')
       const userAdminDialog = ref(false)
-      const userAdminStep = ref(1)
-      const userAdminAgreement = ref(false)
-      const userAdminOtpVerified = ref(false)
-      const userAdminMobileSaving = ref(false)
-      const userAdminMobileForm = ref({
+      const userAdminPinMode = ref('verify')
+      const userAdminPinSaving = ref(false)
+      const userAdminPinForm = ref({
         mobileCountryCode: DEFAULT_MOBILE_COUNTRY_CODE,
         mobileNumber: '',
-        otp: ''
+        pin: ''
       })
 
       const settings = ref(cloneSettings(DEFAULT_SETTINGS))
@@ -1118,6 +1084,39 @@
       })
 
       const isAdmin = computed(() => Boolean(appStore.user?.is_admin))
+      const userAdminDialogMaxWidth = computed(() => (xs.value ? undefined : 680))
+      const hasUserAdminPin = computed(() =>
+        Boolean(appStore.user?.has_user_admin_pin || appStore.user?.user_admin_pin_created_at)
+      )
+      const userAdminRequiresMobile = computed(() =>
+        !hasUserAdminPin.value || userAdminPinMode.value === 'reset'
+      )
+      const canResetUserAdminPin = computed(() =>
+        hasUserAdminPin.value && userAdminPinMode.value !== 'reset'
+      )
+      const canRecoverUserAdminMobile = computed(() =>
+        userAdminPinMode.value === 'reset'
+      )
+      const userAdminPinActionLabel = computed(() => {
+        if (userAdminPinMode.value === 'reset') {
+          return 'Create New PIN'
+        }
+        return hasUserAdminPin.value ? 'Open User Admin' : 'Create PIN'
+      })
+      const userAdminPinHelpText = computed(() => {
+        if (userAdminPinMode.value === 'reset') {
+          return 'Enter the same mobile number used for User Admin and create a new 6 digit PIN.'
+        }
+        return hasUserAdminPin.value
+          ? 'Enter your User Admin PIN to open your product controls.'
+          : 'Add your mobile number and create a 6 digit User Admin PIN. You will create this PIN only once.'
+      })
+      const userAdminPinIcon = computed(() => {
+        if (userAdminPinMode.value === 'reset') {
+          return 'mdi-lock-reset'
+        }
+        return hasUserAdminPin.value ? 'mdi-lock-check-outline' : 'mdi-lock-plus-outline'
+      })
 
       const countryDisplayName = computed(() => {
         const countryCode =
@@ -1137,7 +1136,7 @@
       })
 
       const mobileCountryOptions = computed(() => {
-        const selectedMobileCode = normalizeMobileCountryCode(userAdminMobileForm.value.mobileCountryCode)
+        const selectedMobileCode = normalizeMobileCountryCode(userAdminPinForm.value.mobileCountryCode)
         if (!selectedMobileCode || MOBILE_COUNTRY_OPTIONS.some((item) => item.code === selectedMobileCode)) {
           return MOBILE_COUNTRY_OPTIONS
         }
@@ -1302,23 +1301,43 @@
         snackbar.value = true
       }
 
-      const normalizeUserAdminOtp = () => String(userAdminMobileForm.value.otp || '').replace(/\D+/g, '').slice(0, USER_ADMIN_OTP_LENGTH)
+      const normalizeUserAdminPin = () => String(userAdminPinForm.value.pin || '').replace(/\D+/g, '').slice(0, USER_ADMIN_PIN_LENGTH)
 
       const getUserAdminMobilePayload = () => {
-        const mobileCountryCode = normalizeMobileCountryCode(userAdminMobileForm.value.mobileCountryCode)
-        const mobileNumber = normalizeMobileNumber(userAdminMobileForm.value.mobileNumber)
+        const mobileCountryCode = normalizeMobileCountryCode(userAdminPinForm.value.mobileCountryCode)
+        const mobileNumber = normalizeMobileNumber(userAdminPinForm.value.mobileNumber)
         return { mobileCountryCode, mobileNumber }
       }
 
-      const resetUserAdminAccessFlow = () => {
-        userAdminStep.value = 1
-        userAdminAgreement.value = false
-        userAdminOtpVerified.value = false
-        userAdminMobileSaving.value = false
+      const syncUserAdminMobileToDeliveryProfile = (profile = {}, fallbackCountryCode = '', fallbackMobileNumber = '') => {
+        const savedMobile = formatMobileNumber(
+          profile.mobile_country_code || fallbackCountryCode,
+          profile.mobile_number || fallbackMobileNumber
+        )
+        if (!savedMobile) {
+          return
+        }
+        const existingSettings = loadUserSettings()
+        const deliveryProfile = {
+          ...normalizeDeliveryProfile(existingSettings.deliveryProfile),
+          phone: savedMobile
+        }
+        saveUserSettings({
+          ...existingSettings,
+          deliveryProfile
+        })
+        settings.value.deliveryProfile.phone = savedMobile
+        settingsBaseline.value = cloneSettings(settings.value)
       }
 
-      const goUserAdminStep = (step) => {
-        userAdminStep.value = Math.min(3, Math.max(1, Number(step) || 1))
+      const resetUserAdminAccessFlow = (mode = hasUserAdminPin.value ? 'verify' : 'create') => {
+        userAdminPinMode.value = mode
+        userAdminPinSaving.value = false
+        userAdminPinForm.value = {
+          mobileCountryCode: resolveDefaultMobileCountryCode(),
+          mobileNumber: mode === 'reset' ? '' : resolveStoredMobileNumber(),
+          pin: ''
+        }
       }
 
       const openUserAdminDialog = () => {
@@ -1328,106 +1347,73 @@
         }
 
         resetUserAdminAccessFlow()
-        userAdminMobileForm.value = {
-          mobileCountryCode: resolveDefaultMobileCountryCode(),
-          mobileNumber: resolveStoredMobileNumber(),
-          otp: ''
-        }
         userAdminDialog.value = true
       }
 
-      const continueUserAdminMobile = () => {
-        const { mobileCountryCode, mobileNumber } = getUserAdminMobilePayload()
+      const startUserAdminPinReset = () => {
+        resetUserAdminAccessFlow('reset')
+      }
 
-        if (!mobileCountryCode) {
-          showMessage('Select a valid country code.', 'warning')
-          return
-        }
+      const recoverUserAdminMobile = () => {
+        const mobileNumber = resolveStoredMobileNumber()
+        const mobileCountryCode = resolveDefaultMobileCountryCode()
         if (!mobileNumber) {
-          showMessage('Enter a valid mobile number.', 'warning')
+          showMessage('No saved User Admin mobile number found.', 'warning')
           return
         }
 
-        userAdminMobileForm.value = {
-          ...userAdminMobileForm.value,
+        userAdminPinForm.value = {
+          ...userAdminPinForm.value,
           mobileCountryCode,
-          mobileNumber,
-          otp: ''
+          mobileNumber
         }
-        userAdminOtpVerified.value = false
-        goUserAdminStep(2)
+        showMessage(`Saved mobile added. Ends with ${mobileNumber.slice(-4)}.`)
       }
 
-      const verifyUserAdminOtpStep = () => {
-        const otp = normalizeUserAdminOtp()
-        userAdminMobileForm.value.otp = otp
-
-        if (!/^\d{6}$/.test(otp)) {
-          showMessage('Enter the 6 digit OTP code.', 'warning')
+      const submitUserAdminPin = async () => {
+        if (userAdminPinSaving.value) {
           return
         }
 
-        userAdminOtpVerified.value = true
-        goUserAdminStep(3)
-        showMessage('OTP added')
-      }
-
-      const submitUserAdminAgreement = async () => {
+        const pin = normalizeUserAdminPin()
+        userAdminPinForm.value.pin = pin
+        const requiresMobile = userAdminRequiresMobile.value
         const { mobileCountryCode, mobileNumber } = getUserAdminMobilePayload()
-        const otp = normalizeUserAdminOtp()
 
-        if (!mobileCountryCode) {
+        if (requiresMobile && !mobileCountryCode) {
           showMessage('Select a valid country code.', 'warning')
-          goUserAdminStep(1)
           return
         }
-        if (!mobileNumber) {
-          showMessage('Enter a valid mobile number.', 'warning')
-          goUserAdminStep(1)
+        if (requiresMobile && !mobileNumber) {
+          showMessage('Enter the mobile number used for User Admin.', 'warning')
           return
         }
-        if (!userAdminOtpVerified.value || !/^\d{6}$/.test(otp)) {
-          showMessage('Enter the 6 digit OTP before continuing.', 'warning')
-          goUserAdminStep(2)
-          return
-        }
-        if (!userAdminAgreement.value) {
-          showMessage('Accept the user admin agreement.', 'warning')
+        if (!/^\d{6}$/.test(pin)) {
+          showMessage('Enter a 6 digit User Admin PIN.', 'warning')
           return
         }
 
-        userAdminMobileSaving.value = true
+        userAdminPinSaving.value = true
         try {
-          const response = await appStore.verifyUserAdminMobile({
-            mobileCountryCode,
-            mobileNumber,
-            otp
-          })
-          const verifiedProfile = response?.profile || {}
-          const savedMobile = formatMobileNumber(
-            verifiedProfile.mobile_country_code || mobileCountryCode,
-            verifiedProfile.mobile_number || mobileNumber
-          )
-          const existingSettings = loadUserSettings()
-          const deliveryProfile = {
-            ...normalizeDeliveryProfile(existingSettings.deliveryProfile),
-            phone: savedMobile
+          const response = userAdminPinMode.value === 'reset'
+            ? await appStore.resetUserAdminPin({ mobileCountryCode, mobileNumber, pin })
+            : await appStore.submitUserAdminPin({
+              mobileCountryCode: requiresMobile ? mobileCountryCode : undefined,
+              mobileNumber: requiresMobile ? mobileNumber : undefined,
+              pin
+            })
+          if (requiresMobile) {
+            syncUserAdminMobileToDeliveryProfile(response?.profile, mobileCountryCode, mobileNumber)
           }
-          saveUserSettings({
-            ...existingSettings,
-            deliveryProfile
-          })
-          settings.value.deliveryProfile.phone = savedMobile
-          settingsBaseline.value = cloneSettings(settings.value)
           userAdminDialog.value = false
           resetUserAdminAccessFlow()
-          showMessage('Mobile verified')
+          showMessage(response?.message || (hasUserAdminPin.value ? 'PIN verified' : 'PIN created'))
           await router.push('/user-admin')
         } catch (error) {
-          const errorMessage = error?.response?.data?.message || error?.message || 'Failed to verify mobile'
+          const errorMessage = error?.response?.data?.message || error?.message || 'Failed to submit User Admin PIN'
           showMessage(errorMessage, 'error')
         } finally {
-          userAdminMobileSaving.value = false
+          userAdminPinSaving.value = false
         }
       }
 
@@ -1717,11 +1703,19 @@
         snackbarText,
         snackbarColor,
         userAdminDialog,
-        userAdminStep,
-        userAdminAgreement,
-        userAdminOtpLength: USER_ADMIN_OTP_LENGTH,
-        userAdminMobileSaving,
-        userAdminMobileForm,
+        userAdminPinForm,
+        userAdminPinLength: USER_ADMIN_PIN_LENGTH,
+        userAdminPinSaving,
+        userAdminPinActionLabel,
+        userAdminPinHelpText,
+        userAdminPinIcon,
+        userAdminRequiresMobile,
+        canResetUserAdminPin,
+        canRecoverUserAdminMobile,
+        hasUserAdminPin,
+        smAndDown,
+        xs,
+        userAdminDialogMaxWidth,
         fileInput,
         selectedPhotoName,
         settings,
@@ -1748,11 +1742,10 @@
         openPhotoPicker,
         onPhotoSelected,
         removePhoto,
-        continueUserAdminMobile,
-        goUserAdminStep,
         openUserAdminDialog,
-        submitUserAdminAgreement,
-        verifyUserAdminOtpStep,
+        startUserAdminPinReset,
+        recoverUserAdminMobile,
+        submitUserAdminPin,
         saveAll,
         fetchOrders,
         refreshProfile,

@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { API_URL } from '@/utils/api'
+import { API_URL, buildAuthenticatedRequestConfig } from '@/utils/api'
 
 const DEFAULT_PRODUCTS_FALLBACK_API_URL = 'https://backend-omega-fawn-91.vercel.app'
 
@@ -31,7 +31,7 @@ function isFallbackEligibleError(error) {
 function buildFallbackRequestConfig(config = {}) {
   return {
     ...config,
-    headers: { ...(config.headers || {}) },
+    headers: config.headers ? { ...config.headers } : {},
     withCredentials: false,
   }
 }
@@ -105,6 +105,30 @@ export async function fetchProductDetail(productId, config = {}) {
 
     return await requestProductApi(productPath, config, { preferFallback: true })
   }
+}
+
+export async function fetchProductReviews(productId, config = {}) {
+  const normalizedProductId = String(productId || '').trim()
+  if (!normalizedProductId) {
+    throw new Error('Product id is required')
+  }
+
+  return await requestProductApi(`/products/${encodeURIComponent(normalizedProductId)}/reviews`, config)
+}
+
+export async function createProductReview(productId, payload) {
+  const normalizedProductId = String(productId || '').trim()
+  if (!normalizedProductId) {
+    throw new Error('Product id is required')
+  }
+
+  return await requestProductApi(
+    `/products/${encodeURIComponent(normalizedProductId)}/reviews`,
+    await buildAuthenticatedRequestConfig({
+      data: payload,
+      method: 'post',
+    })
+  )
 }
 
 export function isProductsFallbackResponse(response) {

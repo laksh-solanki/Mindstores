@@ -49,6 +49,14 @@ export async function fetchUserAdminProducts() {
   return Array.isArray(response.data?.items) ? response.data.items : []
 }
 
+export async function fetchUserAdminReviews() {
+  const response = await axios.get(
+    `${API_URL}/user-admin/reviews`,
+    await buildAuthenticatedRequestConfig()
+  )
+  return Array.isArray(response.data?.items) ? response.data.items : []
+}
+
 export async function createUserAdminProduct(payload) {
   const response = await axios.post(
     `${API_URL}/user-admin/products`,

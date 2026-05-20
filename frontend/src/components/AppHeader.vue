@@ -118,7 +118,6 @@
           :prepend-icon="category.icon" rounded="lg" :title="category.label" @click="openCategory(category.key)" />
         <v-list-item v-if="categoryLinks.length === 0" disabled title="Loading categories..." />
         <v-divider class="my-2" />
-        <v-list-item prepend-icon="mdi-refresh" title="Refresh Catalog" @click="refreshCatalogNav" />
         <v-list-item prepend-icon="mdi-cart-outline" title="Cart" to="/cart" @click="closeMobileMenu">
           <template #append>
             <v-badge v-if="cartStore.itemCount > 0" color="teal-darken-1" :content="cartStore.itemCount" />
