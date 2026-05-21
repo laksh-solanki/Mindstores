@@ -34,8 +34,31 @@
         </div>
       </div>
 
+      <!-- Blocked status warning screen -->
+      <div v-if="isBlocked" class="flat-card-container pa-6 text-center my-6">
+        <div class="d-flex flex-column align-center justify-center py-10">
+          <v-avatar color="red-lighten-5" size="80" class="mb-4">
+            <v-icon color="error" icon="mdi-shield-lock-outline" size="48" />
+          </v-avatar>
+          <h2 class="text-h4 font-weight-bold text-red-darken-2 mb-3">your user admin page block</h2>
+          <p class="text-body-1 text-slate-600 mb-6" style="max-width: 500px; margin: 0 auto 24px;">
+            Access to your User Admin console has been restricted by the system administrator. You cannot view or manage product drafts.
+          </p>
+          <div class="d-flex justify-center ga-3">
+            <button class="btn-flat-outline btn-with-icon" @click="loadConsole">
+              <v-icon icon="mdi-refresh" size="18" class="mr-1" />
+              Try Again
+            </button>
+            <router-link to="/" class="btn-flat-solid btn-with-icon text-decoration-none">
+              <v-icon icon="mdi-store-outline" size="18" class="mr-1" />
+              Go to Storefront
+            </router-link>
+          </div>
+        </div>
+      </div>
+
       <v-alert
-        v-if="!appStore.loading && !appStore.isAuthenticated"
+        v-else-if="!appStore.loading && !appStore.isAuthenticated"
         class="mb-4 custom-flat-alert error-alert"
         type="error"
         variant="tonal"
@@ -64,7 +87,7 @@
         </div>
       </v-alert>
 
-      <template v-if="appStore.isAuthenticated && hasPinAccess">
+      <template v-if="appStore.isAuthenticated && hasPinAccess && !isBlocked">
         <v-row align="start" dense>
           <!-- Navigation Sidebar -->
           <v-col cols="12" lg="2" md="3">
@@ -261,6 +284,32 @@
                       prepend-inner-icon="mdi-magnify"
                       variant="outlined"
                     />
+                    
+                    <v-menu location="bottom end" content-class="flat-menu-content">
+                      <template #activator="{ props }">
+                        <button
+                          v-bind="props"
+                          class="btn-flat-outline btn-with-icon"
+                        >
+                          <v-icon icon="mdi-download" size="18" class="mr-1" />
+                          Export
+                          <v-icon icon="mdi-chevron-down" size="14" class="ml-1" />
+                        </button>
+                      </template>
+                      <v-list density="comfortable">
+                        <v-list-item
+                          prepend-icon="mdi-file-delimited-outline"
+                          title="Export to CSV"
+                          @click="exportToCSV"
+                        />
+                        <v-list-item
+                          prepend-icon="mdi-code-json"
+                          title="Export to JSON"
+                          @click="exportToJSON"
+                        />
+                      </v-list>
+                    </v-menu>
+
                     <button
                       class="btn-flat-solid btn-with-icon"
                       @click="openAddDialog"
@@ -299,7 +348,25 @@
                     <span class="font-mono font-weight-bold">{{ formatDraftPrice(resolveItem(item)) }}</span>
                   </template>
                   <template #item.stock="{ item }">
-                    <span class="custom-badge badge-teal font-mono">{{ resolveItem(item).stock }}</span>
+                    <div class="d-inline-flex align-center ga-1 inline-stock-adjuster">
+                      <button
+                        aria-label="Decrease stock"
+                        class="stock-btn-flat minus"
+                        :disabled="adjustingStockId === resolveItem(item).product_id || resolveItem(item).stock <= 0"
+                        @click="adjustStock(resolveItem(item), -1)"
+                      >
+                        <v-icon icon="mdi-minus" size="12" />
+                      </button>
+                      <span class="custom-badge badge-teal font-mono px-2 py-1 text-caption">{{ resolveItem(item).stock }}</span>
+                      <button
+                        aria-label="Increase stock"
+                        class="stock-btn-flat plus"
+                        :disabled="adjustingStockId === resolveItem(item).product_id"
+                        @click="adjustStock(resolveItem(item), 1)"
+                      >
+                        <v-icon icon="mdi-plus" size="12" />
+                      </button>
+                    </div>
                   </template>
                   <template #item.actions="{ item }">
                     <div class="d-flex align-center ga-1">
@@ -309,6 +376,14 @@
                         @click="editProduct(resolveItem(item))"
                       >
                         <v-icon icon="mdi-pencil-outline" size="18" />
+                      </button>
+                      <button
+                        aria-label="Duplicate product"
+                        class="action-icon-btn edit-btn"
+                        :disabled="saving"
+                        @click="duplicateProduct(resolveItem(item))"
+                      >
+                        <v-icon icon="mdi-content-copy" size="18" />
                       </button>
                       <button
                         aria-label="Remove product"
@@ -347,7 +422,7 @@
                     Refresh
                   </button>
                 </div>
-                
+
                 <v-progress-linear v-if="reviewsLoading" color="teal-darken-1" indeterminate class="mb-4" />
                 <v-alert v-else-if="reviews.length === 0" type="info" variant="tonal" class="custom-flat-alert info-alert">
                   No product reviews yet.
@@ -371,7 +446,7 @@
                           density="compact"
                           :model-value="Number(review.rating || 0)"
                           readonly
-                          size="14"
+                          size="30"
                         />
                       </div>
                       <div class="review-comment mt-1 text-slate-700">{{ review.comment }}</div>
@@ -772,6 +847,7 @@
       const appStore = useAppStore()
       const router = useRouter()
       const loading = ref(false)
+      const isBlocked = ref(false)
       const saving = ref(false)
       const activePanel = ref('dashboard')
       const profile = ref({})
@@ -929,6 +1005,9 @@
       ])
 
       const showMessage = (message, color = 'success') => {
+        if (typeof message === 'string' && message.includes('your user admin page block')) {
+          isBlocked.value = true
+        }
         snackbarText.value = message
         snackbarColor.value = color
         snackbar.value = true
@@ -1111,6 +1190,15 @@
         reviewsLoading.value = true
         try {
           profile.value = await fetchUserAdminProfile()
+          if (profile.value?.user_admin_blocked) {
+            isBlocked.value = true
+            products.value = []
+            reviews.value = []
+            return
+          } else {
+            isBlocked.value = false
+          }
+
           if (profile.value?.has_pin_access) {
             const [nextProducts, nextReviews] = await Promise.all([
               fetchUserAdminProducts(),
@@ -1128,6 +1216,13 @@
             return
           }
           if (error?.response?.status === 403) {
+            const errorMsg = error?.response?.data?.message || ''
+            if (errorMsg.includes('your user admin page block')) {
+              isBlocked.value = true
+              products.value = []
+              reviews.value = []
+              return
+            }
             products.value = []
             reviews.value = []
             showMessage('User Admin PIN required from Profile.', 'warning')
@@ -1314,9 +1409,148 @@
         void loadConsole()
       })
 
+      const adjustingStockId = ref('')
+
+      const adjustStock = async (product, change) => {
+        if (!product?.product_id) return
+        const newStock = Math.max(0, Number(product.stock || 0) + change)
+        
+        adjustingStockId.value = product.product_id
+        try {
+          const payload = {
+            stock: newStock
+          }
+          await updateUserAdminProduct(product.product_id, payload)
+          product.stock = newStock
+          products.value = [...products.value]
+          showMessage('Stock adjusted successfully')
+        } catch (error) {
+          console.error('Failed to adjust stock:', error)
+          showMessage(error?.response?.data?.message || 'Failed to adjust stock', 'error')
+        } finally {
+          adjustingStockId.value = ''
+        }
+      }
+
+      const duplicateProduct = async (product) => {
+        if (!product) return
+        saving.value = true
+        try {
+          const priceAmount = Number(product.price || product.price_amount || 0)
+          const priceCurrency = product.price_currency || product.currency || 'USD'
+          const payload = {
+            name: `${product.name || ''} (Copy)`.slice(0, 120),
+            company: product.company || '',
+            description: product.description || '',
+            category: normalizeCategoryName(product.category),
+            subcategory: normalizeSubcategoryName(product.category, product.subcategory),
+            image_url: product.image_url || '',
+            image_urls: Array.isArray(product.image_urls) ? [...product.image_urls] : (product.image_url ? [product.image_url] : []),
+            price: priceAmount,
+            price_amount: priceAmount,
+            price_currency: priceCurrency,
+            currency: priceCurrency,
+            stock: Number(product.stock || 0)
+          }
+          await createUserAdminProduct(payload)
+          showMessage('Product draft duplicated')
+          products.value = await fetchUserAdminProducts()
+        } catch (error) {
+          console.error('Failed to duplicate product:', error)
+          showMessage(error?.response?.data?.message || 'Failed to duplicate product', 'error')
+        } finally {
+          saving.value = false
+        }
+      }
+
+      const escapeCSVCell = (val) => {
+        const str = String(val === null || val === undefined ? '' : val)
+        if (/[",\r\n]/.test(str)) {
+          return `"${str.replace(/"/g, '""')}"`
+        }
+        return str
+      }
+
+      const exportToCSV = () => {
+        if (!products.value || products.value.length === 0) {
+          showMessage('No products to export', 'warning')
+          return
+        }
+        try {
+          const headers = [
+            'Product ID',
+            'Name',
+            'Brand',
+            'Category',
+            'Subcategory',
+            'Description',
+            'Price',
+            'Currency',
+            'Stock',
+            'Primary Image URL',
+            'All Image URLs'
+          ]
+          const rows = products.value.map(p => {
+            const allUrls = Array.isArray(p.image_urls) ? p.image_urls.join(';') : (p.image_url || '')
+            return [
+              p.product_id || '',
+              p.name || '',
+              p.company || '',
+              p.category || '',
+              p.subcategory || '',
+              p.description || '',
+              p.price || p.price_amount || 0,
+              p.price_currency || p.currency || 'USD',
+              p.stock || 0,
+              p.image_url || '',
+              allUrls
+            ].map(escapeCSVCell).join(',')
+          })
+
+          const csvContent = [headers.join(','), ...rows].join('\r\n')
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+          const url = URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.download = `products_export_${new Date().toISOString().slice(0, 10)}.csv`
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          URL.revokeObjectURL(url)
+          showMessage('Products exported to CSV')
+        } catch (error) {
+          console.error('Failed to export CSV:', error)
+          showMessage('Failed to export CSV', 'error')
+        }
+      }
+
+      const exportToJSON = () => {
+        if (!products.value || products.value.length === 0) {
+          showMessage('No products to export', 'warning')
+          return
+        }
+        try {
+          const dataStr = JSON.stringify(products.value, null, 2)
+          const blob = new Blob([dataStr], { type: 'application/json' })
+          const url = URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.download = `products_export_${new Date().toISOString().slice(0, 10)}.json`
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          URL.revokeObjectURL(url)
+          showMessage('Products exported to JSON')
+        } catch (error) {
+          console.error('Failed to export JSON:', error)
+          showMessage('Failed to export JSON', 'error')
+        }
+      }
+
       return {
         appStore,
         loading,
+        isBlocked,
         saving,
         activePanel,
         profile,
@@ -1372,7 +1606,12 @@
         formatMoney,
         formatReviewDate,
         draftImageUrl,
-        formatDraftCategory
+        formatDraftCategory,
+        adjustingStockId,
+        adjustStock,
+        duplicateProduct,
+        exportToCSV,
+        exportToJSON
       }
     }
   }

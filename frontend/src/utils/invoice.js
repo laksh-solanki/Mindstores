@@ -1,7 +1,6 @@
 import openSansRegularUrl from '@fontsource/open-sans/files/open-sans-latin-400-normal.woff2?url'
 import openSansBoldUrl from '@fontsource/open-sans/files/open-sans-latin-700-normal.woff2?url'
 import { PDFDocument } from 'pdf-lib'
-import invoiceTemplateSvg from '@/assets/invoice-template.svg?raw'
 import brandLogoSvg from '@/assets/logo.svg?raw'
 
 const PAGE_WIDTH = 595.5
@@ -10,7 +9,7 @@ const ITEMS_PER_PAGE = 6
 const RENDER_SCALE = 3
 const FONT_FAMILY = 'Invoice Open Sans'
 const BRAND_LOGO_MARKUP = brandLogoSvg
-  .replace(/^<svg[^>]*>/, '<svg x="58" y="56" width="60" height="60" viewBox="0 0 100 100">')
+  .replace(/^<svg[^>]*>/, '<svg x="45" y="40" width="50" height="50" viewBox="0 0 100 100">')
   .replace(/<\/svg>\s*$/, '</svg>')
 
 let invoiceFontAssetsPromise
@@ -135,85 +134,50 @@ function buildBilledToLines(profile) {
   ]).slice(0, 4)
 }
 
-function wrapText(value, {
-  context,
-  fontSize,
-  fontWeight = 400,
-  maxWidth,
-  maxLines = 2
-}) {
-  const normalized = sanitizeText(value)
-  if (!normalized) {
-    return []
-  }
-
-  context.font = `${fontWeight} ${fontSize}px "${FONT_FAMILY}"`
-  if (context.measureText(normalized).width <= maxWidth) {
-    return [normalized]
-  }
-
-  const lines = []
-  let current = ''
-  for (const character of normalized) {
-    const candidate = `${current}${character}`
-    if (context.measureText(candidate).width <= maxWidth || current.length === 0) {
-      current = candidate
-      continue
-    }
-    lines.push(current)
-    current = character
-    if (lines.length === maxLines - 1) {
-      break
-    }
-  }
-
-  if (current && lines.length < maxLines) {
-    lines.push(current)
-  }
-
-  const consumedLength = lines.join('').length
-  if (consumedLength < normalized.length && lines.length > 0) {
-    const lastLine = lines.at(-1)
-    lines[lines.length - 1] = fitText(`${lastLine}${normalized.slice(consumedLength)}`, {
-      context,
-      fontSize,
-      fontWeight,
-      maxWidth
-    })
-  }
-
-  return lines
-}
-
-function fitFontSize(value, {
-  context,
-  fontWeight = 400,
-  maxWidth,
-  startSize,
-  minSize
-}) {
-  const normalized = sanitizeText(value)
-  let size = startSize
-  while (size > minSize) {
-    context.font = `${fontWeight} ${size}px "${FONT_FAMILY}"`
-    if (context.measureText(normalized).width <= maxWidth) {
-      return size
-    }
-    size -= 0.5
-  }
-  return minSize
-}
-
 function textNode({
   x,
   y,
   value,
-  size = 12.005,
+  size = 10,
   weight = 400,
-  fill = '#1D1D1B',
+  fill = '#1E293B',
   anchor = 'start'
 }) {
   return `<text x="${x}" y="${y}" font-family="${FONT_FAMILY}" font-size="${size}" font-weight="${weight}" fill="${fill}" text-anchor="${anchor}">${escapeXml(value)}</text>`
+}
+
+function renderStatusBadge(status, x, y) {
+  const cleanStatus = String(status || 'Completed').toLowerCase()
+  let bg = '#E6F4EA' // light green tint
+  let text = '#137333' // dark green
+  let label = 'PAID'
+
+  if (cleanStatus === 'completed' || cleanStatus === 'paid' || cleanStatus === 'delivered') {
+    bg = '#E6F4EA'
+    text = '#137333'
+    label = 'PAID'
+  } else if (cleanStatus === 'pending' || cleanStatus === 'processing' || cleanStatus === 'ordered') {
+    bg = '#FEF7E0' // light gold/yellow
+    text = '#B06000'
+    label = 'PENDING'
+  } else if (cleanStatus === 'cancelled' || cleanStatus === 'failed') {
+    bg = '#FCE8E6' // light red
+    text = '#C5221F'
+    label = 'CANCELLED'
+  } else {
+    label = cleanStatus.toUpperCase()
+  }
+
+  const badgeWidth = 65
+  const badgeHeight = 18
+  const rx = 4
+
+  return `
+    <g>
+      <rect x="${x}" y="${y}" width="${badgeWidth}" height="${badgeHeight}" rx="${rx}" fill="${bg}" />
+      <text x="${x + badgeWidth / 2}" y="${y + 12.5}" font-family="${FONT_FAMILY}" font-size="9" font-weight="700" fill="${text}" text-anchor="middle">${label}</text>
+    </g>
+  `
 }
 
 function buildOverlay({
@@ -234,140 +198,180 @@ function buildOverlay({
   }, 0))
   const discount = Number(order.discount_amount || 0)
   const total = Number(order.total_amount || Math.max(0, subtotal - discount))
-  const ink = '#1D1D1B'
-  const white = '#FFFFFF'
-  const rowBaselines = [326, 362, 398, 434, 470, 506]
-  const rowSeparators = rowBaselines.slice(0, pageItems.length).map((baseline) => baseline + 14)
+  
+  const inkDark = '#0F172A' // Slate-900
+  const inkMedium = '#475569' // Slate-600
+  const inkLight = '#64748B' // Slate-500
+  const borderLight = '#E2E8F0' // Slate-200
+  const brandTeal = '#00897B' // Brand Teal
 
+  // Address and meta columns configuration
   const billedToLines = buildBilledToLines(profile).map((line) => fitText(line, {
     context: measureContext,
-    fontSize: 12.005,
+    fontSize: 10,
     maxWidth: 240
   }))
-  const orderIdLines = wrapText(order.order_id, {
+
+  const safeOrderId = fitText(order.order_id, {
     context: measureContext,
-    fontSize: 10,
-    maxWidth: 126,
-    maxLines: 2
+    fontSize: 11,
+    fontWeight: 700,
+    maxWidth: 120
   })
-  const safeStoreEmail = fitText(profile.email || 'Digital storefront', {
-    context: measureContext,
-    fontSize: 12.005,
-    maxWidth: 204
-  })
+
+  // Table row calculations
+  // Header: y=270, height=26. Dynamic rows start at y=310. Row height is 36.
+  const rowBaselines = pageItems.map((_, index) => 318 + (index * 36))
+  const rowSeparators = pageItems.map((_, index) => 296 + ((index + 1) * 36))
 
   const dynamicItems = pageItems.map((item, index) => {
     const quantity = Number(item.quantity || 1)
     const price = Number(item.price || 0)
     const safeItemName = fitText(item.name || item.product_id || 'Product', {
       context: measureContext,
-      fontSize: 12.005,
-      maxWidth: 210
+      fontSize: 11,
+      maxWidth: 230
     })
 
     return [
-      textNode({ x: 59.55, y: rowBaselines[index], value: safeItemName }),
-      textNode({ x: 279.507, y: rowBaselines[index], value: String(quantity) }),
-      textNode({ x: 362.438, y: rowBaselines[index], value: formatAmount(price) }),
-      textNode({ x: 487.737, y: rowBaselines[index], value: formatAmount(price * quantity) })
+      textNode({ x: 55, y: rowBaselines[index], value: safeItemName, size: 11 }),
+      textNode({ x: 320, y: rowBaselines[index], value: String(quantity), size: 11, anchor: 'middle', fill: inkMedium }),
+      textNode({ x: 430, y: rowBaselines[index], value: formatAmount(price), size: 11, anchor: 'end', fill: inkMedium }),
+      textNode({ x: 540, y: rowBaselines[index], value: formatAmount(price * quantity), size: 11, anchor: 'end', weight: 700 })
     ].join('')
   }).join('')
 
-  const rowLines = rowSeparators.map((y) => {
-    return `<line x1="59.55" y1="${y}" x2="536.2" y2="${y}" stroke="${ink}" stroke-width="0.75" />`
+  const separatorLines = rowSeparators.map((y) => {
+    return `<line x1="45" y1="${y}" x2="550.5" y2="${y}" stroke="#F1F5F9" stroke-width="1" />`
   }).join('')
 
-  const lastSeparatorY = rowSeparators.at(-1) || 340
-  const subtotalY = Math.max(lastSeparatorY + 28, 497)
-  const discountY = subtotalY + 25
-  const totalBarY = discountY + 11.28
-  const totalTextY = totalBarY + 31.72
-  const continuationY = Math.max(lastSeparatorY + 28, 497)
-  const totalAmountText = formatAmount(total)
-  const totalAmountSize = fitFontSize(totalAmountText, {
-    context: measureContext,
-    fontWeight: 700,
-    maxWidth: 148,
-    startSize: 18.007,
-    minSize: 14
-  })
-  const totalBlock = pageIndex === pageCount - 1
+  // Totals Section placement (bottom of table area at y=512)
+  const isLastPage = pageIndex === pageCount - 1
+  const totalsBlock = isLastPage
     ? [
-        textNode({ x: 362.438, y: subtotalY, value: 'Subtotal', weight: 700 }),
-        textNode({ x: 570, y: subtotalY, value: formatAmount(subtotal), anchor: 'end' }),
-        textNode({ x: 361.273, y: discountY, value: 'Discount', weight: 700 }),
-        textNode({ x: 570, y: discountY, value: formatAmount(discount), anchor: 'end' }),
-        `<rect x="330" y="${totalBarY}" width="250" height="40.08" fill="${ink}" />`,
-        textNode({ x: 362.438, y: totalTextY, value: 'Total', size: 18.007, weight: 700, fill: white }),
-        textNode({ x: 570, y: totalTextY, value: totalAmountText, size: totalAmountSize, weight: 700, fill: white, anchor: 'end' })
+        textNode({ x: 360, y: 542, value: 'Subtotal', size: 10, fill: inkMedium }),
+        textNode({ x: 540, y: 542, value: formatAmount(subtotal), size: 10, anchor: 'end', weight: 700 }),
+        textNode({ x: 360, y: 560, value: 'Discount', size: 10, fill: inkMedium }),
+        textNode({ x: 540, y: 560, value: formatAmount(discount), size: 10, anchor: 'end', weight: 700 }),
+        `<rect x="340" y="575" width="210.5" height="34" rx="4" fill="${brandTeal}" />`,
+        textNode({ x: 355, y: 596, value: 'Total Paid', size: 12, weight: 700, fill: '#FFFFFF' }),
+        textNode({ x: 530, y: 596, value: formatAmount(total), size: 13, weight: 700, fill: '#FFFFFF', anchor: 'end' })
       ].join('')
-    : textNode({ x: 362.438, y: continuationY, value: 'Continued on next page', weight: 700 })
+    : [
+        `<rect x="340" y="575" width="210.5" height="34" rx="4" fill="#F8FAFC" />`,
+        textNode({ x: 445, y: 596, value: 'Continued on next page', size: 10, weight: 700, fill: inkMedium, anchor: 'middle' })
+      ].join('')
 
-  const invoiceDateY = orderIdLines.length > 1 ? 229 : 216
-  const invoicePageY = invoiceDateY + 16
+  // Build customer and store info
+  const billedToName = billedToLines[0] || 'Customer'
+  const billedToDetails = billedToLines.slice(1)
 
   return `
-    <style>
-      @font-face {
-        font-family: "${FONT_FAMILY}";
-        src: url("${regularDataUrl}") format("woff2");
-        font-weight: 400;
-      }
-      @font-face {
-        font-family: "${FONT_FAMILY}";
-        src: url("${boldDataUrl}") format("woff2");
-        font-weight: 700;
-      }
-    </style>
-    <g id="invoice-dynamic-layer">
-      <rect x="56" y="54" width="64" height="64" fill="${white}" />
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 595.5 842.25" width="595.5" height="842.25">
+      <style>
+        @font-face {
+          font-family: "${FONT_FAMILY}";
+          src: url("${regularDataUrl}") format("woff2");
+          font-weight: 400;
+        }
+        @font-face {
+          font-family: "${FONT_FAMILY}";
+          src: url("${boldDataUrl}") format("woff2");
+          font-weight: 700;
+        }
+      </style>
+
+      <!-- Clean Background Page -->
+      <rect width="595.5" height="842.25" fill="#FFFFFF" />
+
+      <!-- Top and Bottom accent colors for premium branding representation -->
+      <rect x="0" y="0" width="595.5" height="6" fill="${brandTeal}" />
+      <rect x="0" y="836.25" width="595.5" height="6" fill="${brandTeal}" />
+
+      <!-- Header -->
       ${BRAND_LOGO_MARKUP}
-      <rect x="56" y="158" width="255" height="104" fill="${white}" />
-      <rect x="420" y="157" width="126" height="96" fill="${white}" />
-      <rect x="56" y="300" width="480" height="250" fill="${white}" />
-      <rect x="330" y="475" width="266" height="190" fill="${white}" />
-      ${pageIndex === pageCount - 1
-        ? ''
-        : `<rect x="56" y="580" width="280" height="100" fill="${white}" />`
-      }
-      <rect x="56" y="696" width="260" height="96" fill="${white}" />
-      <rect x="320" y="715" width="240" height="82" fill="${white}" />
+      ${textNode({ x: 105, y: 64, value: 'Mindstores', size: 18, weight: 700, fill: inkDark })}
+      ${textNode({ x: 105, y: 78, value: 'Digital Storefront', size: 10, fill: inkLight })}
+      
+      ${textNode({ x: 550.5, y: 64, value: 'INVOICE', size: 22, weight: 700, fill: brandTeal, anchor: 'end' })}
+      ${pageCount > 1 ? textNode({ x: 550.5, y: 78, value: `Page ${pageIndex + 1} of ${pageCount}`, size: 9, fill: inkLight, anchor: 'end' }) : ''}
 
-      ${textNode({ x: 59.925, y: 183, value: 'Billed to:', weight: 700 })}
-      ${billedToLines.map((line, index) => textNode({
-        x: 59.925,
-        y: 204 + (index * 16),
-        value: line
-      })).join('')}
+      <!-- Top Meta Info Divider -->
+      <line x1="45" y1="105" x2="550.5" y2="105" stroke="${borderLight}" stroke-width="1" />
 
-      ${textNode({ x: 536.2, y: 183, value: 'Invoice No.', anchor: 'end' })}
-      ${orderIdLines.map((line, index) => textNode({
-        x: 536.2,
-        y: 200 + (index * 13),
+      <!-- Metadata Grid -->
+      ${textNode({ x: 45, y: 124, value: 'INVOICE NO.', size: 9, weight: 700, fill: inkLight })}
+      ${textNode({ x: 45, y: 142, value: safeOrderId, size: 11, weight: 700, fill: inkDark })}
+
+      ${textNode({ x: 185, y: 124, value: 'INVOICE DATE', size: 9, weight: 700, fill: inkLight })}
+      ${textNode({ x: 185, y: 142, value: formatDate(order.created_at), size: 11, fill: inkDark })}
+
+      ${textNode({ x: 325, y: 124, value: 'PAYMENT STATUS', size: 9, weight: 700, fill: inkLight })}
+      ${renderStatusBadge(order.status, 325, 129)}
+
+      ${textNode({ x: 550.5, y: 124, value: 'TOTAL DUE', size: 9, weight: 700, fill: inkLight, anchor: 'end' })}
+      ${textNode({ x: 550.5, y: 142, value: formatAmount(total), size: 12, weight: 700, fill: brandTeal, anchor: 'end' })}
+
+      <!-- Billing Info Divider -->
+      <line x1="45" y1="158" x2="550.5" y2="158" stroke="${borderLight}" stroke-width="1" />
+
+      <!-- Billing Details -->
+      ${textNode({ x: 45, y: 178, value: 'BILLED TO', size: 9, weight: 700, fill: inkLight })}
+      ${textNode({ x: 45, y: 196, value: billedToName, size: 11, weight: 700, fill: inkDark })}
+      ${billedToDetails.map((line, index) => textNode({
+        x: 45,
+        y: 211 + (index * 15),
         value: line,
         size: 10,
-        anchor: 'end'
+        fill: inkMedium
       })).join('')}
-      ${textNode({ x: 536.2, y: invoiceDateY, value: formatDate(order.created_at), anchor: 'end' })}
-      ${pageCount > 1 ? textNode({ x: 536.2, y: invoicePageY, value: `Page ${pageIndex + 1} of ${pageCount}`, size: 10, anchor: 'end' }) : ''}
 
-      ${rowLines}
+      ${textNode({ x: 360, y: 178, value: 'FROM', size: 9, weight: 700, fill: inkLight })}
+      ${textNode({ x: 360, y: 196, value: 'Mindstores Inc.', size: 11, weight: 700, fill: inkDark })}
+      ${textNode({ x: 360, y: 211, value: 'support@mindstores.com', size: 10, fill: inkMedium })}
+      ${textNode({ x: 360, y: 226, value: 'www.mindstores.com', size: 10, fill: inkMedium })}
+
+      <!-- Table Area -->
+      <!-- Table Header Backing -->
+      <rect x="45" y="270" width="505.5" height="26" rx="4" fill="#F8FAFC" />
+      ${textNode({ x: 55, y: 287, value: 'Item Description', size: 9, weight: 700, fill: inkMedium })}
+      ${textNode({ x: 320, y: 287, value: 'Quantity', size: 9, weight: 700, fill: inkMedium, anchor: 'middle' })}
+      ${textNode({ x: 430, y: 287, value: 'Unit Price', size: 9, weight: 700, fill: inkMedium, anchor: 'end' })}
+      ${textNode({ x: 540, y: 287, value: 'Total', size: 9, weight: 700, fill: inkMedium, anchor: 'end' })}
+      
+      <!-- Horizontal lines framing the table content -->
+      <line x1="45" y1="296" x2="550.5" y2="296" stroke="${borderLight}" stroke-width="1" />
+      <line x1="45" y1="512" x2="550.5" y2="512" stroke="${borderLight}" stroke-width="1" />
+
+      <!-- Row lines and content -->
+      ${separatorLines}
       ${dynamicItems}
-      ${totalBlock}
 
-      ${textNode({ x: 59.925, y: 714, value: 'Payment Information', weight: 700 })}
-      ${textNode({ x: 59.925, y: 734, value: `Status: ${sanitizeText(order.status || 'completed')}` })}
-      ${textNode({ x: 59.925, y: 751, value: `Promo code: ${sanitizeText(order.promo_code || 'None')}` })}
-      ${textNode({ x: 59.925, y: 768, value: `Discount: ${formatAmount(discount)}` })}
+      <!-- Totals Block -->
+      ${totalsBlock}
 
-      ${textNode({ x: 536.2, y: 760, value: 'Mindstores', size: 18.007, weight: 700, anchor: 'end' })}
-      ${textNode({ x: 536.2, y: 783, value: safeStoreEmail, anchor: 'end' })}
-    </g>
+      <!-- Bottom Payment & Help Divider -->
+      <line x1="45" y1="645" x2="550.5" y2="645" stroke="${borderLight}" stroke-width="1" />
+
+      <!-- Footer Columns -->
+      ${textNode({ x: 45, y: 665, value: 'PAYMENT DETAILS', size: 9, weight: 700, fill: inkLight })}
+      ${textNode({ x: 45, y: 683, value: 'Payment Method: Card Payment', size: 10, fill: inkMedium })}
+      ${textNode({ x: 45, y: 699, value: `Promo Code: ${sanitizeText(order.promo_code || 'None')}`, size: 10, fill: inkMedium })}
+      ${textNode({ x: 45, y: 715, value: `Taxes (Included): ${formatAmount(0)}`, size: 10, fill: inkMedium })}
+
+      ${textNode({ x: 360, y: 665, value: 'NEED HELP?', size: 9, weight: 700, fill: inkLight })}
+      ${textNode({ x: 360, y: 683, value: 'Please email: support@mindstores.com', size: 10, fill: inkMedium })}
+      ${textNode({ x: 360, y: 699, value: 'Check status at: www.mindstores.com', size: 10, fill: inkMedium })}
+
+      ${textNode({ x: 45, y: 760, value: 'Thank you for shopping at Mindstores!', size: 10, weight: 700, fill: brandTeal })}
+      ${textNode({ x: 45, y: 775, value: 'Your support means the world to our independent digital merchants.', size: 9.5, fill: inkMedium })}
+    </svg>
   `
 }
 
 function buildInvoiceSvg({ overlay }) {
-  return invoiceTemplateSvg.replace('</svg>', `${overlay}</svg>`)
+  // Now our overlay is the complete dynamic SVG markup
+  return overlay
 }
 
 function loadImage(url) {

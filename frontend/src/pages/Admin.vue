@@ -618,6 +618,22 @@
               <template #item.updated_at="{ item }">
                 {{ formatDate(resolveTableItem(item)?.updated_at) }}
               </template>
+              <template #item.user_admin_blocked="{ item }">
+                <v-btn
+                  v-if="resolveTableItem(item)"
+                  :color="resolveTableItem(item)?.user_admin_blocked ? 'error' : 'grey-darken-1'"
+                  icon
+                  size="small"
+                  variant="text"
+                  :loading="blockingUserId === resolveTableItem(item)?.user_id"
+                  @click="toggleUserAdminBlock(resolveTableItem(item))"
+                >
+                  <v-icon>{{ resolveTableItem(item)?.user_admin_blocked ? 'mdi-lock-outline' : 'mdi-lock-open-outline' }}</v-icon>
+                  <v-tooltip activator="parent" location="top">
+                    {{ resolveTableItem(item)?.user_admin_blocked ? 'Blocked (Click to Unblock)' : 'Active (Click to Block)' }}
+                  </v-tooltip>
+                </v-btn>
+              </template>
             </v-data-table>
           </v-card-text>
         </v-card>
@@ -1526,6 +1542,7 @@
   const adminAccessEntries = ref([]);
   const productLoading = ref(false);
   const userLoading = ref(false);
+  const blockingUserId = ref("");
   const accessLoading = ref(false);
   const productSaving = ref(false);
   const accessSaving = ref(false);
@@ -1604,6 +1621,7 @@
     { title: "Role", key: "is_admin" },
     { title: "Country", key: "country_code" },
     { title: "Updated", key: "updated_at" },
+    { title: "Console Block", key: "user_admin_blocked", sortable: false },
   ];
   const accessHeaders = [
     { title: "Email", key: "email" },
@@ -3055,6 +3073,28 @@
       notify(error.response?.data?.message || "Failed to fetch users", "error");
     } finally {
       userLoading.value = false;
+    }
+  }
+
+  async function toggleUserAdminBlock(user) {
+    if (!user?.user_id) return;
+    blockingUserId.value = user.user_id;
+    try {
+      const newBlocked = !user.user_admin_blocked;
+      await runAdminRequest(async (forceRefresh) =>
+        axios.put(
+          `${API_URL}/admin/users/${encodeURIComponent(user.user_id)}/block`,
+          { blocked: newBlocked },
+          await buildAdminRequestConfig({}, forceRefresh),
+        ),
+      );
+      user.user_admin_blocked = newBlocked;
+      notify(newBlocked ? "User admin blocked" : "User admin unblocked");
+    } catch (error) {
+      console.error("Failed to update block status:", error);
+      notify(error.response?.data?.message || "Failed to update block status", "error");
+    } finally {
+      blockingUserId.value = "";
     }
   }
 

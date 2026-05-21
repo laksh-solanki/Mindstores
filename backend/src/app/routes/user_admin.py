@@ -102,6 +102,7 @@ def serialize_user_admin_profile(user: dict[str, Any] | None) -> dict[str, Any]:
         "user_admin_pin_created_at": user.get("user_admin_pin_created_at") if pin_created else None,
         "user_admin_pin_verified_at": user.get("user_admin_pin_verified_at") if pin_created else None,
         "user_admin_pin_unlocked_until": user.get("user_admin_pin_unlocked_until") if pin_created else None,
+        "user_admin_blocked": bool(user.get("user_admin_blocked", False))
     }
 
 
@@ -205,6 +206,8 @@ def require_pin_access(ctx: RequestContext):
     if denied:
         return denied
     profile = serialize_user_admin_profile(ctx.user)
+    if profile.get("user_admin_blocked"):
+        return error_response(403, "your user admin page block")
     if not profile["has_pin_access"]:
         return error_response(403, "User Admin PIN required")
     return None

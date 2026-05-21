@@ -33,6 +33,57 @@ export function formatMobileNumber(countryCode, mobileNumber) {
     .join(' ')
 }
 
+export function parseMobileNumber(fullNumber) {
+  const text = String(fullNumber || '').trim()
+  
+  // Sort country codes by length descending to match more specific ones first (+971 before +91)
+  const sortedCodes = [...MOBILE_COUNTRY_OPTIONS]
+    .map(opt => opt.code)
+    .sort((a, b) => b.length - a.length)
+
+  for (const code of sortedCodes) {
+    if (text.startsWith(code)) {
+      const rest = text.slice(code.length).trim()
+      return {
+        countryCode: code,
+        mobileNumber: normalizeMobileNumber(rest)
+      }
+    }
+  }
+
+  // Fallback split if it starts with + but has a space (e.g. +91 9876543210)
+  if (text.startsWith('+')) {
+    const spaceIndex = text.indexOf(' ')
+    if (spaceIndex !== -1) {
+      const code = text.slice(0, spaceIndex)
+      const rest = text.slice(spaceIndex + 1)
+      return {
+        countryCode: normalizeMobileCountryCode(code),
+        mobileNumber: normalizeMobileNumber(rest)
+      }
+    }
+    
+    // Check lengths 4 down to 2
+    for (let len = 4; len >= 2; len--) {
+      if (text.length > len) {
+        const code = text.slice(0, len)
+        if (normalizeMobileCountryCode(code)) {
+          const rest = text.slice(len)
+          return {
+            countryCode: normalizeMobileCountryCode(code),
+            mobileNumber: normalizeMobileNumber(rest)
+          }
+        }
+      }
+    }
+  }
+
+  return {
+    countryCode: '',
+    mobileNumber: normalizeMobileNumber(text)
+  }
+}
+
 export async function fetchUserAdminProfile() {
   const response = await axios.get(
     `${API_URL}/user-admin/profile`,

@@ -557,7 +557,9 @@
                                   :disabled="invoiceLoadingOrderId === order.order_id"
                                   @click.stop="downloadInvoice(order)"
                                 >
-                                  <v-icon start size="16">mdi-file-pdf-box</v-icon>
+                                  <v-icon start size="16" :class="{ 'mdi-spin': invoiceLoadingOrderId === order.order_id }">
+                                    {{ invoiceLoadingOrderId === order.order_id ? 'mdi-loading' : 'mdi-file-download-outline' }}
+                                  </v-icon>
                                   {{ invoiceLoadingOrderId === order.order_id ? 'Generating...' : 'Invoice Download' }}
                                 </button>
                               </div>
@@ -790,7 +792,8 @@
     formatMobileNumber,
     MOBILE_COUNTRY_OPTIONS,
     normalizeMobileCountryCode,
-    normalizeMobileNumber
+    normalizeMobileNumber,
+    parseMobileNumber
   } from '@/utils/userAdmin'
   import {
     getCurrencyForCountry,
@@ -1258,8 +1261,28 @@
       }
 
       const recoverUserAdminMobile = () => {
-        const mobileNumber = resolveStoredMobileNumber()
-        const mobileCountryCode = resolveDefaultMobileCountryCode()
+        let mobileNumber = resolveStoredMobileNumber()
+        let mobileCountryCode = resolveDefaultMobileCountryCode()
+
+        if (!mobileNumber) {
+          // Fall back to delivery profile phone number
+          const deliveryPhone = settings.value.deliveryProfile?.phone
+          if (deliveryPhone) {
+            const parsed = parseMobileNumber(deliveryPhone)
+            if (parsed.mobileNumber) {
+              mobileNumber = parsed.mobileNumber
+              mobileCountryCode = parsed.countryCode || mobileCountryCode
+            }
+          }
+        } else {
+          // Parse the stored mobile number in case it contains country code or needs splitting
+          const parsed = parseMobileNumber(formatMobileNumber(appStore.user?.mobile_country_code, mobileNumber))
+          if (parsed.mobileNumber) {
+            mobileNumber = parsed.mobileNumber
+            mobileCountryCode = parsed.countryCode || mobileCountryCode
+          }
+        }
+
         if (!mobileNumber) {
           showMessage('No saved User Admin mobile number found.', 'warning')
           return

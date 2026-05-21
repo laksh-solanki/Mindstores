@@ -15,8 +15,9 @@
 </template>
 
 <script setup>
-  import { computed, onMounted, onUnmounted, ref } from 'vue'
+  import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
+  import { useTheme } from 'vuetify'
   import AppFooter from '@/components/AppFooter.vue'
   import AppHeader from '@/components/AppHeader.vue'
   import CookieConsent from '@/components/CookieConsent.vue'
@@ -27,6 +28,20 @@
   const router = useRouter()
   const appStore = useAppStore()
   const routeLoading = ref(false)
+  const theme = useTheme()
+
+  watch(
+    () => route.path,
+    (newPath) => {
+      if (newPath === '/admin') {
+        const saved = localStorage.getItem('mindstore_theme') || 'light'
+        theme.global.name.value = saved
+      } else {
+        theme.global.name.value = 'light'
+      }
+    },
+    { immediate: true }
+  )
 
   const isAuthPage = computed(() => ['/login', '/create-account'].includes(route.path))
   const isAdminPage = computed(() => route.path === '/admin')
@@ -85,7 +100,13 @@ body {
 .v-theme--dark .product-detail-page,
 .v-theme--dark .admin-page,
 .v-theme--dark .payment-page,
-.v-theme--dark .order-success-page {
+.v-theme--dark .order-success-page,
+.v-theme--dark .home-page,
+.v-theme--dark .user-admin-page,
+.v-theme--dark .bespoke-admin-container,
+.v-theme--dark .bespoke-auth-container,
+.v-theme--dark .privacy-page,
+.v-theme--dark .terms-page {
   background-color: #090d16 !important;
   color: #f8fafc !important;
 }
@@ -295,5 +316,181 @@ body {
 .v-theme--dark .app-header .v-badge__badge {
   background-color: #f8fafc !important;
   color: #090d16 !important;
+}
+
+/* ═════════════════════════════════════════════════════════════
+   USER ADMIN CONSOLE & OTHER PAGES DARK MODE OVERRIDES
+   ═════════════════════════════════════════════════════════════ */
+.v-theme--dark .user-admin-page {
+  background-color: #090d16 !important;
+}
+
+.v-theme--dark .admin-topbar {
+  border-bottom-color: #1e293b !important;
+}
+
+.v-theme--dark .section-title,
+.v-theme--dark .section-subtitle,
+.v-theme--dark .metric-value {
+  color: #f8fafc !important;
+}
+
+.v-theme--dark .metric-card-flat {
+  background-color: #121824 !important;
+  border-color: #f8fafc !important;
+  box-shadow: 4px 4px 0px #f8fafc !important;
+}
+.v-theme--dark .metric-card-flat:hover {
+  box-shadow: 6px 6px 0px #f8fafc !important;
+}
+
+.v-theme--dark .metric-avatar-flat {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.v-theme--dark .custom-progress-container {
+  background-color: #1e293b !important;
+  border-color: #f8fafc !important;
+}
+
+.v-theme--dark .custom-progress-bar {
+  border-right-color: #f8fafc !important;
+}
+
+.v-theme--dark .panel-window-header,
+.v-theme--dark .panel-window-header-mini {
+  background-color: #1e293b !important;
+  border-bottom-color: #f8fafc !important;
+}
+
+.v-theme--dark .window-dots .dot {
+  border-color: #f8fafc !important;
+}
+
+.v-theme--dark .window-title-display,
+.v-theme--dark .window-title-mini {
+  color: #cbd5e1 !important;
+}
+
+.v-theme--dark .custom-nav-item {
+  color: #f8fafc !important;
+}
+.v-theme--dark .custom-nav-item:hover {
+  border-color: #334155 !important;
+  background-color: #1e293b !important;
+}
+.v-theme--dark .active-nav-item {
+  background-color: #f8fafc !important;
+  color: #090d16 !important;
+  border-color: #f8fafc !important;
+}
+
+.v-theme--dark .custom-admin-table :deep(thead th) {
+  border-bottom: 2px solid #f8fafc !important;
+  color: #f8fafc !important;
+  background-color: #1e293b !important;
+}
+
+.v-theme--dark .custom-admin-table :deep(tbody td) {
+  border-bottom: 1px solid #1e293b !important;
+  color: #cbd5e1 !important;
+}
+
+.v-theme--dark .avatar-flat-mini,
+.v-theme--dark .table-avatar-flat {
+  border-color: #f8fafc !important;
+  background-color: #1e293b !important;
+}
+
+.v-theme--dark .action-icon-btn {
+  border-color: #334155 !important;
+  background-color: #121824 !important;
+  color: #cbd5e1 !important;
+}
+.v-theme--dark .action-icon-btn:hover {
+  border-color: #f8fafc !important;
+  color: #f8fafc !important;
+  background-color: #1e293b !important;
+}
+
+.v-theme--dark .border-bottom-dashed {
+  border-bottom-color: #1e293b !important;
+}
+
+.v-theme--dark .review-comment {
+  color: #cbd5e1 !important;
+}
+
+.v-theme--dark .review-item-flat {
+  border-bottom-color: #1e293b !important;
+}
+
+/* Stock adjuster button styles */
+.inline-stock-adjuster .stock-btn-flat {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #0f172a;
+  background-color: #ffffff;
+  color: #0f172a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.inline-stock-adjuster .stock-btn-flat:hover:not(:disabled) {
+  background-color: #f1f5f9;
+}
+
+.inline-stock-adjuster .stock-btn-flat:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.v-theme--dark .inline-stock-adjuster .stock-btn-flat {
+  border-color: #f8fafc;
+  background-color: #121824;
+  color: #f8fafc;
+}
+
+.v-theme--dark .inline-stock-adjuster .stock-btn-flat:hover:not(:disabled) {
+  background-color: #1e293b;
+}
+
+/* Privacy & Terms pages dark mode styles */
+.v-theme--dark .premium-wrapper,
+.v-theme--dark .glass-card {
+  background: #121824 !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+.v-theme--dark .premium-tos .bg-gradient {
+  background: radial-gradient(circle at top right, #090d16, #090d16) !important;
+}
+
+.v-theme--dark .section {
+  border-bottom-color: rgba(248, 250, 252, 0.1) !important;
+}
+
+.v-theme--dark .section-icon {
+  background: #1e293b !important;
+  color: #a5b4fc !important;
+}
+
+.v-theme--dark .contact-box {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.v-theme--dark .tos-tab.v-tab--selected {
+  color: #f8fafc !important;
+}
+
+.v-theme--dark .header-actions .v-btn {
+  color: #f8fafc !important;
 }
 </style>

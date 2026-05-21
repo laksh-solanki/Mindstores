@@ -1,7 +1,7 @@
 <template>
   <template v-if="!isAuthPage">
     <v-app-bar app class="app-header" color="white" elevation="0">
-      <v-container class="header-container d-flex align-center ga-md-4" fluid>
+      <v-container class="header-container d-flex align-center ga-md-5" fluid>
         <router-link class="brand-link d-flex align-center text-decoration-none ga-2" to="/">
           <v-avatar color="white" rounded="0" size="33">
             <v-img alt="Mindstore logo" src="../assets/logo.svg" width="23" />
@@ -80,7 +80,7 @@
         <div class="header-actions">
           <v-btn
             aria-label="Cart"
-            class="cart-action-btn"
+            class="cart-action-btn mr-2"
             icon
             rounded="0"
             to="/cart"
@@ -94,9 +94,9 @@
               floating
               location="top right"
             >
-              <v-icon color="black">mdi-cart-outline</v-icon>
+              <v-icon>mdi-cart-outline</v-icon>
             </v-badge>
-            <v-icon v-else color="black">mdi-cart-outline</v-icon>
+            <v-icon v-else>mdi-cart-outline</v-icon>
           </v-btn>
 
           <v-menu v-if="appStore.isAuthenticated" location="bottom end" offset="3" content-class="flat-menu-content">
@@ -177,7 +177,6 @@
             icon
             rounded="0"
             variant="text"
-            color="black"
             @click="toggleMobileMenu"
           >
             <v-icon>{{ isMobileMenuOpen ? 'mdi-close' : 'mdi-menu' }}</v-icon>

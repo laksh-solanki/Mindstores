@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Request
 
 from ..admin_access import normalize_admin_email
 from ..context import RequestContext, error_response, get_context, json_response, read_json_body
-from ..utils import escape_regex, normalize_text, parse_int_param
+from ..utils import escape_regex, normalize_text, parse_int_param, now_iso
 
 router = APIRouter()
 
@@ -25,6 +25,7 @@ def serialize_user(user: dict[str, Any], admin_entries: list[dict[str, Any]]) ->
         "is_admin": bool(email and email in admin_emails),
         "created_at": user.get("created_at"),
         "updated_at": user.get("updated_at"),
+        "user_admin_blocked": bool(user.get("user_admin_blocked", False)),
     }
 
 
@@ -44,6 +45,7 @@ def merge_user_record(current: dict[str, Any], duplicate: dict[str, Any]) -> dic
         not merged.get("created_at") or str(duplicate["created_at"]) < str(merged["created_at"])
     ):
         merged["created_at"] = duplicate["created_at"]
+    merged["user_admin_blocked"] = current.get("user_admin_blocked") or duplicate.get("user_admin_blocked") or False
     return merged
 
 
@@ -152,3 +154,21 @@ async def get_admin_users(ctx: RequestContext = Depends(get_context)):
         200,
         {"Cache-Control": "no-store"},
     )
+
+
+@router.put("/admin/users/{user_id}/block")
+async def toggle_block_user_admin(user_id: str, request: Request, ctx: RequestContext = Depends(get_context)):
+    denied = require_admin(ctx)
+    if denied:
+        return denied
+    body = await read_json_body(request, ctx.config.max_body_bytes)
+    data = body if isinstance(body, dict) else {}
+    blocked = bool(data.get("blocked", False))
+    
+    result = await ctx.db.collection("users").update_one(
+        {"user_id": unquote(user_id)},
+        {"$set": {"user_admin_blocked": blocked, "updated_at": now_iso()}}
+    )
+    if result.matchedCount == 0:
+        return error_response(404, "User not found")
+    return json_response({"message": "User admin status updated", "blocked": blocked}, 200, {"Cache-Control": "no-store"})
