@@ -15,16 +15,16 @@
             A meticulously curated gallery of everyday essentials. Hand-selected for exceptional craft, clean lines, and absolute utility.
           </p>
           <div class="social-links d-flex ga-2">
-            <a href="https://instagram.com" target="_blank" class="social-btn" aria-label="Instagram">
+            <a aria-label="Instagram" class="social-btn" href="https://instagram.com" target="_blank">
               <v-icon size="18">mdi-instagram</v-icon>
             </a>
-            <a href="https://twitter.com" target="_blank" class="social-btn" aria-label="Twitter">
+            <a aria-label="Twitter" class="social-btn" href="https://twitter.com" target="_blank">
               <v-icon size="18">mdi-twitter</v-icon>
             </a>
-            <a href="https://pinterest.com" target="_blank" class="social-btn" aria-label="Pinterest">
+            <a aria-label="Pinterest" class="social-btn" href="https://pinterest.com" target="_blank">
               <v-icon size="18">mdi-pinterest</v-icon>
             </a>
-            <a href="https://github.com" target="_blank" class="social-btn" aria-label="GitHub">
+            <a aria-label="GitHub" class="social-btn" href="https://github.com" target="_blank">
               <v-icon size="18">mdi-github</v-icon>
             </a>
           </div>
@@ -34,10 +34,10 @@
         <div class="footer-column links-col">
           <h4 class="footer-title">SHOP CATALOG</h4>
           <ul class="footer-links-list">
-            <li><router-link to="/electronics" class="footer-link">Electronics</router-link></li>
-            <li><router-link to="/clothing" class="footer-link">Clothing</router-link></li>
-            <li><router-link to="/footwear" class="footer-link">Footwear</router-link></li>
-            <li><router-link to="/books" class="footer-link">Books</router-link></li>
+            <li><router-link class="footer-link" to="/electronics">Electronics</router-link></li>
+            <li><router-link class="footer-link" to="/clothing">Clothing</router-link></li>
+            <li><router-link class="footer-link" to="/footwear">Footwear</router-link></li>
+            <li><router-link class="footer-link" to="/books">Books</router-link></li>
           </ul>
         </div>
 
@@ -45,10 +45,10 @@
         <div class="footer-column links-col">
           <h4 class="footer-title">CUSTOMER SERVICES</h4>
           <ul class="footer-links-list">
-            <li><router-link to="/profile" class="footer-link">My Account</router-link></li>
-            <li><router-link to="/cart" class="footer-link">Shopping Cart</router-link></li>
-            <li><router-link to="/privacy" class="footer-link">Privacy Policy</router-link></li>
-            <li><router-link to="/terms" class="footer-link">Terms & Conditions</router-link></li>
+            <li><router-link class="footer-link" to="/profile">My Account</router-link></li>
+            <li><router-link class="footer-link" to="/cart">Shopping Cart</router-link></li>
+            <li><router-link class="footer-link" to="/privacy">Privacy Policy</router-link></li>
+            <li><router-link class="footer-link" to="/terms">Terms & Conditions</router-link></li>
           </ul>
         </div>
 
@@ -62,24 +62,24 @@
             <div class="newsletter-input-group">
               <input
                 v-model="email"
-                type="email"
-                placeholder="Enter email address"
-                required
                 aria-label="Email Address for newsletter"
                 class="newsletter-input"
-              />
-              <button type="submit" class="newsletter-btn" aria-label="Subscribe">
+                placeholder="Enter email address"
+                required
+                type="email"
+              >
+              <button aria-label="Subscribe" class="newsletter-btn" type="submit">
                 <v-icon size="18">mdi-arrow-right</v-icon>
               </button>
             </div>
             <p v-if="subscribed" class="subscribed-feedback mt-2">
-              <v-icon size="14" class="mr-1">mdi-check-circle</v-icon> You have subscribed.
+              <v-icon class="mr-1" size="14">mdi-check-circle</v-icon> You have subscribed.
             </p>
           </form>
         </div>
       </div>
 
-      <hr class="footer-divider" />
+      <hr class="footer-divider">
 
       <!-- Bottom Bar -->
       <div class="footer-bottom-row">
@@ -100,20 +100,20 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+  import { ref } from 'vue'
 
-const email = ref('')
-const subscribed = ref(false)
+  const email = ref('')
+  const subscribed = ref(false)
 
-function handleSubscribe() {
-  if (email.value.trim()) {
-    subscribed.value = true
-    email.value = ''
-    setTimeout(() => {
-      subscribed.value = false
-    }, 4000)
+  function handleSubscribe() {
+    if (email.value.trim()) {
+      subscribed.value = true
+      email.value = ''
+      setTimeout(() => {
+        subscribed.value = false
+      }, 4000)
+    }
   }
-}
 </script>
 
 <style scoped>

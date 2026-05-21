@@ -6,9 +6,9 @@
         <!-- macOS-style frame header -->
         <div class="frame-header">
           <div class="frame-dots">
-            <span class="dot-red"></span>
-            <span class="dot-yellow"></span>
-            <span class="dot-green"></span>
+            <span class="dot-red" />
+            <span class="dot-yellow" />
+            <span class="dot-green" />
           </div>
           <div class="frame-title-display">auth_session.json</div>
         </div>
@@ -31,7 +31,7 @@
             type="error"
           />
 
-          <v-form @submit.prevent="submitLogin" class="auth-form-fields">
+          <v-form class="auth-form-fields" @submit.prevent="submitLogin">
             <v-text-field
               v-model="email"
               autocomplete="email"
@@ -81,9 +81,9 @@
           </v-form>
 
           <div class="auth-divider-row">
-            <span class="auth-divider-line"></span>
+            <span class="auth-divider-line" />
             <span class="auth-divider-text">or</span>
-            <span class="auth-divider-line"></span>
+            <span class="auth-divider-line" />
           </div>
 
           <v-btn

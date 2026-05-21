@@ -165,15 +165,15 @@
       </div>
     </div>
 
-    <v-row v-slot:default v-if="loading" class="mt-8" no-gutters>
+    <v-row v-if="loading" v-slot class="mt-8" no-gutters>
       <v-col
         v-for="n in 8"
         :key="n"
+        class="pa-0"
         cols="12"
         lg="3"
         md="4"
         sm="6"
-        class="pa-0"
       >
         <v-skeleton-loader class="border rounded-0" style="margin-right: -1px; margin-bottom: -1px;" type="image, article" />
       </v-col>
@@ -200,8 +200,8 @@
               v-if="productImageUrl(product)"
               :alt="product.name"
               aspect-ratio="1"
-              contain
               class="product-grid-image"
+              contain
               :src="productImageUrl(product)"
             />
             <div v-else class="no-image-grid-placeholder">
@@ -213,7 +213,7 @@
             <div class="product-card-meta">
               <span class="product-grid-category">{{ normalizeCategory(product.category) }}</span>
               <span class="grid-badge-stock" :class="{ 'grid-badge-stock--out': isProductSoldOut(product) }">
-                <span class="status-dot"></span>
+                <span class="status-dot" />
                 {{ isProductSoldOut(product) ? 'Sold out' : `${Number(product.stock || 0)} left` }}
               </span>
             </div>
@@ -237,7 +237,7 @@
     </v-row>
 
     <div v-else class="flat-empty-products mt-8">
-      <v-icon color="grey-lighten-1" size="48" class="mb-3">mdi-package-search-outline</v-icon>
+      <v-icon class="mb-3" color="grey-lighten-1" size="48">mdi-package-search-outline</v-icon>
       <h3 class="empty-title">No products found</h3>
       <p class="empty-text">Refresh the catalog or check back later.</p>
     </div>

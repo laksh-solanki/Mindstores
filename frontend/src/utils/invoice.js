@@ -152,20 +152,36 @@ function renderStatusBadge(status, x, y) {
   let text = '#137333' // dark green
   let label = 'PAID'
 
-  if (cleanStatus === 'completed' || cleanStatus === 'paid' || cleanStatus === 'delivered') {
+  switch (cleanStatus) {
+  case 'completed': 
+  case 'paid': 
+  case 'delivered': {
     bg = '#E6F4EA'
     text = '#137333'
     label = 'PAID'
-  } else if (cleanStatus === 'pending' || cleanStatus === 'processing' || cleanStatus === 'ordered') {
+  
+  break;
+  }
+  case 'pending': 
+  case 'processing': 
+  case 'ordered': {
     bg = '#FEF7E0' // light gold/yellow
     text = '#B06000'
     label = 'PENDING'
-  } else if (cleanStatus === 'cancelled' || cleanStatus === 'failed') {
+  
+  break;
+  }
+  case 'cancelled': 
+  case 'failed': {
     bg = '#FCE8E6' // light red
     text = '#C5221F'
     label = 'CANCELLED'
-  } else {
+  
+  break;
+  }
+  default: {
     label = cleanStatus.toUpperCase()
+  }
   }
 
   const badgeWidth = 65

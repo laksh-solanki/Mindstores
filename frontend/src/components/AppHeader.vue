@@ -34,13 +34,25 @@
           >
             {{ category.label }}
           </v-btn>
-          <v-chip v-if="categoriesLoading && categoryLinks.length === 0" class="sync-chip" color="black" size="small" variant="outlined">
+          <v-chip
+            v-if="categoriesLoading && categoryLinks.length === 0"
+            class="sync-chip"
+            color="black"
+            size="small"
+            variant="outlined"
+          >
             Syncing catalog
           </v-chip>
         </div>
 
         <div class="header-search d-none d-md-block flex-grow-1">
-          <v-menu v-model="isSearchOpen" :close-on-content-click="false" location="bottom end" max-width="380" content-class="flat-menu-content">
+          <v-menu
+            v-model="isSearchOpen"
+            :close-on-content-click="false"
+            content-class="flat-menu-content"
+            location="bottom end"
+            max-width="380"
+          >
             <template #activator="{ props }">
               <div v-bind="props">
                 <v-text-field
@@ -88,8 +100,8 @@
           >
             <v-badge
               v-if="cartStore.itemCount > 0"
-              color="black"
               class="flat-cart-badge"
+              color="black"
               :content="cartStore.itemCount"
               floating
               location="top right"
@@ -99,7 +111,7 @@
             <v-icon v-else>mdi-cart-outline</v-icon>
           </v-btn>
 
-          <v-menu v-if="appStore.isAuthenticated" location="bottom end" offset="3" content-class="flat-menu-content">
+          <v-menu v-if="appStore.isAuthenticated" content-class="flat-menu-content" location="bottom end" offset="3">
             <template #activator="{ props }">
               <v-btn
                 v-bind="props"
@@ -115,11 +127,29 @@
               </v-btn>
             </template>
 
-            <v-card class="profile-menu-card" border="0" rounded="0" width="340" elevation="0">
+            <v-card
+              border="0"
+              class="profile-menu-card"
+              elevation="0"
+              rounded="0"
+              width="340"
+            >
               <v-sheet class="profile-menu-cover" color="grey-lighten-4" height="95" />
               <div class="profile-menu-identity">
-                <v-avatar v-if="profileImage" class="profile-menu-avatar" :image="profileImage" rounded="lg" size="88" />
-                <v-avatar v-else class="profile-menu-avatar" color="black" rounded="lg" size="88">
+                <v-avatar
+                  v-if="profileImage"
+                  class="profile-menu-avatar"
+                  :image="profileImage"
+                  rounded="lg"
+                  size="88"
+                />
+                <v-avatar
+                  v-else
+                  class="profile-menu-avatar"
+                  color="black"
+                  rounded="lg"
+                  size="88"
+                >
                   <span class="text-white text-h5 font-weight-bold">{{ userInitials }}</span>
                 </v-avatar>
                 <div class="text-h6 font-weight-black text-center mt-3" style="color: #0f172a;">
@@ -128,8 +158,20 @@
               </div>
               <v-divider class="border-opacity-100" style="color: #0f172a;" />
               <v-list class="pa-1" density="comfortable">
-                <v-list-item prepend-icon="mdi-account-outline" rounded="0" class="menu-list-item" title="Profile" to="/profile" />
-                <v-list-item prepend-icon="mdi-cart-outline" rounded="0" class="menu-list-item" title="Cart" to="/cart" />
+                <v-list-item
+                  class="menu-list-item"
+                  prepend-icon="mdi-account-outline"
+                  rounded="0"
+                  title="Profile"
+                  to="/profile"
+                />
+                <v-list-item
+                  class="menu-list-item"
+                  prepend-icon="mdi-cart-outline"
+                  rounded="0"
+                  title="Cart"
+                  to="/cart"
+                />
                 <v-list-item
                   v-if="canAccessAdmin"
                   class="mb-1 menu-list-item"
@@ -142,12 +184,12 @@
                 <v-divider class="border-opacity-100" style="color: #0f172a;" />
                 <v-list-item class="mt-1">
                   <v-btn
+                    class="logout-btn"
                     color="black"
                     prepend-icon="mdi-logout"
                     rounded="0"
                     text="Logout"
                     variant="outlined"
-                    class="logout-btn"
                     width="100%"
                     @click="logout"
                   >
@@ -188,10 +230,10 @@
     <v-navigation-drawer
       v-model="isMobileMenuOpen"
       class="mobile-drawer"
+      elevation="0"
       location="right"
       temporary
       width="320"
-      elevation="0"
     >
       <v-sheet class="pa-4 border-b-sm" style="border-bottom-color: #0f172a !important;">
         <v-text-field
@@ -207,8 +249,14 @@
         />
       </v-sheet>
 
-      <v-list density="comfortable" nav class="mobile-drawer-list">
-        <v-list-item prepend-icon="mdi-home-outline" rounded="0" title="Home" to="/" @click="closeMobileMenu" />
+      <v-list class="mobile-drawer-list" density="comfortable" nav>
+        <v-list-item
+          prepend-icon="mdi-home-outline"
+          rounded="0"
+          title="Home"
+          to="/"
+          @click="closeMobileMenu"
+        />
         <v-list-subheader class="mobile-subheader">Categories</v-list-subheader>
         <v-list-item
           v-for="category in categoryLinks"
@@ -221,9 +269,21 @@
         />
         <v-list-item v-if="categoryLinks.length === 0" disabled title="Loading categories..." />
         <v-divider class="my-2 border-opacity-100" style="color: #0f172a;" />
-        <v-list-item prepend-icon="mdi-cart-outline" rounded="0" title="Cart" to="/cart" @click="closeMobileMenu">
+        <v-list-item
+          prepend-icon="mdi-cart-outline"
+          rounded="0"
+          title="Cart"
+          to="/cart"
+          @click="closeMobileMenu"
+        >
           <template #append>
-            <v-badge v-if="cartStore.itemCount > 0" color="black" class="flat-cart-badge" :content="cartStore.itemCount" inline />
+            <v-badge
+              v-if="cartStore.itemCount > 0"
+              class="flat-cart-badge"
+              color="black"
+              :content="cartStore.itemCount"
+              inline
+            />
           </template>
         </v-list-item>
         <v-list-item
@@ -242,7 +302,13 @@
           to="/admin"
           @click="closeMobileMenu"
         />
-        <v-list-item v-if="appStore.isAuthenticated" prepend-icon="mdi-logout" rounded="0" title="Logout" @click="logout" />
+        <v-list-item
+          v-if="appStore.isAuthenticated"
+          prepend-icon="mdi-logout"
+          rounded="0"
+          title="Logout"
+          @click="logout"
+        />
         <v-list-item
           v-else
           prepend-icon="mdi-login"

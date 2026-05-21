@@ -84,7 +84,7 @@
             <v-list-item-title>Theme</v-list-item-title>
             <template #append>
               <span class="text-caption font-weight-bold ml-2">{{ isDarkTheme ? 'Dark' : 'Light' }}</span>
-              <v-icon end size="16" class="ml-1">{{ isDarkTheme ? 'mdi-weather-night' : 'mdi-weather-sunny' }}</v-icon>
+              <v-icon class="ml-1" end size="16">{{ isDarkTheme ? 'mdi-weather-night' : 'mdi-weather-sunny' }}</v-icon>
             </template>
           </v-list-item>
           <v-list-item v-if="isAuthenticated" rounded="lg" @click="logout">
@@ -623,9 +623,9 @@
                   v-if="resolveTableItem(item)"
                   :color="resolveTableItem(item)?.user_admin_blocked ? 'error' : 'grey-darken-1'"
                   icon
+                  :loading="blockingUserId === resolveTableItem(item)?.user_id"
                   size="small"
                   variant="text"
-                  :loading="blockingUserId === resolveTableItem(item)?.user_id"
                   @click="toggleUserAdminBlock(resolveTableItem(item))"
                 >
                   <v-icon>{{ resolveTableItem(item)?.user_admin_blocked ? 'mdi-lock-outline' : 'mdi-lock-open-outline' }}</v-icon>
@@ -1528,11 +1528,11 @@
 
   const theme = useTheme();
   const isDarkTheme = computed(() => theme.global.name.value === "dark");
-  const toggleTheme = () => {
+  function toggleTheme () {
     const nextTheme = theme.global.name.value === "dark" ? "light" : "dark";
     theme.global.name.value = nextTheme;
     localStorage.setItem("mindstore_theme", nextTheme);
-  };
+  }
 
   const drawer = ref(!smAndDown.value);
   const desktopDrawerRail = ref(true);

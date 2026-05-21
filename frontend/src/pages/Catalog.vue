@@ -3,7 +3,7 @@
     <div v-if="catalogEntry" class="flat-breadcrumb-wrap mb-4">
       <v-breadcrumbs class="text-subtitle-2 px-0 py-0" :items="breadcrumbItems">
         <template #prepend>
-          <v-icon icon="mdi-home" size="14" class="mr-1" />
+          <v-icon class="mr-1" icon="mdi-home" size="14" />
         </template>
         <template #divider>
           <span class="breadcrumb-divider">/</span>
@@ -12,7 +12,7 @@
     </div>
 
     <div v-else class="flat-empty-products text-center py-10">
-      <v-icon color="warning" size="48" class="mb-3">mdi-folder-alert-outline</v-icon>
+      <v-icon class="mb-3" color="warning" size="48">mdi-folder-alert-outline</v-icon>
       <h2 class="empty-title">Category not found</h2>
       <p class="empty-text">The requested category path is invalid.</p>
       <div class="mt-4">
@@ -21,14 +21,14 @@
     </div>
 
     <v-row v-if="catalogEntry" class="ga-0">
-      <v-col cols="12" lg="3" md="4" class="pr-md-4 pb-4">
+      <v-col class="pr-md-4 pb-4" cols="12" lg="3" md="4">
         <!-- Mobile Expansion Filter -->
         <v-expansion-panels
           v-if="isMobileFilters"
           v-model="mobileFilterPanel"
+          class="flat-mobile-panels"
           elevation="0"
           rounded="0"
-          class="flat-mobile-panels"
           variant="accordion"
         >
           <v-expansion-panel class="flat-panel" value="filters">
@@ -39,31 +39,32 @@
               <div class="d-flex flex-column ga-4 pt-2">
                 <v-text-field
                   v-model="filters.search"
+                  bg-color="#ffffff"
+                  class="flat-field"
                   clearable
                   density="comfortable"
                   hide-details
                   label="Search products"
                   prepend-inner-icon="mdi-magnify"
                   variant="outlined"
-                  class="flat-field"
-                  bg-color="#ffffff"
                 />
 
                 <v-select
                   v-model="filters.company"
+                  bg-color="#ffffff"
+                  class="flat-field"
                   density="comfortable"
                   hide-details
                   :items="companyOptions"
                   label="Company"
                   variant="outlined"
-                  class="flat-field"
-                  bg-color="#ffffff"
                 />
 
                 <div class="flat-slider-box pa-3">
                   <p class="slider-label mb-2">Price Range</p>
                   <v-range-slider
                     v-model="priceRange"
+                    class="flat-range-slider"
                     color="teal-darken-1"
                     density="comfortable"
                     hide-details
@@ -71,7 +72,6 @@
                     :min="priceBounds.min"
                     step="1"
                     thumb-label="always"
-                    class="flat-range-slider"
                   />
                   <div class="d-flex justify-space-between text-caption mt-1">
                     <span>{{ formatAmount(priceRange[0] || 0) }}</span>
@@ -81,15 +81,17 @@
 
                 <v-checkbox
                   v-model="filters.inStock"
+                  class="flat-checkbox"
                   color="teal-darken-1"
                   density="comfortable"
                   hide-details
                   label="In stock only"
-                  class="flat-checkbox"
                 />
 
                 <v-select
                   v-model="filters.sort"
+                  bg-color="#ffffff"
+                  class="flat-field"
                   density="comfortable"
                   hide-details
                   item-title="label"
@@ -97,11 +99,9 @@
                   :items="sortOptions"
                   label="Sort By"
                   variant="outlined"
-                  class="flat-field"
-                  bg-color="#ffffff"
                 />
                 
-                <v-btn class="flat-reset-btn" variant="outlined" rounded="0" @click="resetFilters">Reset Filters</v-btn>
+                <v-btn class="flat-reset-btn" rounded="0" variant="outlined" @click="resetFilters">Reset Filters</v-btn>
               </div>
             </v-expansion-panel-text>
           </v-expansion-panel>
@@ -117,37 +117,38 @@
             <span class="sidebar-title">Filters</span>
             <button class="flat-reset-link" @click="resetFilters">
               Reset
-              <span class="underline-hover"></span>
+              <span class="underline-hover" />
             </button>
           </div>
           <div class="sidebar-body d-flex flex-column ga-4">
             <v-text-field
               v-model="filters.search"
+              bg-color="#ffffff"
+              class="flat-field"
               clearable
               density="comfortable"
               hide-details
               label="Search products"
               prepend-inner-icon="mdi-magnify"
               variant="outlined"
-              class="flat-field"
-              bg-color="#ffffff"
             />
 
             <v-select
               v-model="filters.company"
+              bg-color="#ffffff"
+              class="flat-field"
               density="comfortable"
               hide-details
               :items="companyOptions"
               label="Company"
               variant="outlined"
-              class="flat-field"
-              bg-color="#ffffff"
             />
 
             <div class="flat-slider-box pa-3">
               <p class="slider-label mb-2">Price Range</p>
               <v-range-slider
                 v-model="priceRange"
+                class="flat-range-slider"
                 color="teal-darken-1"
                 density="comfortable"
                 hide-details
@@ -155,7 +156,6 @@
                 :min="priceBounds.min"
                 step="1"
                 thumb-label="always"
-                class="flat-range-slider"
               />
               <div class="d-flex justify-space-between text-caption mt-1">
                 <span>{{ formatAmount(priceRange[0] || 0) }}</span>
@@ -165,15 +165,17 @@
 
             <v-checkbox
               v-model="filters.inStock"
+              class="flat-checkbox"
               color="teal-darken-1"
               density="comfortable"
               hide-details
               label="In stock only"
-              class="flat-checkbox"
             />
 
             <v-select
               v-model="filters.sort"
+              bg-color="#ffffff"
+              class="flat-field"
               density="comfortable"
               hide-details
               item-title="label"
@@ -181,8 +183,6 @@
               :items="sortOptions"
               label="Sort By"
               variant="outlined"
-              class="flat-field"
-              bg-color="#ffffff"
             />
           </div>
         </div>
@@ -196,14 +196,14 @@
           </span>
         </div>
 
-        <v-row v-slot:default v-if="loading" no-gutters>
+        <v-row v-if="loading" v-slot no-gutters>
           <v-col
             v-for="n in 8"
             :key="n"
+            class="pa-0"
             cols="12"
             lg="4"
             sm="6"
-            class="pa-0"
           >
             <v-skeleton-loader class="border rounded-0" style="margin-right: -1px; margin-bottom: -1px;" type="image, article" />
           </v-col>
@@ -229,8 +229,8 @@
                   v-if="productImageUrl(product)"
                   :alt="product.name"
                   aspect-ratio="1"
-                  contain
                   class="product-grid-image"
+                  contain
                   :src="productImageUrl(product)"
                 />
                 <div v-else class="no-image-grid-placeholder">
@@ -242,7 +242,7 @@
                 <div class="product-card-meta">
                   <span class="product-grid-category">{{ getCompanyLabel(product) }}</span>
                   <span class="grid-badge-stock" :class="{ 'grid-badge-stock--out': isProductSoldOut(product) }">
-                    <span class="status-dot"></span>
+                    <span class="status-dot" />
                     {{ isProductSoldOut(product) ? 'Sold out' : `${Number(product.stock || 0)} left` }}
                   </span>
                 </div>
@@ -267,7 +267,7 @@
         </v-row>
 
         <div v-else class="flat-empty-products py-10">
-          <v-icon color="grey-lighten-1" size="48" class="mb-3">mdi-package-variant-remove</v-icon>
+          <v-icon class="mb-3" color="grey-lighten-1" size="48">mdi-package-variant-remove</v-icon>
           <h3 class="empty-title">No products match your filters</h3>
           <p class="empty-text">Change company, price, or stock filters to load more results.</p>
         </div>
@@ -275,9 +275,9 @@
         <div v-if="!loading && totalPages > 1" class="d-flex justify-center mt-6">
           <v-pagination
             v-model="currentPage"
+            class="custom-pagination"
             density="comfortable"
             :length="totalPages"
-            class="custom-pagination"
             :total-visible="6"
           />
         </div>

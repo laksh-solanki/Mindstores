@@ -118,11 +118,11 @@
                 mandatory
               >
                 <v-tab value="upi">
-                  <v-icon start size="18">mdi-cellphone-nfc</v-icon>
+                  <v-icon size="18" start>mdi-cellphone-nfc</v-icon>
                   UPI ID
                 </v-tab>
                 <v-tab value="card">
-                  <v-icon start size="18">mdi-credit-card-outline</v-icon>
+                  <v-icon size="18" start>mdi-credit-card-outline</v-icon>
                   Credit / Debit Card
                 </v-tab>
               </v-tabs>
@@ -157,7 +157,7 @@
                   <div class="card-inner-frame">
                     <div class="card-header-row">
                       <span class="card-brand-label">MINDSTORES CARD</span>
-                      <div class="card-chip-icon"></div>
+                      <div class="card-chip-icon" />
                     </div>
                     <div class="card-number-display mt-6">{{ maskedCardNumber }}</div>
                     <div class="card-footer-row mt-4">
@@ -226,9 +226,9 @@
         <div class="gallery-frame summary-frame">
           <div class="frame-header">
             <div class="frame-dots">
-              <span class="dot-red"></span>
-              <span class="dot-yellow"></span>
-              <span class="dot-green"></span>
+              <span class="dot-red" />
+              <span class="dot-yellow" />
+              <span class="dot-green" />
             </div>
             <div class="frame-title-display">order_receipt.json</div>
           </div>
@@ -264,7 +264,7 @@
               </div>
             </div>
 
-            <div class="price-summary-divider my-4"></div>
+            <div class="price-summary-divider my-4" />
 
             <!-- Summary Prices List -->
             <div class="summary-prices-list">
@@ -280,7 +280,7 @@
                 <span>Shipping</span>
                 <span class="free-badge">Free</span>
               </div>
-              <div class="price-divider-thick my-3"></div>
+              <div class="price-divider-thick my-3" />
               <div class="price-row total-row">
                 <span>Total</span>
                 <span class="total-amount">{{ formatAmount(payableAmount) }}</span>
@@ -318,22 +318,28 @@
 
     <!-- Empty State -->
     <v-row v-else>
-      <v-col cols="12" class="d-flex justify-center">
+      <v-col class="d-flex justify-center" cols="12">
         <div class="gallery-frame empty-payment-frame">
           <div class="frame-header">
             <div class="frame-dots">
-              <span class="dot-red"></span>
-              <span class="dot-yellow"></span>
-              <span class="dot-green"></span>
+              <span class="dot-red" />
+              <span class="dot-yellow" />
+              <span class="dot-green" />
             </div>
             <div class="frame-title-display">payment_checkout.json</div>
           </div>
           <div class="empty-payment-body text-center pa-8">
-            <v-icon size="48" color="teal-darken-1">mdi-cart-off-outline</v-icon>
+            <v-icon color="teal-darken-1" size="48">mdi-cart-off-outline</v-icon>
             <h2 class="empty-title mt-4">No Selected Items</h2>
             <p class="empty-subtitle mt-2">Go back to your cart and select products before payment.</p>
             <div class="mt-6">
-              <v-btn class="action-btn-flat" rounded="0" size="large" to="/cart" variant="flat">
+              <v-btn
+                class="action-btn-flat"
+                rounded="0"
+                size="large"
+                to="/cart"
+                variant="flat"
+              >
                 Back to Cart
               </v-btn>
             </div>

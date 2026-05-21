@@ -3,9 +3,9 @@
     <!-- Header Navigation Strip -->
     <div class="auth-header-bar">
       <button class="back-btn" @click="goBack">
-        <v-icon size="14" class="mr-1">mdi-arrow-left</v-icon>
+        <v-icon class="mr-1" size="14">mdi-arrow-left</v-icon>
         <span>Back to Store</span>
-        <span class="underline-hover"></span>
+        <span class="underline-hover" />
       </button>
     </div>
 
@@ -15,9 +15,9 @@
         <!-- macOS-style frame header -->
         <div class="frame-header">
           <div class="frame-dots">
-            <span class="dot-red"></span>
-            <span class="dot-yellow"></span>
-            <span class="dot-green"></span>
+            <span class="dot-red" />
+            <span class="dot-yellow" />
+            <span class="dot-green" />
           </div>
           <div class="frame-title-display">secure_signup.json</div>
         </div>
@@ -40,7 +40,7 @@
             type="error"
           />
 
-          <v-form @submit.prevent="submitSignup" class="auth-form-fields">
+          <v-form class="auth-form-fields" @submit.prevent="submitSignup">
             <v-text-field
               v-model="name"
               autocomplete="name"
@@ -113,9 +113,9 @@
           </v-form>
 
           <div class="auth-divider-row">
-            <span class="auth-divider-line"></span>
+            <span class="auth-divider-line" />
             <span class="auth-divider-text">or</span>
-            <span class="auth-divider-line"></span>
+            <span class="auth-divider-line" />
           </div>
 
           <v-btn

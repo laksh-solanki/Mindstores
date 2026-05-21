@@ -15,14 +15,14 @@
       <!-- Minimalist navigation / category / status strip -->
       <div class="detail-header-bar">
         <button class="back-btn" @click="goBack">
-          <v-icon size="14" class="mr-1">mdi-arrow-left</v-icon>
+          <v-icon class="mr-1" size="14">mdi-arrow-left</v-icon>
           <span>Back to Catalog</span>
-          <span class="underline-hover"></span>
+          <span class="underline-hover" />
         </button>
         <div class="header-badges">
           <span class="badge-category">{{ categoryLabel }}</span>
           <span class="badge-stock" :class="{ 'badge-stock--out': !stockReady }">
-            <span class="status-dot"></span>
+            <span class="status-dot" />
             {{ stockText }}
           </span>
         </div>
@@ -35,9 +35,9 @@
           <div class="gallery-frame">
             <div class="frame-header">
               <div class="frame-dots">
-                <span class="dot-red"></span>
-                <span class="dot-yellow"></span>
-                <span class="dot-green"></span>
+                <span class="dot-red" />
+                <span class="dot-yellow" />
+                <span class="dot-green" />
               </div>
               <div class="frame-title-display">product_stage.json</div>
             </div>
@@ -45,10 +45,10 @@
             <div class="gallery-carousel-wrap">
               <v-carousel
                 v-if="productImageUrls.length > 0"
+                class="custom-carousel"
                 height="auto"
                 :hide-delimiters="productImageUrls.length <= 1"
                 :show-arrows="productImageUrls.length > 1 ? 'hover' : false"
-                class="custom-carousel"
               >
                 <v-carousel-item
                   v-for="(imageUrl, index) in productImageUrls"
@@ -57,11 +57,11 @@
                   <v-img
                     :alt="`${product.name} image ${index + 1}`"
                     aspect-ratio="1.2"
+                    class="gallery-image"
                     cover
                     decoding="async"
                     :fetchpriority="index === 0 ? 'high' : 'auto'"
                     :loading="index === 0 ? 'eager' : 'lazy'"
-                    class="gallery-image"
                     sizes="(max-width: 768px) 100vw, 42vw"
                     :src="imageUrl"
                     @click="openImageDialog(index)"
@@ -126,7 +126,7 @@
               </v-icon>
             </div>
 
-            <hr class="section-divider" />
+            <hr class="section-divider">
 
             <div class="trust-grid">
               <div
@@ -147,19 +147,19 @@
                 </div>
                 <div class="qty-picker">
                   <button
+                    aria-label="Decrease quantity"
                     class="qty-picker-btn"
                     :disabled="quantity <= 1"
                     @click="decreaseQuantity"
-                    aria-label="Decrease quantity"
                   >
                     <v-icon size="12">mdi-minus</v-icon>
                   </button>
                   <span class="qty-picker-value">{{ quantity }}</span>
                   <button
+                    aria-label="Increase quantity"
                     class="qty-picker-btn"
                     :disabled="!stockReady || quantity >= product.stock"
                     @click="increaseQuantity"
-                    aria-label="Increase quantity"
                   >
                     <v-icon size="12">mdi-plus</v-icon>
                   </button>
@@ -169,25 +169,25 @@
               <div class="action-buttons-group">
                 <v-btn
                   class="action-btn-cart"
+                  :disabled="!stockReady"
                   rounded="0"
                   size="large"
                   variant="flat"
-                  :disabled="!stockReady"
                   @click="addToCart"
                 >
-                  <v-icon start size="16">mdi-cart</v-icon>
+                  <v-icon size="16" start>mdi-cart</v-icon>
                   {{ stockReady ? 'Add to Cart' : 'Sold Out' }}
                 </v-btn>
 
                 <v-btn
                   class="action-btn-buy"
+                  :disabled="!stockReady"
                   rounded="0"
                   size="large"
                   variant="outlined"
-                  :disabled="!stockReady"
                   @click="buyNow"
                 >
-                  <v-icon start size="16">mdi-lightning-bolt</v-icon>
+                  <v-icon size="16" start>mdi-lightning-bolt</v-icon>
                   Buy Now
                 </v-btn>
               </div>
@@ -230,7 +230,7 @@
             >
               <h3 class="promise-item-title">{{ detail.title }}</h3>
               <p class="promise-item-copy">{{ detail.copy }}</p>
-              <hr v-if="index < atelierDetails.length - 1" class="promise-item-divider" />
+              <hr v-if="index < atelierDetails.length - 1" class="promise-item-divider">
             </div>
           </div>
         </div>
@@ -249,7 +249,7 @@
           </span>
         </div>
 
-        <hr class="section-divider" />
+        <hr class="section-divider">
 
         <div class="reviews-split-grid">
           <!-- LEFT SIDE: Rating Summary & Form -->
@@ -269,14 +269,14 @@
               <v-btn
                 class="login-redirect-btn"
                 rounded="0"
-                variant="flat"
                 to="/login"
+                variant="flat"
               >
                 Log In
               </v-btn>
             </div>
 
-            <v-form v-else @submit.prevent="submitReview" class="review-submission-form">
+            <v-form v-else class="review-submission-form" @submit.prevent="submitReview">
               <div class="form-rating-row">
                 <span class="form-rating-label">Your Rating:</span>
                 <v-rating
@@ -293,6 +293,7 @@
               <v-textarea
                 v-model="reviewForm.comment"
                 auto-grow
+                bg-color="#ffffff"
                 class="review-textarea-custom"
                 counter
                 density="comfortable"
@@ -300,19 +301,18 @@
                 :maxlength="reviewCommentMaxLength"
                 rows="3"
                 variant="outlined"
-                bg-color="#ffffff"
               />
 
               <v-btn
-                class="save-review-btn"
                 block
-                variant="flat"
-                rounded="0"
-                type="submit"
+                class="save-review-btn"
                 :disabled="!canSubmitReview"
                 :loading="reviewSaving"
+                rounded="0"
+                type="submit"
+                variant="flat"
               >
-                <v-icon start size="14">mdi-message-draw</v-icon>
+                <v-icon size="14" start>mdi-message-draw</v-icon>
                 Submit Review
               </v-btn>
             </v-form>
@@ -320,10 +320,10 @@
 
           <!-- RIGHT SIDE: Reviews Feed -->
           <div class="reviews-feed-panel">
-            <v-progress-linear v-if="reviewsLoading" color="teal-darken-2" indeterminate class="mb-4" />
+            <v-progress-linear v-if="reviewsLoading" class="mb-4" color="teal-darken-2" indeterminate />
 
             <div v-else-if="reviews.length === 0" class="empty-reviews-state">
-              <v-icon color="grey-lighten-1" size="32" class="mb-2">mdi-message-outline</v-icon>
+              <v-icon class="mb-2" color="grey-lighten-1" size="32">mdi-message-outline</v-icon>
               <p>No reviews written for this product yet.</p>
             </div>
 
@@ -351,7 +351,7 @@
                   <span class="review-date-badge">{{ formatReviewDate(review.created_at) }}</span>
                 </div>
                 <p class="review-card-comment">{{ review.comment }}</p>
-                <hr v-if="index < reviews.length - 1" class="review-card-divider" />
+                <hr v-if="index < reviews.length - 1" class="review-card-divider">
               </div>
             </div>
           </div>
@@ -363,7 +363,13 @@
       <v-icon color="grey-lighten-1" size="64">mdi-package-variant-remove</v-icon>
       <h2 class="not-found-title">Product not found</h2>
       <p class="not-found-text">This product may have been moved or is temporarily unavailable.</p>
-      <v-btn class="not-found-btn" rounded="0" color="teal-darken-2" variant="flat" @click="router.push('/')">
+      <v-btn
+        class="not-found-btn"
+        color="teal-darken-2"
+        rounded="0"
+        variant="flat"
+        @click="router.push('/')"
+      >
         Back to Home
       </v-btn>
     </div>

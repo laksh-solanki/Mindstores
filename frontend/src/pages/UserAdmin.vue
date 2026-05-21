@@ -21,14 +21,14 @@
             class="btn-flat-outline btn-with-icon"
             @click="loadConsole"
           >
-            <v-icon icon="mdi-refresh" size="18" class="mr-1" />
+            <v-icon class="mr-1" icon="mdi-refresh" size="18" />
             Refresh
           </button>
           <router-link
-            to="/profile"
             class="btn-flat-solid btn-with-icon text-decoration-none"
+            to="/profile"
           >
-            <v-icon icon="mdi-account-outline" size="18" class="mr-1" />
+            <v-icon class="mr-1" icon="mdi-account-outline" size="18" />
             Profile
           </router-link>
         </div>
@@ -37,7 +37,7 @@
       <!-- Blocked status warning screen -->
       <div v-if="isBlocked" class="flat-card-container pa-6 text-center my-6">
         <div class="d-flex flex-column align-center justify-center py-10">
-          <v-avatar color="red-lighten-5" size="80" class="mb-4">
+          <v-avatar class="mb-4" color="red-lighten-5" size="80">
             <v-icon color="error" icon="mdi-shield-lock-outline" size="48" />
           </v-avatar>
           <h2 class="text-h4 font-weight-bold text-red-darken-2 mb-3">your user admin page block</h2>
@@ -46,11 +46,11 @@
           </p>
           <div class="d-flex justify-center ga-3">
             <button class="btn-flat-outline btn-with-icon" @click="loadConsole">
-              <v-icon icon="mdi-refresh" size="18" class="mr-1" />
+              <v-icon class="mr-1" icon="mdi-refresh" size="18" />
               Try Again
             </button>
-            <router-link to="/" class="btn-flat-solid btn-with-icon text-decoration-none">
-              <v-icon icon="mdi-store-outline" size="18" class="mr-1" />
+            <router-link class="btn-flat-solid btn-with-icon text-decoration-none" to="/">
+              <v-icon class="mr-1" icon="mdi-store-outline" size="18" />
               Go to Storefront
             </router-link>
           </div>
@@ -68,7 +68,7 @@
             <v-icon icon="mdi-alert-circle-outline" />
             <span>Login before opening your user admin controls.</span>
           </div>
-          <router-link to="/login" class="btn-flat-solid text-decoration-none py-1 px-4 text-center">Login</router-link>
+          <router-link class="btn-flat-solid text-decoration-none py-1 px-4 text-center" to="/login">Login</router-link>
         </div>
       </v-alert>
 
@@ -83,7 +83,7 @@
             <v-icon icon="mdi-lock-outline" />
             <span>Create or enter your User Admin PIN from Profile before using User Admin.</span>
           </div>
-          <router-link to="/profile" class="btn-flat-solid text-decoration-none py-1 px-4 text-center">Open Profile</router-link>
+          <router-link class="btn-flat-solid text-decoration-none py-1 px-4 text-center" to="/profile">Open Profile</router-link>
         </div>
       </v-alert>
 
@@ -94,9 +94,9 @@
             <div class="flat-card-container pa-0 mb-4">
               <div class="panel-window-header">
                 <div class="window-dots">
-                  <span class="dot dot-red"></span>
-                  <span class="dot dot-yellow"></span>
-                  <span class="dot dot-green"></span>
+                  <span class="dot dot-red" />
+                  <span class="dot dot-yellow" />
+                  <span class="dot dot-green" />
                 </div>
                 <div class="window-title-display">NAVIGATION</div>
               </div>
@@ -110,7 +110,7 @@
                   @click="activePanel = item.id"
                 >
                   <template #prepend>
-                    <v-icon :icon="item.icon" size="18" class="mr-2" />
+                    <v-icon class="mr-2" :icon="item.icon" size="18" />
                   </template>
                   <v-list-item-title class="font-weight-bold">{{ item.label }}</v-list-item-title>
                 </v-list-item>
@@ -122,7 +122,7 @@
           <v-col cols="12" lg="10" md="9">
             <!-- Dashboard View -->
             <template v-if="activePanel === 'dashboard'">
-              <v-row dense class="mb-4">
+              <v-row class="mb-4" dense>
                 <v-col
                   v-for="metric in metrics"
                   :key="metric.label"
@@ -136,7 +136,7 @@
                         <div class="metric-label">{{ metric.label }}</div>
                         <div class="metric-value font-mono">{{ metric.value }}</div>
                       </div>
-                      <v-avatar :color="metric.color" size="44" class="metric-avatar-flat">
+                      <v-avatar class="metric-avatar-flat" :color="metric.color" size="44">
                         <v-icon :color="metric.color">{{ metric.icon }}</v-icon>
                       </v-avatar>
                     </div>
@@ -146,13 +146,13 @@
 
               <v-row class="mt-2" dense>
                 <!-- Product Analysis -->
-                <v-col cols="12" lg="4" class="mb-4">
+                <v-col class="mb-4" cols="12" lg="4">
                   <div class="flat-card-container pa-0 h-100">
                     <div class="panel-window-header-mini">
                       <div class="window-dots">
-                        <span class="dot dot-red"></span>
-                        <span class="dot dot-yellow"></span>
-                        <span class="dot dot-green"></span>
+                        <span class="dot dot-red" />
+                        <span class="dot dot-yellow" />
+                        <span class="dot dot-green" />
                       </div>
                       <div class="window-title-mini">Product Analysis</div>
                     </div>
@@ -167,10 +167,10 @@
                           <span class="font-mono text-medium-emphasis font-weight-bold">{{ segment.count }}</span>
                         </div>
                         <div class="custom-progress-container">
-                          <div class="custom-progress-bar" :style="{ width: segment.percent + '%' }"></div>
+                          <div class="custom-progress-bar" :style="{ width: segment.percent + '%' }" />
                         </div>
                       </div>
-                      <v-alert v-if="categoryStats.length === 0" type="info" variant="tonal" class="custom-flat-alert info-alert">
+                      <v-alert v-if="categoryStats.length === 0" class="custom-flat-alert info-alert" type="info" variant="tonal">
                         No product categories yet.
                       </v-alert>
                     </div>
@@ -178,35 +178,35 @@
                 </v-col>
 
                 <!-- Inventory Stats -->
-                <v-col cols="12" lg="4" class="mb-4">
+                <v-col class="mb-4" cols="12" lg="4">
                   <div class="flat-card-container pa-0 h-100">
                     <div class="panel-window-header-mini">
                       <div class="window-dots">
-                        <span class="dot dot-red"></span>
-                        <span class="dot dot-yellow"></span>
-                        <span class="dot dot-green"></span>
+                        <span class="dot dot-red" />
+                        <span class="dot dot-yellow" />
+                        <span class="dot dot-green" />
                       </div>
                       <div class="window-title-mini">Inventory</div>
                     </div>
                     <div class="pa-4">
-                      <v-list density="compact" class="bg-transparent custom-stat-list py-0">
+                      <v-list class="bg-transparent custom-stat-list py-0" density="compact">
                         <v-list-item class="px-0 py-2 border-bottom-dashed">
                           <template #prepend>
-                            <v-icon color="warning" icon="mdi-alert-outline" class="mr-2" />
+                            <v-icon class="mr-2" color="warning" icon="mdi-alert-outline" />
                           </template>
                           <v-list-item-title class="font-weight-bold text-slate-800">Low stock</v-list-item-title>
                           <v-list-item-subtitle class="font-weight-medium text-slate-600">{{ lowStockCount }} products below 5 units</v-list-item-subtitle>
                         </v-list-item>
                         <v-list-item class="px-0 py-2 border-bottom-dashed">
                           <template #prepend>
-                            <v-icon color="teal-darken-1" icon="mdi-image-multiple-outline" class="mr-2" />
+                            <v-icon class="mr-2" color="teal-darken-1" icon="mdi-image-multiple-outline" />
                           </template>
                           <v-list-item-title class="font-weight-bold text-slate-800">Images</v-list-item-title>
                           <v-list-item-subtitle class="font-weight-medium text-slate-600">{{ productsWithImagesCount }} products with images</v-list-item-subtitle>
                         </v-list-item>
                         <v-list-item class="px-0 py-2">
                           <template #prepend>
-                            <v-icon color="success" icon="mdi-cash-multiple" class="mr-2" />
+                            <v-icon class="mr-2" color="success" icon="mdi-cash-multiple" />
                           </template>
                           <v-list-item-title class="font-weight-bold text-slate-800">Shelf value</v-list-item-title>
                           <v-list-item-subtitle class="font-weight-bold font-mono text-teal-darken-1">{{ formatMoney(totalInventoryValue) }}</v-list-item-subtitle>
@@ -217,18 +217,18 @@
                 </v-col>
 
                 <!-- Top Value Products -->
-                <v-col cols="12" lg="4" class="mb-4">
+                <v-col class="mb-4" cols="12" lg="4">
                   <div class="flat-card-container pa-0 h-100">
                     <div class="panel-window-header-mini">
                       <div class="window-dots">
-                        <span class="dot dot-red"></span>
-                        <span class="dot dot-yellow"></span>
-                        <span class="dot dot-green"></span>
+                        <span class="dot dot-red" />
+                        <span class="dot dot-yellow" />
+                        <span class="dot dot-green" />
                       </div>
                       <div class="window-title-mini">Top Value Products</div>
                     </div>
                     <div class="pa-4">
-                      <v-list v-if="topValueProducts.length > 0" density="compact" class="bg-transparent py-0 custom-top-products-list">
+                      <v-list v-if="topValueProducts.length > 0" class="bg-transparent py-0 custom-top-products-list" density="compact">
                         <v-list-item
                           v-for="product in topValueProducts"
                           :key="product.product_id || product.name"
@@ -236,7 +236,7 @@
                         >
                           <template #prepend>
                             <div class="avatar-flat-mini mr-3">
-                              <img v-if="draftImageUrl(product)" :src="draftImageUrl(product)" class="img-cover" />
+                              <img v-if="draftImageUrl(product)" class="img-cover" :src="draftImageUrl(product)">
                               <v-icon v-else icon="mdi-image-off-outline" size="18" />
                             </div>
                           </template>
@@ -249,7 +249,7 @@
                           </template>
                         </v-list-item>
                       </v-list>
-                      <v-alert v-else type="info" variant="tonal" class="custom-flat-alert info-alert">
+                      <v-alert v-else class="custom-flat-alert info-alert" type="info" variant="tonal">
                         No product value data.
                       </v-alert>
                     </div>
@@ -262,9 +262,9 @@
             <div v-else-if="activePanel === 'products'" class="flat-card-container pa-0">
               <div class="panel-window-header">
                 <div class="window-dots">
-                  <span class="dot dot-red"></span>
-                  <span class="dot dot-yellow"></span>
-                  <span class="dot dot-green"></span>
+                  <span class="dot dot-red" />
+                  <span class="dot dot-yellow" />
+                  <span class="dot dot-green" />
                 </div>
                 <div class="window-title-display">Console / Products</div>
               </div>
@@ -285,15 +285,15 @@
                       variant="outlined"
                     />
                     
-                    <v-menu location="bottom end" content-class="flat-menu-content">
+                    <v-menu content-class="flat-menu-content" location="bottom end">
                       <template #activator="{ props }">
                         <button
                           v-bind="props"
                           class="btn-flat-outline btn-with-icon"
                         >
-                          <v-icon icon="mdi-download" size="18" class="mr-1" />
+                          <v-icon class="mr-1" icon="mdi-download" size="18" />
                           Export
-                          <v-icon icon="mdi-chevron-down" size="14" class="ml-1" />
+                          <v-icon class="ml-1" icon="mdi-chevron-down" size="14" />
                         </button>
                       </template>
                       <v-list density="comfortable">
@@ -314,14 +314,14 @@
                       class="btn-flat-solid btn-with-icon"
                       @click="openAddDialog"
                     >
-                      <v-icon icon="mdi-plus" size="18" class="mr-1" />
+                      <v-icon class="mr-1" icon="mdi-plus" size="18" />
                       Add Product
                     </button>
                   </div>
                 </div>
 
-                <v-progress-linear v-if="loading" color="teal-darken-1" indeterminate class="mb-4" />
-                <v-alert v-else-if="filteredProducts.length === 0" type="info" variant="tonal" class="custom-flat-alert info-alert">
+                <v-progress-linear v-if="loading" class="mb-4" color="teal-darken-1" indeterminate />
+                <v-alert v-else-if="filteredProducts.length === 0" class="custom-flat-alert info-alert" type="info" variant="tonal">
                   {{ products.length === 0 ? 'Add your first product.' : 'No matching products found.' }}
                 </v-alert>
                 <v-data-table
@@ -335,8 +335,8 @@
                   <template #item.name="{ item }">
                     <div class="d-flex align-center ga-3 py-2">
                       <div class="table-avatar-flat">
-                        <img v-if="draftImageUrl(resolveItem(item))" :src="draftImageUrl(resolveItem(item))" class="img-cover" />
-                        <v-icon v-else icon="mdi-image-off-outline" size="18" color="grey" />
+                        <img v-if="draftImageUrl(resolveItem(item))" class="img-cover" :src="draftImageUrl(resolveItem(item))">
+                        <v-icon v-else color="grey" icon="mdi-image-off-outline" size="18" />
                       </div>
                       <div>
                         <div class="font-weight-bold text-slate-800 text-body-2">{{ resolveItem(item).name }}</div>
@@ -402,9 +402,9 @@
             <div v-else-if="activePanel === 'reviews'" class="flat-card-container pa-0">
               <div class="panel-window-header">
                 <div class="window-dots">
-                  <span class="dot dot-red"></span>
-                  <span class="dot dot-yellow"></span>
-                  <span class="dot dot-green"></span>
+                  <span class="dot dot-red" />
+                  <span class="dot dot-yellow" />
+                  <span class="dot dot-green" />
                 </div>
                 <div class="window-title-display">Console / Reviews</div>
               </div>
@@ -418,13 +418,13 @@
                     class="btn-flat-outline btn-with-icon"
                     @click="loadConsole"
                   >
-                    <v-icon icon="mdi-refresh" size="18" class="mr-1" />
+                    <v-icon class="mr-1" icon="mdi-refresh" size="18" />
                     Refresh
                   </button>
                 </div>
 
-                <v-progress-linear v-if="reviewsLoading" color="teal-darken-1" indeterminate class="mb-4" />
-                <v-alert v-else-if="reviews.length === 0" type="info" variant="tonal" class="custom-flat-alert info-alert">
+                <v-progress-linear v-if="reviewsLoading" class="mb-4" color="teal-darken-1" indeterminate />
+                <v-alert v-else-if="reviews.length === 0" class="custom-flat-alert info-alert" type="info" variant="tonal">
                   No product reviews yet.
                 </v-alert>
                 <div v-else class="reviews-list-flat">
@@ -434,8 +434,8 @@
                     class="review-item-flat"
                   >
                     <div class="review-avatar-flat">
-                      <img v-if="review.product_image_url" :src="review.product_image_url" class="img-cover" />
-                      <v-icon v-else icon="mdi-image-off-outline" size="18" color="grey" />
+                      <img v-if="review.product_image_url" class="img-cover" :src="review.product_image_url">
+                      <v-icon v-else color="grey" icon="mdi-image-off-outline" size="18" />
                     </div>
                     <div class="review-details-flat">
                       <div class="d-flex align-center flex-wrap ga-2">
@@ -481,12 +481,12 @@
         <!-- Dialog Header -->
         <div class="panel-window-header">
           <div class="window-dots">
-            <span class="dot dot-red" @click="productDialog = false"></span>
-            <span class="dot dot-yellow"></span>
-            <span class="dot dot-green"></span>
+            <span class="dot dot-red" @click="productDialog = false" />
+            <span class="dot dot-yellow" />
+            <span class="dot dot-green" />
           </div>
           <div class="window-title-display">{{ editProductId ? 'Edit Product Draft' : 'Add New Product Draft' }}</div>
-          <button class="dialog-close-btn" @click="productDialog = false" aria-label="Close dialog">
+          <button aria-label="Close dialog" class="dialog-close-btn" @click="productDialog = false">
             <v-icon icon="mdi-close" size="18" />
           </button>
         </div>
@@ -500,9 +500,9 @@
                   <v-col cols="12">
                     <v-file-input
                       v-model="productImageFiles"
-                      class="flat-text-field"
                       accept="image/png,image/jpeg,image/webp,image/gif"
                       chips
+                      class="flat-text-field"
                       clearable
                       density="comfortable"
                       label="Product images"
@@ -516,8 +516,8 @@
                   </v-col>
                   <v-col cols="12">
                     <v-textarea
-                      class="flat-text-field"
                       auto-grow
+                      class="flat-text-field"
                       density="comfortable"
                       hide-details
                       label="Image URLs (one per line)"
@@ -530,7 +530,7 @@
                   </v-col>
                 </v-row>
               </v-col>
-              <v-col cols="12" md="4" class="d-flex align-stretch">
+              <v-col class="d-flex align-stretch" cols="12" md="4">
                 <div class="image-preview-frame pa-3 w-100 d-flex align-center justify-center">
                   <v-carousel
                     v-if="productImageGallery.length > 0"
@@ -545,10 +545,10 @@
                     >
                       <v-img
                         :alt="`Product preview ${index + 1}`"
+                        class="carousel-img-flat"
                         cover
                         height="180"
                         :src="imageUrl"
-                        class="carousel-img-flat"
                       />
                     </v-carousel-item>
                   </v-carousel>
@@ -561,7 +561,7 @@
                   </div>
                 </div>
               </v-col>
-              <v-col v-if="productImageGallery.length > 0" cols="12" class="mt-2">
+              <v-col v-if="productImageGallery.length > 0" class="mt-2" cols="12">
                 <div class="d-flex flex-wrap ga-2">
                   <span
                     v-for="(imageUrl, index) in productImageGallery"
@@ -570,17 +570,17 @@
                   >
                     {{ index === 0 ? 'Primary image' : `Image ${index + 1}` }}
                     <button
-                      type="button"
-                      class="chip-close-btn ml-1"
-                      @click="removeProductImage(index)"
                       aria-label="Remove image"
+                      class="chip-close-btn ml-1"
+                      type="button"
+                      @click="removeProductImage(index)"
                     >
                       ×
                     </button>
                   </span>
                 </div>
               </v-col>
-              <v-col cols="12" md="8" class="mt-4">
+              <v-col class="mt-4" cols="12" md="8">
                 <v-text-field
                   v-model="productForm.name"
                   class="flat-text-field"
@@ -590,7 +590,7 @@
                   variant="outlined"
                 />
               </v-col>
-              <v-col cols="12" md="4" class="mt-4">
+              <v-col class="mt-4" cols="12" md="4">
                 <v-text-field
                   v-model="productForm.company"
                   class="flat-text-field"
@@ -604,25 +604,25 @@
                   v-for="option in descriptionBulletOptions"
                   :key="option.symbol"
                   :aria-label="option.label"
-                  type="button"
                   class="btn-flat-outline bullet-btn-flat"
+                  type="button"
                   @click="addDescriptionBullet(option.symbol)"
                 >
                   {{ option.symbol }}
                 </button>
               </v-col>
-              <v-col cols="12" md="11" class="mt-2">
+              <v-col class="mt-2" cols="12" md="11">
                 <v-textarea
                   v-model="productForm.description"
-                  class="flat-text-field"
                   auto-grow
+                  class="flat-text-field"
                   density="comfortable"
                   label="Description"
                   rows="7"
                   variant="outlined"
                 />
               </v-col>
-              <v-col cols="12" md="4" class="mt-2">
+              <v-col class="mt-2" cols="12" md="4">
                 <v-select
                   v-model="productForm.price_currency"
                   class="flat-text-field"
@@ -635,7 +635,7 @@
                   variant="outlined"
                 />
               </v-col>
-              <v-col cols="12" md="4" class="mt-2">
+              <v-col class="mt-2" cols="12" md="4">
                 <v-text-field
                   v-model.number="productForm.price"
                   class="flat-text-field"
@@ -648,7 +648,7 @@
                   variant="outlined"
                 />
               </v-col>
-              <v-col cols="12" md="4" class="mt-2">
+              <v-col class="mt-2" cols="12" md="4">
                 <v-text-field
                   v-model.number="productForm.stock"
                   class="flat-text-field"
@@ -660,7 +660,7 @@
                   variant="outlined"
                 />
               </v-col>
-              <v-col cols="12" md="6" class="mt-2">
+              <v-col class="mt-2" cols="12" md="6">
                 <v-combobox
                   v-model="productForm.category"
                   class="flat-text-field"
@@ -681,7 +681,7 @@
                   </template>
                 </v-combobox>
               </v-col>
-              <v-col cols="12" md="6" class="mt-2">
+              <v-col class="mt-2" cols="12" md="6">
                 <v-combobox
                   v-model="productForm.subcategory"
                   class="flat-text-field"
@@ -709,11 +709,11 @@
 
         <!-- Dialog Actions -->
         <div class="dialog-actions-flat border-top pa-4 bg-light d-flex justify-end ga-3">
-          <button type="button" class="btn-flat-outline" @click="productDialog = false">Cancel</button>
+          <button class="btn-flat-outline" type="button" @click="productDialog = false">Cancel</button>
           <button
-            type="button"
             class="btn-flat-solid"
             :disabled="saving"
+            type="button"
             @click="saveProductDraft"
           >
             <span v-if="saving">Saving...</span>
@@ -728,9 +728,9 @@
       <div class="flat-card-container dialog-frame-flat pa-0 w-100">
         <div class="panel-window-header">
           <div class="window-dots">
-            <span class="dot dot-red" @click="catalogOptionDialog = false"></span>
-            <span class="dot dot-yellow"></span>
-            <span class="dot dot-green"></span>
+            <span class="dot dot-red" @click="catalogOptionDialog = false" />
+            <span class="dot dot-yellow" />
+            <span class="dot dot-green" />
           </div>
           <div class="window-title-display">{{ catalogOptionDialogTitle }}</div>
         </div>
@@ -746,11 +746,11 @@
           />
         </div>
         <div class="dialog-actions-flat border-top pa-4 bg-light d-flex justify-end ga-3">
-          <button type="button" class="btn-flat-outline" @click="catalogOptionDialog = false">Cancel</button>
+          <button class="btn-flat-outline" type="button" @click="catalogOptionDialog = false">Cancel</button>
           <button
-            type="button"
             class="btn-flat-solid"
             :disabled="catalogOptionSaving"
+            type="button"
             @click="saveCatalogOption"
           >
             <span v-if="catalogOptionSaving">Saving...</span>
@@ -1513,9 +1513,9 @@
           const link = document.createElement('a')
           link.href = url
           link.download = `products_export_${new Date().toISOString().slice(0, 10)}.csv`
-          document.body.appendChild(link)
+          document.body.append(link)
           link.click()
-          document.body.removeChild(link)
+          link.remove()
           URL.revokeObjectURL(url)
           showMessage('Products exported to CSV')
         } catch (error) {
@@ -1536,9 +1536,9 @@
           const link = document.createElement('a')
           link.href = url
           link.download = `products_export_${new Date().toISOString().slice(0, 10)}.json`
-          document.body.appendChild(link)
+          document.body.append(link)
           link.click()
-          document.body.removeChild(link)
+          link.remove()
           URL.revokeObjectURL(url)
           showMessage('Products exported to JSON')
         } catch (error) {

@@ -17,7 +17,7 @@
             class="btn-flat-outline btn-with-icon"
             @click="openUserAdminDialog"
           >
-            <v-icon start size="18">mdi-account-key-outline</v-icon>
+            <v-icon size="18" start>mdi-account-key-outline</v-icon>
             Admin Console
           </button>
           <button
@@ -26,7 +26,7 @@
             :disabled="refreshing"
             @click="refreshProfile"
           >
-            <v-icon :class="{ 'mdi-spin': refreshing }" start size="18">mdi-refresh</v-icon>
+            <v-icon :class="{ 'mdi-spin': refreshing }" size="18" start>mdi-refresh</v-icon>
             Refresh
           </button>
           <button
@@ -34,7 +34,7 @@
             :disabled="!isFormDirty || savingAll"
             @click="saveAll"
           >
-            <v-icon start size="18">mdi-content-save-outline</v-icon>
+            <v-icon size="18" start>mdi-content-save-outline</v-icon>
             Save Changes
           </button>
         </div>
@@ -138,7 +138,7 @@
                       class="btn-flat-solid logout-btn-flat w-100 mt-4"
                       @click="logout"
                     >
-                      <v-icon start size="16">mdi-logout</v-icon>
+                      <v-icon size="16" start>mdi-logout</v-icon>
                       Logout Session
                     </button>
                   </div>
@@ -186,15 +186,15 @@
                   grow
                 >
                   <v-tab value="profile">
-                    <v-icon start size="18">mdi-account-edit-outline</v-icon>
+                    <v-icon size="18" start>mdi-account-edit-outline</v-icon>
                     Profile Details
                   </v-tab>
                   <v-tab value="orders">
-                    <v-icon start size="18">mdi-receipt-text-outline</v-icon>
+                    <v-icon size="18" start>mdi-receipt-text-outline</v-icon>
                     Order History
                   </v-tab>
                   <v-tab value="security">
-                    <v-icon start size="18">mdi-shield-account-outline</v-icon>
+                    <v-icon size="18" start>mdi-shield-account-outline</v-icon>
                     Account Access
                   </v-tab>
                 </v-tabs>
@@ -364,7 +364,13 @@
                                   <strong>Order updates</strong>
                                   <span class="pref-desc">Email order status changes</span>
                                 </div>
-                                <v-switch v-model="settings.orderUpdates" class="flat-switch" color="teal-darken-1" hide-details inset />
+                                <v-switch
+                                  v-model="settings.orderUpdates"
+                                  class="flat-switch"
+                                  color="teal-darken-1"
+                                  hide-details
+                                  inset
+                                />
                               </div>
                             </v-col>
                             <v-col cols="12" md="6">
@@ -373,7 +379,13 @@
                                   <strong>Promotional emails</strong>
                                   <span class="pref-desc">Offers and seasonal drops</span>
                                 </div>
-                                <v-switch v-model="settings.promotionalEmails" class="flat-switch" color="teal-darken-1" hide-details inset />
+                                <v-switch
+                                  v-model="settings.promotionalEmails"
+                                  class="flat-switch"
+                                  color="teal-darken-1"
+                                  hide-details
+                                  inset
+                                />
                               </div>
                             </v-col>
                             <v-col cols="12" md="6">
@@ -382,7 +394,13 @@
                                   <strong>Quick checkout</strong>
                                   <span class="pref-desc">Select cart items automatically</span>
                                 </div>
-                                <v-switch v-model="settings.quickCheckout" class="flat-switch" color="teal-darken-1" hide-details inset />
+                                <v-switch
+                                  v-model="settings.quickCheckout"
+                                  class="flat-switch"
+                                  color="teal-darken-1"
+                                  hide-details
+                                  inset
+                                />
                               </div>
                             </v-col>
                             <v-col cols="12" md="6">
@@ -391,7 +409,13 @@
                                   <strong>Low stock alerts</strong>
                                   <span class="pref-desc">Show inventory reminders</span>
                                 </div>
-                                <v-switch v-model="settings.lowStockAlerts" class="flat-switch" color="teal-darken-1" hide-details inset />
+                                <v-switch
+                                  v-model="settings.lowStockAlerts"
+                                  class="flat-switch"
+                                  color="teal-darken-1"
+                                  hide-details
+                                  inset
+                                />
                               </div>
                             </v-col>
                           </v-row>
@@ -433,7 +457,7 @@
                           :disabled="loading"
                           @click="fetchOrders"
                         >
-                          <v-icon :class="{ 'mdi-spin': loading }" start size="16">mdi-refresh</v-icon>
+                          <v-icon :class="{ 'mdi-spin': loading }" size="16" start>mdi-refresh</v-icon>
                           Refresh
                         </button>
                       </div>
@@ -482,7 +506,7 @@
 
                       <!-- Empty Orders state -->
                       <div v-else-if="filteredOrders.length === 0" class="empty-orders-flat mt-6">
-                        <v-icon size="48" color="teal-darken-1">mdi-package-variant</v-icon>
+                        <v-icon color="teal-darken-1" size="48">mdi-package-variant</v-icon>
                         <h3 class="empty-title mt-2">{{ orders.length === 0 ? 'No orders yet' : 'No matching orders' }}</h3>
                         <p class="empty-subtitle mt-1">
                           {{ orders.length === 0 ? 'Orders placed from your cart will appear here.'
@@ -557,7 +581,7 @@
                                   :disabled="invoiceLoadingOrderId === order.order_id"
                                   @click.stop="downloadInvoice(order)"
                                 >
-                                  <v-icon start size="16" :class="{ 'mdi-spin': invoiceLoadingOrderId === order.order_id }">
+                                  <v-icon :class="{ 'mdi-spin': invoiceLoadingOrderId === order.order_id }" size="16" start>
                                     {{ invoiceLoadingOrderId === order.order_id ? 'mdi-loading' : 'mdi-file-download-outline' }}
                                   </v-icon>
                                   {{ invoiceLoadingOrderId === order.order_id ? 'Generating...' : 'Invoice Download' }}
@@ -616,19 +640,25 @@
                           </div>
 
                           <div class="quick-links-group mt-4">
-                            <v-btn class="btn-flat-solid mt-2 w-100" to="/cart" block size="large">
+                            <v-btn block class="btn-flat-solid mt-2 w-100" size="large" to="/cart">
                               <v-icon start>mdi-cart-outline</v-icon>
                               Open Cart
                             </v-btn>
-                            <v-btn class="btn-flat-outline mt-2 w-100" to="/" block size="large">
+                            <v-btn block class="btn-flat-outline mt-2 w-100" size="large" to="/">
                               <v-icon start>mdi-storefront-outline</v-icon>
                               Continue Shopping
                             </v-btn>
-                            <v-btn v-if="isAdmin" class="btn-flat-outline mt-2 w-100 admin-btn-action" to="/admin" block size="large">
+                            <v-btn
+                              v-if="isAdmin"
+                              block
+                              class="btn-flat-outline mt-2 w-100 admin-btn-action"
+                              size="large"
+                              to="/admin"
+                            >
                               <v-icon start>mdi-shield-star-outline</v-icon>
                               System Admin Console
                             </v-btn>
-                            <v-btn class="btn-flat-solid logout-btn-flat mt-4 w-100" block size="large" @click="logout">
+                            <v-btn block class="btn-flat-solid logout-btn-flat mt-4 w-100" size="large" @click="logout">
                               <v-icon start>mdi-logout</v-icon>
                               Logout Session
                             </v-btn>
@@ -657,19 +687,19 @@
     <!-- User Admin PIN Verification Dialog -->
     <v-dialog
       v-model="userAdminDialog"
+      class="flat-dialog"
       :fullscreen="xs"
       :max-width="userAdminDialogMaxWidth"
       scrollable
       width="100%"
-      class="flat-dialog"
     >
       <div class="gallery-frame dialog-frame-flat h-100">
         <!-- macOS-style frame header -->
         <div class="frame-header">
           <div class="frame-dots">
-            <span class="dot-red" @click="userAdminDialog = false"></span>
-            <span class="dot-yellow"></span>
-            <span class="dot-green"></span>
+            <span class="dot-red" @click="userAdminDialog = false" />
+            <span class="dot-yellow" />
+            <span class="dot-green" />
           </div>
           <div class="frame-title-display">admin_gatekeeper.json</div>
           <button class="dialog-close-btn" @click="userAdminDialog = false">
@@ -1264,7 +1294,14 @@
         let mobileNumber = resolveStoredMobileNumber()
         let mobileCountryCode = resolveDefaultMobileCountryCode()
 
-        if (!mobileNumber) {
+        if (mobileNumber) {
+          // Parse the stored mobile number in case it contains country code or needs splitting
+          const parsed = parseMobileNumber(formatMobileNumber(appStore.user?.mobile_country_code, mobileNumber))
+          if (parsed.mobileNumber) {
+            mobileNumber = parsed.mobileNumber
+            mobileCountryCode = parsed.countryCode || mobileCountryCode
+          }
+        } else {
           // Fall back to delivery profile phone number
           const deliveryPhone = settings.value.deliveryProfile?.phone
           if (deliveryPhone) {
@@ -1273,13 +1310,6 @@
               mobileNumber = parsed.mobileNumber
               mobileCountryCode = parsed.countryCode || mobileCountryCode
             }
-          }
-        } else {
-          // Parse the stored mobile number in case it contains country code or needs splitting
-          const parsed = parseMobileNumber(formatMobileNumber(appStore.user?.mobile_country_code, mobileNumber))
-          if (parsed.mobileNumber) {
-            mobileNumber = parsed.mobileNumber
-            mobileCountryCode = parsed.countryCode || mobileCountryCode
           }
         }
 

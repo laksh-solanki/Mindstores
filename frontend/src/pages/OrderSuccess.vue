@@ -6,9 +6,9 @@
         <div class="gallery-frame success-frame-window">
           <div class="frame-header">
             <div class="frame-dots">
-              <span class="dot-red" @click="$router.push('/')"></span>
-              <span class="dot-yellow"></span>
-              <span class="dot-green"></span>
+              <span class="dot-red" @click="$router.push('/')" />
+              <span class="dot-yellow" />
+              <span class="dot-green" />
             </div>
             <div class="frame-title-display">payment_confirmed.json</div>
           </div>
@@ -16,7 +16,7 @@
           <div class="success-body text-center pa-6 pa-md-10">
             <!-- Custom Flat Success Badge -->
             <div class="custom-success-badge mb-5">
-              <v-icon icon="mdi-check-circle" size="18" class="mr-1" />
+              <v-icon class="mr-1" icon="mdi-check-circle" size="18" />
               Payment Confirmed
             </div>
 
@@ -38,12 +38,12 @@
                 <div class="step-node">✓</div>
                 <span class="step-label">Confirmed</span>
               </div>
-              <div class="step-connector active"></div>
+              <div class="step-connector active" />
               <div class="step-item active-current">
                 <div class="step-node">2</div>
                 <span class="step-label">Processing</span>
               </div>
-              <div class="step-connector"></div>
+              <div class="step-connector" />
               <div class="step-item">
                 <div class="step-node">3</div>
                 <span class="step-label">Shipped</span>

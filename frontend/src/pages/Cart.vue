@@ -5,7 +5,7 @@
       <button class="back-btn" @click="$router.push('/')">
         <v-icon start>mdi-arrow-left</v-icon>
         Back to Catalog
-        <span class="underline-hover"></span>
+        <span class="underline-hover" />
       </button>
     </div>
 
@@ -14,9 +14,9 @@
       <div class="gallery-frame empty-cart-frame">
         <div class="frame-header">
           <div class="frame-dots">
-            <span class="dot-red"></span>
-            <span class="dot-yellow"></span>
-            <span class="dot-green"></span>
+            <span class="dot-red" />
+            <span class="dot-yellow" />
+            <span class="dot-green" />
           </div>
           <div class="frame-title-display">cart_session.json</div>
         </div>
@@ -64,9 +64,9 @@
                 <img
                   v-if="cartProductImageUrl(item.product_id)"
                   :alt="cartProductName(item.product_id)"
-                  :src="cartProductImageUrl(item.product_id)"
                   class="cart-item-img"
-                />
+                  :src="cartProductImageUrl(item.product_id)"
+                >
                 <div v-else class="no-image-placeholder">
                   <v-icon color="primary" size="36">mdi-image-off-outline</v-icon>
                 </div>
@@ -149,9 +149,9 @@
         <div class="gallery-frame summary-frame">
           <div class="frame-header">
             <div class="frame-dots">
-              <span class="dot-red"></span>
-              <span class="dot-yellow"></span>
-              <span class="dot-green"></span>
+              <span class="dot-red" />
+              <span class="dot-yellow" />
+              <span class="dot-green" />
             </div>
             <div class="frame-title-display">order_summary.json</div>
           </div>
@@ -238,7 +238,7 @@
                 <span>Shipping</span>
                 <span class="free-badge">Free</span>
               </div>
-              <div class="price-divider my-3"></div>
+              <div class="price-divider my-3" />
               <div class="price-row total-row">
                 <span>Total</span>
                 <span class="total-amount">{{ formatAmount(finalTotalAmount) }}</span>
@@ -1220,6 +1220,9 @@
   .flat-cart-item-card {
     flex-direction: column;
     gap: 16px;
+  }
+  .product-name-link {
+    white-space: normal;
   }
   .cart-item-image-wrapper {
     width: 100%;

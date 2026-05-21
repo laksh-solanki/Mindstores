@@ -90,6 +90,10 @@ body {
   margin: 0;
 }
 
+.min-width-0 {
+  min-width: 0 !important;
+}
+
 /* ═════════════════════════════════════════════════════════════
    GLOBAL DARK MODE OVERRIDES (HIGH-CONTRAST FLAT EDITORIAL)
    ═════════════════════════════════════════════════════════════ */
