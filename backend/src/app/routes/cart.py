@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Request
 
 from ..context import RequestContext, error_response, get_context, json_response, read_json_body
 from ..utils import now_iso, random_compact_id
+from .products import find_catalog_product
 
 router = APIRouter()
 
@@ -77,15 +78,16 @@ async def cart_add(request: Request, ctx: RequestContext = Depends(get_context))
     quantity = parse_quantity(data.get("quantity"))
     if not product_id or quantity is None:
         return error_response(400, "Valid product_id and quantity are required")
-    product = await ctx.db.collection("products").find_one({"product_id": product_id}, {"projection": {"_id": 0, "product_id": 1, "stock": 1, "name": 1}})
+    product, _product_source = await find_catalog_product(ctx, product_id)
     if not product:
         return error_response(404, "Product not found")
+    cart_product_id = normalize_product_id(product.get("product_id")) or product_id
     stock = int(product.get("stock") or 0)
     if stock <= 0:
         return error_response(400, "Product is out of stock")
     cart = await ensure_cart(ctx.db, ctx.user.get("user_id"))
     items = sanitize_items(cart.get("items"))
-    index = next((idx for idx, item in enumerate(items) if item["product_id"] == product_id), -1)
+    index = next((idx for idx, item in enumerate(items) if item["product_id"] == cart_product_id), -1)
     existing_quantity = items[index]["quantity"] if index >= 0 else 0
     next_quantity = existing_quantity + quantity
     if next_quantity > stock:
@@ -93,7 +95,7 @@ async def cart_add(request: Request, ctx: RequestContext = Depends(get_context))
     if index >= 0:
         items[index]["quantity"] = next_quantity
     else:
-        items.append({"product_id": product_id, "quantity": quantity})
+        items.append({"product_id": cart_product_id, "quantity": quantity})
     now = now_iso()
     await ctx.db.collection("carts").update_one(
         {"user_id": ctx.user.get("user_id")},
@@ -131,18 +133,19 @@ async def cart_update(request: Request, ctx: RequestContext = Depends(get_contex
     quantity = parse_quantity(data.get("quantity"))
     if not product_id or quantity is None:
         return error_response(400, "Valid product_id and quantity are required")
-    product = await ctx.db.collection("products").find_one({"product_id": product_id}, {"projection": {"_id": 0, "stock": 1}})
+    product, _product_source = await find_catalog_product(ctx, product_id)
     if not product:
         return error_response(404, "Product not found")
+    cart_product_id = normalize_product_id(product.get("product_id")) or product_id
     if quantity > int(product.get("stock") or 0):
         return error_response(400, "Insufficient stock")
     cart = await ctx.db.collection("carts").find_one({"user_id": ctx.user.get("user_id")})
     if not cart:
         return error_response(404, "Cart not found")
     items = sanitize_items(cart.get("items"))
-    index = next((idx for idx, item in enumerate(items) if item["product_id"] == product_id), -1)
+    index = next((idx for idx, item in enumerate(items) if item["product_id"] == cart_product_id), -1)
     if index < 0:
         return error_response(404, "Item not found in cart")
     items[index]["quantity"] = quantity
     await ctx.db.collection("carts").update_one({"user_id": ctx.user.get("user_id")}, {"$set": {"items": items, "updated_at": now_iso()}})
-    return json_response({"message": "Cart item quantity updated", "product_id": product_id, "quantity": quantity})
+    return json_response({"message": "Cart item quantity updated", "product_id": cart_product_id, "quantity": quantity})
