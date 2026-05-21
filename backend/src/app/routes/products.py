@@ -94,14 +94,40 @@ def serialize_product(product: dict[str, Any] | None) -> dict[str, Any] | None:
     return output
 
 
-def serialize_user_admin_product(product: dict[str, Any] | None) -> dict[str, Any] | None:
+def serialize_user_admin_product(
+    product: dict[str, Any] | None,
+    *,
+    include_owner_email: bool = False,
+) -> dict[str, Any] | None:
     output = serialize_product(product)
     if not output:
         return None
     output["catalog_source"] = "user_admin"
     output["source_label"] = "User Admin"
-    output["owner_email"] = normalize_text(output.get("owner_email"), 320)
+    if include_owner_email:
+        output["owner_email"] = normalize_text(output.get("owner_email"), 320)
+    else:
+        output.pop("owner_email", None)
     return output
+
+
+def sort_catalog_items(items: list[dict[str, Any]], sort_clause: dict[str, int]) -> list[dict[str, Any]]:
+    def sort_value(item: dict[str, Any], key: str) -> Any:
+        if key == "price":
+            try:
+                return float(item.get("price") or 0)
+            except (TypeError, ValueError):
+                return 0
+        if key == "name":
+            return normalize_text(item.get("name"), 160).casefold()
+        if key == "created_at":
+            return str(item.get("created_at") or item.get("updated_at") or "")
+        return str(item.get(key) or "")
+
+    sorted_items = [item for item in items if item]
+    for key, direction in reversed(list((sort_clause or {}).items())):
+        sorted_items.sort(key=lambda item: sort_value(item, key), reverse=int(direction) < 0)
+    return sorted_items
 
 
 def normalize_review_rating(value: Any) -> int | None:
@@ -412,36 +438,30 @@ async def get_products(ctx: RequestContext = Depends(get_context)):
     )
     should_paginate = include_meta or page_size_input is not None or page_input is not None
     collection = ctx.db.collection("products")
+    public_products = await collection.find(db_query).to_array()
+    public_user_products = await ctx.db.collection("user_products").find(db_query).to_array()
+    catalog_items = [
+        *(serialize_product(item) for item in public_products),
+        *(
+            serialize_user_admin_product(item, include_owner_email=include_user_products)
+            for item in public_user_products
+        ),
+    ]
+    catalog_items = sort_catalog_items(catalog_items, sort_clause)
 
     if not should_paginate:
         limit = min(max(limit_input or 150, 1), 250)
-        products = await collection.find(db_query).sort(sort_clause).limit(limit).to_array()
-        items = [serialize_product(item) for item in products]
-        if include_user_products:
-            user_products = await ctx.db.collection("user_products").find(db_query).sort(sort_clause).limit(limit).to_array()
-            items.extend(serialize_user_admin_product(item) for item in user_products)
-            reverse = list(sort_clause.values())[0] < 0 if sort_clause else True
-            items = sorted(
-                [item for item in items if item],
-                key=lambda item: str(item.get("updated_at") or item.get("created_at") or ""),
-                reverse=reverse,
-            )[:limit]
-        cache_header = (
-            {"Cache-Control": "no-store"}
-            if include_user_products
-            else {"Cache-Control": "public, max-age=60, stale-while-revalidate=300"}
-        )
-        return json_response(items, headers=cache_header)
+        return json_response(catalog_items[:limit], headers={"Cache-Control": "no-store"})
 
     page = max(1, page_input or 1)
     page_size = min(max(page_size_input or limit_input or 24, 1), 250)
     skip = (page - 1) * page_size
-    products = await collection.find(db_query).sort(sort_clause).skip(skip).limit(page_size).to_array()
-    total = await collection.count_documents(db_query)
+    page_items = catalog_items[skip : skip + page_size]
+    total = len(catalog_items)
     total_pages = max(1, (total + page_size - 1) // page_size)
     return json_response(
         {
-            "items": [serialize_product(item) for item in products],
+            "items": page_items,
             "meta": {
                 "page": page,
                 "page_size": page_size,
@@ -451,7 +471,7 @@ async def get_products(ctx: RequestContext = Depends(get_context)):
                 "has_next": page < total_pages,
             },
         },
-        headers={"Cache-Control": "public, max-age=60, stale-while-revalidate=300"},
+        headers={"Cache-Control": "no-store"},
     )
 
 
@@ -472,6 +492,12 @@ async def get_product_categories(ctx: RequestContext = Depends(get_context)):
         {"projection": {"_id": 0, "category": 1, "subcategory": 1}},
     ).to_array()
     for product in products:
+        merge_category_record(records, product.get("category"), product.get("subcategory"))
+    user_products = await ctx.db.collection("user_products").find(
+        {},
+        {"projection": {"_id": 0, "category": 1, "subcategory": 1}},
+    ).to_array()
+    for product in user_products:
         merge_category_record(records, product.get("category"), product.get("subcategory"))
 
     return json_response({"items": serialize_category_records(records)}, headers={"Cache-Control": "no-store"})
