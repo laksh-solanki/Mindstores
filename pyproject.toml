@@ -1,0 +1,15 @@
+[project]
+name = "mindstores-vercel-backend"
+version = "3.0.0"
+description = "Root Vercel configuration for the Mindstores FastAPI backend"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi==0.115.12",
+  "httpx==0.28.1",
+  "dnspython==2.8.0",
+  "pymongo==4.17.0",
+  "python-dotenv==1.2.2",
+]
+
+[tool.vercel]
+entrypoint = "backend.server:app"
