@@ -12,6 +12,6 @@ export default createVuetify({
     },
   },
   theme: {
-    defaultTheme: 'light',
+    defaultTheme: (typeof window !== 'undefined' && window.localStorage.getItem('mindstore_theme')) || 'light',
   },
 })

@@ -1,67 +1,67 @@
 <template>
   <div class="photo-zoom-root">
-    <slot v-if="$slots.trigger" name="trigger" :open-dialog="openDialog"></slot>
+    <slot v-if="$slots.trigger" name="trigger" :open-dialog="openDialog" />
 
     <template v-else-if="!hideTrigger">
       <v-avatar
         v-if="triggerVariant === 'avatar'"
-        :size="size"
+        :aria-label="triggerAriaLabel"
         :class="['photo-trigger', avatarClass, triggerClass]"
         role="button"
+        :size="size"
         tabindex="0"
-        :aria-label="triggerAriaLabel"
         @click="openDialog"
         @keydown.enter.prevent="openDialog"
         @keydown.space.prevent="openDialog"
       >
-        <v-img :src="src" :alt="alt" :cover="imgCover"></v-img>
+        <v-img :alt="alt" :cover="imgCover" :src="src" />
       </v-avatar>
 
       <button
         v-else
-        type="button"
-        :class="['image-trigger', triggerClass]"
         :aria-label="triggerAriaLabel"
+        :class="['image-trigger', triggerClass]"
+        type="button"
         @click="openDialog"
       >
         <v-img
-          :src="src"
           :alt="alt"
-          :height="imageHeight"
-          :cover="imgCover"
           :class="imageClass"
-        ></v-img>
+          :cover="imgCover"
+          :height="imageHeight"
+          :src="src"
+        />
       </button>
     </template>
 
-    <v-dialog v-model="dialogOpen" :max-width="maxWidth" fullscreen :scrollable="true">
+    <v-dialog v-model="dialogOpen" fullscreen :max-width="maxWidth" :scrollable="true">
       <v-card class="zoom-card border" :class="{ 'is-custom-card': isCustomMode }">
         <div class="zoom-toolbar px-4 py-3">
           <p class="text-subtitle-2 font-weight-bold m-0">{{ dialogLabel }}</p>
           <div class="d-flex align-center ga-1 flex-wrap justify-end">
-            <slot name="toolbar-actions" :close-dialog="closeDialog"></slot>
+            <slot :close-dialog="closeDialog" name="toolbar-actions" />
             <v-btn
+              density="comfortable"
+              :disabled="zoomLevel <= 1"
               icon="mdi-magnify-minus-outline"
               variant="text"
-              density="comfortable"
               @click="zoomOut"
-              :disabled="zoomLevel <= 1"
-            ></v-btn>
+            />
             <v-btn
+              density="comfortable"
+              :disabled="zoomLevel === 1"
               icon="mdi-refresh"
               variant="text"
-              density="comfortable"
               @click="resetZoom"
-              :disabled="zoomLevel === 1"
-            ></v-btn>
+            />
             <v-btn
-              icon="mdi-magnify-plus-outline"
               density="comfortable"
+              :disabled="zoomLevel >= 3"
+              icon="mdi-magnify-plus-outline"
               variant="text"
               @click="zoomIn"
-              :disabled="zoomLevel >= 3"
-            ></v-btn>
-            <v-btn icon="mdi-close" density="comfortable" variant="text" @click="closeDialog"></v-btn>
+            />
+            <v-btn density="comfortable" icon="mdi-close" variant="text" @click="closeDialog" />
           </div>
         </div>
 
@@ -70,25 +70,25 @@
           class="zoom-stage"
           :class="{ 'is-zoomed': zoomLevel > 1, 'is-dragging': isDragging, 'is-custom-stage': isCustomMode }"
           tabindex="0"
+          @keydown="handleStageKeydown"
+          @pointercancel="stopPan"
           @pointerdown="startPan"
+          @pointerleave="stopPan"
           @pointermove="onPanMove"
           @pointerup="stopPan"
-          @pointercancel="stopPan"
-          @pointerleave="stopPan"
-          @keydown="handleStageKeydown"
         >
           <img
             v-if="!isCustomMode"
             ref="zoomImage"
-            :src="src"
             :alt="alt"
             class="zoom-image"
             :class="{ 'is-sized': hasBaseImageSize }"
-            :style="zoomImageStyle"
             draggable="false"
+            :src="src"
+            :style="zoomImageStyle"
             @dragstart.prevent
             @load="handleImageLoad"
-          />
+          >
 
           <div
             v-else
@@ -102,7 +102,7 @@
               class="zoom-custom-content-inner"
               :style="zoomContentInnerStyle"
             >
-              <slot></slot>
+              <slot />
             </div>
           </div>
         </div>
@@ -112,447 +112,452 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+  import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
-const props = defineProps({
-  modelValue: {
-    type: Boolean,
-    default: undefined,
-  },
-  src: {
-    type: String,
-    default: "",
-  },
-  alt: {
-    type: String,
-    default: "Profile photo",
-  },
-  dialogTitle: {
-    type: String,
-    default: "",
-  },
-  size: {
-    type: [Number, String],
-    default: 120,
-  },
-  avatarClass: {
-    type: [String, Array, Object],
-    default: "",
-  },
-  triggerClass: {
-    type: [String, Array, Object],
-    default: "",
-  },
-  imageClass: {
-    type: [String, Array, Object],
-    default: "",
-  },
-  triggerVariant: {
-    type: String,
-    default: "avatar",
-  },
-  imageHeight: {
-    type: [Number, String],
-    default: null,
-  },
-  imgCover: {
-    type: Boolean,
-    default: true,
-  },
-  hideTrigger: {
-    type: Boolean,
-    default: false,
-  },
-  contentMode: {
-    type: String,
-    default: "image",
-  },
-  maxWidth: {
-    type: [Number, String],
-    default: 980,
-  },
-  contentWidth: {
-    type: Number,
-    default: 0,
-  },
-  contentHeight: {
-    type: Number,
-    default: 0,
-  },
-  fullscreenOnMobile: {
-    type: Boolean,
-    default: true,
-  },
-});
+  const props = defineProps({
+    modelValue: {
+      type: Boolean,
+      default: undefined,
+    },
+    src: {
+      type: String,
+      default: "",
+    },
+    alt: {
+      type: String,
+      default: "Profile photo",
+    },
+    dialogTitle: {
+      type: String,
+      default: "",
+    },
+    size: {
+      type: [Number, String],
+      default: 120,
+    },
+    avatarClass: {
+      type: [String, Array, Object],
+      default: "",
+    },
+    triggerClass: {
+      type: [String, Array, Object],
+      default: "",
+    },
+    imageClass: {
+      type: [String, Array, Object],
+      default: "",
+    },
+    triggerVariant: {
+      type: String,
+      default: "avatar",
+    },
+    imageHeight: {
+      type: [Number, String],
+      default: null,
+    },
+    imgCover: {
+      type: Boolean,
+      default: true,
+    },
+    hideTrigger: {
+      type: Boolean,
+      default: false,
+    },
+    contentMode: {
+      type: String,
+      default: "image",
+    },
+    maxWidth: {
+      type: [Number, String],
+      default: 980,
+    },
+    contentWidth: {
+      type: Number,
+      default: 0,
+    },
+    contentHeight: {
+      type: Number,
+      default: 0,
+    },
+    fullscreenOnMobile: {
+      type: Boolean,
+      default: true,
+    },
+  });
 
-const emit = defineEmits(["update:modelValue"]);
+  const emit = defineEmits(["update:modelValue"]);
 
-const internalDialogOpen = ref(false);
-const zoomLevel = ref(1);
-const zoomStage = ref(null);
-const zoomImage = ref(null);
-const zoomContent = ref(null);
-const zoomContentInner = ref(null);
-const naturalImageSize = ref({ width: 0, height: 0 });
-const baseImageSize = ref({ width: 0, height: 0 });
-const naturalContentSize = ref({ width: 0, height: 0 });
-const baseContentSize = ref({ width: 0, height: 0 });
-const isDragging = ref(false);
-const activePointerId = ref(null);
-const panOrigin = ref({
-  startX: 0,
-  startY: 0,
-  scrollLeft: 0,
-  scrollTop: 0,
-});
+  const internalDialogOpen = ref(false);
+  const zoomLevel = ref(1);
+  const zoomStage = ref(null);
+  const zoomImage = ref(null);
+  const zoomContent = ref(null);
+  const zoomContentInner = ref(null);
+  const naturalImageSize = ref({ width: 0, height: 0 });
+  const baseImageSize = ref({ width: 0, height: 0 });
+  const naturalContentSize = ref({ width: 0, height: 0 });
+  const baseContentSize = ref({ width: 0, height: 0 });
+  const isDragging = ref(false);
+  const activePointerId = ref(null);
+  const panOrigin = ref({
+    startX: 0,
+    startY: 0,
+    scrollLeft: 0,
+    scrollTop: 0,
+  });
 
-const isControlled = computed(() => props.modelValue !== undefined);
-const isCustomMode = computed(() => props.contentMode === "custom");
-const triggerAriaLabel = computed(() => `Open ${props.alt || "image"}`);
-const dialogLabel = computed(() => props.dialogTitle || props.alt || "Preview");
-const hasBaseImageSize = computed(
-  () => baseImageSize.value.width > 0 && baseImageSize.value.height > 0,
-);
-const hasBaseContentSize = computed(
-  () => baseContentSize.value.width > 0 && baseContentSize.value.height > 0,
-);
-const dialogOpen = computed({
-  get: () => (isControlled.value ? props.modelValue : internalDialogOpen.value),
-  set: (value) => {
-    if (!isControlled.value) {
-      internalDialogOpen.value = value;
+  const isControlled = computed(() => props.modelValue !== undefined);
+  const isCustomMode = computed(() => props.contentMode === "custom");
+  const triggerAriaLabel = computed(() => `Open ${props.alt || "image"}`);
+  const dialogLabel = computed(() => props.dialogTitle || props.alt || "Preview");
+  const hasBaseImageSize = computed(
+    () => baseImageSize.value.width > 0 && baseImageSize.value.height > 0,
+  );
+  const hasBaseContentSize = computed(
+    () => baseContentSize.value.width > 0 && baseContentSize.value.height > 0,
+  );
+  const dialogOpen = computed({
+    get: () => (isControlled.value ? props.modelValue : internalDialogOpen.value),
+    set: (value) => {
+      if (!isControlled.value) {
+        internalDialogOpen.value = value;
+      }
+
+      emit("update:modelValue", value);
+    },
+  });
+
+  const zoomImageStyle = computed(() => {
+    if (!hasBaseImageSize.value) return {};
+
+    return {
+      width: `${Math.round(baseImageSize.value.width * zoomLevel.value)}px`,
+      height: `${Math.round(baseImageSize.value.height * zoomLevel.value)}px`,
+    };
+  });
+
+  const zoomContentStyle = computed(() => {
+    if (!hasBaseContentSize.value) return {};
+
+    return {
+      width: `${Math.round(baseContentSize.value.width * zoomLevel.value)}px`,
+      height: `${Math.round(baseContentSize.value.height * zoomLevel.value)}px`,
+    };
+  });
+
+  const zoomContentInnerStyle = computed(() => {
+    if (!hasBaseContentSize.value || !naturalContentSize.value.width || !naturalContentSize.value.height) {
+      return {};
     }
 
-    emit("update:modelValue", value);
-  },
-});
+    const scale = (baseContentSize.value.width * zoomLevel.value) / naturalContentSize.value.width;
 
-const zoomImageStyle = computed(() => {
-  if (!hasBaseImageSize.value) return {};
-
-  return {
-    width: `${Math.round(baseImageSize.value.width * zoomLevel.value)}px`,
-    height: `${Math.round(baseImageSize.value.height * zoomLevel.value)}px`,
-  };
-});
-
-const zoomContentStyle = computed(() => {
-  if (!hasBaseContentSize.value) return {};
-
-  return {
-    width: `${Math.round(baseContentSize.value.width * zoomLevel.value)}px`,
-    height: `${Math.round(baseContentSize.value.height * zoomLevel.value)}px`,
-  };
-});
-
-const zoomContentInnerStyle = computed(() => {
-  if (!hasBaseContentSize.value || !naturalContentSize.value.width || !naturalContentSize.value.height) {
-    return {};
-  }
-
-  const scale = (baseContentSize.value.width * zoomLevel.value) / naturalContentSize.value.width;
-
-  return {
-    width: `${naturalContentSize.value.width}px`,
-    height: `${naturalContentSize.value.height}px`,
-    transform: `scale(${scale})`,
-    transformOrigin: "top left",
-  };
-});
-
-const closeDialog = () => {
-  dialogOpen.value = false;
-};
-
-const focusStage = () => {
-  zoomStage.value?.focus({ preventScroll: true });
-};
-
-const centerStage = () => {
-  const stageElement = zoomStage.value;
-  if (!stageElement) return;
-
-  stageElement.scrollLeft = Math.max(
-    0,
-    (stageElement.scrollWidth - stageElement.clientWidth) / 2,
-  );
-  stageElement.scrollTop = Math.max(
-    0,
-    (stageElement.scrollHeight - stageElement.clientHeight) / 2,
-  );
-};
-
-const getScaledSize = (naturalWidth, naturalHeight) => {
-  const stageElement = zoomStage.value;
-  if (!stageElement || !naturalWidth || !naturalHeight) return { width: 0, height: 0 };
-
-  const stagePadding = isCustomMode.value ? 30 : 44;
-  const availableWidth = Math.max(stageElement.clientWidth - stagePadding, 120);
-  const availableHeight = Math.max(stageElement.clientHeight - stagePadding, 120);
-  const scale = Math.min(
-    availableWidth / naturalWidth,
-    availableHeight / naturalHeight,
-    1,
-  );
-
-  return {
-    width: naturalWidth * scale,
-    height: naturalHeight * scale,
-  };
-};
-
-const updateBaseImageSize = () => {
-  if (!naturalImageSize.value.width || !naturalImageSize.value.height) return;
-  baseImageSize.value = getScaledSize(naturalImageSize.value.width, naturalImageSize.value.height);
-};
-
-const updateBaseContentSize = () => {
-  if (!naturalContentSize.value.width || !naturalContentSize.value.height) return;
-  baseContentSize.value = getScaledSize(naturalContentSize.value.width, naturalContentSize.value.height);
-};
-
-const syncZoom = async (nextZoomLevel) => {
-  const stageElement = zoomStage.value;
-  const previousZoomLevel = zoomLevel.value;
-
-  if (!stageElement || nextZoomLevel === previousZoomLevel) {
-    zoomLevel.value = nextZoomLevel;
-    return;
-  }
-
-  const centerXRatio =
-    stageElement.scrollWidth > 0
-      ? (stageElement.scrollLeft + stageElement.clientWidth / 2) / stageElement.scrollWidth
-      : 0.5;
-  const centerYRatio =
-    stageElement.scrollHeight > 0
-      ? (stageElement.scrollTop + stageElement.clientHeight / 2) / stageElement.scrollHeight
-      : 0.5;
-
-  zoomLevel.value = nextZoomLevel;
-  await nextTick();
-
-  stageElement.scrollLeft = Math.max(
-    0,
-    stageElement.scrollWidth * centerXRatio - stageElement.clientWidth / 2,
-  );
-  stageElement.scrollTop = Math.max(
-    0,
-    stageElement.scrollHeight * centerYRatio - stageElement.clientHeight / 2,
-  );
-
-  focusStage();
-};
-
-const handleImageLoad = async (event) => {
-  naturalImageSize.value = {
-    width: event.target?.naturalWidth || 0,
-    height: event.target?.naturalHeight || 0,
-  };
-
-  await nextTick();
-  updateBaseImageSize();
-  centerStage();
-};
-
-const measureCustomContent = async () => {
-  if (!isCustomMode.value) return;
-
-  if (props.contentWidth > 0 && props.contentHeight > 0) {
-    naturalContentSize.value = {
-      width: props.contentWidth,
-      height: props.contentHeight,
+    return {
+      width: `${naturalContentSize.value.width}px`,
+      height: `${naturalContentSize.value.height}px`,
+      transform: `scale(${scale})`,
+      transformOrigin: "top left",
     };
-    return;
+  });
+
+  function closeDialog () {
+    dialogOpen.value = false;
   }
 
-  await nextTick();
-  const contentElement = zoomContentInner.value;
-  if (!contentElement) return;
-
-  const previousWidth = zoomContent.value?.style.width;
-  const previousHeight = zoomContent.value?.style.height;
-
-  if (zoomContent.value) {
-    zoomContent.value.style.width = "";
-    zoomContent.value.style.height = "";
+  function focusStage () {
+    zoomStage.value?.focus({ preventScroll: true });
   }
 
-  await nextTick();
+  function centerStage () {
+    const stageElement = zoomStage.value;
+    if (!stageElement) return;
 
-  const rect = contentElement.getBoundingClientRect();
-  if (rect.width > 0 && rect.height > 0) {
-    naturalContentSize.value = {
-      width: rect.width,
-      height: rect.height,
+    stageElement.scrollLeft = Math.max(
+      0,
+      (stageElement.scrollWidth - stageElement.clientWidth) / 2,
+    );
+    stageElement.scrollTop = Math.max(
+      0,
+      (stageElement.scrollHeight - stageElement.clientHeight) / 2,
+    );
+  }
+
+  function getScaledSize (naturalWidth, naturalHeight) {
+    const stageElement = zoomStage.value;
+    if (!stageElement || !naturalWidth || !naturalHeight) return { width: 0, height: 0 };
+
+    const stagePadding = isCustomMode.value ? 30 : 44;
+    const availableWidth = Math.max(stageElement.clientWidth - stagePadding, 120);
+    const availableHeight = Math.max(stageElement.clientHeight - stagePadding, 120);
+    const scale = Math.min(
+      availableWidth / naturalWidth,
+      availableHeight / naturalHeight,
+      1,
+    );
+
+    return {
+      width: naturalWidth * scale,
+      height: naturalHeight * scale,
     };
   }
 
-  if (zoomContent.value && zoomLevel.value > 1) {
-    zoomContent.value.style.width = previousWidth || "";
-    zoomContent.value.style.height = previousHeight || "";
-  }
-};
-
-const openDialog = () => {
-  zoomLevel.value = 1;
-  dialogOpen.value = true;
-};
-
-const zoomIn = () => {
-  syncZoom(Math.min(3, Number((zoomLevel.value + 0.25).toFixed(2))));
-};
-
-const zoomOut = () => {
-  syncZoom(Math.max(1, Number((zoomLevel.value - 0.25).toFixed(2))));
-};
-
-const resetZoom = () => {
-  syncZoom(1);
-};
-
-const startPan = (event) => {
-  if (zoomLevel.value <= 1 || event.button !== 0 || !zoomStage.value) return;
-
-  activePointerId.value = event.pointerId;
-  isDragging.value = true;
-  panOrigin.value = {
-    startX: event.clientX,
-    startY: event.clientY,
-    scrollLeft: zoomStage.value.scrollLeft,
-    scrollTop: zoomStage.value.scrollTop,
-  };
-
-  zoomStage.value.setPointerCapture?.(event.pointerId);
-  event.preventDefault();
-};
-
-const onPanMove = (event) => {
-  if (
-    !isDragging.value ||
-    activePointerId.value === null ||
-    event.pointerId !== activePointerId.value ||
-    !zoomStage.value
-  ) {
-    return;
+  function updateBaseImageSize () {
+    if (!naturalImageSize.value.width || !naturalImageSize.value.height) return;
+    baseImageSize.value = getScaledSize(naturalImageSize.value.width, naturalImageSize.value.height);
   }
 
-  zoomStage.value.scrollLeft =
-    panOrigin.value.scrollLeft - (event.clientX - panOrigin.value.startX);
-  zoomStage.value.scrollTop =
-    panOrigin.value.scrollTop - (event.clientY - panOrigin.value.startY);
-
-  event.preventDefault();
-};
-
-const stopPan = (event) => {
-  if (!isDragging.value || !zoomStage.value) return;
-
-  if (
-    event?.pointerId !== undefined &&
-    activePointerId.value !== null &&
-    event.pointerId !== activePointerId.value
-  ) {
-    return;
+  function updateBaseContentSize () {
+    if (!naturalContentSize.value.width || !naturalContentSize.value.height) return;
+    baseContentSize.value = getScaledSize(naturalContentSize.value.width, naturalContentSize.value.height);
   }
 
-  if (activePointerId.value !== null) {
-    zoomStage.value.releasePointerCapture?.(activePointerId.value);
-  }
+  async function syncZoom (nextZoomLevel) {
+    const stageElement = zoomStage.value;
+    const previousZoomLevel = zoomLevel.value;
 
-  isDragging.value = false;
-  activePointerId.value = null;
-};
-
-const handleStageKeydown = (event) => {
-  if (zoomLevel.value <= 1 || !zoomStage.value) return;
-
-  const panAmount = event.shiftKey ? 160 : 80;
-
-  switch (event.key) {
-    case "ArrowLeft":
-      zoomStage.value.scrollLeft -= panAmount;
-      break;
-    case "ArrowRight":
-      zoomStage.value.scrollLeft += panAmount;
-      break;
-    case "ArrowUp":
-      zoomStage.value.scrollTop -= panAmount;
-      break;
-    case "ArrowDown":
-      zoomStage.value.scrollTop += panAmount;
-      break;
-    default:
+    if (!stageElement || nextZoomLevel === previousZoomLevel) {
+      zoomLevel.value = nextZoomLevel;
       return;
-  }
-
-  event.preventDefault();
-};
-
-const resetMeasuredState = () => {
-  baseImageSize.value = { width: 0, height: 0 };
-  naturalImageSize.value = { width: 0, height: 0 };
-  baseContentSize.value = { width: 0, height: 0 };
-  naturalContentSize.value = { width: 0, height: 0 };
-};
-
-const handleWindowResize = async () => {
-  if (!dialogOpen.value) return;
-
-  await nextTick();
-
-  if (isCustomMode.value) {
-    if (!naturalContentSize.value.width || !naturalContentSize.value.height) {
-      await measureCustomContent();
     }
-    updateBaseContentSize();
-  } else {
-    updateBaseImageSize();
+
+    const centerXRatio =
+      stageElement.scrollWidth > 0
+        ? (stageElement.scrollLeft + stageElement.clientWidth / 2) / stageElement.scrollWidth
+        : 0.5;
+    const centerYRatio =
+      stageElement.scrollHeight > 0
+        ? (stageElement.scrollTop + stageElement.clientHeight / 2) / stageElement.scrollHeight
+        : 0.5;
+
+    zoomLevel.value = nextZoomLevel;
+    await nextTick();
+
+    stageElement.scrollLeft = Math.max(
+      0,
+      stageElement.scrollWidth * centerXRatio - stageElement.clientWidth / 2,
+    );
+    stageElement.scrollTop = Math.max(
+      0,
+      stageElement.scrollHeight * centerYRatio - stageElement.clientHeight / 2,
+    );
+
+    focusStage();
   }
 
-  if (zoomLevel.value === 1) {
+  async function handleImageLoad (event) {
+    naturalImageSize.value = {
+      width: event.target?.naturalWidth || 0,
+      height: event.target?.naturalHeight || 0,
+    };
+
+    await nextTick();
+    updateBaseImageSize();
     centerStage();
   }
-};
 
-watch(dialogOpen, async (isOpen) => {
-  if (!isOpen) {
+  async function measureCustomContent () {
+    if (!isCustomMode.value) return;
+
+    if (props.contentWidth > 0 && props.contentHeight > 0) {
+      naturalContentSize.value = {
+        width: props.contentWidth,
+        height: props.contentHeight,
+      };
+      return;
+    }
+
+    await nextTick();
+    const contentElement = zoomContentInner.value;
+    if (!contentElement) return;
+
+    const previousWidth = zoomContent.value?.style.width;
+    const previousHeight = zoomContent.value?.style.height;
+
+    if (zoomContent.value) {
+      zoomContent.value.style.width = "";
+      zoomContent.value.style.height = "";
+    }
+
+    await nextTick();
+
+    const rect = contentElement.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      naturalContentSize.value = {
+        width: rect.width,
+        height: rect.height,
+      };
+    }
+
+    if (zoomContent.value && zoomLevel.value > 1) {
+      zoomContent.value.style.width = previousWidth || "";
+      zoomContent.value.style.height = previousHeight || "";
+    }
+  }
+
+  function openDialog () {
     zoomLevel.value = 1;
-    resetMeasuredState();
+    dialogOpen.value = true;
+  }
+
+  function zoomIn () {
+    syncZoom(Math.min(3, Number((zoomLevel.value + 0.25).toFixed(2))));
+  }
+
+  function zoomOut () {
+    syncZoom(Math.max(1, Number((zoomLevel.value - 0.25).toFixed(2))));
+  }
+
+  function resetZoom () {
+    syncZoom(1);
+  }
+
+  function startPan (event) {
+    if (zoomLevel.value <= 1 || event.button !== 0 || !zoomStage.value) return;
+
+    activePointerId.value = event.pointerId;
+    isDragging.value = true;
+    panOrigin.value = {
+      startX: event.clientX,
+      startY: event.clientY,
+      scrollLeft: zoomStage.value.scrollLeft,
+      scrollTop: zoomStage.value.scrollTop,
+    };
+
+    zoomStage.value.setPointerCapture?.(event.pointerId);
+    event.preventDefault();
+  }
+
+  function onPanMove (event) {
+    if (
+      !isDragging.value ||
+      activePointerId.value === null ||
+      event.pointerId !== activePointerId.value ||
+      !zoomStage.value
+    ) {
+      return;
+    }
+
+    zoomStage.value.scrollLeft =
+      panOrigin.value.scrollLeft - (event.clientX - panOrigin.value.startX);
+    zoomStage.value.scrollTop =
+      panOrigin.value.scrollTop - (event.clientY - panOrigin.value.startY);
+
+    event.preventDefault();
+  }
+
+  function stopPan (event) {
+    if (!isDragging.value || !zoomStage.value) return;
+
+    if (
+      event?.pointerId !== undefined &&
+      activePointerId.value !== null &&
+      event.pointerId !== activePointerId.value
+    ) {
+      return;
+    }
+
+    if (activePointerId.value !== null) {
+      zoomStage.value.releasePointerCapture?.(activePointerId.value);
+    }
+
     isDragging.value = false;
     activePointerId.value = null;
-    return;
   }
 
-  await nextTick();
+  function handleStageKeydown (event) {
+    if (zoomLevel.value <= 1 || !zoomStage.value) return;
 
-  if (isCustomMode.value) {
-    await measureCustomContent();
-    updateBaseContentSize();
-  } else if (zoomImage.value?.complete && zoomImage.value.naturalWidth) {
-    naturalImageSize.value = {
-      width: zoomImage.value.naturalWidth,
-      height: zoomImage.value.naturalHeight,
-    };
-    updateBaseImageSize();
+    const panAmount = event.shiftKey ? 160 : 80;
+
+    switch (event.key) {
+      case "ArrowLeft": {
+        zoomStage.value.scrollLeft -= panAmount;
+        break;
+      }
+      case "ArrowRight": {
+        zoomStage.value.scrollLeft += panAmount;
+        break;
+      }
+      case "ArrowUp": {
+        zoomStage.value.scrollTop -= panAmount;
+        break;
+      }
+      case "ArrowDown": {
+        zoomStage.value.scrollTop += panAmount;
+        break;
+      }
+      default: {
+        return;
+      }
+    }
+
+    event.preventDefault();
   }
 
-  centerStage();
-  focusStage();
-});
+  function resetMeasuredState () {
+    baseImageSize.value = { width: 0, height: 0 };
+    naturalImageSize.value = { width: 0, height: 0 };
+    baseContentSize.value = { width: 0, height: 0 };
+    naturalContentSize.value = { width: 0, height: 0 };
+  }
 
-watch(isCustomMode, () => {
-  zoomLevel.value = 1;
-  resetMeasuredState();
-});
+  async function handleWindowResize () {
+    if (!dialogOpen.value) return;
 
-onMounted(() => {
-  window.addEventListener("resize", handleWindowResize);
-});
+    await nextTick();
 
-onBeforeUnmount(() => {
-  window.removeEventListener("resize", handleWindowResize);
-});
+    if (isCustomMode.value) {
+      if (!naturalContentSize.value.width || !naturalContentSize.value.height) {
+        await measureCustomContent();
+      }
+      updateBaseContentSize();
+    } else {
+      updateBaseImageSize();
+    }
+
+    if (zoomLevel.value === 1) {
+      centerStage();
+    }
+  }
+
+  watch(dialogOpen, async (isOpen) => {
+    if (!isOpen) {
+      zoomLevel.value = 1;
+      resetMeasuredState();
+      isDragging.value = false;
+      activePointerId.value = null;
+      return;
+    }
+
+    await nextTick();
+
+    if (isCustomMode.value) {
+      await measureCustomContent();
+      updateBaseContentSize();
+    } else if (zoomImage.value?.complete && zoomImage.value.naturalWidth) {
+      naturalImageSize.value = {
+        width: zoomImage.value.naturalWidth,
+        height: zoomImage.value.naturalHeight,
+      };
+      updateBaseImageSize();
+    }
+
+    centerStage();
+    focusStage();
+  });
+
+  watch(isCustomMode, () => {
+    zoomLevel.value = 1;
+    resetMeasuredState();
+  });
+
+  onMounted(() => {
+    window.addEventListener("resize", handleWindowResize);
+  });
+
+  onBeforeUnmount(() => {
+    window.removeEventListener("resize", handleWindowResize);
+  });
 </script>
 
 <style scoped>

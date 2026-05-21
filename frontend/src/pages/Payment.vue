@@ -1,80 +1,150 @@
 <template>
-  <v-container class="py-6 py-md-8">
-    <v-sheet class="pa-4 pa-md-6 mb-6" border rounded="lg">
-      <v-chip color="teal-darken-1" size="small" variant="tonal">Secure Checkout</v-chip>
-      <h1 class="text-h4 text-md-h3 font-weight-bold mt-3">Personal Payment</h1>
-      <p class="text-body-2 text-medium-emphasis mt-2">Finalize your order with encrypted payment and curated delivery details.</p>
-    </v-sheet>
+  <v-container class="bespoke-payment-container" fluid>
+    <!-- Secure Checkout Header -->
+    <div class="payment-header-bar">
+      <div>
+        <div class="brand-tagline">
+          <span class="tag-label">SECURE CHECKOUT</span>
+          <span class="tag-dot">•</span>
+          <span class="tag-label">PERSONAL PAYMENT</span>
+        </div>
+        <h1 class="page-title">Personal <span class="highlight-serif">Payment</span></h1>
+        <p class="page-subtitle">Finalize your order with encrypted payment and curated delivery details.</p>
+      </div>
+    </div>
 
-    <v-row v-if="selectedItems.length > 0">
+    <!-- Active State -->
+    <v-row v-if="selectedItems.length > 0" class="payment-active-grid">
+      <!-- Billing Address & Payment Method Forms -->
       <v-col cols="12" md="8">
-        <v-card rounded="lg" variant="outlined">
-          <v-card-title>Contact & Billing</v-card-title>
-          <v-divider />
-          <v-card-text>
-            <v-row>
+        <!-- Billing Details Flat Card -->
+        <div class="flat-card-container">
+          <div class="panel-head">
+            <h2 class="panel-title">Contact & Billing</h2>
+          </div>
+          <div class="panel-body mt-4">
+            <v-row dense>
               <v-col cols="12" sm="6">
-                <v-text-field v-model="form.firstName" label="First Name" rounded="lg" variant="outlined" />
+                <v-text-field
+                  v-model="form.firstName"
+                  class="flat-text-field"
+                  density="comfortable"
+                  label="First Name"
+                  variant="outlined"
+                />
               </v-col>
               <v-col cols="12" sm="6">
-                <v-text-field v-model="form.lastName" label="Last Name" rounded="lg" variant="outlined" />
+                <v-text-field
+                  v-model="form.lastName"
+                  class="flat-text-field"
+                  density="comfortable"
+                  label="Last Name"
+                  variant="outlined"
+                />
               </v-col>
               <v-col cols="12" sm="6">
                 <v-text-field
                   v-model="form.email"
+                  class="flat-text-field"
+                  density="comfortable"
                   label="Email"
-                  rounded="lg"
                   type="email"
                   variant="outlined"
                 />
               </v-col>
               <v-col cols="12" sm="6">
-                <v-text-field v-model="form.phone" label="Phone Number" rounded="lg" variant="outlined" />
+                <v-text-field
+                  v-model="form.phone"
+                  class="flat-text-field"
+                  density="comfortable"
+                  label="Phone Number"
+                  variant="outlined"
+                />
               </v-col>
               <v-col cols="12">
-                <v-text-field v-model="form.address" label="Street Address" rounded="lg" variant="outlined" />
+                <v-text-field
+                  v-model="form.address"
+                  class="flat-text-field"
+                  density="comfortable"
+                  label="Street Address"
+                  variant="outlined"
+                />
               </v-col>
               <v-col cols="12" sm="6">
-                <v-text-field v-model="form.city" label="City" rounded="lg" variant="outlined" />
+                <v-text-field
+                  v-model="form.city"
+                  class="flat-text-field"
+                  density="comfortable"
+                  label="City"
+                  variant="outlined"
+                />
               </v-col>
               <v-col cols="12" sm="3">
-                <v-text-field v-model="form.state" label="State" rounded="lg" variant="outlined" />
+                <v-text-field
+                  v-model="form.state"
+                  class="flat-text-field"
+                  density="comfortable"
+                  label="State"
+                  variant="outlined"
+                />
               </v-col>
               <v-col cols="12" sm="3">
-                <v-text-field v-model="form.zip" label="ZIP" rounded="lg" variant="outlined" />
+                <v-text-field
+                  v-model="form.zip"
+                  class="flat-text-field"
+                  density="comfortable"
+                  label="ZIP"
+                  variant="outlined"
+                />
               </v-col>
             </v-row>
-          </v-card-text>
-        </v-card>
+          </div>
+        </div>
 
-        <v-card class="mt-4" rounded="lg" variant="outlined">
-          <v-card-title>Payment Method</v-card-title>
-          <v-divider />
-          <v-card-text>
-            <v-tabs
-              v-model="tab"
-              class="mb-4"
-              density="comfortable"
-              grow
-              mandatory
-            >
-              <v-tab value="upi">UPI ID</v-tab>
-              <v-tab value="card">Card</v-tab>
-            </v-tabs>
+        <!-- Payment Method Flat Card -->
+        <div class="flat-card-container mt-6">
+          <div class="panel-head">
+            <h2 class="panel-title">Payment Method</h2>
+          </div>
+          <div class="panel-body mt-4">
+            <div class="tabs-header-flat mb-5">
+              <v-tabs
+                v-model="tab"
+                align-tabs="start"
+                class="custom-editorial-tabs"
+                color="teal-darken-1"
+                density="comfortable"
+                grow
+                mandatory
+              >
+                <v-tab value="upi">
+                  <v-icon start size="18">mdi-cellphone-nfc</v-icon>
+                  UPI ID
+                </v-tab>
+                <v-tab value="card">
+                  <v-icon start size="18">mdi-credit-card-outline</v-icon>
+                  Credit / Debit Card
+                </v-tab>
+              </v-tabs>
+            </div>
 
             <v-tabs-window v-model="tab">
               <v-tabs-window-item value="upi">
-                <v-alert class="mb-3" density="compact" type="info" variant="tonal">
-                  Use any UPI app linked to your bank account.
-                </v-alert>
-                <v-row>
+                <div class="custom-flat-alert info-alert mb-4">
+                  <v-icon class="alert-icon" size="18">mdi-information-outline</v-icon>
+                  <div class="alert-content">
+                    Use any UPI app linked to your bank account.
+                  </div>
+                </div>
+                <v-row dense>
                   <v-col cols="12">
                     <v-text-field
                       v-model="form.upiId"
+                      class="flat-text-field"
+                      density="comfortable"
                       hint="Example: name@okaxis"
                       label="UPI ID"
                       persistent-hint
-                      rounded="lg"
                       variant="outlined"
                     />
                   </v-col>
@@ -82,48 +152,64 @@
               </v-tabs-window-item>
 
               <v-tabs-window-item value="card">
-                <v-sheet class="pa-4 mb-4" border rounded="lg">
-                  <p class="text-caption text-medium-emphasis">Mindstore Card Preview</p>
-                  <p class="text-h6 font-weight-bold mt-2">{{ maskedCardNumber }}</p>
-                  <div class="d-flex justify-space-between text-caption text-medium-emphasis mt-2">
-                    <span>{{ form.cardHolder || 'CARD HOLDER' }}</span>
-                    <span>{{ form.expiry || 'MM/YY' }}</span>
+                <!-- High-contrast Credit Card Mockup -->
+                <div class="editorial-card-preview mb-6">
+                  <div class="card-inner-frame">
+                    <div class="card-header-row">
+                      <span class="card-brand-label">MINDSTORES CARD</span>
+                      <div class="card-chip-icon"></div>
+                    </div>
+                    <div class="card-number-display mt-6">{{ maskedCardNumber }}</div>
+                    <div class="card-footer-row mt-4">
+                      <div class="card-holder-info">
+                        <span class="card-label-tiny">CARD HOLDER</span>
+                        <span class="card-value-small">{{ form.cardHolder || 'CARD HOLDER' }}</span>
+                      </div>
+                      <div class="card-expiry-info text-right">
+                        <span class="card-label-tiny">EXPIRY</span>
+                        <span class="card-value-small">{{ form.expiry || 'MM/YY' }}</span>
+                      </div>
+                    </div>
                   </div>
-                </v-sheet>
+                </div>
 
-                <v-row>
+                <v-row dense>
                   <v-col cols="12">
                     <v-text-field
                       v-model="form.cardHolder"
+                      class="flat-text-field"
+                      density="comfortable"
                       label="Card Holder Name"
-                      rounded="lg"
                       variant="outlined"
                     />
                   </v-col>
                   <v-col cols="12">
                     <v-text-field
                       v-model="form.cardNumber"
+                      class="flat-text-field"
+                      density="comfortable"
                       label="Card Number"
                       maxlength="19"
-                      rounded="lg"
                       variant="outlined"
                     />
                   </v-col>
-                  <v-col cols="6" sm="4">
+                  <v-col cols="6" sm="6">
                     <v-text-field
                       v-model="form.expiry"
+                      class="flat-text-field"
+                      density="comfortable"
                       label="Expiry (MM/YY)"
                       maxlength="5"
-                      rounded="lg"
                       variant="outlined"
                     />
                   </v-col>
-                  <v-col cols="6" sm="4">
+                  <v-col cols="6" sm="6">
                     <v-text-field
                       v-model="form.cvv"
+                      class="flat-text-field"
+                      density="comfortable"
                       label="CVV"
                       maxlength="4"
-                      rounded="lg"
                       type="password"
                       variant="outlined"
                     />
@@ -131,62 +217,83 @@
                 </v-row>
               </v-tabs-window-item>
             </v-tabs-window>
-          </v-card-text>
-        </v-card>
+          </div>
+        </div>
       </v-col>
 
+      <!-- Order Summary Card -->
       <v-col cols="12" md="4">
-        <v-card rounded="lg" variant="outlined">
-          <v-card-title>Order Summary</v-card-title>
-          <v-divider />
-          <v-card-text>
-            <div class="d-flex flex-column ga-2">
-              <v-sheet v-for="item in selectedItems" :key="item.product_id" class="pa-3" border rounded="lg">
-                <p class="font-weight-medium">{{ item.name }}</p>
-                <p class="text-caption text-medium-emphasis mt-1">
-                  Qty {{ item.quantity }} - {{ item.stock > 0 ? `${item.stock} in stock` : 'Sold out' }}
-                </p>
-                <p class="font-weight-bold mt-2">{{ formatAmount(item.price * item.quantity) }}</p>
-              </v-sheet>
+        <div class="gallery-frame summary-frame">
+          <div class="frame-header">
+            <div class="frame-dots">
+              <span class="dot-red"></span>
+              <span class="dot-yellow"></span>
+              <span class="dot-green"></span>
+            </div>
+            <div class="frame-title-display">order_receipt.json</div>
+          </div>
+          <div class="summary-card-body">
+            <h2 class="summary-title">Order <span class="highlight-serif">Summary</span></h2>
+
+            <div class="summary-items-list mt-4">
+              <div
+                v-for="item in selectedItems"
+                :key="item.product_id"
+                class="flat-summary-item"
+              >
+                <div class="d-flex justify-space-between align-start ga-2">
+                  <div class="min-width-0">
+                    <h4 class="summary-item-name">{{ item.name }}</h4>
+                    <p class="summary-item-qty">
+                      Qty {{ item.quantity }} •
+                      <span :class="item.stock > 0 ? 'text-success-dark' : 'text-error-dark'">
+                        {{ item.stock > 0 ? 'Available' : 'Sold out' }}
+                      </span>
+                    </p>
+                  </div>
+                  <strong class="summary-item-price">{{ formatAmount(item.price * item.quantity) }}</strong>
+                </div>
+              </div>
             </div>
 
-            <v-alert
-              v-if="selectedStockIssues.length > 0"
-              class="mt-3"
-              density="compact"
-              type="warning"
-              variant="tonal"
-            >
-              {{ selectedStockIssues.length }} selected item needs stock review.
-            </v-alert>
+            <!-- Stock Warning Alert -->
+            <div v-if="selectedStockIssues.length > 0" class="custom-flat-alert warning-alert mt-4">
+              <v-icon class="alert-icon" size="18">mdi-alert-outline</v-icon>
+              <div class="alert-content">
+                {{ selectedStockIssues.length }} selected item needs stock review.
+              </div>
+            </div>
 
-            <v-divider class="my-4" />
+            <div class="price-summary-divider my-4"></div>
 
-            <div class="d-flex justify-space-between mb-2">
-              <span>Subtotal</span>
-              <strong>{{ formatAmount(totalAmount) }}</strong>
+            <!-- Summary Prices List -->
+            <div class="summary-prices-list">
+              <div class="price-row">
+                <span>Subtotal</span>
+                <span>{{ formatAmount(totalAmount) }}</span>
+              </div>
+              <div v-if="promoDiscount > 0" class="price-row promo-row-text">
+                <span>Promo ({{ selectedPromoCode }})</span>
+                <span>-{{ formatAmount(promoDiscount) }}</span>
+              </div>
+              <div class="price-row">
+                <span>Shipping</span>
+                <span class="free-badge">Free</span>
+              </div>
+              <div class="price-divider-thick my-3"></div>
+              <div class="price-row total-row">
+                <span>Total</span>
+                <span class="total-amount">{{ formatAmount(payableAmount) }}</span>
+              </div>
             </div>
-            <div v-if="promoDiscount > 0" class="d-flex justify-space-between mb-2 text-success">
-              <span>Promo ({{ selectedPromoCode }})</span>
-              <strong>-{{ formatAmount(promoDiscount) }}</strong>
-            </div>
-            <div class="d-flex justify-space-between mb-2">
-              <span>Shipping</span>
-              <strong>Free</strong>
-            </div>
-            <div class="d-flex justify-space-between text-subtitle-1 font-weight-bold mt-3">
-              <span>Total</span>
-              <strong>{{ formatAmount(payableAmount) }}</strong>
-            </div>
-          </v-card-text>
 
-          <v-card-actions class="d-flex flex-column ga-2">
+            <!-- CTA Flat Buttons -->
             <v-btn
               block
-              color="teal-darken-1"
+              class="action-btn-flat mt-5"
               :disabled="selectedStockIssues.length > 0"
               :loading="submitting"
-              rounded="lg"
+              rounded="0"
               size="large"
               variant="flat"
               @click="submitPayment"
@@ -196,32 +303,46 @@
 
             <v-btn
               block
-              color="error"
-              rounded="lg"
+              class="action-btn-flat-outline mt-3"
+              rounded="0"
               size="large"
-              variant="tonal"
+              variant="outlined"
               @click="cancelPayment"
             >
               Cancel Payment
             </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-col>
-    </v-row>
-
-    <v-row v-else>
-      <v-col cols="12">
-        <v-card class="text-center py-10" rounded="lg" variant="outlined">
-          <v-icon size="52">mdi-cart-outline</v-icon>
-          <h2 class="text-h5 mt-4">No Selected Items</h2>
-          <p class="text-body-2 text-medium-emphasis mt-2">Go back to your cart and select products before payment.</p>
-          <div class="mt-4">
-            <v-btn color="teal-darken-1" rounded="lg" to="/cart" variant="flat">Back to Cart</v-btn>
           </div>
-        </v-card>
+        </div>
       </v-col>
     </v-row>
 
+    <!-- Empty State -->
+    <v-row v-else>
+      <v-col cols="12" class="d-flex justify-center">
+        <div class="gallery-frame empty-payment-frame">
+          <div class="frame-header">
+            <div class="frame-dots">
+              <span class="dot-red"></span>
+              <span class="dot-yellow"></span>
+              <span class="dot-green"></span>
+            </div>
+            <div class="frame-title-display">payment_checkout.json</div>
+          </div>
+          <div class="empty-payment-body text-center pa-8">
+            <v-icon size="48" color="teal-darken-1">mdi-cart-off-outline</v-icon>
+            <h2 class="empty-title mt-4">No Selected Items</h2>
+            <p class="empty-subtitle mt-2">Go back to your cart and select products before payment.</p>
+            <div class="mt-6">
+              <v-btn class="action-btn-flat" rounded="0" size="large" to="/cart" variant="flat">
+                Back to Cart
+              </v-btn>
+            </div>
+          </div>
+        </div>
+      </v-col>
+    </v-row>
+
+    <!-- Base SnackBar Notification -->
     <BaseAlert
       v-model="snackbar"
       floating
@@ -499,3 +620,458 @@
     }
   }
 </script>
+
+<style scoped>
+/* ════════════════════════════════ PAGE ROOT ═══ */
+.bespoke-payment-container {
+  min-height: 100vh;
+  background: #f8fafc;
+  padding: 40px max(16px, 4vw) 80px !important;
+}
+
+/* ════════════════════════════════ HEADER BAR ══ */
+.payment-header-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 32px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.brand-tagline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.tag-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: #0f766e;
+}
+.tag-dot {
+  font-size: 10px;
+  color: #cbd5e1;
+}
+
+.page-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800;
+  color: #0f172a;
+}
+.highlight-serif {
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+  font-style: italic;
+  font-weight: 400;
+  color: #0d9488;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+/* ════════════════════════════════ ACTIVE GRID ═ */
+.payment-active-grid {
+  align-items: start;
+}
+
+/* ════════════════════════════════ FLAT CARD ═══ */
+.flat-card-container {
+  background: #ffffff;
+  border: 1px solid #0f172a;
+  box-shadow: 6px 6px 0px #0f172a;
+  padding: 24px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.panel-head {
+  border-bottom: 1px solid #cbd5e1;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+}
+
+.panel-title {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+/* ════════════════════════════════ FORM OVERRIDES ═ */
+:deep(.flat-text-field .v-field) {
+  border-radius: 0 !important;
+  border: 1px solid #0f172a !important;
+  background-color: #ffffff !important;
+  box-shadow: none !important;
+  transition: border-color 0.2s ease;
+}
+
+:deep(.flat-text-field .v-field--focused) {
+  border-color: #0d9488 !important;
+}
+
+:deep(.flat-text-field .v-field__outline) {
+  display: none !important;
+}
+
+:deep(.flat-text-field .v-label) {
+  color: #64748b !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+}
+
+:deep(.flat-text-field input) {
+  color: #0f172a !important;
+  font-weight: 500 !important;
+}
+
+/* ════════════════════════════════ PRINT TABS ══ */
+.tabs-header-flat {
+  border-bottom: 1px solid #0f172a;
+}
+
+.custom-editorial-tabs {
+  background: transparent !important;
+}
+
+:deep(.custom-editorial-tabs .v-btn) {
+  border-radius: 0 !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  font-size: 13px !important;
+  color: #64748b !important;
+  border: 1px solid transparent;
+  border-bottom: none;
+  margin-right: 4px;
+}
+
+:deep(.custom-editorial-tabs .v-tab--selected) {
+  color: #0f172a !important;
+  background: #ffffff !important;
+  border-color: #0f172a #0f172a transparent #0f172a !important;
+}
+
+:deep(.custom-editorial-tabs .v-tabs-slider) {
+  display: none !important;
+}
+
+/* ════════════════════════════════ CREDIT CARD PREVIEW ═ */
+.editorial-card-preview {
+  background: #0f172a;
+  color: #ffffff;
+  border: 1px solid #0f172a;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 4px 4px 0px #0d9488;
+}
+
+.card-inner-frame {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-brand-label {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  color: #0d9488;
+}
+
+.card-chip-icon {
+  width: 36px;
+  height: 26px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  position: relative;
+}
+
+.card-chip-icon::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  width: 24px;
+  height: 18px;
+  border-right: 1px solid #94a3b8;
+  border-bottom: 1px solid #94a3b8;
+}
+
+.card-number-display {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #f1f5f9;
+  word-spacing: 0.1em;
+}
+
+.card-footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.card-label-tiny {
+  display: block;
+  font-size: 9px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.1em;
+  margin-bottom: 2px;
+}
+
+.card-value-small {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #ffffff;
+}
+
+/* ════════════════════════════════ macOS FRAME ══ */
+.gallery-frame {
+  background: #ffffff;
+  border: 1px solid #0f172a;
+  box-shadow: 6px 6px 0px #0f172a;
+  display: flex;
+  flex-direction: column;
+}
+
+.frame-header {
+  height: 36px;
+  background: #f1f5f9;
+  border-bottom: 1px solid #0f172a;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  position: relative;
+}
+
+.frame-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.dot-red, .dot-yellow, .dot-green {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+.dot-red { background: #ef4444; }
+.dot-yellow { background: #eab308; }
+.dot-green { background: #22c55e; }
+
+.frame-title-display {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.summary-card-body {
+  padding: 24px;
+}
+
+.summary-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  border-bottom: 1px solid #cbd5e1;
+  padding-bottom: 12px;
+}
+
+/* ════════════════════════════════ SUMMARY ITEMS ═ */
+.summary-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.flat-summary-item {
+  border-bottom: 1px dashed #cbd5e1;
+  padding-bottom: 12px;
+}
+.flat-summary-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.summary-item-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.summary-item-qty {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.text-success-dark {
+  color: #0f766e;
+  font-weight: 700;
+}
+
+.text-error-dark {
+  color: #b91c1c;
+  font-weight: 700;
+}
+
+.summary-item-price {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.price-summary-divider {
+  border-top: 1px solid #0f172a;
+}
+
+/* ════════════════════════════════ SUMMARY PRICES ═ */
+.summary-prices-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: #475569;
+  font-weight: 600;
+}
+
+.promo-row-text {
+  color: #0f766e;
+}
+
+.free-badge {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #0f766e;
+  border: 1px solid #0f766e;
+  padding: 1px 6px;
+  background: #f0fdf4;
+}
+
+.price-divider-thick {
+  border-top: 2px solid #0f172a;
+}
+
+.total-row {
+  font-size: 18px;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.total-amount {
+  font-size: 20px;
+  color: #0f766e;
+  text-decoration: underline;
+  text-decoration-style: double;
+}
+
+/* ════════════════════════════════ FLAT BUTTONS ══ */
+.action-btn-flat {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  font-size: 14px !important;
+  letter-spacing: 0.05em !important;
+  border: 1px solid #0f172a !important;
+  transition: all 0.2s ease !important;
+}
+
+.action-btn-flat:hover {
+  background: #0d9488 !important;
+  border-color: #0d9488 !important;
+}
+
+.action-btn-flat-outline {
+  background: transparent !important;
+  color: #ef4444 !important;
+  font-weight: 800 !important;
+  font-size: 14px !important;
+  letter-spacing: 0.05em !important;
+  border: 1px solid #ef4444 !important;
+  transition: all 0.2s ease !important;
+}
+
+.action-btn-flat-outline:hover {
+  background: #fef2f2 !important;
+}
+
+/* ════════════════════════════════ EMPTY STATE ═ */
+.empty-payment-frame {
+  width: 100%;
+  max-width: 520px;
+  margin-top: 40px;
+}
+
+.empty-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.empty-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  max-width: 360px;
+  margin: 8px auto 0;
+}
+
+/* ════════════════════════════════ ALERTS ══════ */
+.custom-flat-alert {
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 1px solid #cbd5e1;
+  font-size: 13px;
+  font-weight: 600;
+  align-items: center;
+}
+
+.info-alert {
+  background: #f0fdfa;
+  border-color: #0d9488;
+  color: #0f766e;
+}
+.info-alert .alert-icon {
+  color: #0d9488;
+}
+
+.warning-alert {
+  background: #fffbeb;
+  border-color: #f59e0b;
+  color: #b45309;
+}
+.warning-alert .alert-icon {
+  color: #f59e0b;
+}
+
+.alert-content {
+  flex-grow: 1;
+}
+</style>
+  

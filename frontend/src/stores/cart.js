@@ -212,7 +212,7 @@ export const useCartStore = defineStore('cart', {
 
     invalidateProducts(productIds = []) {
       for (const productId of productIds) {
-        if (!productId) continue
+        if (!productId) {continue}
         delete this.products[productId]
         pendingProductRequests.delete(productId)
       }

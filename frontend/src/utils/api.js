@@ -23,7 +23,7 @@ export function buildApiUrl(path) {
 }
 
 export async function buildAuthenticatedRequestConfig(config = {}, options = {}) {
-  const headers = { ...(config.headers || {}) }
+  const headers = { ...config.headers }
   const hasAuthorizationHeader = Object.keys(headers).some((key) => key.toLowerCase() === 'authorization')
   const currentUser = firebaseAuth.currentUser
 

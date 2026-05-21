@@ -1,40 +1,54 @@
 <template>
-  <v-container class="py-4 py-md-6" fluid>
+  <v-container class="bespoke-detail-container" fluid>
+    <!-- LOADING STATE -->
     <v-row v-if="loading" dense>
       <v-col cols="12" md="5">
-        <v-skeleton-loader class="rounded-xl" height="460" type="image" />
+        <v-skeleton-loader class="rounded-0 border" height="460" type="image" />
       </v-col>
       <v-col cols="12" md="7">
-        <v-skeleton-loader class="rounded-xl" type="article, list-item-three-line, actions" />
+        <v-skeleton-loader class="rounded-0 border" type="article, list-item-three-line, actions" />
       </v-col>
     </v-row>
 
+    <!-- PRODUCT DISPLAY -->
     <template v-else-if="product">
-      <div class="d-flex align-center justify-space-between flex-wrap ga-3 mb-4">
-        <div class="d-flex align-center flex-wrap justify-end ga-2">
-          <v-chip color="teal-darken-1" size="small" variant="tonal">
-            {{ categoryLabel }}
-          </v-chip>
-          <v-chip
-            :color="stockReady ? 'success' : 'error'"
-            prepend-icon="mdi-circle"
-            size="small"
-            variant="tonal"
-          >
+      <!-- Minimalist navigation / category / status strip -->
+      <div class="detail-header-bar">
+        <button class="back-btn" @click="goBack">
+          <v-icon size="14" class="mr-1">mdi-arrow-left</v-icon>
+          <span>Back to Catalog</span>
+          <span class="underline-hover"></span>
+        </button>
+        <div class="header-badges">
+          <span class="badge-category">{{ categoryLabel }}</span>
+          <span class="badge-stock" :class="{ 'badge-stock--out': !stockReady }">
+            <span class="status-dot"></span>
             {{ stockText }}
-          </v-chip>
+          </span>
         </div>
       </div>
 
-      <v-row dense>
-        <v-col cols="12" lg="5">
-          <v-card border rounded="xl" variant="flat">
-            <v-sheet class="pa-3 pa-md-4" color="grey-lighten-5" rounded="xl">
+      <!-- Main Columns Grid -->
+      <div class="bespoke-detail-grid">
+        <!-- LEFT COLUMN: Image Gallery mock macOS Frame & specs -->
+        <div class="detail-left-col">
+          <div class="gallery-frame">
+            <div class="frame-header">
+              <div class="frame-dots">
+                <span class="dot-red"></span>
+                <span class="dot-yellow"></span>
+                <span class="dot-green"></span>
+              </div>
+              <div class="frame-title-display">product_stage.json</div>
+            </div>
+
+            <div class="gallery-carousel-wrap">
               <v-carousel
                 v-if="productImageUrls.length > 0"
                 height="auto"
                 :hide-delimiters="productImageUrls.length <= 1"
                 :show-arrows="productImageUrls.length > 1 ? 'hover' : false"
+                class="custom-carousel"
               >
                 <v-carousel-item
                   v-for="(imageUrl, index) in productImageUrls"
@@ -42,346 +56,317 @@
                 >
                   <v-img
                     :alt="`${product.name} image ${index + 1}`"
-                    aspect-ratio="1"
+                    aspect-ratio="1.2"
                     cover
                     decoding="async"
                     :fetchpriority="index === 0 ? 'high' : 'auto'"
                     :loading="index === 0 ? 'eager' : 'lazy'"
-                    max-height="440"
+                    class="gallery-image"
                     sizes="(max-width: 768px) 100vw, 42vw"
                     :src="imageUrl"
                     @click="openImageDialog(index)"
                   />
                 </v-carousel-item>
               </v-carousel>
-              <v-sheet
+              <div
                 v-else
-                class="d-flex align-center justify-center"
-                color="grey-lighten-4"
-                height="380"
-                rounded="lg"
+                class="no-image-placeholder"
               >
-                <v-icon color="primary" size="56">mdi-image-off-outline</v-icon>
-              </v-sheet>
-            </v-sheet>
-          </v-card>
+                <v-icon color="grey-lighten-1" size="56">mdi-image-off-outline</v-icon>
+                <span>No preview available</span>
+              </div>
+            </div>
+          </div>
 
-          <v-row class="mt-3" dense>
-            <v-col
+          <!-- Specs details panels -->
+          <div class="specs-grid">
+            <div
               v-for="panel in visualPanels"
               :key="panel.title"
-              cols="12"
-              md="4"
+              class="spec-card"
             >
-              <v-card border class="h-100" rounded="lg" variant="flat">
-                <v-card-text class="pa-3">
-                  <p class="text-caption text-medium-emphasis text-uppercase font-weight-medium mb-1">
-                    {{ panel.title }}
-                  </p>
-                  <p class="text-body-2 font-weight-medium mb-0">{{ panel.value }}</p>
-                </v-card-text>
-              </v-card>
-            </v-col>
-          </v-row>
-        </v-col>
+              <span class="spec-label">{{ panel.title }}</span>
+              <span class="spec-value">{{ panel.value }}</span>
+            </div>
+          </div>
+        </div>
 
-        <v-col cols="12" lg="7">
-          <v-card border rounded="xl" variant="flat">
-            <v-card-text class="pa-4 pa-md-6">
-              <div class="d-flex align-center flex-wrap ga-2">
-                <span class="text-caption text-medium-emphasis">Inclusive of all taxes</span>
-                <v-divider vertical />
-                <span class="text-caption text-medium-emphasis">Curated by Mindstores</span>
-              </div>
+        <!-- RIGHT COLUMN: Purchase & configuration stage -->
+        <div class="detail-right-col">
+          <div class="product-purchase-panel">
+            <div class="panel-meta">
+              <span class="meta-item">Inclusive of all taxes</span>
+              <span class="meta-dot">•</span>
+              <span class="meta-item">Curated by Mindstores</span>
+            </div>
 
-              <h1 class="text-h5 text-md-h4 font-weight-bold mt-3 mb-3 text-break">
-                {{ product.name }}
-              </h1>
+            <h1 class="product-title">{{ product.name }}</h1>
 
-              <div class="d-flex align-center flex-wrap ga-3">
-                <p class="text-h5 text-md-h4 font-weight-bold mb-0">{{ formattedPrice }}</p>
-
-                <v-chip color="amber-lighten-5" size="small" variant="flat">
-                  <v-icon color="amber-darken-2" start>mdi-star</v-icon>
+            <div class="pricing-rating-row">
+              <div class="price-display">{{ formattedPrice }}</div>
+              <div class="rating-summary">
+                <span class="rating-badge">
+                  <v-icon color="amber-darken-2" size="14" start>mdi-star</v-icon>
                   {{ ratingLabel }}
-                </v-chip>
-
-                <span class="text-body-2 text-medium-emphasis">
+                </span>
+                <span class="reviews-count-label">
                   {{ reviewCountLabel }}
                 </span>
               </div>
+            </div>
 
-              <div class="d-flex align-center ga-1 mt-3">
-                <v-icon
-                  v-for="(filled, index) in ratingStars"
-                  :key="index"
-                  :color="filled ? 'amber-darken-2' : 'grey-lighten-1'"
-                  size="18"
-                >
-                  {{ filled ? 'mdi-star' : 'mdi-star-outline' }}
-                </v-icon>
+            <div class="star-rating-stars">
+              <v-icon
+                v-for="(filled, index) in ratingStars"
+                :key="index"
+                :color="filled ? 'amber-darken-2' : 'grey-lighten-2'"
+                size="16"
+              >
+                {{ filled ? 'mdi-star' : 'mdi-star-outline' }}
+              </v-icon>
+            </div>
+
+            <hr class="section-divider" />
+
+            <div class="trust-grid">
+              <div
+                v-for="chip in trustChips"
+                :key="chip.label"
+                class="trust-item"
+              >
+                <v-icon class="trust-item-icon" size="14">{{ chip.icon }}</v-icon>
+                <span class="trust-item-text">{{ chip.label }}</span>
+              </div>
+            </div>
+
+            <div class="action-box">
+              <div class="qty-section">
+                <div class="qty-info">
+                  <span class="qty-label">Quantity</span>
+                  <span class="qty-stock-status">{{ stockText }}</span>
+                </div>
+                <div class="qty-picker">
+                  <button
+                    class="qty-picker-btn"
+                    :disabled="quantity <= 1"
+                    @click="decreaseQuantity"
+                    aria-label="Decrease quantity"
+                  >
+                    <v-icon size="12">mdi-minus</v-icon>
+                  </button>
+                  <span class="qty-picker-value">{{ quantity }}</span>
+                  <button
+                    class="qty-picker-btn"
+                    :disabled="!stockReady || quantity >= product.stock"
+                    @click="increaseQuantity"
+                    aria-label="Increase quantity"
+                  >
+                    <v-icon size="12">mdi-plus</v-icon>
+                  </button>
+                </div>
               </div>
 
-              <v-divider class="my-5" />
+              <div class="action-buttons-group">
+                <v-btn
+                  class="action-btn-cart"
+                  rounded="0"
+                  size="large"
+                  variant="flat"
+                  :disabled="!stockReady"
+                  @click="addToCart"
+                >
+                  <v-icon start size="16">mdi-cart</v-icon>
+                  {{ stockReady ? 'Add to Cart' : 'Sold Out' }}
+                </v-btn>
 
-              <div class="d-flex flex-wrap ga-2 mb-5">
-                <v-chip
-                  v-for="chip in trustChips"
-                  :key="chip.label"
-                  :prepend-icon="chip.icon"
-                  size="small"
+                <v-btn
+                  class="action-btn-buy"
+                  rounded="0"
+                  size="large"
                   variant="outlined"
+                  :disabled="!stockReady"
+                  @click="buyNow"
                 >
-                  {{ chip.label }}
-                </v-chip>
+                  <v-icon start size="16">mdi-lightning-bolt</v-icon>
+                  Buy Now
+                </v-btn>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-              <v-card color="grey-lighten-5" rounded="lg" variant="flat">
-                <v-card-text class="pa-4">
-                  <div class="d-flex align-center justify-space-between flex-wrap ga-3">
-                    <div>
-                      <p class="text-body-2 font-weight-medium mb-1">Quantity</p>
-                      <p class="text-caption text-medium-emphasis mb-0">{{ stockText }}</p>
-                    </div>
+      <!-- SECONDARY INFO GRID: Description & Service -->
+      <div class="editorial-details-row">
+        <div class="details-main-card">
+          <h2 class="details-section-title">Product Details</h2>
+          <div class="details-content-wrapper">
+            <div class="description-lines">
+              <p
+                v-for="(line, index) in visibleDescriptionLines"
+                :key="`${line}-${index}`"
+                class="desc-line"
+              >
+                {{ line }}
+              </p>
+            </div>
+            <button
+              v-if="showSeeMore"
+              class="see-more-toggle"
+              @click="toggleDescription"
+            >
+              {{ isTruncated ? 'See more' : 'See less' }}
+            </button>
+          </div>
+        </div>
 
-                    <div class="d-flex align-center ga-2">
-                      <v-btn
-                        density="comfortable"
-                        :disabled="quantity <= 1"
-                        icon="mdi-minus"
-                        size="small"
-                        variant="outlined"
-                        @click="decreaseQuantity"
-                      />
-                      <v-chip class="px-5" variant="outlined">Qty {{ quantity }}</v-chip>
-                      <v-btn
-                        density="comfortable"
-                        :disabled="!stockReady || quantity >= product.stock"
-                        icon="mdi-plus"
-                        size="small"
-                        variant="outlined"
-                        @click="increaseQuantity"
-                      />
-                    </div>
-                  </div>
+        <div class="promise-sidebar-card">
+          <h2 class="details-section-title">Service Promise</h2>
+          <div class="promise-list">
+            <div
+              v-for="(detail, index) in atelierDetails"
+              :key="detail.title"
+              class="promise-list-item"
+            >
+              <h3 class="promise-item-title">{{ detail.title }}</h3>
+              <p class="promise-item-copy">{{ detail.copy }}</p>
+              <hr v-if="index < atelierDetails.length - 1" class="promise-item-divider" />
+            </div>
+          </div>
+        </div>
+      </div>
 
-                  <div class="d-flex flex-column flex-sm-row ga-3 mt-4">
-                    <v-btn
-                      class="flex-grow-1"
-                      color="teal-darken-1"
-                      :disabled="!stockReady"
-                      prepend-icon="mdi-cart"
-                      rounded="lg"
-                      size="large"
-                      variant="flat"
-                      @click="addToCart"
-                    >
-                      {{ stockReady ? 'Add to Cart' : 'Sold Out' }}
-                    </v-btn>
+      <!-- REVIEWS SECTION -->
+      <div class="reviews-section-card">
+        <div class="reviews-section-header">
+          <div class="header-text-wrap">
+            <h2 class="details-section-title">Customer Reviews</h2>
+            <p class="section-subtitle-text">Shared by verified Mindstores customers.</p>
+          </div>
+          <span class="reviews-score-badge">
+            <v-icon color="amber-darken-2" size="14" start>mdi-star</v-icon>
+            <span>{{ ratingLabel }} · {{ reviewCountLabel }}</span>
+          </span>
+        </div>
 
-                    <v-btn
-                      class="flex-grow-1"
-                      color="primary"
-                      :disabled="!stockReady"
-                      prepend-icon="mdi-lightning-bolt"
-                      rounded="lg"
-                      size="large"
-                      variant="tonal"
-                      @click="buyNow"
-                    >
-                      Buy Now
-                    </v-btn>
-                  </div>
-                </v-card-text>
-              </v-card>
-            </v-card-text>
-          </v-card>
-        </v-col>
+        <hr class="section-divider" />
 
-        <v-col cols="12" lg="8">
-          <v-card border rounded="xl" variant="flat">
-            <v-card-title class="text-subtitle-1 font-weight-bold">Product Details</v-card-title>
-            <v-divider />
-            <v-card-text>
-              <div class="d-flex flex-column ga-2">
-                <p
-                  v-for="(line, index) in visibleDescriptionLines"
-                  :key="`${line}-${index}`"
-                  class="text-body-2 text-medium-emphasis mb-0"
-                >
-                  {{ line }}
-                </p>
+        <div class="reviews-split-grid">
+          <!-- LEFT SIDE: Rating Summary & Form -->
+          <div class="reviews-form-panel">
+            <div class="rating-hero-box">
+              <div class="rating-hero-avatar">
+                <v-icon color="amber-darken-2" icon="mdi-star" size="24" />
               </div>
+              <div class="rating-hero-values">
+                <span class="rating-hero-number">{{ ratingLabel }}</span>
+                <span class="rating-hero-count">{{ reviewCountLabel }}</span>
+              </div>
+            </div>
+
+            <div v-if="!appStore.isAuthenticated" class="login-prompt-box">
+              <p class="login-prompt-text">Log in to share your experience with this item.</p>
               <v-btn
-                v-if="showSeeMore"
-                class="px-0 mt-2"
-                color="teal-darken-1"
-                size="small"
-                variant="plain"
-                @click="toggleDescription"
+                class="login-redirect-btn"
+                rounded="0"
+                variant="flat"
+                to="/login"
               >
-                {{ isTruncated ? 'See more' : 'See less' }}
+                Log In
               </v-btn>
-            </v-card-text>
-          </v-card>
-        </v-col>
+            </div>
 
-        <v-col cols="12" lg="4">
-          <v-card border class="h-100" rounded="xl" variant="flat">
-            <v-card-title class="text-subtitle-1 font-weight-bold">Service Promise</v-card-title>
-            <v-divider />
-            <v-list lines="three">
-              <template
-                v-for="(detail, index) in atelierDetails"
-                :key="detail.title"
-              >
-                <v-list-item :title="detail.title">
-                  <template #subtitle>
-                    <span class="text-body-2 text-medium-emphasis">{{ detail.copy }}</span>
-                  </template>
-                </v-list-item>
-                <v-divider v-if="index < atelierDetails.length - 1" />
-              </template>
-            </v-list>
-          </v-card>
-        </v-col>
-
-        <v-col cols="12">
-          <v-card border rounded="xl" variant="flat">
-            <v-card-title class="d-flex align-center justify-space-between flex-wrap ga-3">
-              <div>
-                <div class="text-subtitle-1 font-weight-bold">Public Reviews</div>
-                <div class="text-body-2 text-medium-emphasis">Shared by logged-in Mindstores customers.</div>
+            <v-form v-else @submit.prevent="submitReview" class="review-submission-form">
+              <div class="form-rating-row">
+                <span class="form-rating-label">Your Rating:</span>
+                <v-rating
+                  v-model="reviewForm.rating"
+                  active-color="amber-darken-2"
+                  color="grey-lighten-2"
+                  density="comfortable"
+                  hover
+                  length="5"
+                  size="28"
+                />
               </div>
-              <v-chip color="amber-darken-2" prepend-icon="mdi-star" variant="tonal">
-                {{ ratingLabel }} · {{ reviewCountLabel }}
-              </v-chip>
-            </v-card-title>
-            <v-divider />
-            <v-card-text>
-              <v-row dense>
-                <v-col cols="12" md="5">
-                  <v-sheet class="pa-4 h-100" color="grey-lighten-5" rounded="lg">
-                    <div class="d-flex align-center ga-3 mb-4">
-                      <v-avatar color="amber-lighten-5" size="56">
-                        <v-icon color="amber-darken-2" icon="mdi-star" size="28" />
-                      </v-avatar>
-                      <div>
-                        <div class="text-h5 font-weight-bold">{{ ratingLabel }}</div>
-                        <div class="text-body-2 text-medium-emphasis">{{ reviewCountLabel }}</div>
-                      </div>
-                    </div>
 
-                    <v-alert
-                      v-if="!appStore.isAuthenticated"
-                      color="teal-darken-1"
-                      icon="mdi-login"
-                      rounded="lg"
-                      variant="tonal"
-                    >
-                      <div class="d-flex flex-column flex-sm-row align-sm-center justify-space-between ga-3">
-                        <span>Login first before adding your review.</span>
-                        <v-btn color="teal-darken-1" rounded="lg" to="/login" variant="flat">Login</v-btn>
-                      </div>
-                    </v-alert>
+              <v-textarea
+                v-model="reviewForm.comment"
+                auto-grow
+                class="review-textarea-custom"
+                counter
+                density="comfortable"
+                label="Write a review..."
+                :maxlength="reviewCommentMaxLength"
+                rows="3"
+                variant="outlined"
+                bg-color="#ffffff"
+              />
 
-                    <v-form v-else @submit.prevent="submitReview">
-                      <div class="text-body-2 font-weight-medium mb-2">Your rating</div>
-                      <v-rating
-                        v-model="reviewForm.rating"
-                        active-color="amber-darken-2"
-                        color="grey-lighten-1"
-                        density="comfortable"
-                        hover
-                        length="5"
-                        size="32"
-                      />
-                      <v-textarea
-                        v-model="reviewForm.comment"
-                        auto-grow
-                        class="mt-3"
-                        counter
-                        density="comfortable"
-                        label="Write public review"
-                        :maxlength="reviewCommentMaxLength"
-                        rows="3"
-                        variant="outlined"
-                      />
-                      <v-btn
-                        block
-                        color="teal-darken-1"
-                        :disabled="!canSubmitReview"
-                        :loading="reviewSaving"
-                        prepend-icon="mdi-message-draw"
-                        rounded="lg"
-                        type="submit"
-                        variant="flat"
-                      >
-                        Save Review
-                      </v-btn>
-                    </v-form>
-                  </v-sheet>
-                </v-col>
+              <v-btn
+                class="save-review-btn"
+                block
+                variant="flat"
+                rounded="0"
+                type="submit"
+                :disabled="!canSubmitReview"
+                :loading="reviewSaving"
+              >
+                <v-icon start size="14">mdi-message-draw</v-icon>
+                Submit Review
+              </v-btn>
+            </v-form>
+          </div>
 
-                <v-col cols="12" md="7">
-                  <v-progress-linear v-if="reviewsLoading" color="teal-darken-1" indeterminate />
-                  <v-alert v-else-if="reviews.length === 0" type="info" variant="tonal">
-                    No public reviews yet.
-                  </v-alert>
-                  <v-list v-else bg-color="transparent" lines="three">
-                    <template
-                      v-for="(review, index) in reviews"
-                      :key="review.review_id || `${review.created_at}-${index}`"
-                    >
-                      <v-list-item>
-                        <template #prepend>
-                          <v-avatar color="teal-lighten-5" size="42">
-                            <span class="text-teal-darken-2 font-weight-bold">{{ reviewerInitial(review) }}</span>
-                          </v-avatar>
-                        </template>
-                        <template #title>
-                          <div class="d-flex align-center flex-wrap ga-2">
-                            <span class="font-weight-medium">{{ review.reviewer_name || 'Mindstores user' }}</span>
-                            <v-rating
-                              active-color="amber-darken-2"
-                              color="grey-lighten-1"
-                              density="compact"
-                              :model-value="Number(review.rating || 0)"
-                              readonly
-                              size="16"
-                            />
-                          </div>
-                        </template>
-                        <template #subtitle>
-                          <div class="text-body-2 text-medium-emphasis mt-1">{{ review.comment }}</div>
-                          <div class="text-caption text-medium-emphasis mt-1">{{ formatReviewDate(review.created_at) }}</div>
-                        </template>
-                      </v-list-item>
-                      <v-divider v-if="index < reviews.length - 1" />
-                    </template>
-                  </v-list>
-                </v-col>
-              </v-row>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
+          <!-- RIGHT SIDE: Reviews Feed -->
+          <div class="reviews-feed-panel">
+            <v-progress-linear v-if="reviewsLoading" color="teal-darken-2" indeterminate class="mb-4" />
+
+            <div v-else-if="reviews.length === 0" class="empty-reviews-state">
+              <v-icon color="grey-lighten-1" size="32" class="mb-2">mdi-message-outline</v-icon>
+              <p>No reviews written for this product yet.</p>
+            </div>
+
+            <div v-else class="reviews-list-wrapper">
+              <div
+                v-for="(review, index) in reviews"
+                :key="review.review_id || `${review.created_at}-${index}`"
+                class="review-feed-card"
+              >
+                <div class="review-card-header">
+                  <div class="reviewer-avatar">
+                    <span>{{ reviewerInitial(review) }}</span>
+                  </div>
+                  <div class="reviewer-meta-info">
+                    <span class="reviewer-name">{{ review.reviewer_name || 'Mindstores User' }}</span>
+                    <v-rating
+                      active-color="amber-darken-2"
+                      color="grey-lighten-2"
+                      density="compact"
+                      :model-value="Number(review.rating || 0)"
+                      readonly
+                      size="14"
+                    />
+                  </div>
+                  <span class="review-date-badge">{{ formatReviewDate(review.created_at) }}</span>
+                </div>
+                <p class="review-card-comment">{{ review.comment }}</p>
+                <hr v-if="index < reviews.length - 1" class="review-card-divider" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </template>
 
-    <v-row v-else justify="center">
-      <v-col cols="12" md="7">
-        <v-card class="pa-8 text-center" rounded="xl" variant="outlined">
-          <v-icon color="primary" size="48">mdi-package-variant-remove</v-icon>
-          <h2 class="text-h5 mt-3">Product not found</h2>
-          <p class="text-body-2 text-medium-emphasis mt-2">
-            This product may have been moved or is temporarily unavailable.
-          </p>
-          <v-btn class="mt-4" color="teal-darken-1" rounded="lg" @click="router.push('/')">
-            Back to Home
-          </v-btn>
-        </v-card>
-      </v-col>
-    </v-row>
+    <div v-else class="product-not-found-card">
+      <v-icon color="grey-lighten-1" size="64">mdi-package-variant-remove</v-icon>
+      <h2 class="not-found-title">Product not found</h2>
+      <p class="not-found-text">This product may have been moved or is temporarily unavailable.</p>
+      <v-btn class="not-found-btn" rounded="0" color="teal-darken-2" variant="flat" @click="router.push('/')">
+        Back to Home
+      </v-btn>
+    </div>
   </v-container>
 
   <BaseAlert
@@ -825,3 +810,793 @@
     window.removeEventListener(PRODUCTS_CACHE_INVALIDATED_EVENT, handleProductsInvalidated)
   })
 </script>
+
+<style scoped>
+/* ════════════════════════════════ PAGE ROOT ═══ */
+.bespoke-detail-container {
+  min-height: 100vh;
+  background: #f8fafc;
+  padding: 40px max(16px, 4vw) 80px !important;
+}
+
+/* ════════════════════════════════ HEADER BAR ══ */
+.detail-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 32px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.back-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+  transition: color 0.2s ease;
+}
+.back-btn:hover {
+  color: #0d9488;
+}
+.underline-hover {
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: currentColor;
+  transition: transform 0.25s ease;
+  transform-origin: right;
+  transform: scaleX(0);
+}
+.back-btn:hover .underline-hover {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+.header-badges {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.badge-category {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #0f766e;
+  background: rgba(13, 148, 136, 0.08);
+  padding: 4px 10px;
+  border: 1px solid rgba(13, 148, 136, 0.15);
+}
+.badge-stock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #166534;
+  background: rgba(22, 163, 74, 0.08);
+  padding: 4px 10px;
+  border: 1px solid rgba(22, 163, 74, 0.15);
+}
+.badge-stock--out {
+  color: #991b1b;
+  background: rgba(220, 38, 38, 0.08);
+  border-color: rgba(220, 38, 38, 0.15);
+}
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+/* ════════════════════════════════ CORE GRID ═══ */
+.bespoke-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 48px;
+  align-items: start;
+  margin-bottom: 48px;
+}
+
+/* ── LEFT COLUMN: Gallery Frame ── */
+.detail-left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.gallery-frame {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #0f172a;
+  box-shadow: 6px 6px 0px #0f172a;
+}
+.frame-header {
+  height: 36px;
+  background: #f8fafc;
+  border-bottom: 1px solid #0f172a;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  position: relative;
+}
+.frame-dots {
+  display: flex;
+  gap: 6px;
+}
+.frame-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid #0f172a;
+  display: inline-block;
+}
+.dot-red { background: #ff5f56; }
+.dot-yellow { background: #ffbd2e; }
+.dot-green { background: #27c93f; }
+
+.frame-title-display {
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.gallery-carousel-wrap {
+  position: relative;
+  background: #fafafa;
+  padding: 16px;
+  min-height: 360px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.gallery-image {
+  cursor: zoom-in;
+  transition: transform 0.2s ease;
+}
+.gallery-image:hover {
+  transform: scale(1.01);
+}
+
+.no-image-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Custom indicators & arrows override */
+.custom-carousel :deep(.v-window__container) {
+  background: #fafafa;
+}
+.custom-carousel :deep(.v-carousel__controls) {
+  background: transparent !important;
+  color: #0f172a !important;
+}
+.custom-carousel :deep(.v-btn--icon.v-btn--density-default) {
+  width: 32px;
+  height: 32px;
+  color: #0f172a;
+}
+
+.specs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.spec-card {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.spec-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.spec-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* ── RIGHT COLUMN: Purchase Panel ── */
+.product-purchase-panel {
+  background: #ffffff;
+  border: 1px solid #0f172a;
+  box-shadow: 6px 6px 0px #0f172a;
+  padding: 32px;
+}
+
+.panel-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.meta-item {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.meta-dot {
+  font-size: 10px;
+  color: #cbd5e1;
+}
+
+.product-title {
+  font-size: clamp(20px, 3vw, 30px);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  margin-bottom: 16px;
+}
+
+.pricing-rating-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+.price-display {
+  font-size: clamp(24px, 4vw, 32px);
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+.rating-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rating-badge {
+  display: inline-flex;
+  align-items: center;
+  background: #fffbeb;
+  border: 1px solid #fef3c7;
+  color: #d97706;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 2px 8px;
+  gap: 4px;
+}
+.reviews-count-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.star-rating-stars {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 24px;
+}
+
+.section-divider {
+  border: 0;
+  height: 1px;
+  background: #f1f5f9;
+  margin: 0 0 20px;
+}
+
+.trust-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.trust-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+}
+.trust-item-icon {
+  color: #0d9488;
+}
+.trust-item-text {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.action-box {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  padding: 20px;
+}
+
+.qty-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.qty-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.qty-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.qty-stock-status {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+}
+.qty-picker {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 4px;
+}
+.qty-picker-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #0f172a;
+  outline: none;
+}
+.qty-picker-btn:disabled {
+  color: #cbd5e1;
+  cursor: not-allowed;
+}
+.qty-picker-value {
+  width: 32px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.action-buttons-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.action-btn-cart {
+  width: 100%;
+  height: 50px !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  background: #0f172a !important;
+  text-transform: none !important;
+  letter-spacing: 0px !important;
+  transition: background-color 0.2s ease !important;
+}
+.action-btn-cart:hover:not(:disabled) {
+  background: #1e293b !important;
+}
+.action-btn-buy {
+  width: 100%;
+  height: 50px !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  border: 1px solid #0f172a !important;
+  text-transform: none !important;
+  letter-spacing: 0px !important;
+  background: transparent !important;
+  transition: background-color 0.2s ease, color 0.2s ease !important;
+}
+.action-btn-buy:hover:not(:disabled) {
+  background: #0f172a !important;
+  color: #ffffff !important;
+}
+
+/* ════════════════════════════════ DETAILS SECTION ════ */
+.editorial-details-row {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 32px;
+  margin-bottom: 48px;
+}
+
+.details-main-card,
+.promise-sidebar-card {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 32px;
+}
+
+.details-section-title {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+  margin: 0 0 20px;
+}
+
+.description-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.desc-line {
+  font-size: 14px;
+  line-height: 1.65;
+  color: #475569;
+  margin: 0;
+}
+.see-more-toggle {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0d9488;
+  margin-top: 16px;
+  outline: none;
+}
+.see-more-toggle:hover {
+  text-decoration: underline;
+}
+
+.promise-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.promise-list-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.promise-item-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+.promise-item-copy {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #64748b;
+  margin: 0;
+}
+.promise-item-divider {
+  border: 0;
+  height: 1px;
+  background: #f1f5f9;
+  margin: 12px 0 0;
+}
+
+/* ════════════════════════════════ REVIEWS SECTION ════ */
+.reviews-section-card {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 32px;
+  margin-bottom: 32px;
+}
+
+.reviews-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.header-text-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.header-text-wrap .details-section-title {
+  margin: 0;
+}
+.section-subtitle-text {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+.reviews-score-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #d97706;
+  background: #fffbeb;
+  border: 1px solid #fef3c7;
+  padding: 4px 12px;
+}
+
+.reviews-split-grid {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 48px;
+  align-items: start;
+}
+
+/* ── Left form panel ── */
+.reviews-form-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.rating-hero-box {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #fafafa;
+  border: 1px solid #e2e8f0;
+  padding: 16px;
+}
+.rating-hero-box .v-icon {
+  margin-right: 0 !important;
+}
+.rating-hero-avatar {
+  width: 44px;
+  height: 44px;
+  background: #fffbeb;
+  border: 1px solid #fef3c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rating-hero-values {
+  display: flex;
+  flex-direction: column;
+}
+.rating-hero-number {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+}
+.rating-hero-count {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.login-prompt-box {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.login-prompt-text {
+  font-size: 13px;
+  color: #166534;
+  margin: 0;
+  font-weight: 600;
+}
+.login-redirect-btn {
+  height: 36px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  background: #166534 !important;
+  color: #ffffff !important;
+  text-transform: none !important;
+  letter-spacing: 0px !important;
+}
+
+.review-submission-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 20px;
+}
+.form-rating-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.form-rating-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.review-textarea-custom :deep(.v-field) {
+  border-radius: 0 !important;
+}
+.save-review-btn {
+  height: 42px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  background: #0f172a !important;
+  color: #ffffff !important;
+  text-transform: none !important;
+  letter-spacing: 0px !important;
+  transition: background-color 0.15s ease !important;
+}
+.save-review-btn:hover:not(:disabled) {
+  background: #1e293b !important;
+}
+
+/* ── Right feed panel ── */
+.reviews-feed-panel {
+  display: flex;
+  flex-direction: column;
+}
+.empty-reviews-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  background: #fafafa;
+  border: 1px dashed #cbd5e1;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.reviews-list-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.review-feed-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.review-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
+.reviewer-avatar {
+  width: 36px;
+  height: 36px;
+  background: #0f766e;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.reviewer-meta-info {
+  display: flex;
+  flex-direction: column;
+}
+.reviewer-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.review-date-badge {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+.review-card-comment {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #475569;
+  margin: 0 0 4px;
+}
+.review-card-divider {
+  border: 0;
+  height: 1px;
+  background: #f1f5f9;
+  margin: 8px 0 0;
+}
+
+/* ════════════════════════════════ NOT FOUND CARD ═════ */
+.product-not-found-card {
+  max-width: 500px;
+  margin: 80px auto;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid #0f172a;
+  box-shadow: 6px 6px 0px #0f172a;
+  padding: 48px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.not-found-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+.not-found-text {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0 0 8px;
+}
+.not-found-btn {
+  height: 44px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+  letter-spacing: 0px !important;
+}
+
+/* ════════════════════════════════ RESPONSIVE ═════════ */
+@media (max-width: 959px) {
+  .bespoke-detail-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .editorial-details-row {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .reviews-split-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+}
+
+@media (max-width: 599px) {
+  .bespoke-detail-container {
+    padding: 24px 16px 60px !important;
+  }
+  .specs-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .product-purchase-panel {
+    padding: 24px 16px;
+  }
+  .details-main-card,
+  .promise-sidebar-card,
+  .reviews-section-card {
+    padding: 24px 16px;
+  }
+  .review-card-header {
+    align-items: flex-start;
+  }
+  .review-date-badge {
+    position: static;
+    transform: none;
+    margin-top: 4px;
+  }
+}
+</style>

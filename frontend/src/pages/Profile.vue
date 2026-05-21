@@ -1,49 +1,49 @@
 <template>
   <div class="profile-page">
-    <v-container class="profile-shell" fluid>
+    <v-container class="bespoke-profile-container" fluid>
+      <!-- Topbar -->
       <section class="profile-topbar">
         <div>
-          <p class="profile-kicker ml-2">Account</p>
-          <h1 class="page-title ml-2">Profile</h1>
+          <div class="brand-tagline ml-2">
+            <span class="tag-label">ACCOUNT PANEL</span>
+            <span class="tag-dot">•</span>
+            <span class="tag-label">USER PROFILE</span>
+          </div>
+          <h1 class="page-title ml-2">Your <span class="highlight-serif">Profile</span></h1>
         </div>
 
         <div v-if="appStore.isAuthenticated" class="topbar-actions">
-          <v-btn
-            color="teal-darken-1"
-            rounded="lg"
-            variant="tonal"
+          <button
+            class="btn-flat-outline btn-with-icon"
             @click="openUserAdminDialog"
           >
-            <v-icon start>mdi-account-key-outline</v-icon>
+            <v-icon start size="18">mdi-account-key-outline</v-icon>
             Admin Console
-          </v-btn>
-          <v-btn
+          </button>
+          <button
             aria-label="Refresh profile"
-            :loading="refreshing"
-            rounded="lg"
-            variant="tonal"
+            class="btn-flat-outline btn-with-icon"
+            :disabled="refreshing"
             @click="refreshProfile"
           >
-            <v-icon start>mdi-refresh</v-icon>
+            <v-icon :class="{ 'mdi-spin': refreshing }" start size="18">mdi-refresh</v-icon>
             Refresh
-          </v-btn>
-          <v-btn
-            color="teal-darken-1"
-            :disabled="!isFormDirty"
-            :loading="savingAll"
-            rounded="lg"
+          </button>
+          <button
+            class="btn-flat-solid btn-with-icon"
+            :disabled="!isFormDirty || savingAll"
             @click="saveAll"
           >
-            <v-icon start>mdi-content-save-outline</v-icon>
-            Save
-          </v-btn>
+            <v-icon start size="18">mdi-content-save-outline</v-icon>
+            Save Changes
+          </button>
         </div>
       </section>
 
+      <!-- Guest Alert -->
       <v-alert
         v-if="!appStore.loading && !appStore.isAuthenticated"
-        class="profile-alert"
-        rounded="lg"
+        class="custom-flat-alert error-alert mb-4"
         type="info"
         variant="tonal"
       >
@@ -52,277 +52,227 @@
             <strong>Sign in to view your profile.</strong>
             <p>Your orders, cart, and saved checkout details are connected to your account.</p>
           </div>
-          <v-btn color="teal-darken-1" rounded="lg" to="/login" variant="flat">Login</v-btn>
+          <v-btn class="btn-flat-solid mt-2 mt-sm-0" to="/login" variant="flat">Login</v-btn>
         </div>
       </v-alert>
 
+      <!-- Profile Workspace -->
       <template v-else>
         <v-row class="align-start">
+          <!-- Sidebar -->
           <v-col cols="12" lg="4" xl="3">
             <aside class="profile-sidebar">
               <v-row>
+                <!-- Profile Identity Card -->
                 <v-col cols="12" lg="12" md="6">
-                  <v-card border rounded="lg" variant="flat">
-                    <v-card-text class="pa-4 pa-sm-5">
-                      <div class="avatar-wrap">
-                        <v-avatar v-if="profilePreviewImage" class="profile-avatar" :image="profilePreviewImage" size="104" />
-                        <v-avatar v-else class="profile-avatar initials-avatar" color="teal-darken-1" size="104">
-                          {{ profileInitials }}
-                        </v-avatar>
+                  <div class="flat-card-container">
+                    <div class="avatar-wrap">
+                      <v-avatar v-if="profilePreviewImage" class="profile-avatar" :image="profilePreviewImage" size="104" />
+                      <v-avatar v-else class="profile-avatar initials-avatar" color="teal-darken-1" size="104">
+                        {{ profileInitials }}
+                      </v-avatar>
 
-                        <div class="avatar-actions">
-                          <v-btn
-                            aria-label="Upload photo"
-                            icon
-                            rounded="lg"
-                            size="small"
-                            variant="tonal"
-                            @click="openPhotoPicker"
-                          >
-                            <v-icon>mdi-camera-outline</v-icon>
-                            <v-tooltip activator="parent" location="bottom">Upload photo</v-tooltip>
-                          </v-btn>
-                          <v-btn
-                            aria-label="Remove photo"
-                            :disabled="!profilePreviewImage"
-                            icon
-                            rounded="lg"
-                            size="small"
-                            variant="tonal"
-                            @click="removePhoto"
-                          >
-                            <v-icon>mdi-delete-outline</v-icon>
-                            <v-tooltip activator="parent" location="bottom">Remove photo</v-tooltip>
-                          </v-btn>
-                        </div>
+                      <div class="avatar-actions">
+                        <button
+                          aria-label="Upload photo"
+                          class="avatar-action-btn"
+                          @click="openPhotoPicker"
+                        >
+                          <v-icon size="16">mdi-camera-outline</v-icon>
+                        </button>
+                        <button
+                          aria-label="Remove photo"
+                          class="avatar-action-btn delete-photo"
+                          :disabled="!profilePreviewImage"
+                          @click="removePhoto"
+                        >
+                          <v-icon size="16">mdi-delete-outline</v-icon>
+                        </button>
                       </div>
+                    </div>
 
-                      <input
-                        ref="fileInput"
-                        accept="image/png,image/jpeg,image/webp,image/gif"
-                        class="sr-only"
-                        type="file"
-                        @change="onPhotoSelected"
-                      >
+                    <input
+                      ref="fileInput"
+                      accept="image/png,image/jpeg,image/webp,image/gif"
+                      class="sr-only"
+                      type="file"
+                      @change="onPhotoSelected"
+                    >
 
-                      <h2 class="profile-name">{{ displayName }}</h2>
-                      <p class="profile-email">{{ appStore.user?.email || 'No email available' }}</p>
-                      <p v-if="selectedPhotoName" class="photo-name">{{ selectedPhotoName }}</p>
+                    <h2 class="profile-name">{{ displayName }}</h2>
+                    <p class="profile-email">{{ appStore.user?.email || 'No email available' }}</p>
+                    <p v-if="selectedPhotoName" class="photo-name">{{ selectedPhotoName }}</p>
 
-                      <div class="profile-chip-row">
-                        <v-chip color="teal-darken-1" size="small" variant="tonal">{{ countryDisplayName }}</v-chip>
-                        <v-chip :color="isAdmin ? 'success' : undefined" size="small" variant="tonal">
-                          {{ isAdmin ? 'Admin' : 'Customer' }}
-                        </v-chip>
+                    <div class="profile-chip-row">
+                      <span class="custom-badge badge-teal">{{ countryDisplayName }}</span>
+                      <span class="custom-badge" :class="isAdmin ? 'badge-success' : 'badge-slate'">
+                        {{ isAdmin ? 'Admin' : 'Customer' }}
+                      </span>
+                    </div>
+
+                    <!-- Sidebar Stats Grid -->
+                    <div class="stats-flat-grid mt-4">
+                      <div class="stat-flat-box">
+                        <v-icon color="teal-darken-1" size="20">mdi-package-variant-closed</v-icon>
+                        <span class="stat-value">{{ orders.length }}</span>
+                        <span class="stat-label">Orders</span>
                       </div>
+                      <div class="stat-flat-box">
+                        <v-icon color="teal-darken-1" size="20">mdi-cart-outline</v-icon>
+                        <span class="stat-value">{{ cartStore.itemCount }}</span>
+                        <span class="stat-label">Cart</span>
+                      </div>
+                      <div class="stat-flat-box">
+                        <v-icon color="teal-darken-1" size="20">mdi-cash-multiple</v-icon>
+                        <span class="stat-value">{{ totalSpentDisplay }}</span>
+                        <span class="stat-label">Spent</span>
+                      </div>
+                      <div class="stat-flat-box">
+                        <v-icon color="teal-darken-1" size="20">mdi-currency-usd</v-icon>
+                        <span class="stat-value">{{ settings.currency }}</span>
+                        <span class="stat-label">Currency</span>
+                      </div>
+                    </div>
 
-                      <v-row class="mt-3">
-                        <v-col cols="12" sm="6">
-                          <v-card
-                            border
-                            elevation="1"
-                            min-height="90"
-                            rounded="lg"
-                            variant="flat"
-                          >
-                            <v-card-text class="d-flex flex-column justify-center ga-1 pa-3">
-                              <v-icon color="primary">mdi-package-variant-closed</v-icon>
-                              <strong class="text-body-1 font-weight-bold">{{ orders.length }}</strong>
-                              <span class="text-caption text-medium-emphasis">Orders</span>
-                            </v-card-text>
-                          </v-card>
-                        </v-col>
-                        <v-col cols="12" sm="6">
-                          <v-card
-                            border
-                            elevation="1"
-                            min-height="90"
-                            rounded="lg"
-                            variant="flat"
-                          >
-                            <v-card-text class="d-flex flex-column justify-center ga-1 pa-3">
-                              <v-icon color="primary">mdi-cart-outline</v-icon>
-                              <strong class="text-body-1 font-weight-bold">{{ cartStore.itemCount }}</strong>
-                              <span class="text-caption text-medium-emphasis">Cart</span>
-                            </v-card-text>
-                          </v-card>
-                        </v-col>
-                        <v-col cols="12" sm="6">
-                          <v-card
-                            border
-                            elevation="1"
-                            min-height="90"
-                            rounded="lg"
-                            variant="flat"
-                          >
-                            <v-card-text class="d-flex flex-column justify-center ga-1 pa-3">
-                              <v-icon color="primary">mdi-cash-multiple</v-icon>
-                              <strong class="text-body-1 font-weight-bold">{{ totalSpentDisplay }}</strong>
-                              <span class="text-caption text-medium-emphasis">Spent</span>
-                            </v-card-text>
-                          </v-card>
-                        </v-col>
-                        <v-col cols="12" sm="6">
-                          <v-card
-                            border
-                            elevation="1"
-                            min-height="90"
-                            rounded="lg"
-                            variant="flat"
-                          >
-                            <v-card-text class="d-flex flex-column justify-center ga-1 pa-3">
-                              <v-icon color="primary">mdi-currency-usd</v-icon>
-                              <strong class="text-body-1 font-weight-bold">{{ settings.currency }}</strong>
-                              <span class="text-caption text-medium-emphasis">Currency</span>
-                            </v-card-text>
-                          </v-card>
-                        </v-col>
-                      </v-row>
-
-                      <v-btn
-                        block
-                        class="logout-btn"
-                        color="error"
-                        rounded="lg"
-                        variant="tonal"
-                        @click="logout"
-                      >
-                        <v-icon start>mdi-logout</v-icon>
-                        Logout
-                      </v-btn>
-                    </v-card-text>
-                  </v-card>
+                    <button
+                      class="btn-flat-solid logout-btn-flat w-100 mt-4"
+                      @click="logout"
+                    >
+                      <v-icon start size="16">mdi-logout</v-icon>
+                      Logout Session
+                    </button>
+                  </div>
                 </v-col>
 
+                <!-- Readiness Tracker Card -->
                 <v-col cols="12" lg="12" md="6">
-                  <v-card border rounded="lg" variant="flat">
-                    <v-card-text class="pa-4 pa-sm-5">
-                      <div class="readiness-head">
-                        <v-progress-circular color="teal-darken-1" :model-value="profileCompletion" size="74" width="8">
-                          {{ profileCompletion }}%
-                        </v-progress-circular>
-                        <div>
-                          <h3>Account Readiness</h3>
-                          <p>{{ completedProfileItems }} of {{ profileChecklist.length }} complete</p>
-                        </div>
+                  <div class="flat-card-container">
+                    <div class="readiness-head">
+                      <v-progress-circular color="teal-darken-1" :model-value="profileCompletion" size="68" width="6">
+                        {{ profileCompletion }}%
+                      </v-progress-circular>
+                      <div>
+                        <h3 class="readiness-title">Account Readiness</h3>
+                        <p class="readiness-subtitle">{{ completedProfileItems }} of {{ profileChecklist.length }} complete</p>
                       </div>
+                    </div>
 
-                      <div class="check-list">
-                        <div
-                          v-for="item in profileChecklist"
-                          :key="item.label"
-                          :class="['check-row', { complete: item.complete }]"
-                        >
-                          <v-icon size="18">{{ item.complete ? 'mdi-check-circle' : 'mdi-circle-outline' }}</v-icon>
-                          <span>{{ item.label }}</span>
-                        </div>
+                    <div class="check-list mt-4">
+                      <div
+                        v-for="item in profileChecklist"
+                        :key="item.label"
+                        :class="['check-row', { complete: item.complete }]"
+                      >
+                        <v-icon size="16">{{ item.complete ? 'mdi-check-circle' : 'mdi-circle-outline' }}</v-icon>
+                        <span>{{ item.label }}</span>
                       </div>
-                    </v-card-text>
-                  </v-card>
+                    </div>
+                  </div>
                 </v-col>
               </v-row>
             </aside>
           </v-col>
 
+          <!-- Main Panel tabs -->
           <v-col cols="12" lg="8" xl="9">
             <main class="profile-main">
-              <div class="mb-3">
+              <div class="tabs-header-flat">
                 <v-tabs
                   v-model="activeTab"
-                  bg-color="white"
+                  align-tabs="start"
+                  class="custom-editorial-tabs"
+                  color="teal-darken-1"
                   density="comfortable"
                   grow
-                  inset
-                  inset-padding="6"
-                  inset-radius="5"
-                  slider-color="teal-darken-1"
                 >
                   <v-tab value="profile">
-                    <v-icon start>mdi-account-edit-outline</v-icon>
-                    Profile
+                    <v-icon start size="18">mdi-account-edit-outline</v-icon>
+                    Profile Details
                   </v-tab>
                   <v-tab value="orders">
-                    <v-icon start>mdi-receipt-text-outline</v-icon>
-                    Orders
+                    <v-icon start size="18">mdi-receipt-text-outline</v-icon>
+                    Order History
                   </v-tab>
                   <v-tab value="security">
-                    <v-icon start>mdi-shield-account-outline</v-icon>
-                    Security
+                    <v-icon start size="18">mdi-shield-account-outline</v-icon>
+                    Account Access
                   </v-tab>
                 </v-tabs>
               </div>
 
-              <v-tabs-window v-model="activeTab">
-                <v-tabs-window-item value="profile">
-                  <v-row>
-                    <v-col cols="12" md="6">
-                      <v-card border class="h-100" rounded="lg" variant="flat">
-                        <v-card-text class="pa-4 pa-sm-5">
+              <div class="tab-contents-flat mt-4">
+                <v-tabs-window v-model="activeTab">
+                  <!-- Profile details -->
+                  <v-tabs-window-item value="profile">
+                    <v-row>
+                      <!-- Personal Details Form -->
+                      <v-col cols="12" md="6">
+                        <div class="flat-card-container h-100">
                           <div class="panel-head">
                             <div>
-                              <h2>Personal Details</h2>
-                              <p>Saved to your Mindstore account.</p>
+                              <h2 class="panel-title">Personal Details</h2>
+                              <p class="panel-subtitle">Saved to your Mindstore account.</p>
                             </div>
                           </div>
 
-                          <v-row>
+                          <v-row class="mt-2" dense>
                             <v-col cols="12" md="6">
                               <v-text-field
                                 v-model="profileForm.name"
+                                class="flat-text-field"
                                 density="comfortable"
                                 label="Full Name"
                                 maxlength="120"
-                                rounded="lg"
                                 variant="outlined"
                               />
                             </v-col>
                             <v-col cols="12" md="6">
                               <v-text-field
                                 v-model="profileForm.email"
+                                class="flat-text-field"
                                 density="comfortable"
                                 label="Email"
                                 readonly
-                                rounded="lg"
                                 variant="outlined"
                               />
                             </v-col>
                             <v-col cols="12" md="6">
                               <v-select
                                 v-model="profileForm.countryCode"
+                                class="flat-text-field"
                                 density="comfortable"
                                 item-title="label"
                                 item-value="code"
                                 :items="countryOptions"
                                 label="Country"
-                                rounded="lg"
                                 variant="outlined"
                               />
                             </v-col>
                             <v-col cols="12" md="6">
                               <v-text-field
+                                class="flat-text-field"
                                 density="comfortable"
                                 label="Currency"
                                 :model-value="`${settings.currency} (Auto)`"
                                 readonly
-                                rounded="lg"
                                 variant="outlined"
                               />
                             </v-col>
                           </v-row>
-                        </v-card-text>
-                      </v-card>
-                    </v-col>
+                        </div>
+                      </v-col>
 
-                    <v-col cols="12" md="6">
-                      <v-card border rounded="lg" variant="flat">
-                        <v-card-text class="pa-4 pa-sm-5">
-                          <div class="panel-head">
+                      <!-- Delivery Profile Form -->
+                      <v-col cols="12" md="6">
+                        <div class="flat-card-container">
+                          <div class="panel-head d-flex justify-space-between align-center">
                             <div>
-                              <h2>Delivery Profile</h2>
-                              <p>Used to prefill checkout.</p>
+                              <h2 class="panel-title">Delivery Profile</h2>
+                              <p class="panel-subtitle">Used to prefill checkout.</p>
                             </div>
                             <v-switch
                               v-model="settings.saveDeliveryDetails"
+                              class="flat-switch"
                               color="teal-darken-1"
                               density="compact"
                               hide-details
@@ -330,54 +280,54 @@
                             />
                           </div>
 
-                          <v-row>
+                          <v-row class="mt-2" dense>
                             <v-col cols="12" md="6">
                               <v-text-field
                                 v-model="settings.deliveryProfile.phone"
+                                class="flat-text-field"
                                 density="comfortable"
                                 label="Phone Number"
                                 maxlength="32"
-                                rounded="lg"
                                 variant="outlined"
                               />
                             </v-col>
                             <v-col cols="12" md="6">
                               <v-text-field
                                 v-model="settings.deliveryProfile.postalCode"
+                                class="flat-text-field"
                                 density="comfortable"
                                 label="Postal Code"
                                 maxlength="32"
-                                rounded="lg"
                                 variant="outlined"
                               />
                             </v-col>
                             <v-col cols="12">
                               <v-text-field
                                 v-model="settings.deliveryProfile.address"
+                                class="flat-text-field"
                                 density="comfortable"
                                 label="Street Address"
                                 maxlength="220"
-                                rounded="lg"
                                 variant="outlined"
                               />
                             </v-col>
                             <v-col cols="12" md="6">
                               <v-text-field
                                 v-model="settings.deliveryProfile.city"
+                                class="flat-text-field"
                                 density="comfortable"
                                 label="City"
                                 maxlength="96"
-                                rounded="lg"
                                 variant="outlined"
                               />
                             </v-col>
                             <v-col cols="12" md="6">
                               <v-text-field
                                 v-model="settings.deliveryProfile.state"
+                                class="flat-text-field"
                                 density="comfortable"
                                 label="State"
                                 maxlength="96"
-                                rounded="lg"
                                 variant="outlined"
                               />
                             </v-col>
@@ -385,150 +335,144 @@
                               <v-textarea
                                 v-model="settings.deliveryProfile.instructions"
                                 auto-grow
+                                class="flat-text-field"
                                 density="comfortable"
                                 label="Delivery Notes"
                                 maxlength="240"
-                                rounded="lg"
                                 rows="2"
                                 variant="outlined"
                               />
                             </v-col>
                           </v-row>
-                        </v-card-text>
-                      </v-card>
-                    </v-col>
+                        </div>
+                      </v-col>
 
-                    <v-col cols="12">
-                      <v-card border rounded="lg" variant="flat">
-                        <v-card-text class="pa-4 pa-sm-5">
+                      <!-- Preferences Panel -->
+                      <v-col cols="12">
+                        <div class="flat-card-container">
                           <div class="panel-head">
                             <div>
-                              <h2>Preferences</h2>
-                              <p>Stored locally for this browser.</p>
+                              <h2 class="panel-title">System Preferences</h2>
+                              <p class="panel-subtitle">Stored locally for this browser.</p>
                             </div>
                           </div>
 
-                          <v-row>
+                          <v-row class="mt-2" dense>
                             <v-col cols="12" md="6">
-                              <v-card border min-height="82" rounded="lg" variant="flat">
-                                <v-card-text class="d-flex align-center justify-space-between ga-3 pa-3">
-                                  <span class="d-flex flex-column ga-1">
-                                    <strong>Order updates</strong>
-                                    <small class="text-medium-emphasis">Email order status changes</small>
-                                  </span>
-                                  <v-switch v-model="settings.orderUpdates" color="teal-darken-1" hide-details inset />
-                                </v-card-text>
-                              </v-card>
+                              <div class="preference-flat-card">
+                                <div class="pref-details">
+                                  <strong>Order updates</strong>
+                                  <span class="pref-desc">Email order status changes</span>
+                                </div>
+                                <v-switch v-model="settings.orderUpdates" class="flat-switch" color="teal-darken-1" hide-details inset />
+                              </div>
                             </v-col>
                             <v-col cols="12" md="6">
-                              <v-card border min-height="82" rounded="lg" variant="flat">
-                                <v-card-text class="d-flex align-center justify-space-between ga-3 pa-3">
-                                  <span class="d-flex flex-column ga-1">
-                                    <strong>Promotional emails</strong>
-                                    <small class="text-medium-emphasis">Offers and seasonal drops</small>
-                                  </span>
-                                  <v-switch v-model="settings.promotionalEmails" color="teal-darken-1" hide-details inset />
-                                </v-card-text>
-                              </v-card>
+                              <div class="preference-flat-card">
+                                <div class="pref-details">
+                                  <strong>Promotional emails</strong>
+                                  <span class="pref-desc">Offers and seasonal drops</span>
+                                </div>
+                                <v-switch v-model="settings.promotionalEmails" class="flat-switch" color="teal-darken-1" hide-details inset />
+                              </div>
                             </v-col>
                             <v-col cols="12" md="6">
-                              <v-card border min-height="82" rounded="lg" variant="flat">
-                                <v-card-text class="d-flex align-center justify-space-between ga-3 pa-3">
-                                  <span class="d-flex flex-column ga-1">
-                                    <strong>Quick checkout</strong>
-                                    <small class="text-medium-emphasis">Select cart items automatically</small>
-                                  </span>
-                                  <v-switch v-model="settings.quickCheckout" color="teal-darken-1" hide-details inset />
-                                </v-card-text>
-                              </v-card>
+                              <div class="preference-flat-card">
+                                <div class="pref-details">
+                                  <strong>Quick checkout</strong>
+                                  <span class="pref-desc">Select cart items automatically</span>
+                                </div>
+                                <v-switch v-model="settings.quickCheckout" class="flat-switch" color="teal-darken-1" hide-details inset />
+                              </div>
                             </v-col>
                             <v-col cols="12" md="6">
-                              <v-card border min-height="82" rounded="lg" variant="flat">
-                                <v-card-text class="d-flex align-center justify-space-between ga-3 pa-3">
-                                  <span class="d-flex flex-column ga-1">
-                                    <strong>Low stock alerts</strong>
-                                    <small class="text-medium-emphasis">Show inventory reminders</small>
-                                  </span>
-                                  <v-switch v-model="settings.lowStockAlerts" color="teal-darken-1" hide-details inset />
-                                </v-card-text>
-                              </v-card>
+                              <div class="preference-flat-card">
+                                <div class="pref-details">
+                                  <strong>Low stock alerts</strong>
+                                  <span class="pref-desc">Show inventory reminders</span>
+                                </div>
+                                <v-switch v-model="settings.lowStockAlerts" class="flat-switch" color="teal-darken-1" hide-details inset />
+                              </div>
                             </v-col>
                           </v-row>
 
-                          <div class="save-strip">
-                            <span v-if="isFormDirty">Unsaved changes</span>
-                            <span v-else>Profile is up to date</span>
-                            <v-btn
-                              color="teal-darken-1"
-                              :disabled="!isFormDirty"
-                              :loading="savingAll"
-                              rounded="lg"
+                          <!-- Save strip flat -->
+                          <div class="save-strip-flat">
+                            <span v-if="isFormDirty" class="dirty-state-text">
+                              <v-icon color="warning" size="16">mdi-alert-circle-outline</v-icon>
+                              Unsaved changes pending
+                            </span>
+                            <span v-else class="clean-state-text">
+                              <v-icon color="success" size="16">mdi-check-circle-outline</v-icon>
+                              Profile is up to date
+                            </span>
+                            <button
+                              class="btn-flat-solid save-btn"
+                              :disabled="!isFormDirty || savingAll"
                               @click="saveAll"
                             >
                               Save Changes
-                            </v-btn>
+                            </button>
                           </div>
-                        </v-card-text>
-                      </v-card>
-                    </v-col>
-                  </v-row>
-                </v-tabs-window-item>
-
-                <v-tabs-window-item value="orders">
-                  <v-card border rounded="lg" variant="flat">
-                    <v-card-text class="pa-4 pa-sm-5">
-                      <div class="panel-head orders-head">
-                        <div>
-                          <h2>Orders</h2>
-                          <p>{{ orders.length }} total, {{ completedOrderCount }} completed.</p>
                         </div>
-                        <v-btn
+                      </v-col>
+                    </v-row>
+                  </v-tabs-window-item>
+
+                  <!-- Orders Tab -->
+                  <v-tabs-window-item value="orders">
+                    <div class="flat-card-container">
+                      <div class="panel-head orders-head d-flex justify-space-between align-center">
+                        <div>
+                          <h2 class="panel-title">Orders Archive</h2>
+                          <p class="panel-subtitle">{{ orders.length }} total, {{ completedOrderCount }} completed.</p>
+                        </div>
+                        <button
                           aria-label="Refresh orders"
-                          :loading="loading"
-                          rounded="lg"
-                          variant="tonal"
+                          class="btn-flat-outline btn-with-icon"
+                          :disabled="loading"
                           @click="fetchOrders"
                         >
-                          <v-icon start>mdi-refresh</v-icon>
+                          <v-icon :class="{ 'mdi-spin': loading }" start size="16">mdi-refresh</v-icon>
                           Refresh
-                        </v-btn>
+                        </button>
                       </div>
 
-                      <v-row>
+                      <v-row class="mt-2" dense>
                         <v-col cols="12" md="6">
                           <v-text-field
                             v-model="orderSearch"
+                            class="flat-text-field"
                             density="comfortable"
                             hide-details
                             label="Search Orders"
                             prepend-inner-icon="mdi-magnify"
-                            rounded="lg"
                             variant="outlined"
                           />
                         </v-col>
                         <v-col cols="12" md="3" sm="6">
                           <v-select
                             v-model="orderStatusFilter"
+                            class="flat-text-field"
                             density="comfortable"
                             hide-details
                             item-title="label"
                             item-value="value"
                             :items="orderStatusOptions"
-                            label="Status"
-                            rounded="lg"
+                            label="Status Filter"
                             variant="outlined"
                           />
                         </v-col>
                         <v-col cols="12" md="3" sm="6">
                           <v-select
                             v-model="orderSort"
+                            class="flat-text-field"
                             density="comfortable"
                             hide-details
                             item-title="label"
                             item-value="value"
                             :items="orderSortOptions"
-                            label="Sort"
-                            rounded="lg"
+                            label="Sort By"
                             variant="outlined"
                           />
                         </v-col>
@@ -536,216 +480,170 @@
 
                       <v-progress-linear v-if="loading" class="mt-4" color="teal-darken-1" indeterminate />
 
-                      <div v-else-if="filteredOrders.length === 0" class="empty-orders">
-                        <v-icon size="48">mdi-package-variant</v-icon>
-                        <h3>{{ orders.length === 0 ? 'No orders yet' : 'No matching orders' }}</h3>
-                        <p>
+                      <!-- Empty Orders state -->
+                      <div v-else-if="filteredOrders.length === 0" class="empty-orders-flat mt-6">
+                        <v-icon size="48" color="teal-darken-1">mdi-package-variant</v-icon>
+                        <h3 class="empty-title mt-2">{{ orders.length === 0 ? 'No orders yet' : 'No matching orders' }}</h3>
+                        <p class="empty-subtitle mt-1">
                           {{ orders.length === 0 ? 'Orders placed from your cart will appear here.'
                             : 'Adjust search or status filters.' }}
                         </p>
-                        <v-btn color="teal-darken-1" rounded="lg" to="/" variant="flat">Shop Products</v-btn>
+                        <v-btn class="btn-flat-solid mt-4" to="/">Shop Products</v-btn>
                       </div>
 
-                      <v-expansion-panels v-else class="orders-list w-100" variant="accordion">
-                        <v-expansion-panel v-for="order in filteredOrders" :key="order.order_id" class="order-item">
-                          <v-expansion-panel-title>
-                            <div class="order-title-row">
-                              <div>
-                                <p class="order-id">Order #{{ order.order_id }}</p>
-                                <p class="order-date">{{ formatDate(order.created_at) }}</p>
-                              </div>
-                              <div class="order-summary">
-                                <strong>{{ formatAmount(order.total_amount) }}</strong>
-                                <v-chip :color="statusColor(order.status)" size="small" variant="tonal">
-                                  {{ order.status }}
-                                </v-chip>
-                              </div>
-                            </div>
-                          </v-expansion-panel-title>
-                          <v-expansion-panel-text>
-                            <v-row>
-                              <v-col cols="12" sm="4">
-                                <v-card border rounded="lg" variant="flat">
-                                  <v-card-text class="pa-3">
-                                    <span class="d-block text-caption text-medium-emphasis">Items</span>
-                                    <strong class="d-block mt-1">{{ order.items.length }}</strong>
-                                  </v-card-text>
-                                </v-card>
-                              </v-col>
-                              <v-col cols="12" sm="4">
-                                <v-card border rounded="lg" variant="flat">
-                                  <v-card-text class="pa-3">
-                                    <span class="d-block text-caption text-medium-emphasis">Created</span>
-                                    <strong class="d-block mt-1">{{ formatDate(order.created_at) }}</strong>
-                                  </v-card-text>
-                                </v-card>
-                              </v-col>
-                              <v-col cols="12" sm="4">
-                                <v-card rounded="lg" variant="outlined">
-                                  <v-card-text class="pa-3">
-                                    <span class="d-block text-caption text-medium-emphasis">Status</span>
-                                    <strong class="d-block mt-1">{{ order.status }}</strong>
-                                  </v-card-text>
-                                </v-card>
-                              </v-col>
-                            </v-row>
-
-                            <div class="order-product-list">
-                              <div
-                                v-for="item in order.items"
-                                :key="`${order.order_id}-${item.product_id}`"
-                                class="order-product-row"
-                              >
-                                <div>
-                                  <strong>{{ item.name || 'Product' }}</strong>
-                                  <span>Qty {{ item.quantity || 1 }}</span>
+                      <!-- Orders List Expansion -->
+                      <div v-else class="orders-expansion-container mt-4">
+                        <v-expansion-panels class="flat-expansion-panels" variant="accordion">
+                          <v-expansion-panel
+                            v-for="order in filteredOrders"
+                            :key="order.order_id"
+                            class="flat-expansion-panel"
+                          >
+                            <v-expansion-panel-title class="flat-panel-title">
+                              <div class="order-title-row-flat">
+                                <div class="order-info-left">
+                                  <span class="order-id">Order #{{ order.order_id }}</span>
+                                  <span class="order-date">{{ formatDate(order.created_at) }}</span>
                                 </div>
-                                <span>{{ item.product_id }}</span>
+                                <div class="order-summary-right">
+                                  <strong class="order-amount-display">{{ formatAmount(order.total_amount) }}</strong>
+                                  <span class="order-status-badge" :class="'status-' + statusColor(order.status)">
+                                    {{ order.status }}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
+                            </v-expansion-panel-title>
+                            
+                            <v-expansion-panel-text class="flat-panel-content">
+                              <v-row dense>
+                                <v-col cols="12" sm="4">
+                                  <div class="order-detail-minibox">
+                                    <span class="minibox-label">Items Count</span>
+                                    <strong class="minibox-value">{{ order.items.length }}</strong>
+                                  </div>
+                                </v-col>
+                                <v-col cols="12" sm="4">
+                                  <div class="order-detail-minibox">
+                                    <span class="minibox-label">Purchase Date</span>
+                                    <strong class="minibox-value">{{ formatDate(order.created_at) }}</strong>
+                                  </div>
+                                </v-col>
+                                <v-col cols="12" sm="4">
+                                  <div class="order-detail-minibox">
+                                    <span class="minibox-label">Current Status</span>
+                                    <strong class="minibox-value">{{ order.status }}</strong>
+                                  </div>
+                                </v-col>
+                              </v-row>
 
-                            <div class="d-flex justify-end mt-4">
-                              <v-btn
-                                color="teal-darken-1"
-                                :loading="invoiceLoadingOrderId === order.order_id"
-                                prepend-icon="mdi-file-pdf-box"
-                                rounded="lg"
-                                variant="flat"
-                                @click.stop="downloadInvoice(order)"
-                              >
-                                Invoice Download
-                              </v-btn>
-                            </div>
-                          </v-expansion-panel-text>
-                        </v-expansion-panel>
-                      </v-expansion-panels>
-                    </v-card-text>
-                  </v-card>
-                </v-tabs-window-item>
+                              <!-- Product List Inside Order -->
+                              <div class="order-product-list-flat mt-4">
+                                <div
+                                  v-for="item in order.items"
+                                  :key="`${order.order_id}-${item.product_id}`"
+                                  class="order-product-row-flat"
+                                >
+                                  <div class="prod-info">
+                                    <strong class="prod-name">{{ item.name || 'Product' }}</strong>
+                                    <span class="prod-qty">Quantity: {{ item.quantity || 1 }}</span>
+                                  </div>
+                                  <span class="prod-id">{{ item.product_id }}</span>
+                                </div>
+                              </div>
 
-                <v-tabs-window-item value="security">
-                  <v-row>
-                    <v-col cols="12" md="6">
-                      <v-card border rounded="lg" variant="flat">
-                        <v-card-text class="pa-4 pa-sm-5">
-                          <div class="panel-head">
+                              <div class="d-flex justify-end mt-4">
+                                <button
+                                  class="btn-flat-solid btn-with-icon"
+                                  :disabled="invoiceLoadingOrderId === order.order_id"
+                                  @click.stop="downloadInvoice(order)"
+                                >
+                                  <v-icon start size="16">mdi-file-pdf-box</v-icon>
+                                  {{ invoiceLoadingOrderId === order.order_id ? 'Generating...' : 'Invoice Download' }}
+                                </button>
+                              </div>
+                            </v-expansion-panel-text>
+                          </v-expansion-panel>
+                        </v-expansion-panels>
+                      </div>
+                    </div>
+                  </v-tabs-window-item>
+
+                  <!-- Security Tab -->
+                  <v-tabs-window-item value="security">
+                    <v-row>
+                      <!-- Session Card -->
+                      <v-col cols="12" md="6">
+                        <div class="flat-card-container h-100">
+                          <div class="panel-head d-flex justify-space-between align-center">
                             <div>
-                              <h2>Session</h2>
-                              <p>Current account connection.</p>
+                              <h2 class="panel-title">Session Connection</h2>
+                              <p class="panel-subtitle">Current account connection details.</p>
                             </div>
-                            <v-chip color="success" size="small" variant="tonal">Authenticated</v-chip>
+                            <span class="order-status-badge status-success">Authenticated</span>
                           </div>
 
-                          <v-row>
-                            <v-col cols="12">
-                              <v-card border rounded="lg" variant="flat">
-                                <v-card-text class="pa-3">
-                                  <span class="d-block text-caption text-medium-emphasis">Email</span>
-                                  <strong>{{ appStore.user?.email || 'Not available' }}</strong>
-                                </v-card-text>
-                              </v-card>
-                            </v-col>
-                            <v-col cols="12">
-                              <v-card border rounded="lg" variant="flat">
-                                <v-card-text class="pa-3">
-                                  <span class="d-block text-caption text-medium-emphasis">User ID</span>
-                                  <strong>{{ appStore.user?.user_id || appStore.user?.uid || 'Not available' }}</strong>
-                                </v-card-text>
-                              </v-card>
-                            </v-col>
-                            <v-col cols="12">
-                              <v-card border rounded="lg" variant="flat">
-                                <v-card-text class="pa-3">
-                                  <span class="d-block text-caption text-medium-emphasis">Created</span>
-                                  <strong>{{ formatDate(appStore.user?.created_at) }}</strong>
-                                </v-card-text>
-                              </v-card>
-                            </v-col>
-                            <v-col cols="12">
-                              <v-card border rounded="lg" variant="flat">
-                                <v-card-text class="pa-3">
-                                  <span class="d-block text-caption text-medium-emphasis">Updated</span>
-                                  <strong>{{ formatDate(appStore.user?.updated_at) }}</strong>
-                                </v-card-text>
-                              </v-card>
-                            </v-col>
-                          </v-row>
-                        </v-card-text>
-                      </v-card>
-                    </v-col>
+                          <div class="session-info-list mt-4">
+                            <div class="session-field">
+                              <span class="field-label">Email Address</span>
+                              <strong class="field-val">{{ appStore.user?.email || 'Not available' }}</strong>
+                            </div>
+                            <div class="session-field">
+                              <span class="field-label">User ID Identifier</span>
+                              <strong class="field-val">{{ appStore.user?.user_id || appStore.user?.uid || 'Not available' }}</strong>
+                            </div>
+                            <div class="session-field">
+                              <span class="field-label">Account Created</span>
+                              <strong class="field-val">{{ formatDate(appStore.user?.created_at) }}</strong>
+                            </div>
+                            <div class="session-field">
+                              <span class="field-label">Profile Updated</span>
+                              <strong class="field-val">{{ formatDate(appStore.user?.updated_at) }}</strong>
+                            </div>
+                          </div>
+                        </div>
+                      </v-col>
 
-                    <v-col cols="12" md="6">
-                      <v-card border rounded="lg" variant="flat">
-                        <v-card-text class="pa-4 pa-sm-5">
+                      <!-- Quick Links -->
+                      <v-col cols="12" md="6">
+                        <div class="flat-card-container h-100">
                           <div class="panel-head">
                             <div>
-                              <h2>Account Actions</h2>
-                              <p>Quick links for your account.</p>
+                              <h2 class="panel-title">Account Actions</h2>
+                              <p class="panel-subtitle">Quick navigation links for your convenience.</p>
                             </div>
                           </div>
 
-                          <v-row>
-                            <v-col cols="12">
-                              <v-btn
-                                block
-                                color="teal-darken-1"
-                                rounded="lg"
-                                to="/cart"
-                                variant="flat"
-                              >
-                                <v-icon start>mdi-cart-outline</v-icon>
-                                Open Cart
-                              </v-btn>
-                            </v-col>
-                            <v-col cols="12">
-                              <v-btn
-                                block
-                                color="teal-darken-1"
-                                rounded="lg"
-                                to="/"
-                                variant="tonal"
-                              >
-                                <v-icon start>mdi-storefront-outline</v-icon>
-                                Continue Shopping
-                              </v-btn>
-                            </v-col>
-                            <v-col v-if="isAdmin" cols="12">
-                              <v-btn
-                                block
-                                color="success"
-                                rounded="lg"
-                                to="/admin"
-                                variant="tonal"
-                              >
-                                <v-icon start>mdi-shield-star-outline</v-icon>
-                                Admin
-                              </v-btn>
-                            </v-col>
-                            <v-col cols="12">
-                              <v-btn
-                                block
-                                color="error"
-                                rounded="lg"
-                                variant="tonal"
-                                @click="logout"
-                              >
-                                <v-icon start>mdi-logout</v-icon>
-                                Logout
-                              </v-btn>
-                            </v-col>
-                          </v-row>
-                        </v-card-text>
-                      </v-card>
-                    </v-col>
-                  </v-row>
-                </v-tabs-window-item>
-              </v-tabs-window>
+                          <div class="quick-links-group mt-4">
+                            <v-btn class="btn-flat-solid mt-2 w-100" to="/cart" block size="large">
+                              <v-icon start>mdi-cart-outline</v-icon>
+                              Open Cart
+                            </v-btn>
+                            <v-btn class="btn-flat-outline mt-2 w-100" to="/" block size="large">
+                              <v-icon start>mdi-storefront-outline</v-icon>
+                              Continue Shopping
+                            </v-btn>
+                            <v-btn v-if="isAdmin" class="btn-flat-outline mt-2 w-100 admin-btn-action" to="/admin" block size="large">
+                              <v-icon start>mdi-shield-star-outline</v-icon>
+                              System Admin Console
+                            </v-btn>
+                            <v-btn class="btn-flat-solid logout-btn-flat mt-4 w-100" block size="large" @click="logout">
+                              <v-icon start>mdi-logout</v-icon>
+                              Logout Session
+                            </v-btn>
+                          </div>
+                        </div>
+                      </v-col>
+                    </v-row>
+                  </v-tabs-window-item>
+                </v-tabs-window>
+              </div>
             </main>
           </v-col>
         </v-row>
       </template>
     </v-container>
 
+    <!-- Custom SnackBar Alert -->
     <BaseAlert
       v-model="snackbar"
       floating
@@ -754,120 +652,125 @@
       :type="snackbarColor"
     />
 
+    <!-- User Admin PIN Verification Dialog -->
     <v-dialog
       v-model="userAdminDialog"
       :fullscreen="xs"
       :max-width="userAdminDialogMaxWidth"
       scrollable
       width="100%"
+      class="flat-dialog"
     >
-      <v-card
-        class="d-flex flex-column"
-        :class="{ 'h-100': xs }"
-        :rounded="xs ? 0 : 'lg'"
-      >
-        <v-card-title class="d-flex align-start align-sm-center justify-space-between ga-3 px-4 px-sm-6 py-3 py-sm-4">
-          <span class="text-subtitle-1 text-sm-h6 font-weight-bold text-wrap">User Admin Access</span>
-          <v-btn
-            aria-label="Close user admin dialog"
-            icon
-            rounded="lg"
-            variant="text"
-            @click="userAdminDialog = false"
-          >
-            <v-icon icon="mdi-close" />
-          </v-btn>
-        </v-card-title>
-        <v-card-text class="flex-grow-1 overflow-y-auto px-4 px-sm-6 py-3 py-sm-4">
-          <v-alert
-            color="teal-darken-1"
-            :density="smAndDown ? 'compact' : 'default'"
-            :icon="userAdminPinIcon"
-            variant="tonal"
-          >
-            {{ userAdminPinHelpText }}
-          </v-alert>
+      <div class="gallery-frame dialog-frame-flat h-100">
+        <!-- macOS-style frame header -->
+        <div class="frame-header">
+          <div class="frame-dots">
+            <span class="dot-red" @click="userAdminDialog = false"></span>
+            <span class="dot-yellow"></span>
+            <span class="dot-green"></span>
+          </div>
+          <div class="frame-title-display">admin_gatekeeper.json</div>
+          <button class="dialog-close-btn" @click="userAdminDialog = false">
+            <v-icon>mdi-close</v-icon>
+          </button>
+        </div>
 
+        <div class="dialog-card-body d-flex flex-column pa-6">
+          <div class="brand-tagline">
+            <span class="tag-label">CONSOLE GATE</span>
+            <span class="tag-dot">•</span>
+            <span class="tag-label">PIN CONTROL</span>
+          </div>
+          
+          <h2 class="dialog-title text-wrap">User Admin <span class="highlight-serif">Access</span></h2>
+
+          <div class="custom-flat-alert info-alert mt-4">
+            <v-icon class="alert-icon" size="18">{{ userAdminPinIcon }}</v-icon>
+            <div class="alert-content">
+              {{ userAdminPinHelpText }}
+            </div>
+          </div>
+
+
+
+          <!-- Mobile Inputs (If required) -->
           <v-row v-if="userAdminRequiresMobile" class="mt-4" dense>
             <v-col cols="12" sm="5">
               <v-select
                 v-model="userAdminPinForm.mobileCountryCode"
-                :density="smAndDown ? 'compact' : 'comfortable'"
+                class="flat-text-field"
+                density="comfortable"
                 item-title="label"
                 item-value="code"
                 :items="mobileCountryOptions"
                 label="Country Code"
-                rounded="lg"
                 variant="outlined"
               />
             </v-col>
             <v-col cols="12" sm="7">
               <v-text-field
                 v-model="userAdminPinForm.mobileNumber"
-                :density="smAndDown ? 'compact' : 'comfortable'"
+                class="flat-text-field"
+                density="comfortable"
                 label="Mobile Number"
                 maxlength="15"
-                rounded="lg"
                 variant="outlined"
               />
             </v-col>
           </v-row>
-          <div v-if="canRecoverUserAdminMobile" class="d-flex justify-center justify-sm-end mt-1">
-            <v-btn
-              color="teal-darken-1"
+
+          <div v-if="canRecoverUserAdminMobile" class="d-flex justify-end mt-1">
+            <button
+              class="text-link-btn"
               :disabled="userAdminPinSaving"
-              rounded="lg"
-              variant="text"
               @click="recoverUserAdminMobile"
             >
-              Forgot mobile?
-            </v-btn>
+              Forgot mobile number?
+            </button>
           </div>
 
-          <v-otp-input
-            v-model="userAdminPinForm.pin"
-            class="mt-4"
-            :density="smAndDown ? 'compact' : 'comfortable'"
-            :disabled="userAdminPinSaving"
-            :length="userAdminPinLength"
-            type="number"
-            variant="outlined"
-            @finish="submitUserAdminPin"
-          />
-          <div v-if="canResetUserAdminPin" class="d-flex justify-center justify-sm-end mt-2">
-            <v-btn
-              color="teal-darken-1"
+          <!-- OTP PIN INPUT -->
+          <div class="otp-wrap-flat mt-4">
+            <v-otp-input
+              v-model="userAdminPinForm.pin"
+              class="flat-otp-input"
+              density="comfortable"
               :disabled="userAdminPinSaving"
-              rounded="lg"
-              variant="text"
+              :length="userAdminPinLength"
+              type="number"
+              variant="outlined"
+              @finish="submitUserAdminPin"
+            />
+          </div>
+
+          <div v-if="canResetUserAdminPin" class="d-flex justify-end mt-2">
+            <button
+              class="text-link-btn"
+              :disabled="userAdminPinSaving"
               @click="startUserAdminPinReset"
             >
               Forgot PIN?
-            </v-btn>
+            </button>
           </div>
-        </v-card-text>
-        <v-card-actions class="px-4 px-sm-6 pb-4 pb-sm-5 d-flex flex-column flex-md-row align-stretch align-md-center ga-2">
-          <v-btn
-            :block="smAndDown"
-            rounded="lg"
-            variant="text"
-            @click="userAdminDialog = false"
-          >
-            Cancel
-          </v-btn>
-          <v-spacer class="d-none d-md-flex" />
-          <v-btn
-            :block="smAndDown"
-            color="teal-darken-1"
-            :loading="userAdminPinSaving"
-            rounded="lg"
-            variant="flat"
-            @click="submitUserAdminPin"
-          >
-            {{ userAdminPinActionLabel }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
+
+          <!-- Action buttons inside Dialog -->
+          <div class="dialog-actions-flat mt-6">
+            <button
+              class="btn-flat-outline"
+              @click="userAdminDialog = false"
+            >
+              Cancel
+            </button>
+            <button
+              class="btn-flat-solid"
+              :disabled="userAdminPinSaving"
+              @click="submitUserAdminPin"
+            >
+              {{ userAdminPinSaving ? 'Verifying...' : userAdminPinActionLabel }}
+            </button>
+          </div>
+        </div>
+      </div>
     </v-dialog>
   </div>
 </template>
@@ -1437,7 +1340,7 @@
         const reader = new FileReader()
         reader.addEventListener('load', () => {
           const result = String(reader.result || '')
-          if (!result.startsWith('data:image/') || result.length > MAX_PHOTO_DATA_URL_LENGTH) {
+          if (result.length > MAX_PHOTO_DATA_URL_LENGTH || !result.startsWith('data:image/')) {
             showMessage('Unsupported image format or size.', 'warning')
             return
           }
@@ -1703,6 +1606,7 @@
         snackbarText,
         snackbarColor,
         userAdminDialog,
+        userAdminPinMode,
         userAdminPinForm,
         userAdminPinLength: USER_ADMIN_PIN_LENGTH,
         userAdminPinSaving,
@@ -1760,89 +1664,88 @@
 </script>
 
 <style scoped>
+/* ════════════════════════════════ PAGE ROOT ═══ */
 .profile-page {
   min-height: 100vh;
-  background: #e3e3e3;
+  background: #f8fafc;
 }
 
-.profile-shell {
-  padding-top: 24px;
-  padding-bottom: 32px;
+.bespoke-profile-container {
+  padding: 40px max(16px, 4vw) 80px !important;
 }
 
+/* ════════════════════════════════ TOPBAR ══════ */
 .profile-topbar {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 32px;
+  border-bottom: 1px solid #cbd5e1;
+  padding-bottom: 24px;
 }
 
-.profile-kicker {
-  margin-bottom: 4px;
-  font-size: 0.78rem;
-  color: #616161;
-  font-weight: 700;
-  text-transform: uppercase;
+.brand-tagline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.tag-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: #0f766e;
+}
+.tag-dot {
+  font-size: 10px;
+  color: #cbd5e1;
 }
 
 .page-title {
-  font-size: clamp(1.55rem, 2.6vw, 2.2rem);
-  line-height: 1.25;
-  font-weight: 600;
-  color: #1f1f1f;
+  font-size: clamp(24px, 3.5vw, 36px);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  margin-top: 4px;
 }
-
-.profile-subtitle {
-  margin-top: 6px;
-  color: #616161;
-  line-height: 1.55;
+.highlight-serif {
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+  font-style: italic;
+  font-weight: 400;
+  color: #0d9488;
 }
 
 .topbar-actions {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
-  justify-content: flex-end;
 }
 
-.profile-alert {
-  margin-top: 16px;
-}
-
-.guest-alert {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.guest-alert p {
-  margin-top: 4px;
-}
-
-.profile-sidebar {
-  position: sticky;
-  top: 88px;
-}
-
-.profile-main {
-  min-width: 0;
+/* ════════════════════════════════ FLAT CARDS ══ */
+.flat-card-container {
+  background: #ffffff;
+  border: 1px solid #0f172a;
+  box-shadow: 4px 4px 0px #0f172a;
+  padding: 24px;
+  margin-bottom: 24px;
 }
 
 .avatar-wrap {
-  display: grid;
-  justify-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 12px;
+  position: relative;
 }
 
 .profile-avatar {
-  border: 1px solid #e0e0e0;
+  border: 2px solid #0f172a;
 }
-
 .initials-avatar {
-  font-size: 1.75rem;
+  font-size: 2rem;
   font-weight: 700;
+  color: #ffffff !important;
 }
 
 .avatar-actions {
@@ -1850,195 +1753,783 @@
   gap: 8px;
 }
 
-.profile-name {
-  margin-top: 12px;
-  text-align: center;
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #212121;
-  overflow-wrap: anywhere;
+.avatar-action-btn {
+  width: 32px;
+  height: 32px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #0f172a;
+  transition: all 0.2s ease;
+}
+.avatar-action-btn:hover {
+  border-color: #0f172a;
+  background: #f1f5f9;
+}
+.avatar-action-btn.delete-photo:hover:not(:disabled) {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: #fef2f2;
+}
+.avatar-action-btn:disabled {
+  color: #cbd5e1;
+  border-color: #cbd5e1;
+  cursor: not-allowed;
 }
 
-.profile-email,
-.photo-name {
+.profile-name {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+  word-break: break-all;
+}
+
+.profile-email {
   margin-top: 4px;
   text-align: center;
-  color: #616161;
-  overflow-wrap: anywhere;
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+  word-break: break-all;
 }
 
 .photo-name {
-  font-size: 0.82rem;
+  font-size: 11px;
+  color: #0d9488;
+  text-align: center;
+  margin-top: 4px;
+  font-weight: 600;
 }
 
 .profile-chip-row {
-  margin-top: 14px;
+  margin-top: 16px;
   display: flex;
   gap: 8px;
-  flex-wrap: wrap;
   justify-content: center;
 }
 
-.logout-btn {
-  margin-top: 16px;
+/* Custom Badges */
+.custom-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border: 1px solid currentColor;
+}
+.badge-teal {
+  color: #0f766e;
+  background: #f0fdfa;
+}
+.badge-success {
+  color: #16a34a;
+  background: #f0fdf4;
+}
+.badge-slate {
+  color: #64748b;
+  background: #f8fafc;
 }
 
+/* Sidebar Stats Grid */
+.stats-flat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.stat-flat-box {
+  border: 1px solid #cbd5e1;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: #f8fafc;
+}
+.stat-value {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+.stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+/* Sidebar Logout button */
+.logout-btn-flat {
+  background: #ef4444 !important;
+  border-color: #ef4444 !important;
+  color: #ffffff !important;
+}
+.logout-btn-flat:hover {
+  background: #dc2626 !important;
+}
+
+/* Readiness Tracker */
 .readiness-head {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
 }
-
-.readiness-head h3 {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #212121;
+.readiness-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
 }
-
-.readiness-head p {
-  margin-top: 3px;
-  color: #616161;
-  font-size: 0.9rem;
+.readiness-subtitle {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+  margin-top: 2px;
 }
 
 .check-list {
-  margin-top: 16px;
-  display: grid;
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
-
 .check-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #757575;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 600;
 }
-
 .check-row.complete {
-  color: #00897B;
+  color: #0f766e;
 }
 
-.panel-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
+/* ════════════════════════════════ MAIN CONTAINER ═ */
+.profile-sidebar {
+  position: sticky;
+  top: 40px;
 }
 
-.panel-head h2 {
-  font-size: 1.12rem;
-  color: #212121;
-  font-weight: 700;
+/* Custom Tabs style overrides */
+.tabs-header-flat {
+  border-bottom: 2px solid #0f172a;
 }
 
-.panel-head p {
-  margin-top: 3px;
-  color: #616161;
-  font-size: 0.9rem;
-}
-
-.save-strip {
-  margin-top: 16px;
-  border-top: 1px solid #eeeeee;
-  padding-top: 14px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  color: #616161;
-}
-
-.orders-head {
-  align-items: center;
-}
-
-.empty-orders {
-  min-height: 300px;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 10px;
-  text-align: center;
-  color: #616161;
-}
-
-.empty-orders h3 {
-  color: #212121;
-  font-size: 1.15rem;
-}
-
-.orders-list {
-  margin-top: 14px;
-  gap: 10px;
-}
-
-.order-item {
-  border: 1px solid #eeeeee;
-  border-radius: 8px !important;
-  overflow: hidden;
-  box-shadow: none !important;
-}
-
-.order-title-row {
-  width: 100%;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.order-id {
-  color: #212121;
-  font-weight: 700;
-}
-
-.order-date {
-  margin-top: 3px;
-  color: #616161;
-  font-size: 0.88rem;
-}
-
-.order-summary {
-  display: flex;
-  align-items: flex-end;
-  flex-direction: column;
-  gap: 7px;
-  text-align: right;
-}
-
-.order-summary strong {
-  color: #1976d2;
-}
-
-.order-product-list {
-  margin-top: 12px;
-  display: grid;
+.custom-editorial-tabs :deep(.v-slide-group__content) {
   gap: 8px;
 }
 
-.order-product-row {
-  border-top: 1px solid #eeeeee;
-  padding-top: 8px;
+.custom-editorial-tabs :deep(.v-tab) {
+  border-radius: 0 !important;
+  border: 1px solid #cbd5e1;
+  border-bottom: none;
+  font-weight: 700 !important;
+  text-transform: none !important;
+  letter-spacing: 0px !important;
+  color: #64748b !important;
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.custom-editorial-tabs :deep(.v-tab--selected) {
+  color: #ffffff !important;
+  background: #0f172a !important;
+  border-color: #0f172a !important;
+}
+
+/* Tab Panels */
+.panel-head {
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+}
+.panel-subtitle {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+/* Custom Switch Overrides */
+.flat-switch :deep(.v-switch__track) {
+  border-radius: 0 !important;
+}
+.flat-switch :deep(.v-switch__thumb) {
+  border-radius: 0 !important;
+}
+
+/* Input Fields overrides */
+.flat-text-field :deep(.v-field) {
+  border-radius: 0 !important;
+  border-color: #cbd5e1 !important;
+}
+.flat-text-field :deep(.v-field--focused) {
+  border-color: #0f172a !important;
+}
+
+/* Preference Box */
+.preference-flat-card {
+  border: 1px solid #cbd5e1;
+  padding: 16px;
+  background: #f8fafc;
   display: flex;
-  align-items: flex-start;
   justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.pref-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pref-details strong {
+  font-size: 13px;
+  color: #0f172a;
+  font-weight: 700;
+}
+.pref-desc {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Save Strip */
+.save-strip-flat {
+  border-top: 1px solid #cbd5e1;
+  padding-top: 20px;
+  margin-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.dirty-state-text {
+  font-size: 12px;
+  font-weight: 700;
+  color: #d97706;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.clean-state-text {
+  font-size: 12px;
+  font-weight: 700;
+  color: #16a34a;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Guest Alert */
+.custom-flat-alert {
+  border-radius: 0 !important;
+  font-size: 13px !important;
+  border: 1px solid currentColor !important;
+}
+.error-alert {
+  color: #dc2626 !important;
+  background: #fef2f2 !important;
+}
+.guest-alert {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  width: 100%;
+}
+.guest-alert p {
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+/* ════════════════════════════════ ORDERS TAB ═════ */
+.empty-orders-flat {
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border: 1px dashed #cbd5e1;
+  padding: 32px;
+  background: #f8fafc;
+}
+.empty-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+.empty-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  max-width: 320px;
+}
+
+/* Expansion Panels */
+.orders-expansion-container {
+  display: flex;
+  flex-direction: column;
+}
+.flat-expansion-panels :deep(.v-expansion-panel) {
+  border-radius: 0 !important;
+  border: 1px solid #cbd5e1 !important;
+  margin-bottom: 12px !important;
+  box-shadow: none !important;
+}
+.flat-expansion-panels :deep(.v-expansion-panel--active) {
+  border-color: #0f172a !important;
+  box-shadow: 4px 4px 0px #0f172a !important;
+}
+.flat-expansion-panel :deep(.v-expansion-panel-text__wrapper) {
+  padding: 20px !important;
+}
+
+.order-title-row-flat {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-right: 16px;
+}
+.order-info-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.order-id {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+}
+.order-date {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+}
+.order-summary-right {
+  display: flex;
+  align-items: center;
   gap: 12px;
 }
-
-.order-product-row div {
-  display: grid;
-  gap: 3px;
+.order-amount-display {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+}
+.order-status-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border: 1px solid currentColor;
+  text-transform: uppercase;
+}
+.status-success {
+  color: #16a34a;
+  background: #f0fdf4;
+}
+.status-shipped {
+  color: #0284c7;
+  background: #f0f9ff;
+}
+.status-warning {
+  color: #d97706;
+  background: #fffbeb;
+}
+.status-error {
+  color: #dc2626;
+  background: #fef2f2;
 }
 
-.order-product-row strong {
-  color: #212121;
+.order-detail-minibox {
+  border: 1px solid #cbd5e1;
+  padding: 10px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+}
+.minibox-label {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.minibox-value {
+  font-size: 13px;
+  color: #0f172a;
+  font-weight: 800;
+  margin-top: 2px;
 }
 
-.order-product-row span {
-  color: #616161;
-  font-size: 0.84rem;
-  overflow-wrap: anywhere;
+.order-product-list-flat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 16px;
+}
+.order-product-row-flat {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  font-size: 13px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed #cbd5e1;
+}
+.order-product-row-flat:last-child {
+  border-bottom: none;
+}
+.prod-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.prod-name {
+  font-weight: 700;
+  color: #0f172a;
+}
+.prod-qty {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+}
+.prod-id {
+  font-family: monospace;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+/* ════════════════════════════════ SECURITY TAB ═══ */
+.session-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.session-field {
+  border: 1px solid #cbd5e1;
+  padding: 12px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+}
+.field-label {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.field-val {
+  font-size: 13px;
+  color: #0f172a;
+  font-weight: 800;
+  margin-top: 2px;
+  word-break: break-all;
+}
+
+.quick-links-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.quick-links-group :deep(.v-btn) {
+  border-radius: 0 !important;
+}
+
+/* ════════════════════════════════ DIALOG GATE ════ */
+.dialog-frame-flat {
+  background: #ffffff; /* Clean light background */
+  border: 1px solid #0f172a;
+  box-shadow: 8px 8px 0px #0f172a; /* Handcrafted developer offset shadow */
+  color: #0f172a;
+  transition: all 0.3s ease;
+}
+
+/* macOS-style frame header in light theme */
+.dialog-frame-flat .frame-header {
+  background: #f8fafc;
+  border-bottom: 1px solid #0f172a;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  height: 38px;
+}
+
+.dialog-frame-flat .frame-dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.dialog-frame-flat .frame-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  cursor: pointer;
+  border: 1px solid #0f172a;
+}
+
+.dialog-frame-flat .dot-red { background: #ff5f56; }
+.dialog-frame-flat .dot-yellow { background: #ffbd2e; }
+.dialog-frame-flat .dot-green { background: #27c93f; }
+
+.dialog-frame-flat .frame-title-display {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', Courier, monospace;
+  font-size: 12px;
+  color: #64748b;
+  letter-spacing: 0.5px;
+  margin-left: 12px;
+  flex-grow: 1;
+}
+
+.dialog-close-btn {
+  position: absolute;
+  right: 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+.dialog-close-btn:hover {
+  color: #ef4444;
+}
+
+.dialog-card-body {
+  flex-grow: 1;
+}
+
+.brand-tagline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.brand-tagline .tag-label {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', Courier, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #0d9488; /* Teal accent */
+}
+
+.brand-tagline .tag-dot {
+  color: #cbd5e1;
+}
+
+.dialog-title {
+  font-size: 26px;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.5px;
+  margin-bottom: 16px;
+}
+
+.dialog-title .highlight-serif {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  color: #0d9488; /* Teal */
+}
+
+/* Custom flat alert styling for the terminal gate */
+.custom-flat-alert.info-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #f0fdfa !important;
+  border: 1px solid #0d9488 !important;
+  color: #0f766e !important;
+  padding: 14px;
+  border-radius: 0;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.custom-flat-alert.info-alert .alert-icon {
+  color: #0d9488 !important;
+  margin-top: 2px;
+}
+
+.custom-flat-alert.info-alert .alert-content {
+  flex-grow: 1;
+}
+
+/* Forgot Links */
+.text-link-btn {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0d9488;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+.text-link-btn:hover {
+  color: #0f766e;
+}
+
+/* OTP Verification Styles */
+.otp-wrap-flat {
+  display: flex;
+  justify-content: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 24px 16px;
+}
+
+.flat-otp-input :deep(.v-otp-input__field) {
+  border-radius: 0 !important;
+  border: 1px solid #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', Courier, monospace;
+  font-size: 1.8rem;
+  transition: all 0.2s ease;
+  height: 54px !important;
+}
+
+.flat-otp-input :deep(.v-otp-input__field:focus) {
+  border-color: #0f172a !important;
+}
+
+/* Form Controls Inside Dialog */
+.dialog-card-body :deep(.flat-text-field .v-field) {
+  background: #ffffff !important;
+  border-radius: 0 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+.dialog-card-body :deep(.flat-text-field .v-field--focused) {
+  border-color: #0f172a !important;
+}
+
+.dialog-card-body :deep(.flat-text-field .v-label) {
+  color: #64748b !important;
+}
+
+.dialog-card-body :deep(.flat-text-field .v-field__input) {
+  color: #0f172a !important;
+}
+
+/* Action Buttons inside Dialog */
+.dialog-actions-flat {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.dialog-actions-flat button {
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dialog-actions-flat .btn-flat-outline {
+  color: #0f172a;
+  border: 1px solid #0f172a;
+  background: transparent;
+  transition: all 0.25s ease;
+}
+
+.dialog-actions-flat .btn-flat-outline:hover {
+  background: #f1f5f9;
+}
+
+.dialog-actions-flat .btn-flat-solid {
+  background: #0f172a;
+  border: 1px solid #0f172a;
+  color: #ffffff;
+  box-shadow: 4px 4px 0px rgba(15, 23, 42, 0.15);
+  transition: all 0.25s ease;
+}
+
+.dialog-actions-flat .btn-flat-solid:hover {
+  background: #1e293b;
+  border-color: #1e293b;
+  box-shadow: 4px 4px 0px rgba(15, 23, 42, 0.25);
+  transform: translate(-1px, -1px);
+}
+
+.dialog-actions-flat .btn-flat-solid:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+
+/* ════════════════════════════════ BUTTON GENERAL ═ */
+.btn-flat-solid {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  background: #0f172a;
+  border: 1px solid #0f172a;
+  border-radius: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+.btn-flat-solid:hover:not(:disabled) {
+  background: #1e293b;
+  border-color: #1e293b;
+}
+.btn-flat-solid:disabled {
+  background: #cbd5e1;
+  border-color: #cbd5e1;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.btn-flat-outline {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  border-radius: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+.btn-flat-outline:hover:not(:disabled) {
+  border-color: #0f172a;
+  background: #f8fafc;
+}
+.btn-flat-outline:disabled {
+  border-color: #e2e8f0;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.btn-with-icon {
+  gap: 6px;
+}
+
+.admin-btn-action :deep(.v-btn__content) {
+  color: #0f766e !important;
 }
 
 .sr-only {
@@ -2053,42 +2544,55 @@
   border: 0;
 }
 
+/* ════════════════════════════════ RESPONSIVE ═════ */
 @media (max-width: 1279px) {
   .profile-sidebar {
     position: static;
   }
 }
 
-@media (max-width: 800px) {
-
-  .profile-topbar,
-  .guest-alert,
-  .save-strip,
-  .order-title-row {
+@media (max-width: 959px) {
+  .profile-topbar {
     flex-direction: column;
     align-items: stretch;
+    gap: 16px;
   }
-
   .topbar-actions {
-    justify-content: stretch;
-  }
-
-  .topbar-actions .v-btn,
-  .save-strip .v-btn {
     width: 100%;
   }
-
-  .order-summary {
-    align-items: flex-start;
-    text-align: left;
+  .topbar-actions button {
+    flex: 1;
+    min-width: 120px;
+  }
+  .save-strip-flat {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .save-strip-flat button {
+    width: 100%;
   }
 }
 
-@media (max-width: 600px) {
-  .profile-shell {
-    padding-top: 18px;
-    padding-bottom: 24px;
+@media (max-width: 599px) {
+  .bespoke-profile-container {
+    padding: 24px 16px 60px !important;
   }
-
+  .order-title-row-flat {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .order-summary-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .dialog-actions-flat {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .dialog-actions-flat button {
+    width: 100%;
+  }
 }
 </style>

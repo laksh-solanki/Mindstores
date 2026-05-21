@@ -1,88 +1,105 @@
 <template>
-  <div class="user-admin-page">
-    <v-container class="py-5 py-md-7" fluid>
-      <v-row align="center" class="mb-4" dense>
-        <v-col cols="12" md="7">
-          <div class="text-h5 text-md-h4 font-weight-bold">User Admin</div>
-          <div class="text-body-2 text-medium-emphasis">
+  <div class="user-admin-page bespoke-admin-container">
+    <v-container class="py-5 py-md-7 px-0" fluid>
+      <!-- Topbar Header -->
+      <div class="admin-topbar mb-6">
+        <div>
+          <div class="brand-tagline">
+            <span class="tag-label">MINDSTORES</span>
+            <span class="tag-dot">✦</span>
+            <span class="tag-label text-uppercase">ADMIN CONSOLE</span>
+          </div>
+          <h1 class="page-title">
+            User <span class="highlight-serif">Admin</span>
+          </h1>
+          <p class="page-subtitle">
             Manage your product drafts from your PIN-protected account.
-          </div>
-        </v-col>
-        <v-col cols="12" md="5">
-          <div class="d-flex flex-column flex-sm-row justify-md-end ga-2">
-            <v-btn
-              color="teal-darken-1"
-              prepend-icon="mdi-refresh"
-              rounded="lg"
-              variant="tonal"
-              @click="loadConsole"
-            >
-              Refresh
-            </v-btn>
-            <v-btn
-              color="teal-darken-1"
-              prepend-icon="mdi-account-outline"
-              rounded="lg"
-              to="/profile"
-              variant="flat"
-            >
-              Profile
-            </v-btn>
-          </div>
-        </v-col>
-      </v-row>
+          </p>
+        </div>
+        <div class="topbar-actions">
+          <button
+            class="btn-flat-outline btn-with-icon"
+            @click="loadConsole"
+          >
+            <v-icon icon="mdi-refresh" size="18" class="mr-1" />
+            Refresh
+          </button>
+          <router-link
+            to="/profile"
+            class="btn-flat-solid btn-with-icon text-decoration-none"
+          >
+            <v-icon icon="mdi-account-outline" size="18" class="mr-1" />
+            Profile
+          </router-link>
+        </div>
+      </div>
 
       <v-alert
         v-if="!appStore.loading && !appStore.isAuthenticated"
-        class="mb-4"
-        rounded="lg"
-        type="info"
+        class="mb-4 custom-flat-alert error-alert"
+        type="error"
         variant="tonal"
       >
-        <div class="d-flex flex-column flex-sm-row align-sm-center justify-space-between ga-3">
-          <span>Login before opening your user admin controls.</span>
-          <v-btn color="teal-darken-1" rounded="lg" to="/login" variant="flat">Login</v-btn>
+        <div class="d-flex flex-column flex-sm-row align-sm-center justify-space-between ga-3 w-100">
+          <div class="d-flex align-center ga-2">
+            <v-icon icon="mdi-alert-circle-outline" />
+            <span>Login before opening your user admin controls.</span>
+          </div>
+          <router-link to="/login" class="btn-flat-solid text-decoration-none py-1 px-4 text-center">Login</router-link>
         </div>
       </v-alert>
 
       <v-alert
         v-else-if="!loading && !hasPinAccess"
-        class="mb-4"
-        rounded="lg"
+        class="mb-4 custom-flat-alert warning-alert"
         type="warning"
         variant="tonal"
       >
-        <div class="d-flex flex-column flex-sm-row align-sm-center justify-space-between ga-3">
-          <span>Create or enter your User Admin PIN from Profile before using User Admin.</span>
-          <v-btn color="teal-darken-1" rounded="lg" to="/profile" variant="flat">Open Profile</v-btn>
+        <div class="d-flex flex-column flex-sm-row align-sm-center justify-space-between ga-3 w-100">
+          <div class="d-flex align-center ga-2">
+            <v-icon icon="mdi-lock-outline" />
+            <span>Create or enter your User Admin PIN from Profile before using User Admin.</span>
+          </div>
+          <router-link to="/profile" class="btn-flat-solid text-decoration-none py-1 px-4 text-center">Open Profile</router-link>
         </div>
       </v-alert>
 
       <template v-if="appStore.isAuthenticated && hasPinAccess">
         <v-row align="start" dense>
+          <!-- Navigation Sidebar -->
           <v-col cols="12" lg="2" md="3">
-            <v-card border rounded="lg" variant="flat">
-              <v-list density="compact" nav>
+            <div class="flat-card-container pa-0 mb-4">
+              <div class="panel-window-header">
+                <div class="window-dots">
+                  <span class="dot dot-red"></span>
+                  <span class="dot dot-yellow"></span>
+                  <span class="dot dot-green"></span>
+                </div>
+                <div class="window-title-display">NAVIGATION</div>
+              </div>
+              <v-list class="custom-admin-nav bg-transparent" density="compact" nav>
                 <v-list-item
                   v-for="item in userAdminNavItems"
                   :key="item.id"
                   :active="activePanel === item.id"
-                  active-color="teal-darken-1"
-                  rounded="lg"
+                  active-class="active-nav-item"
+                  class="custom-nav-item"
                   @click="activePanel = item.id"
                 >
                   <template #prepend>
-                    <v-icon :icon="item.icon" />
+                    <v-icon :icon="item.icon" size="18" class="mr-2" />
                   </template>
-                  <v-list-item-title>{{ item.label }}</v-list-item-title>
+                  <v-list-item-title class="font-weight-bold">{{ item.label }}</v-list-item-title>
                 </v-list-item>
               </v-list>
-            </v-card>
+            </div>
           </v-col>
 
+          <!-- Main Console Panel -->
           <v-col cols="12" lg="10" md="9">
+            <!-- Dashboard View -->
             <template v-if="activePanel === 'dashboard'">
-              <v-row dense>
+              <v-row dense class="mb-4">
                 <v-col
                   v-for="metric in metrics"
                   :key="metric.label"
@@ -90,136 +107,177 @@
                   md="3"
                   sm="6"
                 >
-                  <v-card border rounded="lg" variant="flat">
-                    <v-card-text class="d-flex align-center justify-space-between ga-3">
+                  <div class="metric-card-flat">
+                    <div class="d-flex align-center justify-space-between ga-3">
                       <div>
-                        <div class="text-caption text-medium-emphasis">{{ metric.label }}</div>
-                        <div class="text-h6 font-weight-bold">{{ metric.value }}</div>
+                        <div class="metric-label">{{ metric.label }}</div>
+                        <div class="metric-value font-mono">{{ metric.value }}</div>
                       </div>
-                      <v-avatar :color="metric.color" size="44" variant="tonal">
+                      <v-avatar :color="metric.color" size="44" class="metric-avatar-flat">
                         <v-icon :color="metric.color">{{ metric.icon }}</v-icon>
                       </v-avatar>
-                    </v-card-text>
-                  </v-card>
+                    </div>
+                  </div>
                 </v-col>
               </v-row>
 
               <v-row class="mt-2" dense>
-                <v-col cols="12" lg="4">
-                  <v-card border class="h-100" rounded="lg" variant="flat">
-                    <v-card-title>Product Analysis</v-card-title>
-                    <v-card-text>
+                <!-- Product Analysis -->
+                <v-col cols="12" lg="4" class="mb-4">
+                  <div class="flat-card-container pa-0 h-100">
+                    <div class="panel-window-header-mini">
+                      <div class="window-dots">
+                        <span class="dot dot-red"></span>
+                        <span class="dot dot-yellow"></span>
+                        <span class="dot dot-green"></span>
+                      </div>
+                      <div class="window-title-mini">Product Analysis</div>
+                    </div>
+                    <div class="pa-4">
                       <div
                         v-for="segment in categoryStats"
                         :key="segment.name"
                         class="mb-4"
                       >
                         <div class="d-flex justify-space-between text-body-2 mb-1">
-                          <span class="font-weight-medium">{{ segment.name }}</span>
-                          <span class="text-medium-emphasis">{{ segment.count }}</span>
+                          <span class="font-weight-bold text-slate-800">{{ segment.name }}</span>
+                          <span class="font-mono text-medium-emphasis font-weight-bold">{{ segment.count }}</span>
                         </div>
-                        <v-progress-linear color="teal-darken-1" height="10" :model-value="segment.percent" rounded />
+                        <div class="custom-progress-container">
+                          <div class="custom-progress-bar" :style="{ width: segment.percent + '%' }"></div>
+                        </div>
                       </div>
-                      <v-alert v-if="categoryStats.length === 0" type="info" variant="tonal">
+                      <v-alert v-if="categoryStats.length === 0" type="info" variant="tonal" class="custom-flat-alert info-alert">
                         No product categories yet.
                       </v-alert>
-                    </v-card-text>
-                  </v-card>
+                    </div>
+                  </div>
                 </v-col>
 
-                <v-col cols="12" lg="4">
-                  <v-card border class="h-100" rounded="lg" variant="flat">
-                    <v-card-title>Inventory</v-card-title>
-                    <v-card-text>
-                      <v-list density="compact">
-                        <v-list-item :subtitle="`${lowStockCount} products below 5 units`" title="Low stock">
+                <!-- Inventory Stats -->
+                <v-col cols="12" lg="4" class="mb-4">
+                  <div class="flat-card-container pa-0 h-100">
+                    <div class="panel-window-header-mini">
+                      <div class="window-dots">
+                        <span class="dot dot-red"></span>
+                        <span class="dot dot-yellow"></span>
+                        <span class="dot dot-green"></span>
+                      </div>
+                      <div class="window-title-mini">Inventory</div>
+                    </div>
+                    <div class="pa-4">
+                      <v-list density="compact" class="bg-transparent custom-stat-list py-0">
+                        <v-list-item class="px-0 py-2 border-bottom-dashed">
                           <template #prepend>
-                            <v-icon color="warning" icon="mdi-alert-outline" />
+                            <v-icon color="warning" icon="mdi-alert-outline" class="mr-2" />
                           </template>
+                          <v-list-item-title class="font-weight-bold text-slate-800">Low stock</v-list-item-title>
+                          <v-list-item-subtitle class="font-weight-medium text-slate-600">{{ lowStockCount }} products below 5 units</v-list-item-subtitle>
                         </v-list-item>
-                        <v-list-item :subtitle="`${productsWithImagesCount} products with images`" title="Images">
+                        <v-list-item class="px-0 py-2 border-bottom-dashed">
                           <template #prepend>
-                            <v-icon color="teal-darken-1" icon="mdi-image-multiple-outline" />
+                            <v-icon color="teal-darken-1" icon="mdi-image-multiple-outline" class="mr-2" />
                           </template>
+                          <v-list-item-title class="font-weight-bold text-slate-800">Images</v-list-item-title>
+                          <v-list-item-subtitle class="font-weight-medium text-slate-600">{{ productsWithImagesCount }} products with images</v-list-item-subtitle>
                         </v-list-item>
-                        <v-list-item :subtitle="formatMoney(totalInventoryValue)" title="Shelf value">
+                        <v-list-item class="px-0 py-2">
                           <template #prepend>
-                            <v-icon color="success" icon="mdi-cash-multiple" />
+                            <v-icon color="success" icon="mdi-cash-multiple" class="mr-2" />
                           </template>
+                          <v-list-item-title class="font-weight-bold text-slate-800">Shelf value</v-list-item-title>
+                          <v-list-item-subtitle class="font-weight-bold font-mono text-teal-darken-1">{{ formatMoney(totalInventoryValue) }}</v-list-item-subtitle>
                         </v-list-item>
                       </v-list>
-                    </v-card-text>
-                  </v-card>
+                    </div>
+                  </div>
                 </v-col>
 
-                <v-col cols="12" lg="4">
-                  <v-card border class="h-100" rounded="lg" variant="flat">
-                    <v-card-title>Top Value Products</v-card-title>
-                    <v-card-text>
-                      <v-list v-if="topValueProducts.length > 0" density="compact">
+                <!-- Top Value Products -->
+                <v-col cols="12" lg="4" class="mb-4">
+                  <div class="flat-card-container pa-0 h-100">
+                    <div class="panel-window-header-mini">
+                      <div class="window-dots">
+                        <span class="dot dot-red"></span>
+                        <span class="dot dot-yellow"></span>
+                        <span class="dot dot-green"></span>
+                      </div>
+                      <div class="window-title-mini">Top Value Products</div>
+                    </div>
+                    <div class="pa-4">
+                      <v-list v-if="topValueProducts.length > 0" density="compact" class="bg-transparent py-0 custom-top-products-list">
                         <v-list-item
                           v-for="product in topValueProducts"
                           :key="product.product_id || product.name"
-                          :subtitle="formatDraftCategory(product)"
-                          :title="product.name"
+                          class="px-0 py-2 border-bottom-dashed"
                         >
                           <template #prepend>
-                            <v-avatar v-if="draftImageUrl(product)" rounded="lg" size="36">
-                              <v-img cover :src="draftImageUrl(product)" />
-                            </v-avatar>
-                            <v-avatar v-else color="surface" rounded="lg" size="36">
-                              <v-icon color="primary" icon="mdi-image-off-outline" />
-                            </v-avatar>
+                            <div class="avatar-flat-mini mr-3">
+                              <img v-if="draftImageUrl(product)" :src="draftImageUrl(product)" class="img-cover" />
+                              <v-icon v-else icon="mdi-image-off-outline" size="18" />
+                            </div>
                           </template>
+                          <div class="d-flex flex-column min-width-0">
+                            <span class="font-weight-bold text-truncate text-slate-800 text-body-2">{{ product.name }}</span>
+                            <span class="text-caption text-medium-emphasis">{{ formatDraftCategory(product) }}</span>
+                          </div>
                           <template #append>
-                            <div class="text-body-2 font-weight-bold">{{ formatMoney(product.shelf_value) }}</div>
+                            <div class="font-weight-bold font-mono text-body-2 text-slate-800">{{ formatMoney(product.shelf_value) }}</div>
                           </template>
                         </v-list-item>
                       </v-list>
-                      <v-alert v-else type="info" variant="tonal">
+                      <v-alert v-else type="info" variant="tonal" class="custom-flat-alert info-alert">
                         No product value data.
                       </v-alert>
-                    </v-card-text>
-                  </v-card>
+                    </div>
+                  </div>
                 </v-col>
               </v-row>
             </template>
 
-            <v-card v-else-if="activePanel === 'products'" border rounded="lg" variant="flat">
-              <v-card-title class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3">
-                <div>
-                  <div>Products</div>
-                  <div class="text-body-2 text-medium-emphasis">{{ products.length }} saved in your user admin area.</div>
+            <!-- Products Table View -->
+            <div v-else-if="activePanel === 'products'" class="flat-card-container pa-0">
+              <div class="panel-window-header">
+                <div class="window-dots">
+                  <span class="dot dot-red"></span>
+                  <span class="dot dot-yellow"></span>
+                  <span class="dot dot-green"></span>
                 </div>
-                <div class="d-flex flex-column flex-sm-row ga-2">
-                  <v-text-field
-                    v-model="productSearch"
-                    density="compact"
-                    hide-details
-                    label="Search products"
-                    max-width="320"
-                    prepend-inner-icon="mdi-magnify"
-                    rounded="lg"
-                    variant="outlined"
-                  />
-                  <v-btn
-                    color="teal-darken-1"
-                    prepend-icon="mdi-plus"
-                    rounded="lg"
-                    variant="flat"
-                    @click="openAddDialog"
-                  >
-                    Add Product
-                  </v-btn>
+                <div class="window-title-display">Console / Products</div>
+              </div>
+              <div class="pa-4">
+                <div class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 mb-4">
+                  <div>
+                    <h2 class="section-title">Products</h2>
+                    <div class="section-subtitle">{{ products.length }} saved in your user admin area.</div>
+                  </div>
+                  <div class="d-flex flex-column flex-sm-row ga-2 align-sm-center">
+                    <v-text-field
+                      v-model="productSearch"
+                      class="flat-text-field search-text-field"
+                      density="compact"
+                      hide-details
+                      label="Search products"
+                      prepend-inner-icon="mdi-magnify"
+                      variant="outlined"
+                    />
+                    <button
+                      class="btn-flat-solid btn-with-icon"
+                      @click="openAddDialog"
+                    >
+                      <v-icon icon="mdi-plus" size="18" class="mr-1" />
+                      Add Product
+                    </button>
+                  </div>
                 </div>
-              </v-card-title>
-              <v-card-text>
-                <v-progress-linear v-if="loading" color="teal-darken-1" indeterminate />
-                <v-alert v-else-if="filteredProducts.length === 0" type="info" variant="tonal">
+
+                <v-progress-linear v-if="loading" color="teal-darken-1" indeterminate class="mb-4" />
+                <v-alert v-else-if="filteredProducts.length === 0" type="info" variant="tonal" class="custom-flat-alert info-alert">
                   {{ products.length === 0 ? 'Add your first product.' : 'No matching products found.' }}
                 </v-alert>
                 <v-data-table
                   v-else
+                  class="custom-admin-table"
                   density="comfortable"
                   :headers="productHeaders"
                   :items="filteredProducts"
@@ -227,116 +285,108 @@
                 >
                   <template #item.name="{ item }">
                     <div class="d-flex align-center ga-3 py-2">
-                      <v-avatar v-if="draftImageUrl(resolveItem(item))" rounded="lg" size="44">
-                        <v-img cover :src="draftImageUrl(resolveItem(item))" />
-                      </v-avatar>
-                      <v-avatar v-else color="surface" rounded="lg" size="44">
-                        <v-icon color="primary">mdi-image-off-outline</v-icon>
-                      </v-avatar>
+                      <div class="table-avatar-flat">
+                        <img v-if="draftImageUrl(resolveItem(item))" :src="draftImageUrl(resolveItem(item))" class="img-cover" />
+                        <v-icon v-else icon="mdi-image-off-outline" size="18" color="grey" />
+                      </div>
                       <div>
-                        <div class="font-weight-medium">{{ resolveItem(item).name }}</div>
-                        <div class="text-caption text-medium-emphasis">{{ formatDraftCategory(resolveItem(item)) }}</div>
+                        <div class="font-weight-bold text-slate-800 text-body-2">{{ resolveItem(item).name }}</div>
+                        <div class="table-category-tag mt-1">{{ formatDraftCategory(resolveItem(item)) }}</div>
                       </div>
                     </div>
                   </template>
                   <template #item.price="{ item }">
-                    {{ formatDraftPrice(resolveItem(item)) }}
+                    <span class="font-mono font-weight-bold">{{ formatDraftPrice(resolveItem(item)) }}</span>
                   </template>
                   <template #item.stock="{ item }">
-                    <v-chip color="teal-darken-1" size="small" variant="tonal">
-                      {{ resolveItem(item).stock }}
-                    </v-chip>
+                    <span class="custom-badge badge-teal font-mono">{{ resolveItem(item).stock }}</span>
                   </template>
                   <template #item.actions="{ item }">
-                    <div class="d-flex align-center">
-                      <v-btn
+                    <div class="d-flex align-center ga-1">
+                      <button
                         aria-label="Edit product"
-                        icon
-                        size="small"
-                        variant="text"
+                        class="action-icon-btn edit-btn"
                         @click="editProduct(resolveItem(item))"
                       >
-                        <v-icon icon="mdi-pencil-outline" />
-                      </v-btn>
-                      <v-btn
+                        <v-icon icon="mdi-pencil-outline" size="18" />
+                      </button>
+                      <button
                         aria-label="Remove product"
-                        color="error"
-                        icon
-                        size="small"
-                        variant="text"
+                        class="action-icon-btn delete-btn"
                         @click="removeProduct(resolveItem(item))"
                       >
-                        <v-icon icon="mdi-delete-outline" />
-                      </v-btn>
+                        <v-icon icon="mdi-delete-outline" size="18" />
+                      </button>
                     </div>
                   </template>
                 </v-data-table>
-              </v-card-text>
-            </v-card>
+              </div>
+            </div>
 
-            <v-card v-else-if="activePanel === 'reviews'" border rounded="lg" variant="flat">
-              <v-card-title class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3">
-                <div>
-                  <div>Reviews</div>
-                  <div class="text-body-2 text-medium-emphasis">{{ reviews.length }} public reviews on your products.</div>
+            <!-- Reviews List View -->
+            <div v-else-if="activePanel === 'reviews'" class="flat-card-container pa-0">
+              <div class="panel-window-header">
+                <div class="window-dots">
+                  <span class="dot dot-red"></span>
+                  <span class="dot dot-yellow"></span>
+                  <span class="dot dot-green"></span>
                 </div>
-                <v-btn
-                  color="teal-darken-1"
-                  prepend-icon="mdi-refresh"
-                  rounded="lg"
-                  variant="tonal"
-                  @click="loadConsole"
-                >
-                  Refresh
-                </v-btn>
-              </v-card-title>
-              <v-divider />
-              <v-card-text>
-                <v-progress-linear v-if="reviewsLoading" color="teal-darken-1" indeterminate />
-                <v-alert v-else-if="reviews.length === 0" type="info" variant="tonal">
+                <div class="window-title-display">Console / Reviews</div>
+              </div>
+              <div class="pa-4">
+                <div class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 mb-4">
+                  <div>
+                    <h2 class="section-title">Reviews</h2>
+                    <div class="section-subtitle">{{ reviews.length }} public reviews on your products.</div>
+                  </div>
+                  <button
+                    class="btn-flat-outline btn-with-icon"
+                    @click="loadConsole"
+                  >
+                    <v-icon icon="mdi-refresh" size="18" class="mr-1" />
+                    Refresh
+                  </button>
+                </div>
+                
+                <v-progress-linear v-if="reviewsLoading" color="teal-darken-1" indeterminate class="mb-4" />
+                <v-alert v-else-if="reviews.length === 0" type="info" variant="tonal" class="custom-flat-alert info-alert">
                   No product reviews yet.
                 </v-alert>
-                <v-list v-else bg-color="transparent" lines="three">
-                  <template
+                <div v-else class="reviews-list-flat">
+                  <div
                     v-for="(review, index) in reviews"
                     :key="review.review_id || `${review.product_id}-${index}`"
+                    class="review-item-flat"
                   >
-                    <v-list-item>
-                      <template #prepend>
-                        <v-avatar v-if="review.product_image_url" rounded="lg" size="48">
-                          <v-img cover :src="review.product_image_url" />
-                        </v-avatar>
-                        <v-avatar v-else color="surface" rounded="lg" size="48">
-                          <v-icon color="primary" icon="mdi-image-off-outline" />
-                        </v-avatar>
-                      </template>
-                      <template #title>
-                        <div class="d-flex align-center flex-wrap ga-2">
-                          <span class="font-weight-medium">{{ review.product_name || review.product_id }}</span>
-                          <v-rating
-                            active-color="amber-darken-2"
-                            color="grey-lighten-1"
-                            density="compact"
-                            :model-value="Number(review.rating || 0)"
-                            readonly
-                            size="16"
-                          />
-                        </div>
-                      </template>
-                      <template #subtitle>
-                        <div class="text-body-2 text-medium-emphasis mt-1">{{ review.comment }}</div>
-                        <div class="d-flex flex-wrap ga-2 mt-2 text-caption text-medium-emphasis">
-                          <span>{{ review.reviewer_name || 'Mindstores user' }}</span>
-                          <span v-if="review.reviewer_email">{{ review.reviewer_email }}</span>
-                          <span>{{ formatReviewDate(review.created_at) }}</span>
-                        </div>
-                      </template>
-                    </v-list-item>
-                    <v-divider v-if="index < reviews.length - 1" />
-                  </template>
-                </v-list>
-              </v-card-text>
-            </v-card>
+                    <div class="review-avatar-flat">
+                      <img v-if="review.product_image_url" :src="review.product_image_url" class="img-cover" />
+                      <v-icon v-else icon="mdi-image-off-outline" size="18" color="grey" />
+                    </div>
+                    <div class="review-details-flat">
+                      <div class="d-flex align-center flex-wrap ga-2">
+                        <span class="review-product-name">{{ review.product_name || review.product_id }}</span>
+                        <v-rating
+                          active-color="amber-darken-2"
+                          color="grey-lighten-1"
+                          density="compact"
+                          :model-value="Number(review.rating || 0)"
+                          readonly
+                          size="14"
+                        />
+                      </div>
+                      <div class="review-comment mt-1 text-slate-700">{{ review.comment }}</div>
+                      <div class="review-meta mt-2">
+                        <span class="font-weight-bold">{{ review.reviewer_name || 'Mindstores user' }}</span>
+                        <span v-if="review.reviewer_email" class="meta-dot">•</span>
+                        <span v-if="review.reviewer_email" class="text-medium-emphasis">{{ review.reviewer_email }}</span>
+                        <span class="meta-dot">•</span>
+                        <span>{{ formatReviewDate(review.created_at) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </v-col>
         </v-row>
       </template>
@@ -350,10 +400,24 @@
       :type="snackbarColor"
     />
 
+    <!-- Add/Edit Product Dialog -->
     <v-dialog v-model="productDialog" max-width="1180" scrollable>
-      <v-card rounded="lg">
-        <v-card-title>{{ editProductId ? 'Edit Product' : 'Add Product' }}</v-card-title>
-        <v-card-text>
+      <div class="flat-card-container dialog-frame-flat pa-0 w-100 d-flex flex-column">
+        <!-- Dialog Header -->
+        <div class="panel-window-header">
+          <div class="window-dots">
+            <span class="dot dot-red" @click="productDialog = false"></span>
+            <span class="dot dot-yellow"></span>
+            <span class="dot dot-green"></span>
+          </div>
+          <div class="window-title-display">{{ editProductId ? 'Edit Product Draft' : 'Add New Product Draft' }}</div>
+          <button class="dialog-close-btn" @click="productDialog = false" aria-label="Close dialog">
+            <v-icon icon="mdi-close" size="18" />
+          </button>
+        </div>
+
+        <!-- Dialog Scroll Body -->
+        <div class="dialog-scroll-body pa-6 flex-grow-1 overflow-y-auto">
           <v-form @submit.prevent="saveProductDraft">
             <v-row dense>
               <v-col cols="12" md="8">
@@ -361,6 +425,7 @@
                   <v-col cols="12">
                     <v-file-input
                       v-model="productImageFiles"
+                      class="flat-text-field"
                       accept="image/png,image/jpeg,image/webp,image/gif"
                       chips
                       clearable
@@ -376,6 +441,7 @@
                   </v-col>
                   <v-col cols="12">
                     <v-textarea
+                      class="flat-text-field"
                       auto-grow
                       density="comfortable"
                       hide-details
@@ -389,13 +455,8 @@
                   </v-col>
                 </v-row>
               </v-col>
-              <v-col cols="12" md="4">
-                <v-sheet
-                  border
-                  class="d-flex align-center justify-center h-100 pa-3"
-                  color="blue-grey-lighten-5"
-                  rounded="lg"
-                >
+              <v-col cols="12" md="4" class="d-flex align-stretch">
+                <div class="image-preview-frame pa-3 w-100 d-flex align-center justify-center">
                   <v-carousel
                     v-if="productImageGallery.length > 0"
                     height="180"
@@ -412,67 +473,73 @@
                         cover
                         height="180"
                         :src="imageUrl"
+                        class="carousel-img-flat"
                       />
                     </v-carousel-item>
                   </v-carousel>
-                  <v-avatar
+                  <div
                     v-else
-                    color="surface"
-                    rounded="lg"
-                    size="156"
-                    variant="outlined"
+                    class="no-preview-placeholder d-flex flex-column align-center justify-center py-4"
                   >
-                    <v-icon color="primary">mdi-image-off-outline</v-icon>
-                  </v-avatar>
-                </v-sheet>
-              </v-col>
-              <v-col v-if="productImageGallery.length > 0" cols="12">
-                <div class="d-flex flex-wrap ga-2">
-                  <v-chip
-                    v-for="(imageUrl, index) in productImageGallery"
-                    :key="`${imageUrl}-${index}`"
-                    closable
-                    size="small"
-                    variant="outlined"
-                    @click:close="removeProductImage(index)"
-                  >
-                    {{ index === 0 ? 'Primary image' : `Image ${index + 1}` }}
-                  </v-chip>
+                    <v-icon color="grey" icon="mdi-image-off-outline" size="48" />
+                    <span class="text-caption mt-2 text-medium-emphasis">No image selected</span>
+                  </div>
                 </div>
               </v-col>
-              <v-col cols="12" md="8">
+              <v-col v-if="productImageGallery.length > 0" cols="12" class="mt-2">
+                <div class="d-flex flex-wrap ga-2">
+                  <span
+                    v-for="(imageUrl, index) in productImageGallery"
+                    :key="`${imageUrl}-${index}`"
+                    class="custom-badge badge-slate d-flex align-center ga-1"
+                  >
+                    {{ index === 0 ? 'Primary image' : `Image ${index + 1}` }}
+                    <button
+                      type="button"
+                      class="chip-close-btn ml-1"
+                      @click="removeProductImage(index)"
+                      aria-label="Remove image"
+                    >
+                      ×
+                    </button>
+                  </span>
+                </div>
+              </v-col>
+              <v-col cols="12" md="8" class="mt-4">
                 <v-text-field
                   v-model="productForm.name"
+                  class="flat-text-field"
                   density="comfortable"
                   label="Product name"
                   required
                   variant="outlined"
                 />
               </v-col>
-              <v-col cols="12" md="4">
+              <v-col cols="12" md="4" class="mt-4">
                 <v-text-field
                   v-model="productForm.company"
+                  class="flat-text-field"
                   density="comfortable"
                   label="Brand"
                   variant="outlined"
                 />
               </v-col>
-              <v-col class="d-flex flex-column ga-1" cols="12" md="1">
-                <v-btn
+              <v-col class="d-flex flex-row flex-md-column ga-1 mt-2" cols="12" md="1">
+                <button
                   v-for="option in descriptionBulletOptions"
                   :key="option.symbol"
                   :aria-label="option.label"
-                  min-width="54"
-                  rounded="lg"
-                  variant="outlined"
+                  type="button"
+                  class="btn-flat-outline bullet-btn-flat"
                   @click="addDescriptionBullet(option.symbol)"
                 >
                   {{ option.symbol }}
-                </v-btn>
+                </button>
               </v-col>
-              <v-col cols="12" md="11">
+              <v-col cols="12" md="11" class="mt-2">
                 <v-textarea
                   v-model="productForm.description"
+                  class="flat-text-field"
                   auto-grow
                   density="comfortable"
                   label="Description"
@@ -480,9 +547,10 @@
                   variant="outlined"
                 />
               </v-col>
-              <v-col cols="12" md="4">
+              <v-col cols="12" md="4" class="mt-2">
                 <v-select
                   v-model="productForm.price_currency"
+                  class="flat-text-field"
                   density="comfortable"
                   item-title="title"
                   item-value="value"
@@ -492,9 +560,10 @@
                   variant="outlined"
                 />
               </v-col>
-              <v-col cols="12" md="4">
+              <v-col cols="12" md="4" class="mt-2">
                 <v-text-field
                   v-model.number="productForm.price"
+                  class="flat-text-field"
                   density="comfortable"
                   label="Price"
                   min="0"
@@ -504,9 +573,10 @@
                   variant="outlined"
                 />
               </v-col>
-              <v-col cols="12" md="4">
+              <v-col cols="12" md="4" class="mt-2">
                 <v-text-field
                   v-model.number="productForm.stock"
+                  class="flat-text-field"
                   density="comfortable"
                   label="Stock"
                   min="0"
@@ -515,9 +585,10 @@
                   variant="outlined"
                 />
               </v-col>
-              <v-col cols="12" md="6">
+              <v-col cols="12" md="6" class="mt-2">
                 <v-combobox
                   v-model="productForm.category"
+                  class="flat-text-field"
                   density="comfortable"
                   :items="categoryOptions"
                   label="Category"
@@ -535,9 +606,10 @@
                   </template>
                 </v-combobox>
               </v-col>
-              <v-col cols="12" md="6">
+              <v-col cols="12" md="6" class="mt-2">
                 <v-combobox
                   v-model="productForm.subcategory"
+                  class="flat-text-field"
                   density="comfortable"
                   :disabled="!normalizeCategoryName(productForm.category)"
                   :items="availableSubcategories"
@@ -558,50 +630,59 @@
               </v-col>
             </v-row>
           </v-form>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn rounded="lg" variant="text" @click="productDialog = false">Cancel</v-btn>
-          <v-btn
-            color="teal-darken-1"
-            :loading="saving"
-            rounded="lg"
-            variant="flat"
+        </div>
+
+        <!-- Dialog Actions -->
+        <div class="dialog-actions-flat border-top pa-4 bg-light d-flex justify-end ga-3">
+          <button type="button" class="btn-flat-outline" @click="productDialog = false">Cancel</button>
+          <button
+            type="button"
+            class="btn-flat-solid"
+            :disabled="saving"
             @click="saveProductDraft"
           >
-            {{ editProductId ? 'Update' : 'Add' }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
+            <span v-if="saving">Saving...</span>
+            <span v-else>{{ editProductId ? 'Update' : 'Add' }}</span>
+          </button>
+        </div>
+      </div>
     </v-dialog>
 
+    <!-- Catalog Option Dialog -->
     <v-dialog v-model="catalogOptionDialog" max-width="460">
-      <v-card rounded="lg">
-        <v-card-title>{{ catalogOptionDialogTitle }}</v-card-title>
-        <v-card-text>
+      <div class="flat-card-container dialog-frame-flat pa-0 w-100">
+        <div class="panel-window-header">
+          <div class="window-dots">
+            <span class="dot dot-red" @click="catalogOptionDialog = false"></span>
+            <span class="dot dot-yellow"></span>
+            <span class="dot dot-green"></span>
+          </div>
+          <div class="window-title-display">{{ catalogOptionDialogTitle }}</div>
+        </div>
+        <div class="pa-6">
           <v-text-field
             v-model="catalogOptionInput"
             autofocus
+            class="flat-text-field"
             density="comfortable"
             :label="catalogOptionInputLabel"
             variant="outlined"
             @keyup.enter="saveCatalogOption"
           />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn rounded="lg" variant="text" @click="catalogOptionDialog = false">Cancel</v-btn>
-          <v-btn
-            color="teal-darken-1"
-            :loading="catalogOptionSaving"
-            rounded="lg"
-            variant="flat"
+        </div>
+        <div class="dialog-actions-flat border-top pa-4 bg-light d-flex justify-end ga-3">
+          <button type="button" class="btn-flat-outline" @click="catalogOptionDialog = false">Cancel</button>
+          <button
+            type="button"
+            class="btn-flat-solid"
+            :disabled="catalogOptionSaving"
             @click="saveCatalogOption"
           >
-            Save
-          </v-btn>
-        </v-card-actions>
-      </v-card>
+            <span v-if="catalogOptionSaving">Saving...</span>
+            <span v-else>Save</span>
+          </button>
+        </div>
+      </div>
     </v-dialog>
   </div>
 </template>
@@ -1298,8 +1379,568 @@
 </script>
 
 <style scoped>
+/* ════════════════════════════════ PAGE ROOT ═══ */
 .user-admin-page {
   min-height: 100vh;
-  background: #f5f7fa;
+  background: #f8fafc;
+}
+
+.bespoke-admin-container {
+  padding: 40px max(16px, 4vw) 80px !important;
+}
+
+/* ════════════════════════════════ TOPBAR ══════ */
+.admin-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 32px;
+  border-bottom: 1px solid #cbd5e1;
+  padding-bottom: 24px;
+}
+
+.brand-tagline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.tag-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: #0f766e;
+}
+.tag-dot {
+  font-size: 10px;
+  color: #cbd5e1;
+}
+
+.page-title {
+  font-size: clamp(24px, 3.5vw, 36px);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  margin-top: 4px;
+}
+.highlight-serif {
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+  font-style: italic;
+  font-weight: 400;
+  color: #0d9488;
+}
+.page-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ════════════════════════════════ FLAT CARDS ══ */
+.flat-card-container {
+  background: #ffffff;
+  border: 1px solid #0f172a;
+  box-shadow: 4px 4px 0px #0f172a;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+/* ════════════════════════════════ WINDOW HEADERS ════ */
+.panel-window-header {
+  height: 36px;
+  background: #f8fafc;
+  border-bottom: 1px solid #0f172a;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  position: relative;
+}
+.panel-window-header-mini {
+  height: 30px;
+  background: #f8fafc;
+  border-bottom: 1px solid #0f172a;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  position: relative;
+}
+
+.window-dots {
+  display: flex;
+  gap: 6px;
+  z-index: 2;
+}
+.window-dots .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid #0f172a;
+  display: inline-block;
+}
+.dot-red { background: #ff5f56; }
+.dot-yellow { background: #ffbd2e; }
+.dot-green { background: #27c93f; }
+
+.window-title-display {
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 800;
+  color: #64748b;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  letter-spacing: 0.05em;
+}
+.window-title-mini {
+  font-family: monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* ════════════════════════════════ SIDEBAR NAV ══ */
+.custom-admin-nav {
+  padding: 8px !important;
+}
+.custom-nav-item {
+  border-radius: 0 !important;
+  border: 1px solid transparent;
+  margin-bottom: 4px !important;
+  transition: all 0.2s ease;
+}
+.custom-nav-item:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+.active-nav-item {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  border-color: #0f172a !important;
+}
+
+/* ════════════════════════════════ METRICS ══════ */
+.metric-card-flat {
+  background: #ffffff;
+  border: 1px solid #0f172a;
+  box-shadow: 4px 4px 0px #0f172a;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.metric-card-flat:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px #0f172a;
+}
+.metric-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.metric-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-top: 4px;
+}
+.metric-avatar-flat {
+  border: 1px solid #cbd5e1;
+  border-radius: 0 !important;
+  background: #f8fafc !important;
+}
+
+/* Progress bar flat */
+.custom-progress-container {
+  height: 8px;
+  background: #e2e8f0;
+  border: 1px solid #0f172a;
+  overflow: hidden;
+}
+.custom-progress-bar {
+  height: 100%;
+  background: #0d9488;
+  border-right: 1px solid #0f172a;
+}
+
+.border-bottom-dashed {
+  border-bottom: 1px dashed #cbd5e1;
+}
+.border-bottom-dashed:last-child {
+  border-bottom: none;
+}
+
+.avatar-flat-mini {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #0f172a;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.img-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ════════════════════════════════ TABLES ═══════ */
+.section-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+}
+.section-subtitle {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.custom-admin-table :deep(table) {
+  border-collapse: collapse;
+}
+.custom-admin-table :deep(thead th) {
+  border-bottom: 2px solid #0f172a !important;
+  font-family: monospace;
+  font-weight: 800 !important;
+  text-transform: uppercase;
+  color: #0f172a !important;
+  background: #f8fafc !important;
+}
+.custom-admin-table :deep(tbody td) {
+  border-bottom: 1px solid #cbd5e1 !important;
+  font-size: 13px !important;
+  color: #334155 !important;
+}
+.custom-admin-table :deep(.v-data-table-footer) {
+  border-top: 1px solid #cbd5e1 !important;
+  font-family: monospace;
+  font-size: 12px;
+}
+.custom-admin-table :deep(.v-pagination__item) {
+  border-radius: 0 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+.custom-admin-table :deep(.v-pagination__item--is-active) {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  border-color: #0f172a !important;
+}
+.custom-admin-table :deep(.v-field) {
+  border-radius: 0 !important;
+}
+
+.table-avatar-flat {
+  width: 44px;
+  height: 44px;
+  border: 1px solid #0f172a;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.table-category-tag {
+  font-size: 10px;
+  font-weight: 700;
+  color: #0d9488;
+  text-transform: uppercase;
+}
+
+.action-icon-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.2s ease;
+}
+.action-icon-btn:hover {
+  border-color: #0f172a;
+  color: #0f172a;
+  background: #f1f5f9;
+}
+.action-icon-btn.delete-btn:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: #fef2f2;
+}
+
+/* ════════════════════════════════ REVIEWS ══════ */
+.reviews-list-flat {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.review-item-flat {
+  display: flex;
+  gap: 16px;
+  border-bottom: 1px dashed #cbd5e1;
+  padding-bottom: 16px;
+}
+.review-item-flat:last-child {
+  border-bottom: none;
+}
+.review-avatar-flat {
+  width: 48px;
+  height: 48px;
+  border: 1px solid #0f172a;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.review-details-flat {
+  flex-grow: 1;
+  min-width: 0;
+}
+.review-product-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+}
+.review-comment {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.review-meta {
+  font-size: 11px;
+  color: #64748b;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.meta-dot {
+  color: #cbd5e1;
+}
+
+/* ════════════════════════════════ DIALOGS ══════ */
+.dialog-frame-flat {
+  background: #ffffff;
+  border: 1px solid #0f172a;
+  box-shadow: 8px 8px 0px #0f172a;
+  border-radius: 0 !important;
+  max-height: 90vh;
+}
+.dialog-scroll-body {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.dialog-close-btn {
+  position: absolute;
+  right: 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dialog-close-btn:hover {
+  color: #ef4444;
+}
+
+.image-preview-frame {
+  border: 1px solid #0f172a;
+  background: #f8fafc;
+}
+.carousel-img-flat {
+  border: none;
+}
+
+.chip-close-btn {
+  background: transparent;
+  border: none;
+  font-weight: bold;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  color: #94a3b8;
+  padding: 0 2px;
+}
+.chip-close-btn:hover {
+  color: #ef4444;
+}
+
+.bullet-btn-flat {
+  height: 36px;
+  min-width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.bullet-btn-flat:hover {
+  border-color: #0f172a;
+  background: #f8fafc;
+}
+
+/* ════════════════════════════════ ALERTS ═══════ */
+.custom-flat-alert {
+  border-radius: 0 !important;
+  font-size: 13px !important;
+  border: 1px solid currentColor !important;
+}
+.error-alert {
+  color: #dc2626 !important;
+  background: #fef2f2 !important;
+}
+.warning-alert {
+  color: #d97706 !important;
+  background: #fffbeb !important;
+}
+.info-alert {
+  color: #0f766e !important;
+  background: #f0fdfa !important;
+}
+
+/* Input Fields overrides */
+.flat-text-field :deep(.v-field) {
+  border-radius: 0 !important;
+  border: 1px solid #cbd5e1 !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+.flat-text-field :deep(.v-field--focused) {
+  border-color: #0f172a !important;
+}
+.flat-text-field :deep(.v-field__outline) {
+  display: none !important;
+}
+.search-text-field {
+  max-width: 320px;
+}
+
+/* ════════════════════════════════ BUTTONS ══════ */
+.btn-flat-solid {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  background: #0f172a;
+  border: 1px solid #0f172a;
+  border-radius: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+.btn-flat-solid:hover:not(:disabled) {
+  background: #1e293b;
+  border-color: #1e293b;
+}
+.btn-flat-solid:disabled {
+  background: #cbd5e1;
+  border-color: #cbd5e1;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.btn-flat-outline {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  border-radius: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+.btn-flat-outline:hover:not(:disabled) {
+  border-color: #0f172a;
+  background: #f8fafc;
+}
+.btn-flat-outline:disabled {
+  border-color: #e2e8f0;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.btn-with-icon {
+  gap: 6px;
+}
+
+/* Custom Badges */
+.custom-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border: 1px solid currentColor;
+  display: inline-flex;
+  align-items: center;
+}
+.badge-teal {
+  color: #0f766e;
+  background: #f0fdfa;
+}
+.badge-slate {
+  color: #64748b;
+  background: #f8fafc;
+}
+
+/* ════════════════════════════════ RESPONSIVE ═════ */
+@media (max-width: 959px) {
+  .admin-topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .topbar-actions {
+    width: 100%;
+  }
+  .topbar-actions button,
+  .topbar-actions a {
+    flex: 1;
+    min-width: 120px;
+    text-align: center;
+  }
+  .search-text-field {
+    max-width: 100%;
+    width: 100%;
+  }
+}
+
+@media (max-width: 599px) {
+  .bespoke-admin-container {
+    padding: 24px 16px 60px !important;
+  }
+  .dialog-actions-flat {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .dialog-actions-flat button {
+    width: 100%;
+  }
 }
 </style>
