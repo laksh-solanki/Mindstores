@@ -368,7 +368,15 @@
                       </div>
                     </template>
                     <template #item.price="{ item }">
-                      {{ formatProductPrice(resolveTableItem(item)) }}
+                      <div class="d-flex flex-column flex-sm-row align-start align-sm-center ga-1">
+                        <span class="font-weight-medium">{{ formatProductPrice(resolveTableItem(item)) }}</span>
+                        <span
+                          v-if="resolveTableItem(item)?.compare_at_price && Number(resolveTableItem(item).compare_at_price) > productPriceAmount(resolveTableItem(item))"
+                          class="text-decoration-line-through text-medium-emphasis text-caption"
+                        >
+                          {{ formatCurrency(resolveTableItem(item).compare_at_price, productPriceCurrency(resolveTableItem(item))) }}
+                        </span>
+                      </div>
                     </template>
                     <template #item.stock="{ item }">
                       <v-chip :color="stockStatus(resolveTableItem(item)).color" size="small" variant="tonal">
@@ -729,8 +737,19 @@
                   </div>
                 </div>
               </template>
+              <template #item.company="{ item }">
+                <HighlightText :query="activeHighlightQuery" :text="resolveTableItem(item)?.company || '—'" />
+              </template>
               <template #item.category_display="{ item }">
                 <HighlightText :query="activeHighlightQuery" :text="formatCategory(resolveTableItem(item))" />
+              </template>
+              <template #item.description="{ item }">
+                <div class="text-truncate text-body-2" style="max-width: 160px; cursor: help;">
+                  {{ resolveTableItem(item)?.description || '—' }}
+                  <v-tooltip v-if="resolveTableItem(item)?.description" activator="parent" location="top" max-width="300">
+                    {{ resolveTableItem(item).description }}
+                  </v-tooltip>
+                </div>
               </template>
               <template #item.owner_email="{ item }">
                 <div class="text-body-2">
@@ -746,12 +765,48 @@
                 </v-chip>
               </template>
               <template #item.price="{ item }">
-                {{ formatProductPrice(resolveTableItem(item)) }}
+                <div class="d-flex flex-column flex-sm-row align-start align-sm-center ga-1">
+                  <span class="font-weight-medium text-slate-800">{{ formatProductPrice(resolveTableItem(item)) }}</span>
+                  <span
+                    v-if="resolveTableItem(item)?.compare_at_price && Number(resolveTableItem(item).compare_at_price) > productPriceAmount(resolveTableItem(item))"
+                    class="text-decoration-line-through text-medium-emphasis text-caption"
+                  >
+                    {{ formatCurrency(resolveTableItem(item).compare_at_price, productPriceCurrency(resolveTableItem(item))) }}
+                  </span>
+                </div>
               </template>
               <template #item.stock="{ item }">
                 <v-chip :color="stockStatus(resolveTableItem(item)).color" size="small" variant="tonal">
-                  {{ resolveTableItem(item)?.stock || 0 }}
+                  {{ resolveTableItem(item)?.stock || 0 }} units
+                  <v-tooltip activator="parent" location="top">
+                    {{ stockStatus(resolveTableItem(item)).label }} stock
+                  </v-tooltip>
                 </v-chip>
+              </template>
+              <template #item.status="{ item }">
+                <v-chip
+                  v-if="resolveTableItem(item)?.status"
+                  :color="resolveTableItem(item).status === 'active' ? 'success' : resolveTableItem(item).status === 'draft' ? 'warning' : 'grey'"
+                  size="small"
+                  variant="flat"
+                >
+                  {{ resolveTableItem(item).status.charAt(0).toUpperCase() + resolveTableItem(item).status.slice(1) }}
+                </v-chip>
+                <span v-else>—</span>
+              </template>
+              <template #item.tags="{ item }">
+                <div class="d-flex flex-wrap ga-1" style="max-width: 150px;">
+                  <v-chip
+                    v-for="tag in (resolveTableItem(item)?.tags || [])"
+                    :key="tag"
+                    color="teal-darken-1"
+                    size="x-small"
+                    variant="tonal"
+                  >
+                    {{ tag }}
+                  </v-chip>
+                  <span v-if="!(resolveTableItem(item)?.tags || []).length" class="text-caption text-disabled">—</span>
+                </div>
               </template>
               <template #item.actions="{ item }">
                 <div class="d-flex align-center">
@@ -1200,6 +1255,17 @@
     <v-card>
       <v-card-title>{{ editMode ? "Edit Product" : "Add Product" }}</v-card-title>
       <v-card-text>
+        <v-alert
+          v-if="dialogAlert.message"
+          :type="dialogAlert.type === 'error' ? 'error' : dialogAlert.type === 'warning' ? 'warning' : 'info'"
+          class="mb-4"
+          closable
+          density="compact"
+          variant="tonal"
+          @click:close="dialogAlert.message = ''"
+        >
+          {{ dialogAlert.message }}
+        </v-alert>
         <v-form @submit.prevent="saveProduct">
           <v-row dense>
             <v-col cols="12" md="8">
@@ -1265,16 +1331,30 @@
               </v-sheet>
             </v-col>
             <v-col v-if="productImageGallery.length > 0" cols="12">
+              <div class="text-caption text-medium-emphasis mb-1">
+                Images (Click to set primary, first image is primary):
+              </div>
               <div class="d-flex flex-wrap ga-2">
                 <v-chip
                   v-for="(imageUrl, index) in productImageGallery"
                   :key="`${imageUrl}-${index}`"
                   closable
-                  size="small"
-                  variant="outlined"
-                  @click:close="removeProductImage(index)"
+                  size="large"
+                  :color="index === 0 ? 'teal' : undefined"
+                  :variant="index === 0 ? 'elevated' : 'outlined'"
+                  class="pr-1"
+                  @click="makePrimaryImage(index)"
+                  @click:close.stop="removeProductImage(index)"
                 >
-                  {{ index === 0 ? "Primary image" : `Image ${index + 1}` }}
+                  <template #prepend>
+                    <v-avatar size="24" class="mr-2 border">
+                      <v-img :src="imageUrl" cover />
+                    </v-avatar>
+                  </template>
+                  <span>{{ index === 0 ? "Primary" : `Image ${index + 1}` }}</span>
+                  <v-tooltip activator="parent" location="top">
+                    {{ index === 0 ? "Currently Primary Image" : "Click to make Primary Image" }}
+                  </v-tooltip>
                 </v-chip>
               </div>
             </v-col>
@@ -1290,27 +1370,28 @@
             <v-col cols="12" md="4">
               <v-text-field v-model="formData.company" density="comfortable" label="Brand" variant="outlined" />
             </v-col>
-            <v-col class="d-flex flex-column ga-1" cols="12" md="1">
-              <v-btn
-                v-for="option in DESCRIPTION_BULLET_OPTIONS"
-                :key="option.symbol"
-                :aria-label="option.label"
-                class="text-headline-large"
-                min-width="54"
-                rounded="lg"
-                variant="outlined"
-                @click="addDescriptionBullet(option.symbol)"
-              >
-                {{ option.symbol }}
-              </v-btn>
-            </v-col>
-            <v-col cols="12" md="11">
+            <v-col cols="12">
+              <div class="d-flex align-center ga-2 mb-2 flex-wrap">
+                <span class="text-caption text-medium-emphasis">Quick Bullets:</span>
+                <v-btn
+                  v-for="option in DESCRIPTION_BULLET_OPTIONS"
+                  :key="option.symbol"
+                  :aria-label="option.label"
+                  size="small"
+                  variant="outlined"
+                  class="font-weight-bold"
+                  style="min-width: 32px;"
+                  @click="addDescriptionBullet(option.symbol)"
+                >
+                  {{ option.symbol }}
+                </v-btn>
+              </div>
               <v-textarea
                 v-model="formData.description"
                 auto-grow
                 density="comfortable"
                 label="Description"
-                rows="7"
+                rows="5"
                 variant="outlined"
               />
             </v-col>
@@ -1386,6 +1467,48 @@
                 </template>
               </v-combobox>
             </v-col>
+            <v-col cols="12" md="4">
+              <v-select
+                v-model="formData.status"
+                density="comfortable"
+                :items="STATUS_OPTIONS"
+                label="Status"
+                required
+                variant="outlined"
+              />
+            </v-col>
+            <v-col cols="12" md="4">
+              <v-text-field
+                v-model.number="formData.compare_at_price"
+                density="comfortable"
+                label="Compare-at Price"
+                min="0"
+                :prefix="selectedPriceCurrency"
+                type="number"
+                variant="outlined"
+              />
+            </v-col>
+            <v-col cols="12" md="4">
+              <v-text-field
+                v-model.number="formData.low_stock_threshold"
+                density="comfortable"
+                label="Low Stock Threshold"
+                min="0"
+                type="number"
+                variant="outlined"
+              />
+            </v-col>
+            <v-col cols="12">
+              <v-combobox
+                v-model="formData.tags"
+                density="comfortable"
+                label="Tags (Press Enter to add)"
+                multiple
+                chips
+                closable-chips
+                variant="outlined"
+              />
+            </v-col>
           </v-row>
         </v-form>
       </v-card-text>
@@ -1403,6 +1526,17 @@
     <v-card>
       <v-card-title>{{ catalogOptionDialogTitle }}</v-card-title>
       <v-card-text>
+        <v-alert
+          v-if="catalogOptionAlert.message"
+          :type="catalogOptionAlert.type === 'error' ? 'error' : catalogOptionAlert.type === 'warning' ? 'warning' : 'info'"
+          class="mb-4"
+          closable
+          density="compact"
+          variant="tonal"
+          @click:close="catalogOptionAlert.message = ''"
+        >
+          {{ catalogOptionAlert.message }}
+        </v-alert>
         <v-text-field
           v-model="catalogOptionInput"
           autofocus
@@ -1426,6 +1560,17 @@
     <v-card>
       <v-card-title>Edit Admin Email</v-card-title>
       <v-card-text>
+        <v-alert
+          v-if="accessEditAlert.message"
+          :type="accessEditAlert.type === 'error' ? 'error' : accessEditAlert.type === 'warning' ? 'warning' : 'info'"
+          class="mb-4"
+          closable
+          density="compact"
+          variant="tonal"
+          @click:close="accessEditAlert.message = ''"
+        >
+          {{ accessEditAlert.message }}
+        </v-alert>
         <v-text-field
           v-model="accessEditEmail"
           autocomplete="email"
@@ -1511,15 +1656,22 @@
   const MAX_PRODUCT_IMAGE_COUNT = 6;
   const DEFAULT_RESTOCK_TARGET = 12;
   const DESCRIPTION_BULLET_OPTIONS = [
-    { symbol: "-", label: "Add dash bullet" },
     { symbol: "•", label: "Add dot bullet" },
-    { symbol: "‣", label: "Add triangle bullet" },
+    { symbol: "✓", label: "Add check bullet" },
+    { symbol: "★", label: "Add star bullet" },
+    { symbol: "➜", label: "Add arrow bullet" },
   ];
   const PRICE_CURRENCY_OPTIONS = [
     { title: "United States (USD)", value: "USD" },
     { title: "India (INR)", value: "INR" },
     { title: "United Kingdom (GBP)", value: "GBP" },
     { title: "Europe (EUR)", value: "EUR" },
+  ];
+
+  const STATUS_OPTIONS = [
+    { title: "Active", value: "active" },
+    { title: "Draft", value: "draft" },
+    { title: "Discontinued", value: "discontinued" },
   ];
 
   const router = useRouter();
@@ -1530,7 +1682,7 @@
   const isDarkTheme = computed(() => theme.global.name.value === "dark");
   function toggleTheme () {
     const nextTheme = theme.global.name.value === "dark" ? "light" : "dark";
-    theme.global.name.value = nextTheme;
+    theme.change(nextTheme);
     localStorage.setItem("mindstore_theme", nextTheme);
   }
 
@@ -1579,6 +1731,25 @@
   const snackbar = ref(false);
   const snackbarText = ref("");
   const snackbarColor = ref("success");
+  const dialogAlert = ref({ message: "", type: "" });
+  const catalogOptionAlert = ref({ message: "", type: "" });
+  const accessEditAlert = ref({ message: "", type: "" });
+
+  watch(productDialog, (newVal) => {
+    if (!newVal) {
+      dialogAlert.value = { message: "", type: "" };
+    }
+  });
+  watch(catalogOptionDialog, (newVal) => {
+    if (!newVal) {
+      catalogOptionAlert.value = { message: "", type: "" };
+    }
+  });
+  watch(accessEditDialog, (newVal) => {
+    if (!newVal) {
+      accessEditAlert.value = { message: "", type: "" };
+    }
+  });
 
   const formData = ref({
     name: "",
@@ -1591,6 +1762,10 @@
     stock: 0,
     image_url: "",
     image_urls: [],
+    status: "active",
+    compare_at_price: null,
+    low_stock_threshold: null,
+    tags: [],
   });
 
   const navItems = [
@@ -1607,8 +1782,11 @@
     { title: "Brand", key: "company" },
     { title: "Added By", key: "owner_email" },
     { title: "Category", key: "category_display" },
+    { title: "Description", key: "description" },
     { title: "Price", key: "price" },
     { title: "Stock", key: "stock" },
+    { title: "Status", key: "status" },
+    { title: "Tags", key: "tags", sortable: false },
     { title: "Actions", key: "actions", sortable: false },
   ];
   const recentProductHeaders = [
@@ -1779,7 +1957,7 @@
   const operationsSummary = computed(() => [
     {
       title: "Low stock",
-      subtitle: "Products below 5 units",
+      subtitle: "Products below stock threshold",
       value: formatNumber(lowStockCount.value),
       icon: "mdi-alert-outline",
       color: lowStockCount.value > 0 ? "warning" : "success",
@@ -1933,10 +2111,16 @@
     }
     return products.value.reduce((total, product) => total + Number(product.price || 0), 0) / products.value.length;
   });
-  const lowStockCount = computed(() => products.value.filter((product) => Number(product.stock || 0) < 5).length);
+  const lowStockCount = computed(() =>
+    products.value.filter((product) =>
+      Number(product.stock || 0) < (product.low_stock_threshold !== null && product.low_stock_threshold !== undefined ? Number(product.low_stock_threshold) : 5)
+    ).length
+  );
   const lowStockProducts = computed(() =>
     products.value
-      .filter((product) => Number(product.stock || 0) < 5)
+      .filter((product) =>
+        Number(product.stock || 0) < (product.low_stock_threshold !== null && product.low_stock_threshold !== undefined ? Number(product.low_stock_threshold) : 5)
+      )
       .toSorted((left, right) => Number(left.stock || 0) - Number(right.stock || 0))
       .slice(0, 6),
   );
@@ -2834,10 +3018,13 @@
 
   function stockStatus(product) {
     const stock = Number(product?.stock || 0);
+    const threshold = product?.low_stock_threshold !== null && product?.low_stock_threshold !== undefined
+      ? Number(product.low_stock_threshold)
+      : 5;
     if (stock <= 0) {
       return { key: "out", label: "Out", color: "error" };
     }
-    if (stock < 5) {
+    if (stock < threshold) {
       return { key: "low", label: "Low", color: "warning" };
     }
     return { key: "active", label: "Active", color: "success" };
@@ -2854,6 +3041,18 @@
   }
 
   function notify(message, color = "success") {
+    if (productDialog.value && color !== "success") {
+      dialogAlert.value = { message, type: color };
+      return;
+    }
+    if (catalogOptionDialog.value && color !== "success") {
+      catalogOptionAlert.value = { message, type: color };
+      return;
+    }
+    if (accessEditDialog.value && color !== "success") {
+      accessEditAlert.value = { message, type: color };
+      return;
+    }
     snackbarText.value = message;
     snackbarColor.value = color;
     snackbar.value = true;
@@ -3173,6 +3372,18 @@
       .join("\n");
   }
 
+  function makePrimaryImage(index) {
+    if (index <= 0 || index >= formData.value.image_urls.length) return;
+    const urls = [...formData.value.image_urls];
+    const [target] = urls.splice(index, 1);
+    urls.unshift(target);
+    formData.value.image_urls = urls;
+    syncPrimaryProductImage();
+    productImageInputValue.value = urls
+      .filter((imageUrl) => !imageUrl.startsWith("data:image/"))
+      .join("\n");
+  }
+
   function readImageFileAsDataUrl(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -3244,6 +3455,7 @@
     }
     catalogOptionType.value = type === "subcategory" ? "subcategory" : "category";
     catalogOptionInput.value = "";
+    catalogOptionAlert.value = { message: "", type: "" };
     catalogOptionDialog.value = true;
   }
 
@@ -3301,7 +3513,12 @@
       stock: 0,
       image_url: "",
       image_urls: [],
+      status: "active",
+      compare_at_price: null,
+      low_stock_threshold: null,
+      tags: [],
     };
+    dialogAlert.value = { message: "", type: "" };
   }
 
   function openAddDialog() {
@@ -3336,7 +3553,12 @@
       stock: Number(selectedProduct.stock || 0),
       image_url: selectedProductImages[0] || "",
       image_urls: selectedProductImages,
+      status: selectedProduct.status || "active",
+      compare_at_price: selectedProduct.compare_at_price !== undefined && selectedProduct.compare_at_price !== null ? Number(selectedProduct.compare_at_price) : null,
+      low_stock_threshold: selectedProduct.low_stock_threshold !== undefined && selectedProduct.low_stock_threshold !== null ? Number(selectedProduct.low_stock_threshold) : null,
+      tags: Array.isArray(selectedProduct.tags) ? [...selectedProduct.tags] : [],
     };
+    dialogAlert.value = { message: "", type: "" };
     productDialog.value = true;
   }
 
@@ -3360,11 +3582,18 @@
       price_currency: priceCurrency,
       currency: priceCurrency,
       stock: Math.max(0, Math.trunc(Number(formData.value.stock))),
+      status: formData.value.status || "active",
+      compare_at_price: formData.value.compare_at_price !== "" && formData.value.compare_at_price !== null && formData.value.compare_at_price !== undefined ? Number(formData.value.compare_at_price) : null,
+      low_stock_threshold: formData.value.low_stock_threshold !== "" && formData.value.low_stock_threshold !== null && formData.value.low_stock_threshold !== undefined ? Math.max(0, Math.trunc(Number(formData.value.low_stock_threshold))) : null,
+      tags: Array.isArray(formData.value.tags) ? [...formData.value.tags] : [],
     };
 
     if (!payload.name) return { error: "Product name is required" };
     if (!payload.category) return { error: "Category is required" };
     if (!Number.isFinite(payload.price_amount) || payload.price_amount < 0) return { error: "Price must be valid" };
+    if (payload.compare_at_price !== null && payload.compare_at_price <= payload.price_amount) {
+      return { error: "Compare-at price must be greater than the regular price" };
+    }
     if (!Number.isFinite(payload.price) || payload.price < 0) return { error: "Price conversion must be valid" };
     if (!Number.isFinite(payload.stock) || payload.stock < 0) return { error: "Stock must be valid" };
     if (manualImageUrls.length > MAX_PRODUCT_IMAGE_COUNT) return { error: `Maximum ${MAX_PRODUCT_IMAGE_COUNT} images allowed` };
@@ -3492,6 +3721,7 @@
 
     accessEditOriginalEmail.value = entry.email;
     accessEditEmail.value = entry.email;
+    accessEditAlert.value = { message: "", type: "" };
     accessEditDialog.value = true;
   }
 

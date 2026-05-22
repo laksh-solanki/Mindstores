@@ -35,9 +35,9 @@
     (newPath) => {
       if (newPath === '/admin') {
         const saved = localStorage.getItem('mindstore_theme') || 'light'
-        theme.global.name.value = saved
+        theme.change(saved)
       } else {
-        theme.global.name.value = 'light'
+        theme.change('light')
       }
     },
     { immediate: true }

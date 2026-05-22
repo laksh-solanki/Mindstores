@@ -144,24 +144,63 @@ async def resolve_current_user(
                 {"user_id": user_id},
                 {"projection": {"_id": 0}},
             )
+            existing_by_email = await db.collection("users").find_one(
+                {"email": email, "user_id": {"$ne": user_id}},
+                {"projection": {"_id": 0}}
+            )
             name = (
                 normalize_text(decoded.get("name") or decoded.get("displayName"), 120)
                 or normalize_text((existing or {}).get("name"), 120)
+                or normalize_text((existing_by_email or {}).get("name"), 120)
                 or "User"
             )
             picture = normalize_profile_picture(decoded.get("picture")) or normalize_profile_picture(
                 (existing or {}).get("picture"),
+            ) or normalize_profile_picture(
+                (existing_by_email or {}).get("picture"),
             )
+            
+            updates_set = {
+                "email": email,
+                "name": name,
+                "picture": picture,
+                "is_admin": await admin_access.is_admin_email(email),
+                "updated_at": now,
+            }
+            
+            # Merge fields if missing in existing
+            merged_delivery_profile = (existing or {}).get("delivery_profile") or (existing_by_email or {}).get("delivery_profile")
+            merged_phone = (existing or {}).get("phone") or (existing_by_email or {}).get("phone")
+            merged_mobile = (existing or {}).get("mobile") or (existing_by_email or {}).get("mobile")
+            merged_country_code = (existing or {}).get("country_code") or (existing_by_email or {}).get("country_code")
+
+            if merged_delivery_profile:
+                updates_set["delivery_profile"] = merged_delivery_profile
+            if merged_phone:
+                updates_set["phone"] = merged_phone
+            if merged_mobile:
+                updates_set["mobile"] = merged_mobile
+            if merged_country_code:
+                updates_set["country_code"] = merged_country_code
+
+            for pref_key in [
+                "currency",
+                "order_updates",
+                "promotional_emails",
+                "quick_checkout",
+                "low_stock_alerts",
+                "save_delivery_details",
+            ]:
+                val = (existing or {}).get(pref_key)
+                if val is None and existing_by_email:
+                    val = existing_by_email.get(pref_key)
+                if val is not None:
+                    updates_set[pref_key] = val
+
             await db.collection("users").update_one(
                 {"user_id": user_id},
                 {
-                    "$set": {
-                        "email": email,
-                        "name": name,
-                        "picture": picture,
-                        "is_admin": await admin_access.is_admin_email(email),
-                        "updated_at": now,
-                    },
+                    "$set": updates_set,
                     "$setOnInsert": {"user_id": user_id, "created_at": now},
                 },
                 upsert=True,

@@ -500,7 +500,17 @@
 
       const prefillFormFromProfile = () => {
         const settings = loadUserSettings()
-        const delivery = settings.deliveryProfile || {}
+        const userDelivery = appStore.user?.delivery_profile || {}
+        const saveDeliveryDetails = appStore.user?.save_delivery_details !== undefined
+          ? appStore.user.save_delivery_details
+          : settings.saveDeliveryDetails
+
+        const phone = userDelivery.phone || settings.deliveryProfile?.phone || ''
+        const address = userDelivery.address || settings.deliveryProfile?.address || ''
+        const city = userDelivery.city || settings.deliveryProfile?.city || ''
+        const state = userDelivery.state || settings.deliveryProfile?.state || ''
+        const zip = userDelivery.postal_code || userDelivery.postalCode || settings.deliveryProfile?.postalCode || ''
+
         const { firstName, lastName } = splitName(appStore.user?.name || settings.displayName)
 
         form.value = {
@@ -508,11 +518,11 @@
           firstName: form.value.firstName || firstName,
           lastName: form.value.lastName || lastName,
           email: form.value.email || appStore.user?.email || '',
-          phone: form.value.phone || (settings.saveDeliveryDetails ? delivery.phone : ''),
-          address: form.value.address || (settings.saveDeliveryDetails ? delivery.address : ''),
-          city: form.value.city || (settings.saveDeliveryDetails ? delivery.city : ''),
-          state: form.value.state || (settings.saveDeliveryDetails ? delivery.state : ''),
-          zip: form.value.zip || (settings.saveDeliveryDetails ? delivery.postalCode : '')
+          phone: form.value.phone || (saveDeliveryDetails ? phone : ''),
+          address: form.value.address || (saveDeliveryDetails ? address : ''),
+          city: form.value.city || (saveDeliveryDetails ? city : ''),
+          state: form.value.state || (saveDeliveryDetails ? state : ''),
+          zip: form.value.zip || (saveDeliveryDetails ? zip : '')
         }
       }
 

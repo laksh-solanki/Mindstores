@@ -345,7 +345,7 @@
                       density="compact"
                       :model-value="Number(review.rating || 0)"
                       readonly
-                      size="14"
+                      size="28"
                     />
                   </div>
                   <span class="review-date-badge">{{ formatReviewDate(review.created_at) }}</span>

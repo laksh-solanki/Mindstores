@@ -468,7 +468,18 @@ export const useAppStore = defineStore("app", {
       }
     },
 
-    async updateAccountProfile({ name, picture, countryCode }) {
+    async updateAccountProfile({
+      name,
+      picture,
+      countryCode,
+      deliveryProfile,
+      currency,
+      orderUpdates,
+      promotionalEmails,
+      quickCheckout,
+      lowStockAlerts,
+      saveDeliveryDetails
+    }) {
       const payload = {};
       const normalizedName = typeof name === "string" ? name.trim() : "";
       const normalizedCountryCode = normalizeCountryCode(countryCode);
@@ -484,6 +495,38 @@ export const useAppStore = defineStore("app", {
 
       if (typeof countryCode === "string") {
         payload.country_code = normalizedCountryCode || null;
+      }
+
+      if (deliveryProfile && typeof deliveryProfile === "object") {
+        payload.delivery_profile = {
+          phone: typeof deliveryProfile.phone === "string" ? deliveryProfile.phone.trim() : "",
+          address: typeof deliveryProfile.address === "string" ? deliveryProfile.address.trim() : "",
+          city: typeof deliveryProfile.city === "string" ? deliveryProfile.city.trim() : "",
+          state: typeof deliveryProfile.state === "string" ? deliveryProfile.state.trim() : "",
+          postal_code: typeof (deliveryProfile.postalCode || deliveryProfile.postal_code) === "string"
+            ? (deliveryProfile.postalCode || deliveryProfile.postal_code).trim()
+            : "",
+          instructions: typeof deliveryProfile.instructions === "string" ? deliveryProfile.instructions.trim() : ""
+        };
+      }
+
+      if (typeof currency === "string") {
+        payload.currency = currency.trim().toUpperCase();
+      }
+      if (typeof orderUpdates === "boolean") {
+        payload.order_updates = orderUpdates;
+      }
+      if (typeof promotionalEmails === "boolean") {
+        payload.promotional_emails = promotionalEmails;
+      }
+      if (typeof quickCheckout === "boolean") {
+        payload.quick_checkout = quickCheckout;
+      }
+      if (typeof lowStockAlerts === "boolean") {
+        payload.low_stock_alerts = lowStockAlerts;
+      }
+      if (typeof saveDeliveryDetails === "boolean") {
+        payload.save_delivery_details = saveDeliveryDetails;
       }
 
       this.loading = true;

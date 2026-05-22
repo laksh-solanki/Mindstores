@@ -190,6 +190,57 @@ def validate_user_product_payload(data: dict[str, Any], *, partial: bool = False
             return None, "Stock must be a non-negative integer"
         updates["stock"] = int(stock)
 
+    if "status" in data or not partial:
+        status = normalize_text(data.get("status"), 30)
+        if status:
+            status = status.lower()
+            if status not in ("active", "draft", "discontinued"):
+                return None, "Status must be one of: active, draft, discontinued"
+            updates["status"] = status
+        else:
+            updates["status"] = "draft"
+
+    if "compare_at_price" in data or not partial:
+        val = data.get("compare_at_price")
+        if val is not None and val != "" and val != "null":
+            try:
+                compare_at_price = float(val)
+                if compare_at_price != compare_at_price or compare_at_price < 0:
+                    return None, "Compare-at price must be a valid non-negative number"
+                updates["compare_at_price"] = compare_at_price
+            except (TypeError, ValueError):
+                return None, "Compare-at price must be a valid number"
+        else:
+            updates["compare_at_price"] = None
+
+    if "low_stock_threshold" in data or not partial:
+        val = data.get("low_stock_threshold")
+        if val is not None and val != "" and val != "null":
+            try:
+                low_stock_threshold = float(val)
+                if low_stock_threshold != low_stock_threshold or not low_stock_threshold.is_integer() or low_stock_threshold < 0:
+                    return None, "Low stock threshold must be a non-negative integer"
+                updates["low_stock_threshold"] = int(low_stock_threshold)
+            except (TypeError, ValueError):
+                return None, "Low stock threshold must be a valid integer"
+        else:
+            updates["low_stock_threshold"] = None
+
+    if "tags" in data or not partial:
+        raw_tags = data.get("tags")
+        tags = []
+        if isinstance(raw_tags, list):
+            for t in raw_tags:
+                v = normalize_text(t, 40)
+                if v:
+                    tags.append(v)
+        elif isinstance(raw_tags, str):
+            for t in raw_tags.split(","):
+                v = normalize_text(t, 40)
+                if v:
+                    tags.append(v)
+        updates["tags"] = tags
+
     if not updates:
         return None, "No valid fields provided for update"
     return updates, None
@@ -399,9 +450,9 @@ async def create_user_product(request: Request, ctx: RequestContext = Depends(ge
         return error_response(400, error)
     now = now_iso()
     product = {
+        "status": "draft",
         **payload,
         "product_id": random_compact_id("userprod"),
-        "status": "draft",
         "owner_user_id": ctx.user.get("user_id"),
         "owner_email": ctx.user.get("email"),
         "created_at": now,

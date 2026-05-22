@@ -195,7 +195,7 @@
                             <v-icon class="mr-2" color="warning" icon="mdi-alert-outline" />
                           </template>
                           <v-list-item-title class="font-weight-bold text-slate-800">Low stock</v-list-item-title>
-                          <v-list-item-subtitle class="font-weight-medium text-slate-600">{{ lowStockCount }} products below 5 units</v-list-item-subtitle>
+                          <v-list-item-subtitle class="font-weight-medium text-slate-600">{{ lowStockCount }} products below stock threshold</v-list-item-subtitle>
                         </v-list-item>
                         <v-list-item class="px-0 py-2 border-bottom-dashed">
                           <template #prepend>
@@ -340,12 +340,34 @@
                       </div>
                       <div>
                         <div class="font-weight-bold text-slate-800 text-body-2">{{ resolveItem(item).name }}</div>
-                        <div class="table-category-tag mt-1">{{ formatDraftCategory(resolveItem(item)) }}</div>
+                        <div class="text-caption font-mono text-slate-400" style="font-size: 10px;">ID: {{ resolveItem(item).product_id }}</div>
                       </div>
                     </div>
                   </template>
+                  <template #item.company="{ item }">
+                    <span class="font-weight-bold text-slate-700">{{ resolveItem(item).company || '—' }}</span>
+                  </template>
+                  <template #item.category="{ item }">
+                    <span class="table-category-tag font-weight-medium">{{ formatDraftCategory(resolveItem(item)) }}</span>
+                  </template>
+                  <template #item.description="{ item }">
+                    <div class="text-truncate text-slate-600" style="max-width: 160px; cursor: help;">
+                      {{ resolveItem(item).description || 'No description' }}
+                      <v-tooltip activator="parent" location="top" max-width="300">
+                        {{ resolveItem(item).description || 'No description' }}
+                      </v-tooltip>
+                    </div>
+                  </template>
                   <template #item.price="{ item }">
-                    <span class="font-mono font-weight-bold">{{ formatDraftPrice(resolveItem(item)) }}</span>
+                    <div class="d-flex flex-column flex-sm-row align-start align-sm-center ga-1">
+                      <span class="font-mono font-weight-bold text-slate-800">{{ formatDraftPrice(resolveItem(item)) }}</span>
+                      <span
+                        v-if="resolveItem(item).compare_at_price && Number(resolveItem(item).compare_at_price) > Number(resolveItem(item).price_amount || resolveItem(item).price || 0)"
+                        class="font-mono text-decoration-line-through text-slate-400 text-caption"
+                      >
+                        {{ formatMoney(resolveItem(item).compare_at_price, resolveItem(item).price_currency || resolveItem(item).currency || 'USD') }}
+                      </span>
+                    </div>
                   </template>
                   <template #item.stock="{ item }">
                     <div class="d-inline-flex align-center ga-1 inline-stock-adjuster">
@@ -357,7 +379,15 @@
                       >
                         <v-icon icon="mdi-minus" size="12" />
                       </button>
-                      <span class="custom-badge badge-teal font-mono px-2 py-1 text-caption">{{ resolveItem(item).stock }}</span>
+                      <span
+                        :class="['custom-badge', 'font-mono', 'px-2', 'py-1', 'text-caption',
+                          Number(resolveItem(item).stock || 0) < (resolveItem(item).low_stock_threshold !== null && resolveItem(item).low_stock_threshold !== undefined ? Number(resolveItem(item).low_stock_threshold) : 5)
+                            ? 'badge-red'
+                            : 'badge-teal'
+                        ]"
+                      >
+                        {{ resolveItem(item).stock }}
+                      </span>
                       <button
                         aria-label="Increase stock"
                         class="stock-btn-flat plus"
@@ -366,6 +396,31 @@
                       >
                         <v-icon icon="mdi-plus" size="12" />
                       </button>
+                    </div>
+                  </template>
+                  <template #item.status="{ item }">
+                    <span
+                      v-if="resolveItem(item).status"
+                      :class="['custom-badge', 'text-caption', 'font-weight-bold',
+                        resolveItem(item).status === 'active' ? 'badge-teal' :
+                        resolveItem(item).status === 'draft' ? 'badge-yellow' : 'badge-slate'
+                      ]"
+                    >
+                      {{ resolveItem(item).status.toUpperCase() }}
+                    </span>
+                    <span v-else class="text-slate-400">—</span>
+                  </template>
+                  <template #item.tags="{ item }">
+                    <div class="d-flex flex-wrap ga-1" style="max-width: 180px;">
+                      <span
+                        v-for="tag in (resolveItem(item).tags || [])"
+                        :key="tag"
+                        class="custom-badge badge-slate text-caption font-weight-medium py-0 px-1"
+                        style="font-size: 10px;"
+                      >
+                        {{ tag }}
+                      </span>
+                      <span v-if="!(resolveItem(item).tags?.length)" class="text-slate-400">—</span>
                     </div>
                   </template>
                   <template #item.actions="{ item }">
@@ -493,6 +548,15 @@
 
         <!-- Dialog Scroll Body -->
         <div class="dialog-scroll-body pa-6 flex-grow-1 overflow-y-auto">
+          <v-alert
+            v-if="dialogAlert.message"
+            :class="['mb-4', 'custom-flat-alert', dialogAlert.type === 'error' ? 'error-alert' : dialogAlert.type === 'warning' ? 'warning-alert' : 'info-alert']"
+            closable
+            variant="tonal"
+            @click:close="dialogAlert.message = ''"
+          >
+            {{ dialogAlert.message }}
+          </v-alert>
           <v-form @submit.prevent="saveProductDraft">
             <v-row dense>
               <v-col cols="12" md="8">
@@ -562,22 +626,31 @@
                 </div>
               </v-col>
               <v-col v-if="productImageGallery.length > 0" class="mt-2" cols="12">
-                <div class="d-flex flex-wrap ga-2">
-                  <span
+                <div class="d-flex flex-wrap ga-3">
+                  <div
                     v-for="(imageUrl, index) in productImageGallery"
                     :key="`${imageUrl}-${index}`"
-                    class="custom-badge badge-slate d-flex align-center ga-1"
+                    :class="['image-chip-flat', index === 0 ? 'primary-chip' : '']"
+                    @click="makePrimaryImage(index)"
                   >
-                    {{ index === 0 ? 'Primary image' : `Image ${index + 1}` }}
+                    <v-tooltip activator="parent" location="top">
+                      {{ index === 0 ? 'Primary Product Image' : 'Click to make primary image' }}
+                    </v-tooltip>
+                    <div class="chip-thumb">
+                      <img :src="imageUrl" class="img-cover">
+                    </div>
+                    <span class="chip-label font-mono">
+                      {{ index === 0 ? 'PRIMARY' : `IMG ${index + 1}` }}
+                    </span>
                     <button
                       aria-label="Remove image"
-                      class="chip-close-btn ml-1"
+                      class="chip-remove-btn"
                       type="button"
-                      @click="removeProductImage(index)"
+                      @click.stop="removeProductImage(index)"
                     >
-                      ×
+                      <v-icon icon="mdi-close" size="10" />
                     </button>
-                  </span>
+                  </div>
                 </div>
               </v-col>
               <v-col class="mt-4" cols="12" md="8">
@@ -599,19 +672,21 @@
                   variant="outlined"
                 />
               </v-col>
-              <v-col class="d-flex flex-row flex-md-column ga-1 mt-2" cols="12" md="1">
-                <button
-                  v-for="option in descriptionBulletOptions"
-                  :key="option.symbol"
-                  :aria-label="option.label"
-                  class="btn-flat-outline bullet-btn-flat"
-                  type="button"
-                  @click="addDescriptionBullet(option.symbol)"
-                >
-                  {{ option.symbol }}
-                </button>
-              </v-col>
-              <v-col class="mt-2" cols="12" md="11">
+              <v-col class="mt-2" cols="12">
+                <div class="d-flex align-center ga-1 mb-1 flex-wrap">
+                  <span class="text-caption font-weight-bold text-slate-600 mr-2">Quick Insert:</span>
+                  <button
+                    v-for="option in descriptionBulletOptions"
+                    :key="option.symbol"
+                    :aria-label="option.label"
+                    class="bullet-btn-flat"
+                    style="height: 30px; width: 30px; min-width: 30px; padding: 0; font-size: 14px;"
+                    type="button"
+                    @click="addDescriptionBullet(option.symbol)"
+                  >
+                    {{ option.symbol }}
+                  </button>
+                </div>
                 <v-textarea
                   v-model="productForm.description"
                   auto-grow
@@ -703,6 +778,52 @@
                   </template>
                 </v-combobox>
               </v-col>
+              <v-col class="mt-2" cols="12" md="4">
+                <v-select
+                  v-model="productForm.status"
+                  class="flat-text-field"
+                  density="comfortable"
+                  :items="statusOptions"
+                  label="Status"
+                  required
+                  variant="outlined"
+                />
+              </v-col>
+              <v-col class="mt-2" cols="12" md="4">
+                <v-text-field
+                  v-model.number="productForm.compare_at_price"
+                  class="flat-text-field"
+                  density="comfortable"
+                  label="Compare-at Price"
+                  min="0"
+                  :prefix="selectedPriceCurrency"
+                  type="number"
+                  variant="outlined"
+                />
+              </v-col>
+              <v-col class="mt-2" cols="12" md="4">
+                <v-text-field
+                  v-model.number="productForm.low_stock_threshold"
+                  class="flat-text-field"
+                  density="comfortable"
+                  label="Low Stock Threshold"
+                  min="0"
+                  type="number"
+                  variant="outlined"
+                />
+              </v-col>
+              <v-col class="mt-2" cols="12">
+                <v-combobox
+                  v-model="productForm.tags"
+                  class="flat-text-field"
+                  density="comfortable"
+                  label="Tags (Press Enter to add)"
+                  multiple
+                  chips
+                  closable-chips
+                  variant="outlined"
+                />
+              </v-col>
             </v-row>
           </v-form>
         </div>
@@ -735,6 +856,15 @@
           <div class="window-title-display">{{ catalogOptionDialogTitle }}</div>
         </div>
         <div class="pa-6">
+          <v-alert
+            v-if="catalogOptionAlert.message"
+            :class="['mb-4', 'custom-flat-alert', catalogOptionAlert.type === 'error' ? 'error-alert' : catalogOptionAlert.type === 'warning' ? 'warning-alert' : 'info-alert']"
+            closable
+            variant="tonal"
+            @click:close="catalogOptionAlert.message = ''"
+          >
+            {{ catalogOptionAlert.message }}
+          </v-alert>
           <v-text-field
             v-model="catalogOptionInput"
             autofocus
@@ -787,17 +917,28 @@
     image_urls: [],
     price: 0,
     price_currency: 'USD',
-    stock: 0
+    stock: 0,
+    status: 'draft',
+    compare_at_price: null,
+    low_stock_threshold: null,
+    tags: []
   }
+
+  const STATUS_OPTIONS = [
+    { title: 'Active', value: 'active' },
+    { title: 'Draft', value: 'draft' },
+    { title: 'Discontinued', value: 'discontinued' }
+  ]
 
   const DEFAULT_PRICE_CURRENCY = 'USD'
   const MAX_PRODUCT_IMAGE_FILE_BYTES = 512 * 1024
   const MAX_PRODUCT_IMAGE_DATA_URL_LENGTH = 700_000
   const MAX_PRODUCT_IMAGE_COUNT = 6
   const DESCRIPTION_BULLET_OPTIONS = [
-    { symbol: '-', label: 'Add dash bullet' },
-    { symbol: '•', label: 'Add dot bullet' },
-    { symbol: '>', label: 'Add angle bullet' }
+    { symbol: '•', label: 'Add bullet' },
+    { symbol: '✓', label: 'Add check' },
+    { symbol: '★', label: 'Add star' },
+    { symbol: '➜', label: 'Add arrow' }
   ]
   const PRICE_CURRENCY_OPTIONS = [
     { title: 'United States (USD)', value: 'USD' },
@@ -808,8 +949,13 @@
 
   const productHeaders = [
     { title: 'Product', key: 'name' },
+    { title: 'Brand', key: 'company' },
+    { title: 'Category', key: 'category' },
+    { title: 'Description', key: 'description' },
     { title: 'Price', key: 'price' },
     { title: 'Stock', key: 'stock' },
+    { title: 'Status', key: 'status' },
+    { title: 'Tags', key: 'tags', sortable: false },
     { title: 'Actions', key: 'actions', sortable: false }
   ]
 
@@ -867,9 +1013,23 @@
       const snackbar = ref(false)
       const snackbarText = ref('')
       const snackbarColor = ref('success')
+      const dialogAlert = ref({ message: '', type: '' })
+      const catalogOptionAlert = ref({ message: '', type: '' })
+
+      watch(productDialog, (newVal) => {
+        if (!newVal) {
+          dialogAlert.value = { message: '', type: '' }
+        }
+      })
+      watch(catalogOptionDialog, (newVal) => {
+        if (!newVal) {
+          catalogOptionAlert.value = { message: '', type: '' }
+        }
+      })
 
       const priceCurrencyOptions = PRICE_CURRENCY_OPTIONS
       const descriptionBulletOptions = DESCRIPTION_BULLET_OPTIONS
+      const statusOptions = STATUS_OPTIONS
 
       const hasPinAccess = computed(() =>
         Boolean(profile.value?.has_pin_access)
@@ -934,7 +1094,12 @@
       })
 
       const lowStockCount = computed(() =>
-        products.value.filter((product) => Number(product.stock || 0) < 5).length
+        products.value.filter((product) => {
+          const threshold = product.low_stock_threshold !== null && product.low_stock_threshold !== undefined
+            ? Number(product.low_stock_threshold)
+            : 5
+          return Number(product.stock || 0) < threshold
+        }).length
       )
 
       const productsWithImagesCount = computed(() =>
@@ -1007,6 +1172,14 @@
       const showMessage = (message, color = 'success') => {
         if (typeof message === 'string' && message.includes('your user admin page block')) {
           isBlocked.value = true
+        }
+        if (catalogOptionDialog.value && color !== 'success') {
+          catalogOptionAlert.value = { message, type: color }
+          return
+        }
+        if (productDialog.value && color !== 'success') {
+          dialogAlert.value = { message, type: color }
+          return
         }
         snackbarText.value = message
         snackbarColor.value = color
@@ -1128,9 +1301,21 @@
       }
 
       const addDescriptionBullet = (symbol) => {
-        const bullet = DESCRIPTION_BULLET_OPTIONS.some((option) => option.symbol === symbol) ? symbol : '-'
+        const bullet = DESCRIPTION_BULLET_OPTIONS.some((option) => option.symbol === symbol) ? symbol : '•'
         const currentDescription = String(productForm.value.description || '').trimEnd()
         productForm.value.description = currentDescription ? `${currentDescription}\n${bullet} ` : `${bullet} `
+      }
+
+      const makePrimaryImage = (index) => {
+        if (index <= 0 || index >= productForm.value.image_urls.length) return
+        const urls = [...productForm.value.image_urls]
+        const [target] = urls.splice(index, 1)
+        urls.unshift(target)
+        productForm.value.image_urls = urls
+        syncPrimaryProductImage()
+        productImageInputValue.value = urls
+          .filter((imageUrl) => !imageUrl.startsWith('data:image/'))
+          .join('\n')
       }
 
       const openCatalogOptionDialog = (type) => {
@@ -1140,6 +1325,7 @@
         }
         catalogOptionType.value = type === 'subcategory' ? 'subcategory' : 'category'
         catalogOptionInput.value = ''
+        catalogOptionAlert.value = { message: '', type: '' }
         catalogOptionDialog.value = true
       }
 
@@ -1170,6 +1356,7 @@
         productImageInputValue.value = ''
         productForm.value = { ...EMPTY_FORM, image_urls: [] }
         editProductId.value = ''
+        dialogAlert.value = { message: '', type: '' }
       }
 
       const openAddDialog = () => {
@@ -1255,7 +1442,15 @@
           price_amount: priceAmount,
           price_currency: priceCurrency,
           currency: priceCurrency,
-          stock
+          stock,
+          status: productForm.value.status || 'draft',
+          compare_at_price: productForm.value.compare_at_price !== '' && productForm.value.compare_at_price !== null && productForm.value.compare_at_price !== undefined ? Number(productForm.value.compare_at_price) : null,
+          low_stock_threshold: productForm.value.low_stock_threshold !== '' && productForm.value.low_stock_threshold !== null && productForm.value.low_stock_threshold !== undefined ? Math.max(0, Math.trunc(Number(productForm.value.low_stock_threshold))) : null,
+          tags: Array.isArray(productForm.value.tags) ? [...productForm.value.tags] : []
+        }
+
+        if (payload.compare_at_price !== null && payload.compare_at_price <= payload.price) {
+          return { error: 'Compare-at price must be greater than the regular price' }
         }
 
         if (!payload.name) return { error: 'Product name is required' }
@@ -1317,8 +1512,13 @@
           image_urls: productImages,
           price: Number(product.price || product.price_amount || 0),
           price_currency: product.price_currency || product.currency || 'USD',
-          stock: Number(product.stock || 0)
+          stock: Number(product.stock || 0),
+          status: product.status || 'draft',
+          compare_at_price: product.compare_at_price !== undefined && product.compare_at_price !== null ? Number(product.compare_at_price) : null,
+          low_stock_threshold: product.low_stock_threshold !== undefined && product.low_stock_threshold !== null ? Number(product.low_stock_threshold) : null,
+          tags: Array.isArray(product.tags) ? [...product.tags] : []
         }
+        dialogAlert.value = { message: '', type: '' }
         productDialog.value = true
       }
 
@@ -1572,8 +1772,12 @@
         snackbar,
         snackbarText,
         snackbarColor,
+        dialogAlert,
+        catalogOptionAlert,
+        makePrimaryImage,
         priceCurrencyOptions,
         descriptionBulletOptions,
+        statusOptions,
         userAdminNavItems,
         productHeaders,
         selectedPriceCurrency,
@@ -2023,6 +2227,63 @@
   color: #ef4444;
 }
 
+/* Image gallery thumbnail chips */
+.image-chip-flat {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border: 1px solid #0f172a;
+  background: #ffffff;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  font-size: 11px;
+  font-weight: 700;
+}
+.image-chip-flat:hover {
+  background: #f1f5f9;
+  transform: translateY(-1px);
+  box-shadow: 2px 2px 0px #0f172a;
+}
+.image-chip-flat.primary-chip {
+  background: #f0fdfa;
+  border-color: #0d9488;
+  box-shadow: 2px 2px 0px #0d9488;
+}
+.image-chip-flat.primary-chip .chip-label {
+  color: #0d9488;
+}
+.chip-thumb {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #0f172a;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+}
+.chip-label {
+  font-size: 9px;
+  font-weight: 800;
+  color: #64748b;
+}
+.chip-remove-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  margin-left: 2px;
+}
+.chip-remove-btn:hover {
+  color: #ef4444;
+}
+
 .bullet-btn-flat {
   height: 36px;
   min-width: 36px;
@@ -2146,6 +2407,14 @@
 .badge-slate {
   color: #64748b;
   background: #f8fafc;
+}
+.badge-yellow {
+  color: #a16207;
+  background: #fefce8;
+}
+.badge-red {
+  color: #be123c;
+  background: #fff1f2;
 }
 
 /* ════════════════════════════════ RESPONSIVE ═════ */

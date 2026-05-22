@@ -88,23 +88,59 @@ async def firebase_login(request: Request, ctx: RequestContext = Depends(get_con
         user_id = f"user_{uid}"
         now = now_iso()
         existing = await ctx.db.collection("users").find_one({"user_id": user_id}, {"projection": {"_id": 0}})
-        locale = normalize_locale(decoded.get("locale")) or normalize_locale(data.get("locale")) or normalize_locale((existing or {}).get("locale"))
-        country_code = resolve_country_code(decoded, data, locale, existing)
-        profile_name = normalize_profile_name(decoded.get("name")) or normalize_profile_name((existing or {}).get("name")) or "User"
-        profile_picture = normalize_image_url(decoded.get("picture")) or normalize_image_url((existing or {}).get("picture"))
+        
+        # Look up by email (Google ID email) to fetch country, mobile, address details
+        existing_by_email = await ctx.db.collection("users").find_one(
+            {"email": email, "user_id": {"$ne": user_id}},
+            {"projection": {"_id": 0}}
+        )
+
+        locale = normalize_locale(decoded.get("locale")) or normalize_locale(data.get("locale")) or normalize_locale((existing or {}).get("locale")) or normalize_locale((existing_by_email or {}).get("locale"))
+        country_code = resolve_country_code(decoded, data, locale, existing or existing_by_email)
+        profile_name = normalize_profile_name(decoded.get("name")) or normalize_profile_name((existing or {}).get("name")) or normalize_profile_name((existing_by_email or {}).get("name")) or "User"
+        profile_picture = normalize_image_url(decoded.get("picture")) or normalize_image_url((existing or {}).get("picture")) or normalize_image_url((existing_by_email or {}).get("picture"))
         is_admin = await ctx.admin_access.is_admin_email(email)
+
+        updates_set = {
+            "email": email,
+            "name": profile_name,
+            "picture": profile_picture,
+            "locale": locale,
+            "country_code": country_code,
+            "is_admin": is_admin,
+            "updated_at": now,
+        }
+
+        # Merge country, mobile/phone, and delivery profile address
+        merged_delivery_profile = (existing or {}).get("delivery_profile") or (existing_by_email or {}).get("delivery_profile")
+        merged_phone = (existing or {}).get("phone") or (existing_by_email or {}).get("phone")
+        merged_mobile = (existing or {}).get("mobile") or (existing_by_email or {}).get("mobile")
+
+        if merged_delivery_profile:
+            updates_set["delivery_profile"] = merged_delivery_profile
+        if merged_phone:
+            updates_set["phone"] = merged_phone
+        if merged_mobile:
+            updates_set["mobile"] = merged_mobile
+
+        for pref_key in [
+            "currency",
+            "order_updates",
+            "promotional_emails",
+            "quick_checkout",
+            "low_stock_alerts",
+            "save_delivery_details",
+        ]:
+            val = (existing or {}).get(pref_key)
+            if val is None and existing_by_email:
+                val = existing_by_email.get(pref_key)
+            if val is not None:
+                updates_set[pref_key] = val
+
         await ctx.db.collection("users").update_one(
             {"user_id": user_id},
             {
-                "$set": {
-                    "email": email,
-                    "name": profile_name,
-                    "picture": profile_picture,
-                    "locale": locale,
-                    "country_code": country_code,
-                    "is_admin": is_admin,
-                    "updated_at": now,
-                },
+                "$set": updates_set,
                 "$setOnInsert": {"user_id": user_id, "created_at": now},
             },
             upsert=True,
@@ -195,6 +231,47 @@ async def update_profile(request: Request, ctx: RequestContext = Depends(get_con
             if not country_code:
                 return error_response(400, "country_code must be a 2-letter code")
             updates["country_code"] = country_code
+    if "delivery_profile" in data or "deliveryProfile" in data:
+        dp = data.get("delivery_profile") if "delivery_profile" in data else data.get("deliveryProfile")
+        if dp is None:
+            updates["delivery_profile"] = None
+            updates["phone"] = None
+            updates["mobile"] = None
+        elif isinstance(dp, dict):
+            phone = normalize_text(dp.get("phone"), 32)
+            address = normalize_text(dp.get("address"), 220)
+            city = normalize_text(dp.get("city"), 96)
+            state = normalize_text(dp.get("state"), 96)
+            postal_code = normalize_text(dp.get("postal_code") or dp.get("postalCode") or dp.get("zip"), 32)
+            instructions = normalize_text(dp.get("instructions"), 240)
+            updates["delivery_profile"] = {
+                "phone": phone or "",
+                "address": address or "",
+                "city": city or "",
+                "state": state or "",
+                "postal_code": postal_code or "",
+                "instructions": instructions or "",
+            }
+            if phone:
+                updates["phone"] = phone
+                updates["mobile"] = phone
+    if "currency" in data:
+        curr = normalize_text(data.get("currency"), 8)
+        if curr:
+            curr_upper = curr.upper()
+            if curr_upper in ("USD", "EUR", "GBP", "INR"):
+                updates["currency"] = curr_upper
+    for snake, camel in [
+        ("order_updates", "orderUpdates"),
+        ("promotional_emails", "promotionalEmails"),
+        ("quick_checkout", "quickCheckout"),
+        ("low_stock_alerts", "lowStockAlerts"),
+        ("save_delivery_details", "saveDeliveryDetails"),
+    ]:
+        if snake in data or camel in data:
+            val = data.get(snake) if snake in data else data.get(camel)
+            if isinstance(val, bool):
+                updates[snake] = val
     if not updates:
         return json_response(await build_user_response(ctx.user, ctx), 200, {"Cache-Control": "no-store"})
     updates["updated_at"] = now_iso()
