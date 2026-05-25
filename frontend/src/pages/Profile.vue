@@ -173,501 +173,247 @@
             </aside>
           </v-col>
 
-          <!-- Main Panel tabs -->
+          <!-- Main Panel -->
           <v-col cols="12" lg="8" xl="9">
             <main class="profile-main">
-              <div class="tabs-header-flat">
-                <v-tabs
-                  v-model="activeTab"
-                  align-tabs="start"
-                  class="custom-editorial-tabs"
-                  color="teal-darken-1"
-                  density="comfortable"
-                  grow
-                >
-                  <v-tab value="profile">
-                    <v-icon size="18" start>mdi-account-edit-outline</v-icon>
-                    Profile Details
-                  </v-tab>
-                  <v-tab value="orders">
-                    <v-icon size="18" start>mdi-receipt-text-outline</v-icon>
-                    Order History
-                  </v-tab>
-                  <v-tab value="security">
-                    <v-icon size="18" start>mdi-shield-account-outline</v-icon>
-                    Account Access
-                  </v-tab>
-                </v-tabs>
-              </div>
-
-              <div class="tab-contents-flat mt-4">
-                <v-tabs-window v-model="activeTab">
-                  <!-- Profile details -->
-                  <v-tabs-window-item value="profile">
-                    <v-row>
-                      <!-- Personal Details Form -->
-                      <v-col cols="12" md="6">
-                        <div class="flat-card-container h-100">
-                          <div class="panel-head">
-                            <div>
-                              <h2 class="panel-title">Personal Details</h2>
-                              <p class="panel-subtitle">Saved to your Mindstore account.</p>
-                            </div>
-                          </div>
-
-                          <v-row class="mt-2" dense>
-                            <v-col cols="12" md="6">
-                              <v-text-field
-                                v-model="profileForm.name"
-                                class="flat-text-field"
-                                density="comfortable"
-                                label="Full Name"
-                                maxlength="120"
-                                variant="outlined"
-                              />
-                            </v-col>
-                            <v-col cols="12" md="6">
-                              <v-text-field
-                                v-model="profileForm.email"
-                                class="flat-text-field"
-                                density="comfortable"
-                                label="Email"
-                                readonly
-                                variant="outlined"
-                              />
-                            </v-col>
-                            <v-col cols="12" md="6">
-                              <v-select
-                                v-model="profileForm.countryCode"
-                                class="flat-text-field"
-                                density="comfortable"
-                                item-title="label"
-                                item-value="code"
-                                :items="countryOptions"
-                                label="Country"
-                                variant="outlined"
-                              />
-                            </v-col>
-                            <v-col cols="12" md="6">
-                              <v-text-field
-                                class="flat-text-field"
-                                density="comfortable"
-                                label="Currency"
-                                :model-value="`${settings.currency} (Auto)`"
-                                readonly
-                                variant="outlined"
-                              />
-                            </v-col>
-                          </v-row>
-                        </div>
-                      </v-col>
-
-                      <!-- Delivery Profile Form -->
-                      <v-col cols="12" md="6">
-                        <div class="flat-card-container">
-                          <div class="panel-head d-flex justify-space-between align-center">
-                            <div>
-                              <h2 class="panel-title">Delivery Profile</h2>
-                              <p class="panel-subtitle">Used to prefill checkout.</p>
-                            </div>
-                            <v-switch
-                              v-model="settings.saveDeliveryDetails"
-                              class="flat-switch"
-                              color="teal-darken-1"
-                              density="compact"
-                              hide-details
-                              inset
-                            />
-                          </div>
-
-                          <v-row class="mt-2" dense>
-                            <v-col cols="12" md="6">
-                              <v-text-field
-                                v-model="settings.deliveryProfile.phone"
-                                class="flat-text-field"
-                                density="comfortable"
-                                label="Phone Number"
-                                maxlength="32"
-                                variant="outlined"
-                              />
-                            </v-col>
-                            <v-col cols="12" md="6">
-                              <v-text-field
-                                v-model="settings.deliveryProfile.postalCode"
-                                class="flat-text-field"
-                                density="comfortable"
-                                label="Postal Code"
-                                maxlength="32"
-                                variant="outlined"
-                              />
-                            </v-col>
-                            <v-col cols="12">
-                              <v-text-field
-                                v-model="settings.deliveryProfile.address"
-                                class="flat-text-field"
-                                density="comfortable"
-                                label="Street Address"
-                                maxlength="220"
-                                variant="outlined"
-                              />
-                            </v-col>
-                            <v-col cols="12" md="6">
-                              <v-text-field
-                                v-model="settings.deliveryProfile.city"
-                                class="flat-text-field"
-                                density="comfortable"
-                                label="City"
-                                maxlength="96"
-                                variant="outlined"
-                              />
-                            </v-col>
-                            <v-col cols="12" md="6">
-                              <v-text-field
-                                v-model="settings.deliveryProfile.state"
-                                class="flat-text-field"
-                                density="comfortable"
-                                label="State"
-                                maxlength="96"
-                                variant="outlined"
-                              />
-                            </v-col>
-                            <v-col cols="12">
-                              <v-textarea
-                                v-model="settings.deliveryProfile.instructions"
-                                auto-grow
-                                class="flat-text-field"
-                                density="comfortable"
-                                label="Delivery Notes"
-                                maxlength="240"
-                                rows="2"
-                                variant="outlined"
-                              />
-                            </v-col>
-                          </v-row>
-                        </div>
-                      </v-col>
-
-                      <!-- Preferences Panel -->
-                      <v-col cols="12">
-                        <div class="flat-card-container">
-                          <div class="panel-head">
-                            <div>
-                              <h2 class="panel-title">System Preferences</h2>
-                              <p class="panel-subtitle">Stored locally for this browser.</p>
-                            </div>
-                          </div>
-
-                          <v-row class="mt-2" dense>
-                            <v-col cols="12" md="6">
-                              <div class="preference-flat-card">
-                                <div class="pref-details">
-                                  <strong>Order updates</strong>
-                                  <span class="pref-desc">Email order status changes</span>
-                                </div>
-                                <v-switch
-                                  v-model="settings.orderUpdates"
-                                  class="flat-switch"
-                                  color="teal-darken-1"
-                                  hide-details
-                                  inset
-                                />
-                              </div>
-                            </v-col>
-                            <v-col cols="12" md="6">
-                              <div class="preference-flat-card">
-                                <div class="pref-details">
-                                  <strong>Promotional emails</strong>
-                                  <span class="pref-desc">Offers and seasonal drops</span>
-                                </div>
-                                <v-switch
-                                  v-model="settings.promotionalEmails"
-                                  class="flat-switch"
-                                  color="teal-darken-1"
-                                  hide-details
-                                  inset
-                                />
-                              </div>
-                            </v-col>
-                            <v-col cols="12" md="6">
-                              <div class="preference-flat-card">
-                                <div class="pref-details">
-                                  <strong>Quick checkout</strong>
-                                  <span class="pref-desc">Select cart items automatically</span>
-                                </div>
-                                <v-switch
-                                  v-model="settings.quickCheckout"
-                                  class="flat-switch"
-                                  color="teal-darken-1"
-                                  hide-details
-                                  inset
-                                />
-                              </div>
-                            </v-col>
-                            <v-col cols="12" md="6">
-                              <div class="preference-flat-card">
-                                <div class="pref-details">
-                                  <strong>Low stock alerts</strong>
-                                  <span class="pref-desc">Show inventory reminders</span>
-                                </div>
-                                <v-switch
-                                  v-model="settings.lowStockAlerts"
-                                  class="flat-switch"
-                                  color="teal-darken-1"
-                                  hide-details
-                                  inset
-                                />
-                              </div>
-                            </v-col>
-                          </v-row>
-
-                          <!-- Save strip flat -->
-                          <div class="save-strip-flat">
-                            <span v-if="isFormDirty" class="dirty-state-text">
-                              <v-icon color="warning" size="16">mdi-alert-circle-outline</v-icon>
-                              Unsaved changes pending
-                            </span>
-                            <span v-else class="clean-state-text">
-                              <v-icon color="success" size="16">mdi-check-circle-outline</v-icon>
-                              Profile is up to date
-                            </span>
-                            <button
-                              class="btn-flat-solid save-btn"
-                              :disabled="!isFormDirty || savingAll"
-                              @click="saveAll"
-                            >
-                              Save Changes
-                            </button>
-                          </div>
-                        </div>
-                      </v-col>
-                    </v-row>
-                  </v-tabs-window-item>
-
-                  <!-- Orders Tab -->
-                  <v-tabs-window-item value="orders">
-                    <div class="flat-card-container">
-                      <div class="panel-head orders-head d-flex justify-space-between align-center">
+              <div class="tab-contents-flat">
+                <v-row>
+                  <!-- Personal Details Form -->
+                  <v-col cols="12" md="6">
+                    <div class="flat-card-container h-100">
+                      <div class="panel-head">
                         <div>
-                          <h2 class="panel-title">Orders Archive</h2>
-                          <p class="panel-subtitle">{{ orders.length }} total, {{ completedOrderCount }} completed.</p>
+                          <h2 class="panel-title">Personal Details</h2>
+                          <p class="panel-subtitle">Saved to your Mindstore account.</p>
                         </div>
-                        <button
-                          aria-label="Refresh orders"
-                          class="btn-flat-outline btn-with-icon"
-                          :disabled="loading"
-                          @click="fetchOrders"
-                        >
-                          <v-icon :class="{ 'mdi-spin': loading }" size="16" start>mdi-refresh</v-icon>
-                          Refresh
-                        </button>
                       </div>
 
                       <v-row class="mt-2" dense>
                         <v-col cols="12" md="6">
                           <v-text-field
-                            v-model="orderSearch"
+                            v-model="profileForm.name"
                             class="flat-text-field"
                             density="comfortable"
-                            hide-details
-                            label="Search Orders"
-                            prepend-inner-icon="mdi-magnify"
+                            label="Full Name"
+                            maxlength="120"
                             variant="outlined"
                           />
                         </v-col>
-                        <v-col cols="12" md="3" sm="6">
-                          <v-select
-                            v-model="orderStatusFilter"
+                        <v-col cols="12" md="6">
+                          <v-text-field
+                            v-model="profileForm.email"
                             class="flat-text-field"
                             density="comfortable"
-                            hide-details
-                            item-title="label"
-                            item-value="value"
-                            :items="orderStatusOptions"
-                            label="Status Filter"
+                            label="Email"
+                            readonly
                             variant="outlined"
                           />
                         </v-col>
-                        <v-col cols="12" md="3" sm="6">
+                        <v-col cols="12" md="6">
                           <v-select
-                            v-model="orderSort"
+                            v-model="profileForm.countryCode"
                             class="flat-text-field"
                             density="comfortable"
-                            hide-details
                             item-title="label"
-                            item-value="value"
-                            :items="orderSortOptions"
-                            label="Sort By"
+                            item-value="code"
+                            :items="countryOptions"
+                            label="Country"
+                            variant="outlined"
+                          />
+                        </v-col>
+                        <v-col cols="12" md="6">
+                          <v-text-field
+                            class="flat-text-field"
+                            density="comfortable"
+                            label="Currency"
+                            :model-value="`${settings.currency} (Auto)`"
+                            readonly
                             variant="outlined"
                           />
                         </v-col>
                       </v-row>
+                    </div>
+                  </v-col>
 
-                      <v-progress-linear v-if="loading" class="mt-4" color="teal-darken-1" indeterminate />
-
-                      <!-- Empty Orders state -->
-                      <div v-else-if="filteredOrders.length === 0" class="empty-orders-flat mt-6">
-                        <v-icon color="teal-darken-1" size="48">mdi-package-variant</v-icon>
-                        <h3 class="empty-title mt-2">{{ orders.length === 0 ? 'No orders yet' : 'No matching orders' }}</h3>
-                        <p class="empty-subtitle mt-1">
-                          {{ orders.length === 0 ? 'Orders placed from your cart will appear here.'
-                            : 'Adjust search or status filters.' }}
-                        </p>
-                        <v-btn class="btn-flat-solid mt-4" to="/">Shop Products</v-btn>
+                  <!-- Delivery Profile Form -->
+                  <v-col cols="12" md="6">
+                    <div class="flat-card-container">
+                      <div class="panel-head d-flex justify-space-between align-center">
+                        <div>
+                          <h2 class="panel-title">Delivery Profile</h2>
+                          <p class="panel-subtitle">Used to prefill checkout.</p>
+                        </div>
+                        <v-switch
+                          v-model="settings.saveDeliveryDetails"
+                          class="flat-switch"
+                          color="teal-darken-1"
+                          density="compact"
+                          hide-details
+                          inset
+                        />
                       </div>
 
-                      <!-- Orders List Expansion -->
-                      <div v-else class="orders-expansion-container mt-4">
-                        <v-expansion-panels class="flat-expansion-panels" variant="accordion">
-                          <v-expansion-panel
-                            v-for="order in filteredOrders"
-                            :key="order.order_id"
-                            class="flat-expansion-panel"
-                          >
-                            <v-expansion-panel-title class="flat-panel-title">
-                              <div class="order-title-row-flat">
-                                <div class="order-info-left">
-                                  <span class="order-id">Order #{{ order.order_id }}</span>
-                                  <span class="order-date">{{ formatDate(order.created_at) }}</span>
-                                </div>
-                                <div class="order-summary-right">
-                                  <strong class="order-amount-display">{{ formatAmount(order.total_amount) }}</strong>
-                                  <span class="order-status-badge" :class="'status-' + statusColor(order.status)">
-                                    {{ order.status }}
-                                  </span>
-                                </div>
-                              </div>
-                            </v-expansion-panel-title>
-                            
-                            <v-expansion-panel-text class="flat-panel-content">
-                              <v-row dense>
-                                <v-col cols="12" sm="4">
-                                  <div class="order-detail-minibox">
-                                    <span class="minibox-label">Items Count</span>
-                                    <strong class="minibox-value">{{ order.items.length }}</strong>
-                                  </div>
-                                </v-col>
-                                <v-col cols="12" sm="4">
-                                  <div class="order-detail-minibox">
-                                    <span class="minibox-label">Purchase Date</span>
-                                    <strong class="minibox-value">{{ formatDate(order.created_at) }}</strong>
-                                  </div>
-                                </v-col>
-                                <v-col cols="12" sm="4">
-                                  <div class="order-detail-minibox">
-                                    <span class="minibox-label">Current Status</span>
-                                    <strong class="minibox-value">{{ order.status }}</strong>
-                                  </div>
-                                </v-col>
-                              </v-row>
+                      <v-row class="mt-2" dense>
+                        <v-col cols="12" md="6">
+                          <v-text-field
+                            v-model="settings.deliveryProfile.phone"
+                            class="flat-text-field"
+                            density="comfortable"
+                            label="Phone Number"
+                            maxlength="32"
+                            variant="outlined"
+                          />
+                        </v-col>
+                        <v-col cols="12" md="6">
+                          <v-text-field
+                            v-model="settings.deliveryProfile.postalCode"
+                            class="flat-text-field"
+                            density="comfortable"
+                            label="Postal Code"
+                            maxlength="32"
+                            variant="outlined"
+                          />
+                        </v-col>
+                        <v-col cols="12">
+                          <v-text-field
+                            v-model="settings.deliveryProfile.address"
+                            class="flat-text-field"
+                            density="comfortable"
+                            label="Street Address"
+                            maxlength="220"
+                            variant="outlined"
+                          />
+                        </v-col>
+                        <v-col cols="12" md="6">
+                          <v-text-field
+                            v-model="settings.deliveryProfile.city"
+                            class="flat-text-field"
+                            density="comfortable"
+                            label="City"
+                            maxlength="96"
+                            variant="outlined"
+                          />
+                        </v-col>
+                        <v-col cols="12" md="6">
+                          <v-text-field
+                            v-model="settings.deliveryProfile.state"
+                            class="flat-text-field"
+                            density="comfortable"
+                            label="State"
+                            maxlength="96"
+                            variant="outlined"
+                          />
+                        </v-col>
+                        <v-col cols="12">
+                          <v-textarea
+                            v-model="settings.deliveryProfile.instructions"
+                            auto-grow
+                            class="flat-text-field"
+                            density="comfortable"
+                            label="Delivery Notes"
+                            maxlength="240"
+                            rows="2"
+                            variant="outlined"
+                          />
+                        </v-col>
+                      </v-row>
+                    </div>
+                  </v-col>
 
-                              <!-- Product List Inside Order -->
-                              <div class="order-product-list-flat mt-4">
-                                <div
-                                  v-for="item in order.items"
-                                  :key="`${order.order_id}-${item.product_id}`"
-                                  class="order-product-row-flat"
-                                >
-                                  <div class="prod-info">
-                                    <strong class="prod-name">{{ item.name || 'Product' }}</strong>
-                                    <span class="prod-qty">Quantity: {{ item.quantity || 1 }}</span>
-                                  </div>
-                                  <span class="prod-id">{{ item.product_id }}</span>
-                                </div>
-                              </div>
+                  <!-- Preferences Panel -->
+                  <v-col cols="12">
+                    <div class="flat-card-container">
+                      <div class="panel-head">
+                        <div>
+                          <h2 class="panel-title">System Preferences</h2>
+                          <p class="panel-subtitle">Stored locally for this browser.</p>
+                        </div>
+                      </div>
 
-                              <div class="d-flex justify-end mt-4">
-                                <button
-                                  class="btn-flat-solid btn-with-icon"
-                                  :disabled="invoiceLoadingOrderId === order.order_id"
-                                  @click.stop="downloadInvoice(order)"
-                                >
-                                  <v-icon :class="{ 'mdi-spin': invoiceLoadingOrderId === order.order_id }" size="16" start>
-                                    {{ invoiceLoadingOrderId === order.order_id ? 'mdi-loading' : 'mdi-file-download-outline' }}
-                                  </v-icon>
-                                  {{ invoiceLoadingOrderId === order.order_id ? 'Generating...' : 'Invoice Download' }}
-                                </button>
-                              </div>
-                            </v-expansion-panel-text>
-                          </v-expansion-panel>
-                        </v-expansion-panels>
+                      <v-row class="mt-2" dense>
+                        <v-col cols="12" md="6">
+                          <div class="preference-flat-card">
+                            <div class="pref-details">
+                              <strong>Order updates</strong>
+                              <span class="pref-desc">Email order status changes</span>
+                            </div>
+                            <v-switch
+                              v-model="settings.orderUpdates"
+                              class="flat-switch"
+                              color="teal-darken-1"
+                              hide-details
+                              inset
+                            />
+                          </div>
+                        </v-col>
+                        <v-col cols="12" md="6">
+                          <div class="preference-flat-card">
+                            <div class="pref-details">
+                              <strong>Promotional emails</strong>
+                              <span class="pref-desc">Offers and seasonal drops</span>
+                            </div>
+                            <v-switch
+                              v-model="settings.promotionalEmails"
+                              class="flat-switch"
+                              color="teal-darken-1"
+                              hide-details
+                              inset
+                            />
+                          </div>
+                        </v-col>
+                        <v-col cols="12" md="6">
+                          <div class="preference-flat-card">
+                            <div class="pref-details">
+                              <strong>Quick checkout</strong>
+                              <span class="pref-desc">Select cart items automatically</span>
+                            </div>
+                            <v-switch
+                              v-model="settings.quickCheckout"
+                              class="flat-switch"
+                              color="teal-darken-1"
+                              hide-details
+                              inset
+                            />
+                          </div>
+                        </v-col>
+                        <v-col cols="12" md="6">
+                          <div class="preference-flat-card">
+                            <div class="pref-details">
+                              <strong>Low stock alerts</strong>
+                              <span class="pref-desc">Show inventory reminders</span>
+                            </div>
+                            <v-switch
+                              v-model="settings.lowStockAlerts"
+                              class="flat-switch"
+                              color="teal-darken-1"
+                              hide-details
+                              inset
+                            />
+                          </div>
+                        </v-col>
+                      </v-row>
+
+                      <!-- Save strip flat -->
+                      <div class="save-strip-flat">
+                        <span v-if="isFormDirty" class="dirty-state-text">
+                          <v-icon color="warning" size="16">mdi-alert-circle-outline</v-icon>
+                          Unsaved changes pending
+                        </span>
+                        <span v-else class="clean-state-text">
+                          <v-icon color="success" size="16">mdi-check-circle-outline</v-icon>
+                          Profile is up to date
+                        </span>
+                        <button
+                          class="btn-flat-solid save-btn"
+                          :disabled="!isFormDirty || savingAll"
+                          @click="saveAll"
+                        >
+                          Save Changes
+                        </button>
                       </div>
                     </div>
-                  </v-tabs-window-item>
-
-                  <!-- Security Tab -->
-                  <v-tabs-window-item value="security">
-                    <v-row>
-                      <!-- Session Card -->
-                      <v-col cols="12" md="6">
-                        <div class="flat-card-container h-100">
-                          <div class="panel-head d-flex justify-space-between align-center">
-                            <div>
-                              <h2 class="panel-title">Session Connection</h2>
-                              <p class="panel-subtitle">Current account connection details.</p>
-                            </div>
-                            <span class="order-status-badge status-success">Authenticated</span>
-                          </div>
-
-                          <div class="session-info-list mt-4">
-                            <div class="session-field">
-                              <span class="field-label">Email Address</span>
-                              <strong class="field-val">{{ appStore.user?.email || 'Not available' }}</strong>
-                            </div>
-                            <div class="session-field">
-                              <span class="field-label">User ID Identifier</span>
-                              <strong class="field-val">{{ appStore.user?.user_id || appStore.user?.uid || 'Not available' }}</strong>
-                            </div>
-                            <div class="session-field">
-                              <span class="field-label">Account Created</span>
-                              <strong class="field-val">{{ formatDate(appStore.user?.created_at) }}</strong>
-                            </div>
-                            <div class="session-field">
-                              <span class="field-label">Profile Updated</span>
-                              <strong class="field-val">{{ formatDate(appStore.user?.updated_at) }}</strong>
-                            </div>
-                          </div>
-                        </div>
-                      </v-col>
-
-                      <!-- Quick Links -->
-                      <v-col cols="12" md="6">
-                        <div class="flat-card-container h-100">
-                          <div class="panel-head">
-                            <div>
-                              <h2 class="panel-title">Account Actions</h2>
-                              <p class="panel-subtitle">Quick navigation links for your convenience.</p>
-                            </div>
-                          </div>
-
-                          <div class="quick-links-group mt-4">
-                            <v-btn block class="btn-flat-solid mt-2 w-100" size="large" to="/cart">
-                              <v-icon start>mdi-cart-outline</v-icon>
-                              Open Cart
-                            </v-btn>
-                            <v-btn block class="btn-flat-outline mt-2 w-100" size="large" to="/">
-                              <v-icon start>mdi-storefront-outline</v-icon>
-                              Continue Shopping
-                            </v-btn>
-                            <v-btn
-                              v-if="isAdmin"
-                              block
-                              class="btn-flat-outline mt-2 w-100 admin-btn-action"
-                              size="large"
-                              to="/admin"
-                            >
-                              <v-icon start>mdi-shield-star-outline</v-icon>
-                              System Admin Console
-                            </v-btn>
-                            <v-btn block class="btn-flat-solid logout-btn-flat mt-4 w-100" size="large" @click="logout">
-                              <v-icon start>mdi-logout</v-icon>
-                              Logout Session
-                            </v-btn>
-                          </div>
-                        </div>
-                      </v-col>
-                    </v-row>
-                  </v-tabs-window-item>
-                </v-tabs-window>
+                  </v-col>
+                </v-row>
               </div>
             </main>
           </v-col>
@@ -731,7 +477,7 @@
             <div class="alert-content">
               {{ userAdminAlert.message }}
             </div>
-            <button class="alert-close-btn ml-2" @click="userAdminAlert = null" aria-label="Dismiss alert">
+            <button aria-label="Dismiss alert" class="alert-close-btn ml-2" @click="userAdminAlert = null">
               <v-icon size="16">mdi-close</v-icon>
             </button>
           </div>
@@ -839,6 +585,7 @@
     parseMobileNumber
   } from '@/utils/userAdmin'
   import {
+    getCountryFromEmail,
     getCurrencyForCountry,
     loadUserSettings,
     normalizeCountryCode,
@@ -1208,11 +955,12 @@
       }
 
       const loadProfileForm = () => {
+        const emailCountry = getCountryFromEmail(appStore.user?.email)
         profileForm.value = {
           name: appStore.user?.name || '',
           email: appStore.user?.email || '',
           countryCode: normalizeCountryCode(
-            appStore.user?.country_code || appStore.user?.country || DEFAULT_COUNTRY_CODE
+            appStore.user?.country_code || appStore.user?.country || emailCountry || DEFAULT_COUNTRY_CODE
           ),
           picture: profileImage.value || ''
         }
@@ -1238,11 +986,11 @@
         settings.value = cloneSettings({
           ...DEFAULT_SETTINGS,
           currency: appStore.user?.currency || loaded.currency || DEFAULT_CURRENCY,
-          orderUpdates: appStore.user?.order_updates !== undefined ? appStore.user.order_updates : loaded.orderUpdates,
-          promotionalEmails: appStore.user?.promotional_emails !== undefined ? appStore.user.promotional_emails : loaded.promotionalEmails,
-          quickCheckout: appStore.user?.quick_checkout !== undefined ? appStore.user.quick_checkout : loaded.quickCheckout,
-          lowStockAlerts: appStore.user?.low_stock_alerts !== undefined ? appStore.user.low_stock_alerts : loaded.lowStockAlerts,
-          saveDeliveryDetails: appStore.user?.save_delivery_details !== undefined ? appStore.user.save_delivery_details : loaded.saveDeliveryDetails,
+          orderUpdates: appStore.user?.order_updates === undefined ? loaded.orderUpdates : appStore.user.order_updates,
+          promotionalEmails: appStore.user?.promotional_emails === undefined ? loaded.promotionalEmails : appStore.user.promotional_emails,
+          quickCheckout: appStore.user?.quick_checkout === undefined ? loaded.quickCheckout : appStore.user.quick_checkout,
+          lowStockAlerts: appStore.user?.low_stock_alerts === undefined ? loaded.lowStockAlerts : appStore.user.low_stock_alerts,
+          saveDeliveryDetails: appStore.user?.save_delivery_details === undefined ? loaded.saveDeliveryDetails : appStore.user.save_delivery_details,
           deliveryProfile
         })
         syncCurrencyWithCountry()

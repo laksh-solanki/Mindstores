@@ -381,9 +381,9 @@
                       </button>
                       <span
                         :class="['custom-badge', 'font-mono', 'px-2', 'py-1', 'text-caption',
-                          Number(resolveItem(item).stock || 0) < (resolveItem(item).low_stock_threshold !== null && resolveItem(item).low_stock_threshold !== undefined ? Number(resolveItem(item).low_stock_threshold) : 5)
-                            ? 'badge-red'
-                            : 'badge-teal'
+                                 Number(resolveItem(item).stock || 0) < (resolveItem(item).low_stock_threshold !== null && resolveItem(item).low_stock_threshold !== undefined ? Number(resolveItem(item).low_stock_threshold) : 5)
+                                   ? 'badge-red'
+                                   : 'badge-teal'
                         ]"
                       >
                         {{ resolveItem(item).stock }}
@@ -402,8 +402,8 @@
                     <span
                       v-if="resolveItem(item).status"
                       :class="['custom-badge', 'text-caption', 'font-weight-bold',
-                        resolveItem(item).status === 'active' ? 'badge-teal' :
-                        resolveItem(item).status === 'draft' ? 'badge-yellow' : 'badge-slate'
+                               resolveItem(item).status === 'active' ? 'badge-teal' :
+                               resolveItem(item).status === 'draft' ? 'badge-yellow' : 'badge-slate'
                       ]"
                     >
                       {{ resolveItem(item).status.toUpperCase() }}
@@ -515,6 +515,140 @@
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+            <!-- Messages List View -->
+            <div v-else-if="activePanel === 'messages'" class="flat-card-container pa-0">
+              <div class="panel-window-header">
+                <div class="window-dots">
+                  <span class="dot dot-red" />
+                  <span class="dot dot-yellow" />
+                  <span class="dot dot-green" />
+                </div>
+                <div class="window-title-display">Console / Messages</div>
+              </div>
+              <div class="pa-4">
+                <div class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 mb-4">
+                  <div>
+                    <h2 class="section-title">Messages</h2>
+                    <div class="section-subtitle">{{ messages.length }} notifications.</div>
+                  </div>
+                  <button class="btn-flat-outline btn-with-icon" @click="loadConsole">
+                    <v-icon class="mr-1" icon="mdi-refresh" size="18" />
+                    Refresh
+                  </button>
+                </div>
+
+                <v-progress-linear v-if="loading" class="mb-4" color="teal-darken-1" indeterminate />
+                <v-alert v-else-if="messages.length === 0" class="custom-flat-alert info-alert" type="info" variant="tonal">
+                  No messages yet.
+                </v-alert>
+                <div v-else class="reviews-list-flat">
+                  <div
+                    v-for="msg in messages"
+                    :key="msg.message_id"
+                    class="review-item-flat d-flex justify-space-between"
+                    :style="!msg.read ? 'border-left: 4px solid #0f766e; background-color: #f0fdfa;' : ''"
+                  >
+                    <div class="flex-grow-1">
+                      <div class="font-weight-bold">{{ msg.message }}</div>
+                      <div class="text-caption text-slate-500 mt-1">Product: {{ msg.product_name }} | Order: {{ msg.order_id }}</div>
+                      <div v-if="msg.type === 'order_request'" class="text-caption text-slate-600 mt-1">
+                         Payment: <span class="text-uppercase">{{ msg.payment_method }}</span> ({{ msg.payment_status }})
+                      </div>
+                      <div class="text-caption text-slate-400 mt-1">{{ formatDate(msg.created_at) }}</div>
+                      <div v-if="msg.type === 'order_request' && msg.status === 'pending'" class="mt-2">
+                        <v-btn size="small" color="success" variant="flat" class="mr-2" :loading="orderActionLoading === msg.message_id" @click="approveOrder(msg)">Approve</v-btn>
+                        <v-btn size="small" color="error" variant="flat" :loading="orderActionLoading === msg.message_id" @click="cancelOrder(msg)">Cancel</v-btn>
+                      </div>
+                      <div v-else-if="msg.type === 'order_request'" class="mt-2 font-weight-bold" :class="msg.status === 'approved' ? 'text-success' : 'text-error'">
+                        {{ msg.status === 'approved' ? 'Approved' : 'Cancelled' }}
+                      </div>
+                    </div>
+                    <v-btn v-if="!msg.read" size="small" variant="outlined" @click="markMessageRead(msg.message_id)">Mark Read</v-btn>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Deliveries View -->
+            <div v-else-if="activePanel === 'deliveries'" class="flat-card-container pa-0">
+              <div class="panel-window-header">
+                <div class="window-dots">
+                  <span class="dot dot-red" />
+                  <span class="dot dot-yellow" />
+                  <span class="dot dot-green" />
+                </div>
+                <div class="window-title-display">Console / Deliveries</div>
+              </div>
+              <div class="pa-4">
+                <div class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 mb-4">
+                  <div>
+                    <h2 class="section-title">Completed Deliveries</h2>
+                    <div class="section-subtitle">{{ deliveries.filter(d => d.order_status === 'completed' && d.delivery_status !== 'cancelled').length }} successful deliveries.</div>
+                  </div>
+                  <button class="btn-flat-outline btn-with-icon" @click="loadConsole">
+                    <v-icon class="mr-1" icon="mdi-refresh" size="18" />
+                    Refresh
+                  </button>
+                </div>
+
+                <v-progress-linear v-if="loading" class="mb-4" color="teal-darken-1" indeterminate />
+                <v-alert v-else-if="deliveries.length === 0" class="custom-flat-alert info-alert" type="info" variant="tonal">
+                  No completed deliveries yet.
+                </v-alert>
+                <v-data-table
+                  v-else
+                  class="custom-admin-table"
+                  density="comfortable"
+                  :headers="[ {title: 'Order ID', key: 'order_id'}, {title: 'Product', key: 'name'}, {title: 'Quantity', key: 'quantity'}, {title: 'Customer', key: 'customer'}, {title: 'Date', key: 'order_created_at'} ]"
+                  :items="deliveries.filter(d => d.order_status === 'completed' && d.delivery_status !== 'cancelled')"
+                  :items-per-page="10"
+                >
+                  <template #item="{ item }">
+                    <tr style="background-color: #dcfce7;">
+                      <td>{{ item.order_id }}</td>
+                      <td>{{ item.name }}</td>
+                      <td>{{ item.quantity }}</td>
+                      <td>{{ item.billing_profile?.name || 'Customer' }}</td>
+                      <td>{{ formatDate(item.order_created_at) }}</td>
+                    </tr>
+                  </template>
+                </v-data-table>
+              </div>
+            </div>
+
+            <!-- Settings View -->
+            <div v-else-if="activePanel === 'settings'" class="flat-card-container pa-0">
+              <div class="panel-window-header">
+                <div class="window-dots">
+                  <span class="dot dot-red" />
+                  <span class="dot dot-yellow" />
+                  <span class="dot dot-green" />
+                </div>
+                <div class="window-title-display">Console / Settings</div>
+              </div>
+              <div class="pa-4">
+                <div class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 mb-4">
+                  <div>
+                    <h2 class="section-title">Payment Settings</h2>
+                  </div>
+                </div>
+                <v-card border rounded="lg" variant="flat">
+                  <v-card-text>
+                    <v-row dense>
+                      <v-col cols="12" md="6">
+                        <v-switch
+                          v-model="cashOnDeliveryEnabled"
+                          color="teal-darken-1"
+                          hide-details
+                          label="Enable Cash on Delivery"
+                          @change="updateCashOnDelivery"
+                        />
+                      </v-col>
+                    </v-row>
+                  </v-card-text>
+                </v-card>
               </div>
             </div>
           </v-col>
@@ -637,7 +771,7 @@
                       {{ index === 0 ? 'Primary Product Image' : 'Click to make primary image' }}
                     </v-tooltip>
                     <div class="chip-thumb">
-                      <img :src="imageUrl" class="img-cover">
+                      <img class="img-cover" :src="imageUrl">
                     </div>
                     <span class="chip-label font-mono">
                       {{ index === 0 ? 'PRIMARY' : `IMG ${index + 1}` }}
@@ -815,12 +949,12 @@
               <v-col class="mt-2" cols="12">
                 <v-combobox
                   v-model="productForm.tags"
+                  chips
                   class="flat-text-field"
+                  closable-chips
                   density="comfortable"
                   label="Tags (Press Enter to add)"
                   multiple
-                  chips
-                  closable-chips
                   variant="outlined"
                 />
               </v-col>
@@ -897,6 +1031,7 @@
   import { useRouter } from 'vue-router'
   import BaseAlert from '@/components/BaseAlert.vue'
   import { useAppStore } from '@/stores/app'
+  import { loadUserSettings, saveUserSettings } from '@/utils/userSettings'
   import { safeDisplayImageUrl, safeDisplayImageUrls } from '@/utils/images'
   import {
     createUserAdminProduct,
@@ -904,7 +1039,10 @@
     fetchUserAdminProducts,
     fetchUserAdminProfile,
     fetchUserAdminReviews,
-    updateUserAdminProduct
+    updateUserAdminProduct,
+    fetchUserAdminMessages,
+    markUserAdminMessageRead,
+    fetchUserAdminDeliveries
   } from '@/utils/userAdmin'
 
   const EMPTY_FORM = {
@@ -962,7 +1100,10 @@
   const userAdminNavItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'mdi-view-dashboard-outline' },
     { id: 'products', label: 'Products', icon: 'mdi-package-variant-closed' },
-    { id: 'reviews', label: 'Reviews', icon: 'mdi-message-star-outline' }
+    { id: 'reviews', label: 'Reviews', icon: 'mdi-message-star-outline' },
+    { id: 'messages', label: 'Messages', icon: 'mdi-email-outline' },
+    { id: 'deliveries', label: 'Deliveries', icon: 'mdi-truck-outline' },
+    { id: 'settings', label: 'Settings', icon: 'mdi-cog-outline' }
   ]
 
   function normalizeText(value, maxLength = 5000) {
@@ -999,6 +1140,8 @@
       const profile = ref({})
       const products = ref([])
       const reviews = ref([])
+      const messages = ref([])
+      const deliveries = ref([])
       const productSearch = ref('')
       const productForm = ref({ ...EMPTY_FORM })
       const productImageFiles = ref([])
@@ -1015,6 +1158,15 @@
       const snackbarColor = ref('success')
       const dialogAlert = ref({ message: '', type: '' })
       const catalogOptionAlert = ref({ message: '', type: '' })
+      const orderActionLoading = ref('')
+      
+      const cashOnDeliveryEnabled = ref(loadUserSettings().cashOnDeliveryEnabled ?? true)
+
+      function updateCashOnDelivery() {
+        const settings = loadUserSettings()
+        settings.cashOnDeliveryEnabled = cashOnDeliveryEnabled.value
+        saveUserSettings(settings)
+      }
 
       watch(productDialog, (newVal) => {
         if (!newVal) {
@@ -1387,15 +1539,21 @@
           }
 
           if (profile.value?.has_pin_access) {
-            const [nextProducts, nextReviews] = await Promise.all([
+            const [nextProducts, nextReviews, nextMessages, nextDeliveries] = await Promise.all([
               fetchUserAdminProducts(),
-              fetchUserAdminReviews()
+              fetchUserAdminReviews(),
+              fetchUserAdminMessages(),
+              fetchUserAdminDeliveries()
             ])
             products.value = nextProducts
             reviews.value = nextReviews
+            messages.value = nextMessages
+            deliveries.value = nextDeliveries
           } else {
             products.value = []
             reviews.value = []
+            messages.value = []
+            deliveries.value = []
           }
         } catch (error) {
           if (error?.response?.status === 401) {
@@ -1408,6 +1566,8 @@
               isBlocked.value = true
               products.value = []
               reviews.value = []
+              messages.value = []
+              deliveries.value = []
               return
             }
             products.value = []
@@ -1671,6 +1831,57 @@
         return str
       }
 
+      const markMessageRead = async (messageId) => {
+        try {
+          await markUserAdminMessageRead(messageId)
+          await fetchMessages()
+        } catch (error) {
+          showMessage(error.response?.data?.message || 'Failed to mark message read', 'error')
+        }
+      }
+
+      async function approveOrder(msg) {
+        if (!msg.order_id || !msg.product_id) return
+        orderActionLoading.value = msg.message_id
+        try {
+          await axios.post(
+            `${API_URL}/user-admin/orders/${msg.order_id}/items/${msg.product_id}/approve`,
+            {},
+            await buildAuthenticatedRequestConfig()
+          )
+          showMessage('Order item approved successfully')
+          await fetchMessages()
+        } catch (error) {
+          showMessage(error.response?.data?.message || 'Failed to approve order item', 'error')
+        } finally {
+          orderActionLoading.value = ''
+        }
+      }
+
+      async function cancelOrder(msg) {
+        if (!msg.order_id || !msg.product_id) return
+        orderActionLoading.value = msg.message_id
+        try {
+          await axios.post(
+            `${API_URL}/user-admin/orders/${msg.order_id}/items/${msg.product_id}/cancel`,
+            {},
+            await buildAuthenticatedRequestConfig()
+          )
+          showMessage('Order item cancelled successfully')
+          await fetchMessages()
+        } catch (error) {
+          showMessage(error.response?.data?.message || 'Failed to cancel order item', 'error')
+        } finally {
+          orderActionLoading.value = ''
+        }
+      }
+
+      function formatDate(value) {
+        if (!value) return ''
+        const date = new Date(value)
+        return new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'short', year: 'numeric' }).format(date)
+      }
+
       const exportToCSV = () => {
         if (!products.value || products.value.length === 0) {
           showMessage('No products to export', 'warning')
@@ -1779,6 +1990,8 @@
         descriptionBulletOptions,
         statusOptions,
         userAdminNavItems,
+        cashOnDeliveryEnabled,
+        updateCashOnDelivery,
         productHeaders,
         selectedPriceCurrency,
         categoryOptions,
@@ -1815,7 +2028,14 @@
         adjustStock,
         duplicateProduct,
         exportToCSV,
-        exportToJSON
+        exportToJSON,
+        messages,
+        deliveries,
+        markMessageRead,
+        approveOrder,
+        cancelOrder,
+        orderActionLoading,
+        formatDate
       }
     }
   }

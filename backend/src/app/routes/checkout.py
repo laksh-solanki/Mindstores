@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Request
 
 from ..context import RequestContext, error_response, get_context, json_response, read_json_body
 from ..utils import normalize_text, now_iso, random_compact_id
+import datetime
 from .cart import normalize_product_id, sanitize_items
 from .products import find_catalog_product
 
@@ -80,6 +81,7 @@ async def place_order(request: Request, ctx: RequestContext = Depends(get_contex
     if promo_code is None:
         return error_response(400, "Invalid promo code format")
     billing_profile = normalize_billing_profile(data.get("billing_profile"))
+    payment_method = normalize_text(data.get("payment_method") or "card", 30)
     product_entries: dict[str, tuple[dict[str, Any], str]] = {}
     for product_id in {item["product_id"] for item in items_to_checkout}:
         product, product_source = await find_catalog_product(ctx, product_id)
@@ -106,6 +108,8 @@ async def place_order(request: Request, ctx: RequestContext = Depends(get_contex
                 "price_amount": product.get("price_amount", price),
                 "price_currency": product.get("price_currency") or product.get("currency") or "USD",
                 "quantity": cart_item["quantity"],
+                "vendor_id": product.get("owner_user_id") or product.get("user_id") or "admin",
+                "delivery_status": "pending",
             }
         )
     applied_promo = None
@@ -120,7 +124,9 @@ async def place_order(request: Request, ctx: RequestContext = Depends(get_contex
         applied_promo = promo["code"]
     total = max(0, round(subtotal - discount, 2))
     order_id = random_compact_id("order")
-    now = now_iso()
+    now_dt = datetime.datetime.now(datetime.timezone.utc)
+    now = now_dt.isoformat().replace("+00:00", "Z")
+    scheduled_date = (now_dt + datetime.timedelta(days=5)).isoformat().replace("+00:00", "Z")
     decremented = []
     try:
         for item in items_to_checkout:
@@ -144,8 +150,10 @@ async def place_order(request: Request, ctx: RequestContext = Depends(get_contex
                 "discount_amount": round(discount, 2),
                 "promo_code": applied_promo,
                 "billing_profile": billing_profile,
+                "payment_method": payment_method,
                 "total_amount": total,
-                "status": "completed",
+                "status": "pending",
+                "scheduled_delivery_date": scheduled_date,
                 "created_at": now,
                 "updated_at": now,
             },
@@ -153,6 +161,33 @@ async def place_order(request: Request, ctx: RequestContext = Depends(get_contex
         purchased = {item["product_id"] for item in items_to_checkout}
         remaining = [item for item in safe_cart_items if item["product_id"] not in purchased]
         await ctx.db.collection("carts").update_one({"user_id": ctx.user.get("user_id")}, {"$set": {"items": remaining, "updated_at": now}})
+        
+        # Generate messages for vendors
+        vendor_items = {}
+        for item in order_items:
+            vid = item.get("vendor_id")
+            if vid and vid != "admin":
+                vendor_items.setdefault(vid, []).append(item)
+                
+        for vid, v_items in vendor_items.items():
+            for v_item in v_items:
+                await ctx.db.collection("messages").insert_one(
+                    {
+                        "message_id": random_compact_id("msg"),
+                        "recipient_user_id": vid,
+                        "type": "order_request",
+                        "order_id": order_id,
+                        "product_id": v_item["product_id"],
+                        "product_name": v_item["name"],
+                        "payment_method": payment_method,
+                        "payment_status": "pending",
+                        "status": "pending",
+                        "message": f"New order requires approval for '{v_item['name']}'.",
+                        "read": False,
+                        "created_at": now,
+                        "updated_at": now,
+                    }
+                )
     except Exception as exc:
         for item in decremented:
             await ctx.db.collection(item["collection_name"]).update_one(

@@ -76,6 +76,11 @@
               <v-icon class="mr-1" size="14">mdi-check-circle</v-icon> You have subscribed.
             </p>
           </form>
+          <div class="mt-6">
+            <a class="footer-link d-inline-flex align-center font-weight-bold" href="https://lakshsolanki.onrender.com" target="_blank">
+              <v-icon class="mr-1" size="16">mdi-code-tags</v-icon> Meet Developer
+            </a>
+          </div>
         </div>
       </div>
 

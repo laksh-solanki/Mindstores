@@ -805,7 +805,7 @@
                   >
                     {{ tag }}
                   </v-chip>
-                  <span v-if="!(resolveTableItem(item)?.tags || []).length" class="text-caption text-disabled">—</span>
+                  <span v-if="(resolveTableItem(item)?.tags || []).length === 0" class="text-caption text-disabled">—</span>
                 </div>
               </template>
               <template #item.actions="{ item }">
@@ -1100,6 +1100,42 @@
           </v-card-text>
         </v-card>
 
+        <v-card v-else-if="activePanel === 'deliveries'" border rounded="lg" variant="flat">
+          <v-card-title class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 my-2">
+            <span>Platform Deliveries</span>
+            <v-btn
+              color="teal-darken-1"
+              :loading="deliveriesLoading"
+              prepend-icon="mdi-refresh"
+              rounded="lg"
+              text="Deliveries"
+              variant="flat"
+              @click="fetchDeliveries"
+            />
+          </v-card-title>
+          <v-card-text>
+            <v-data-table
+              class="mt-4"
+              density="comfortable"
+              :headers="[ {title: 'Order ID', key: 'order_id'}, {title: 'Product', key: 'name'}, {title: 'Quantity', key: 'quantity'}, {title: 'Status', key: 'order_status'}, {title: 'Delivery', key: 'delivery_status'}, {title: 'Date', key: 'order_created_at'} ]"
+              :items="deliveries"
+              :items-per-page="15"
+              :loading="deliveriesLoading"
+            >
+              <template #item="{ item }">
+                <tr :style="item.delivery_status === 'cancelled' ? 'background-color: #ffe4e6;' : (item.order_status === 'completed' && item.delivery_status !== 'cancelled' ? 'background-color: #dcfce7; color: #000; ' : '')">
+                  <td>{{ item.order_id }}</td>
+                  <td>{{ item.name }}</td>
+                  <td>{{ item.quantity }}</td>
+                  <td>{{ item.order_status }}</td>
+                  <td>{{ item.delivery_status }}</td>
+                  <td>{{ new Date(item.order_created_at).toLocaleDateString() }}</td>
+                </tr>
+              </template>
+            </v-data-table>
+          </v-card-text>
+        </v-card>
+
         <v-row v-else dense>
           <v-col cols="12" lg="4">
             <v-card border class="h-100" rounded="lg" variant="flat">
@@ -1235,6 +1271,25 @@
               </v-card-text>
             </v-card>
           </v-col>
+
+          <v-col cols="12">
+            <v-card border rounded="lg" variant="flat">
+              <v-card-title class="my-2">Payment Settings</v-card-title>
+              <v-card-text>
+                <v-row dense>
+                  <v-col cols="12" md="6">
+                    <v-switch
+                      v-model="cashOnDeliveryEnabled"
+                      color="teal-darken-1"
+                      hide-details
+                      label="Enable Cash on Delivery"
+                      @change="updateCashOnDelivery"
+                    />
+                  </v-col>
+                </v-row>
+              </v-card-text>
+            </v-card>
+          </v-col>
         </v-row>
       </template>
 
@@ -1257,10 +1312,10 @@
       <v-card-text>
         <v-alert
           v-if="dialogAlert.message"
-          :type="dialogAlert.type === 'error' ? 'error' : dialogAlert.type === 'warning' ? 'warning' : 'info'"
           class="mb-4"
           closable
           density="compact"
+          :type="dialogAlert.type === 'error' ? 'error' : dialogAlert.type === 'warning' ? 'warning' : 'info'"
           variant="tonal"
           @click:close="dialogAlert.message = ''"
         >
@@ -1338,17 +1393,17 @@
                 <v-chip
                   v-for="(imageUrl, index) in productImageGallery"
                   :key="`${imageUrl}-${index}`"
-                  closable
-                  size="large"
-                  :color="index === 0 ? 'teal' : undefined"
-                  :variant="index === 0 ? 'elevated' : 'outlined'"
                   class="pr-1"
+                  closable
+                  :color="index === 0 ? 'teal' : undefined"
+                  size="large"
+                  :variant="index === 0 ? 'elevated' : 'outlined'"
                   @click="makePrimaryImage(index)"
                   @click:close.stop="removeProductImage(index)"
                 >
                   <template #prepend>
-                    <v-avatar size="24" class="mr-2 border">
-                      <v-img :src="imageUrl" cover />
+                    <v-avatar class="mr-2 border" size="24">
+                      <v-img cover :src="imageUrl" />
                     </v-avatar>
                   </template>
                   <span>{{ index === 0 ? "Primary" : `Image ${index + 1}` }}</span>
@@ -1377,10 +1432,10 @@
                   v-for="option in DESCRIPTION_BULLET_OPTIONS"
                   :key="option.symbol"
                   :aria-label="option.label"
-                  size="small"
-                  variant="outlined"
                   class="font-weight-bold"
+                  size="small"
                   style="min-width: 32px;"
+                  variant="outlined"
                   @click="addDescriptionBullet(option.symbol)"
                 >
                   {{ option.symbol }}
@@ -1501,11 +1556,11 @@
             <v-col cols="12">
               <v-combobox
                 v-model="formData.tags"
+                chips
+                closable-chips
                 density="comfortable"
                 label="Tags (Press Enter to add)"
                 multiple
-                chips
-                closable-chips
                 variant="outlined"
               />
             </v-col>
@@ -1528,10 +1583,10 @@
       <v-card-text>
         <v-alert
           v-if="catalogOptionAlert.message"
-          :type="catalogOptionAlert.type === 'error' ? 'error' : catalogOptionAlert.type === 'warning' ? 'warning' : 'info'"
           class="mb-4"
           closable
           density="compact"
+          :type="catalogOptionAlert.type === 'error' ? 'error' : catalogOptionAlert.type === 'warning' ? 'warning' : 'info'"
           variant="tonal"
           @click:close="catalogOptionAlert.message = ''"
         >
@@ -1562,10 +1617,10 @@
       <v-card-text>
         <v-alert
           v-if="accessEditAlert.message"
-          :type="accessEditAlert.type === 'error' ? 'error' : accessEditAlert.type === 'warning' ? 'warning' : 'info'"
           class="mb-4"
           closable
           density="compact"
+          :type="accessEditAlert.type === 'error' ? 'error' : accessEditAlert.type === 'warning' ? 'warning' : 'info'"
           variant="tonal"
           @click:close="accessEditAlert.message = ''"
         >
@@ -1617,6 +1672,7 @@
     extractProductItems,
     requestProductApi,
   } from "@/utils/products";
+  import { loadUserSettings, saveUserSettings } from "@/utils/userSettings";
 
   const HighlightText = {
     props: {
@@ -1647,6 +1703,13 @@
     },
   };
 
+  const cashOnDeliveryEnabled = ref(loadUserSettings().cashOnDeliveryEnabled ?? true);
+
+  function updateCashOnDelivery() {
+    const settings = loadUserSettings();
+    settings.cashOnDeliveryEnabled = cashOnDeliveryEnabled.value;
+    saveUserSettings(settings);
+  }
 
   const DEFAULT_ADMIN_EMAIL = "lakshsolanki848@gmail.com";
   const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -1691,6 +1754,8 @@
   const activePanel = ref("dashboard");
   const products = ref([]);
   const users = ref([]);
+  const deliveries = ref([]);
+  const deliveriesLoading = ref(false);
   const adminAccessEntries = ref([]);
   const productLoading = ref(false);
   const userLoading = ref(false);
@@ -1774,6 +1839,7 @@
     { id: "products", label: "Products", icon: "mdi-package-variant-closed" },
     { id: "planner", label: "Planner", icon: "mdi-clipboard-list-outline" },
     { id: "logs", label: "Notifications", icon: "mdi-bell-outline" },
+    { id: "deliveries", label: "Deliveries", icon: "mdi-truck-outline" },
     { id: "settings", label: "Settings", icon: "mdi-cog-outline" },
   ];
 
@@ -3191,8 +3257,24 @@
       return;
     }
 
-    await Promise.allSettled([fetchProducts(), fetchProductCategories(), fetchUsers(), fetchAdminAccess()]);
+    await Promise.allSettled([fetchProducts(), fetchProductCategories(), fetchUsers(), fetchAdminAccess(), fetchDeliveries()]);
     lastSyncedAt.value = new Date();
+  }
+
+  async function fetchDeliveries() {
+    if (!canShowAdmin.value) return;
+    deliveriesLoading.value = true;
+    try {
+      const response = await runAdminRequest(async (forceRefresh) =>
+        axios.get(`${API_URL}/admin/deliveries`, await buildAdminRequestConfig({}, forceRefresh)),
+      );
+      deliveries.value = Array.isArray(response.data?.items) ? response.data.items : Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      console.error("Failed to fetch deliveries:", error);
+      notify(error.response?.data?.message || "Failed to fetch deliveries", "error");
+    } finally {
+      deliveriesLoading.value = false;
+    }
   }
 
   async function fetchProducts() {

@@ -172,3 +172,30 @@ async def toggle_block_user_admin(user_id: str, request: Request, ctx: RequestCo
     if result.matchedCount == 0:
         return error_response(404, "User not found")
     return json_response({"message": "User admin status updated", "blocked": blocked}, 200, {"Cache-Control": "no-store"})
+
+
+@router.get("/admin/deliveries")
+async def get_admin_deliveries(ctx: RequestContext = Depends(get_context)):
+    denied = require_admin(ctx)
+    if denied:
+        return denied
+        
+    orders = await ctx.db.collection("orders").find(
+        {},
+        {"projection": {"_id": 0}, "sort": {"created_at": -1}}
+    ).to_array()
+    
+    deliveries = []
+    for order in orders:
+        for item in order.get("items", []):
+            delivery_item = {
+                **item,
+                "order_id": order.get("order_id"),
+                "order_created_at": order.get("created_at"),
+                "scheduled_delivery_date": order.get("scheduled_delivery_date"),
+                "billing_profile": order.get("billing_profile"),
+                "order_status": order.get("status")
+            }
+            deliveries.append(delivery_item)
+            
+    return json_response({"items": deliveries}, 200, {"Cache-Control": "no-store"})

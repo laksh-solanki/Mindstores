@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Request
 
 from ..auth import create_session_token, sha256_hex, verify_firebase_id_token
 from ..context import RequestContext, error_response, get_context, json_response, read_json_body
-from ..utils import normalize_text, now_iso
+from ..utils import normalize_text, now_iso, extract_country_from_email
 
 router = APIRouter()
 PRIVATE_USER_RESPONSE_FIELDS = {"user_admin_pin_hash", "user_admin_pin_salt"}
@@ -53,7 +53,7 @@ async def build_user_response(user: dict[str, Any] | None, ctx: RequestContext) 
     return {**safe_user, "is_admin": await ctx.admin_access.is_admin_email(email)}
 
 
-def resolve_country_code(decoded: dict[str, Any], body: dict[str, Any], locale: str | None, existing: dict[str, Any] | None) -> str | None:
+def resolve_country_code(decoded: dict[str, Any], body: dict[str, Any], locale: str | None, existing: dict[str, Any] | None, email: str | None = None) -> str | None:
     return (
         normalize_country_code(decoded.get("country_code"))
         or normalize_country_code(decoded.get("country"))
@@ -61,6 +61,7 @@ def resolve_country_code(decoded: dict[str, Any], body: dict[str, Any], locale: 
         or normalize_country_code(body.get("countryCode"))
         or normalize_country_code(extract_country_from_locale(locale or ""))
         or normalize_country_code((existing or {}).get("country_code"))
+        or normalize_country_code(extract_country_from_email(email or decoded.get("email") or body.get("email")))
     )
 
 
@@ -96,7 +97,7 @@ async def firebase_login(request: Request, ctx: RequestContext = Depends(get_con
         )
 
         locale = normalize_locale(decoded.get("locale")) or normalize_locale(data.get("locale")) or normalize_locale((existing or {}).get("locale")) or normalize_locale((existing_by_email or {}).get("locale"))
-        country_code = resolve_country_code(decoded, data, locale, existing or existing_by_email)
+        country_code = resolve_country_code(decoded, data, locale, existing or existing_by_email, email)
         profile_name = normalize_profile_name(decoded.get("name")) or normalize_profile_name((existing or {}).get("name")) or normalize_profile_name((existing_by_email or {}).get("name")) or "User"
         profile_picture = normalize_image_url(decoded.get("picture")) or normalize_image_url((existing or {}).get("picture")) or normalize_image_url((existing_by_email or {}).get("picture"))
         is_admin = await ctx.admin_access.is_admin_email(email)

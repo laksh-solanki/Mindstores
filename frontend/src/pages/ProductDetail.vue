@@ -573,6 +573,7 @@
     return [
       { title: 'Material', value: materialLabel.value },
       { title: 'Dispatch', value: stockReady.value ? 'Within 24 hours' : 'Restock in progress' },
+      { title: 'Delivery', value: stockReady.value ? 'Est. in 3-5 days' : 'Unavailable' },
       { title: 'Returns', value: '30-day easy return' },
     ]
   })

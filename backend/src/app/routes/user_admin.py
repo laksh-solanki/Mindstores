@@ -494,3 +494,145 @@ async def delete_user_product(product_id: str, ctx: RequestContext = Depends(get
     if result.deletedCount == 0:
         return error_response(404, "Product draft not found")
     return json_response({"message": "Product draft removed"}, 200, {"Cache-Control": "no-store"})
+
+
+@router.get("/user-admin/messages")
+async def list_user_admin_messages(ctx: RequestContext = Depends(get_context)):
+    denied = require_pin_access(ctx)
+    if denied:
+        return denied
+    messages = await ctx.db.collection("messages").find(
+        {"recipient_user_id": ctx.user.get("user_id")},
+        {"projection": {"_id": 0}, "sort": {"created_at": -1}}
+    ).to_array()
+    return json_response({"items": messages}, 200, {"Cache-Control": "no-store"})
+
+
+@router.post("/user-admin/messages/{message_id}/read")
+async def read_user_admin_message(message_id: str, ctx: RequestContext = Depends(get_context)):
+    denied = require_pin_access(ctx)
+    if denied:
+        return denied
+    await ctx.db.collection("messages").update_one(
+        {"message_id": unquote(message_id), "recipient_user_id": ctx.user.get("user_id")},
+        {"$set": {"read": True, "updated_at": now_iso()}}
+    )
+    return json_response({"message": "Message marked as read"}, 200, {"Cache-Control": "no-store"})
+
+
+@router.get("/user-admin/deliveries")
+async def list_user_admin_deliveries(ctx: RequestContext = Depends(get_context)):
+    denied = require_pin_access(ctx)
+    if denied:
+        return denied
+        
+    user_id = ctx.user.get("user_id")
+    # Find orders where this user is the vendor for at least one item
+    orders = await ctx.db.collection("orders").find(
+        {"items.vendor_id": user_id},
+        {"projection": {"_id": 0}, "sort": {"created_at": -1}}
+    ).to_array()
+    
+    # Filter the order items to only include this vendor's items
+    deliveries = []
+    for order in orders:
+        for item in order.get("items", []):
+            if item.get("vendor_id") == user_id:
+                # Merge order context into the delivery item
+                delivery_item = {
+                    **item,
+                    "order_id": order.get("order_id"),
+                    "order_created_at": order.get("created_at"),
+                    "scheduled_delivery_date": order.get("scheduled_delivery_date"),
+                    "billing_profile": order.get("billing_profile"),
+                    "order_status": order.get("status")
+                }
+                deliveries.append(delivery_item)
+                
+    return json_response({"items": deliveries}, 200, {"Cache-Control": "no-store"})
+
+@router.post("/user-admin/orders/{order_id}/items/{product_id}/approve")
+async def user_admin_approve_order_item(order_id: str, product_id: str, ctx: RequestContext = Depends(get_context)):
+    denied = require_pin_access(ctx)
+    if denied:
+        return denied
+
+    order = await ctx.db.collection("orders").find_one({"order_id": order_id})
+    if not order:
+        return error_response(404, "Order not found")
+
+    item_index = -1
+    item = None
+    for i, it in enumerate(order.get("items", [])):
+        if it.get("product_id") == product_id and it.get("vendor_id") == ctx.user.get("user_id"):
+            item_index = i
+            item = it
+            break
+
+    if not item:
+        return error_response(404, "Item not found in order for this vendor")
+
+    now = now_iso()
+    await ctx.db.collection("orders").update_one(
+        {"order_id": order_id},
+        {"$set": {
+            f"items.{item_index}.delivery_status": "continue shipping",
+            "status": "continue shipping",
+            "updated_at": now
+        }}
+    )
+    
+    await ctx.db.collection("messages").update_many(
+        {"order_id": order_id, "product_id": product_id, "recipient_user_id": ctx.user.get("user_id")},
+        {"$set": {"status": "approved", "updated_at": now}}
+    )
+    return json_response({"message": "Order item approved"}, 200)
+
+@router.post("/user-admin/orders/{order_id}/items/{product_id}/cancel")
+async def user_admin_cancel_order_item(order_id: str, product_id: str, ctx: RequestContext = Depends(get_context)):
+    denied = require_pin_access(ctx)
+    if denied:
+        return denied
+
+    order = await ctx.db.collection("orders").find_one({"order_id": order_id})
+    if not order:
+        return error_response(404, "Order not found")
+
+    item_index = -1
+    item = None
+    for i, it in enumerate(order.get("items", [])):
+        if it.get("product_id") == product_id and it.get("vendor_id") == ctx.user.get("user_id"):
+            item_index = i
+            item = it
+            break
+
+    if not item:
+        return error_response(404, "Item not found in order for this vendor")
+
+    now = now_iso()
+    await ctx.db.collection("orders").update_one(
+        {"order_id": order_id},
+        {"$set": {
+            f"items.{item_index}.delivery_status": "cancelled",
+            "updated_at": now
+        }}
+    )
+
+    all_cancelled = True
+    updated_order = await ctx.db.collection("orders").find_one({"order_id": order_id})
+    for it in updated_order.get("items", []):
+        if it.get("delivery_status") != "cancelled":
+            all_cancelled = False
+            break
+            
+    if all_cancelled:
+        await ctx.db.collection("orders").update_one(
+            {"order_id": order_id},
+            {"$set": {"status": "cancelled", "updated_at": now}}
+        )
+
+    await ctx.db.collection("messages").update_many(
+        {"order_id": order_id, "product_id": product_id, "recipient_user_id": ctx.user.get("user_id")},
+        {"$set": {"status": "cancelled", "updated_at": now}}
+    )
+    return json_response({"message": "Order item cancelled"}, 200)

@@ -10,7 +10,7 @@ import httpx
 
 from .admin_access import AdminAccessService
 from .config import AppConfig
-from .utils import create_session_token, normalize_text, now_iso, sha256_hex
+from .utils import create_session_token, normalize_text, now_iso, sha256_hex, extract_country_from_email
 
 FIREBASE_LOOKUP_URL = "https://identitytoolkit.googleapis.com/v1/accounts:lookup"
 DATA_IMAGE_URL_PATTERN = re.compile(
@@ -172,7 +172,7 @@ async def resolve_current_user(
             merged_delivery_profile = (existing or {}).get("delivery_profile") or (existing_by_email or {}).get("delivery_profile")
             merged_phone = (existing or {}).get("phone") or (existing_by_email or {}).get("phone")
             merged_mobile = (existing or {}).get("mobile") or (existing_by_email or {}).get("mobile")
-            merged_country_code = (existing or {}).get("country_code") or (existing_by_email or {}).get("country_code")
+            merged_country_code = (existing or {}).get("country_code") or (existing_by_email or {}).get("country_code") or extract_country_from_email(email)
 
             if merged_delivery_profile:
                 updates_set["delivery_profile"] = merged_delivery_profile

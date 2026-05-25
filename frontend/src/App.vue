@@ -10,6 +10,7 @@
 
     <AppFooter v-if="!isAuthPage && !isAdminPage" />
     <CookieConsent />
+    <AIAssistant v-if="!isAdminPage" />
     <FullScreenLoader :model-value="showFullscreenLoader" />
   </v-app>
 </template>
@@ -18,6 +19,7 @@
   import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useTheme } from 'vuetify'
+  import AIAssistant from '@/components/AIAssistant.vue'
   import AppFooter from '@/components/AppFooter.vue'
   import AppHeader from '@/components/AppHeader.vue'
   import CookieConsent from '@/components/CookieConsent.vue'

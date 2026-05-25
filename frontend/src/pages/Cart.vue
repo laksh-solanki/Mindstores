@@ -238,6 +238,10 @@
                 <span>Shipping</span>
                 <span class="free-badge">Free</span>
               </div>
+              <div class="price-row" style="font-size: 0.85rem; color: #64748b;">
+                <span>Estimated Delivery</span>
+                <span>3-5 Business Days</span>
+              </div>
               <div class="price-divider my-3" />
               <div class="price-row total-row">
                 <span>Total</span>

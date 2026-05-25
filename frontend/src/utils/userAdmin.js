@@ -133,3 +133,28 @@ export async function deleteUserAdminProduct(productId) {
   )
   return response.data
 }
+
+export async function fetchUserAdminMessages() {
+  const response = await axios.get(
+    `${API_URL}/user-admin/messages`,
+    await buildAuthenticatedRequestConfig()
+  )
+  return Array.isArray(response.data?.items) ? response.data.items : []
+}
+
+export async function markUserAdminMessageRead(messageId) {
+  const response = await axios.post(
+    `${API_URL}/user-admin/messages/${encodeURIComponent(messageId)}/read`,
+    {},
+    await buildAuthenticatedRequestConfig()
+  )
+  return response.data
+}
+
+export async function fetchUserAdminDeliveries() {
+  const response = await axios.get(
+    `${API_URL}/user-admin/deliveries`,
+    await buildAuthenticatedRequestConfig()
+  )
+  return Array.isArray(response.data?.items) ? response.data.items : []
+}

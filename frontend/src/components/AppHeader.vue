@@ -167,6 +167,13 @@
                 />
                 <v-list-item
                   class="menu-list-item"
+                  prepend-icon="mdi-receipt-text-outline"
+                  rounded="0"
+                  title="Order History"
+                  to="/orders"
+                />
+                <v-list-item
+                  class="menu-list-item"
                   prepend-icon="mdi-cart-outline"
                   rounded="0"
                   title="Cart"

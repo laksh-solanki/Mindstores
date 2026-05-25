@@ -125,6 +125,10 @@
                   <v-icon size="18" start>mdi-credit-card-outline</v-icon>
                   Credit / Debit Card
                 </v-tab>
+                <v-tab v-if="isCodEnabled" value="cod">
+                  <v-icon size="18" start>mdi-cash</v-icon>
+                  Cash on Delivery
+                </v-tab>
               </v-tabs>
             </div>
 
@@ -215,6 +219,15 @@
                     />
                   </v-col>
                 </v-row>
+              </v-tabs-window-item>
+
+              <v-tabs-window-item value="cod">
+                <div class="custom-flat-alert info-alert mb-4">
+                  <v-icon class="alert-icon" size="18">mdi-information-outline</v-icon>
+                  <div class="alert-content">
+                    Pay with cash when your order is delivered.
+                  </div>
+                </div>
               </v-tabs-window-item>
             </v-tabs-window>
           </div>
@@ -410,6 +423,7 @@
       const selectedProductIds = ref([])
       const selectedPromoCode = ref('')
       const tab = ref('upi')
+      const isCodEnabled = ref(true)
 
       const form = ref({
         firstName: '',
@@ -500,10 +514,12 @@
 
       const prefillFormFromProfile = () => {
         const settings = loadUserSettings()
+        isCodEnabled.value = settings.cashOnDeliveryEnabled ?? true
+        
         const userDelivery = appStore.user?.delivery_profile || {}
-        const saveDeliveryDetails = appStore.user?.save_delivery_details !== undefined
-          ? appStore.user.save_delivery_details
-          : settings.saveDeliveryDetails
+        const saveDeliveryDetails = appStore.user?.save_delivery_details === undefined
+          ? settings.saveDeliveryDetails
+          : appStore.user.save_delivery_details
 
         const phone = userDelivery.phone || settings.deliveryProfile?.phone || ''
         const address = userDelivery.address || settings.deliveryProfile?.address || ''
@@ -527,6 +543,11 @@
       }
 
       const validateForm = () => {
+        const userDelivery = appStore.user?.delivery_profile || {}
+        if (!userDelivery.address || !userDelivery.city || !userDelivery.state) {
+          return 'Please add your delivery location in your profile first'
+        }
+
         if (!form.value.firstName || !form.value.lastName) {
           return 'Enter your full name'
         }
@@ -538,7 +559,7 @@
           if (!upiPattern.test(String(form.value.upiId || '').trim())) {
             return 'Enter a valid UPI ID'
           }
-        } else {
+        } else if (tab.value === 'card') {
           const cardDigits = String(form.value.cardNumber || '').replace(/\D/g, '')
           if (cardDigits.length < 13) {
             return 'Enter a valid card number'
@@ -581,7 +602,8 @@
                 city: form.value.city,
                 state: form.value.state,
                 postal_code: form.value.zip
-              }
+              },
+              payment_method: tab.value
             },
             await buildAuthenticatedRequestConfig()
           )
@@ -618,6 +640,7 @@
       return {
         form,
         tab,
+        isCodEnabled,
         submitting,
         selectedItems,
         totalAmount,

@@ -9,6 +9,7 @@ const DEFAULT_SETTINGS = {
   quickCheckout: true,
   lowStockAlerts: true,
   saveDeliveryDetails: true,
+  cashOnDeliveryEnabled: true,
   deliveryProfile: {
     phone: '',
     address: '',
@@ -77,6 +78,7 @@ function normalizeSettings(raw = {}) {
     quickCheckout: typeof raw.quickCheckout === 'boolean' ? raw.quickCheckout : DEFAULT_SETTINGS.quickCheckout,
     lowStockAlerts: typeof raw.lowStockAlerts === 'boolean' ? raw.lowStockAlerts : DEFAULT_SETTINGS.lowStockAlerts,
     saveDeliveryDetails: typeof raw.saveDeliveryDetails === 'boolean' ? raw.saveDeliveryDetails : DEFAULT_SETTINGS.saveDeliveryDetails,
+    cashOnDeliveryEnabled: typeof raw.cashOnDeliveryEnabled === 'boolean' ? raw.cashOnDeliveryEnabled : DEFAULT_SETTINGS.cashOnDeliveryEnabled,
     deliveryProfile: normalizeDeliveryProfile(raw.deliveryProfile)
   }
 }
@@ -239,9 +241,47 @@ function subscribeToUserSettings(onChange) {
   }
 }
 
+function getCountryFromEmail(email) {
+  if (typeof email !== 'string') {
+    return ''
+  }
+  const trimmed = email.trim().toLowerCase()
+  const domain = trimmed.split('@')[1]
+  if (!domain) {
+    return ''
+  }
+
+  const suffixMap = {
+    '.in': 'IN',
+    '.uk': 'GB',
+    '.ca': 'CA',
+    '.au': 'AU',
+    '.de': 'DE',
+    '.fr': 'FR',
+    '.it': 'IT',
+    '.es': 'ES',
+    '.nl': 'NL',
+    '.ae': 'AE',
+    '.sg': 'SG',
+    '.jp': 'JP',
+    '.br': 'BR',
+    '.mx': 'MX',
+    '.us': 'US'
+  }
+
+  for (const [suffix, code] of Object.entries(suffixMap)) {
+    if (domain.endsWith(suffix) || domain.includes(suffix + '.')) {
+      return code
+    }
+  }
+
+  return ''
+}
+
 export {
   ALLOWED_CURRENCIES,
   DEFAULT_SETTINGS,
+  getCountryFromEmail,
   getCurrencyForCountry,
   hasSavedCurrencyPreference,
   loadUserSettings,

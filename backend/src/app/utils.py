@@ -95,3 +95,46 @@ def deep_serialize(value: Any) -> Any:
     if isinstance(value, dict):
         return {key: deep_serialize(item) for key, item in value.items()}
     return value
+
+
+def extract_country_from_email(email: str | None) -> str | None:
+    if not email:
+        return None
+    email = email.lower().strip()
+    parts = email.split("@")
+    if len(parts) < 2:
+        return None
+    domain = parts[-1]
+    
+    if domain.endswith(".in") or ".in." in domain:
+        return "IN"
+    if domain.endswith(".uk") or ".uk." in domain:
+        return "GB"
+    if domain.endswith(".ca") or ".ca." in domain:
+        return "CA"
+    if domain.endswith(".au") or ".au." in domain:
+        return "AU"
+    if domain.endswith(".de") or ".de." in domain:
+        return "DE"
+    if domain.endswith(".fr") or ".fr." in domain:
+        return "FR"
+    if domain.endswith(".it") or ".it." in domain:
+        return "IT"
+    if domain.endswith(".es") or ".es." in domain:
+        return "ES"
+    if domain.endswith(".nl") or ".nl." in domain:
+        return "NL"
+    if domain.endswith(".ae") or ".ae." in domain:
+        return "AE"
+    if domain.endswith(".sg") or ".sg." in domain:
+        return "SG"
+    if domain.endswith(".jp") or ".jp." in domain:
+        return "JP"
+    if domain.endswith(".br") or ".br." in domain:
+        return "BR"
+    if domain.endswith(".mx") or ".mx." in domain:
+        return "MX"
+    if domain.endswith(".us") or ".us." in domain:
+        return "US"
+    return None
+
