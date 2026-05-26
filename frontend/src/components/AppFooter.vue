@@ -77,7 +77,7 @@
             </p>
           </form>
           <div class="mt-6">
-            <a class="footer-link d-inline-flex align-center font-weight-bold" href="https://lakshsolanki.onrender.com" target="_blank">
+            <a class="footer-link d-inline-flex align-center justify-center text-center font-weight-bold border pa-2" href="https://lakshsolanki.onrender.com" target="_blank">
               <v-icon class="mr-1" size="16">mdi-code-tags</v-icon> Meet Developer
             </a>
           </div>
@@ -171,7 +171,6 @@
 .social-btn:hover {
   background: #0f172a;
   color: #ffffff !important;
-  transform: translateY(-2px);
 }
 
 .footer-title {

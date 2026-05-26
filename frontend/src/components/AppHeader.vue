@@ -585,7 +585,7 @@
 .header-search :deep(.v-field) {
   border-radius: 0 !important;
   border: 2px solid #0f172a !important;
-  box-shadow: none !important;
+
 }
 .header-search :deep(.v-field__outline) {
   display: none !important;
@@ -645,7 +645,7 @@
 
 .profile-menu-avatar {
   border: 3px solid #ffffff;
-  box-shadow: 0 0 0 2px #0f172a;
+
 }
 
 .menu-list-item {
@@ -754,7 +754,7 @@
 .flat-menu-content {
   border-radius: 0 !important;
   border: 2px solid #0f172a !important;
-  box-shadow: 6px 6px 0px #0f172a !important;
+
   background-color: #ffffff !important;
 }
 

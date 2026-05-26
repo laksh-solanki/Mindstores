@@ -721,7 +721,7 @@
 .flat-card-container {
   background: #ffffff;
   border: 1px solid #0f172a;
-  box-shadow: 6px 6px 0px #0f172a;
+
   padding: 24px;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -744,7 +744,7 @@
   border-radius: 0 !important;
   border: 1px solid #0f172a !important;
   background-color: #ffffff !important;
-  box-shadow: none !important;
+
   transition: border-color 0.2s ease;
 }
 
@@ -806,7 +806,7 @@
   padding: 24px;
   position: relative;
   overflow: hidden;
-  box-shadow: 4px 4px 0px #0d9488;
+
 }
 
 .card-inner-frame {
@@ -882,7 +882,7 @@
 .gallery-frame {
   background: #ffffff;
   border: 1px solid #0f172a;
-  box-shadow: 6px 6px 0px #0f172a;
+
   display: flex;
   flex-direction: column;
 }

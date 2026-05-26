@@ -713,7 +713,7 @@
   max-width: 520px;
   background: #ffffff;
   border: 1px solid #0f172a;
-  box-shadow: 6px 6px 0px #0f172a;
+
 }
 
 .empty-cart-body {
@@ -804,7 +804,7 @@
 
 .flat-cart-item-card:hover {
   border-color: #0f172a;
-  box-shadow: 4px 4px 0px #0f172a;
+
 }
 
 .cart-item-image-wrapper {
@@ -972,7 +972,7 @@
 .summary-frame {
   background: #ffffff;
   border: 1px solid #0f172a;
-  box-shadow: 6px 6px 0px #0f172a;
+
   position: sticky;
   top: 88px;
 }

@@ -114,7 +114,7 @@
 .gallery-frame {
   background: #ffffff;
   border: 1px solid #0f172a;
-  box-shadow: 8px 8px 0px #0f172a;
+
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -203,7 +203,7 @@
   border: 1px solid #0f172a;
   padding: 12px 24px;
   background: #ffffff;
-  box-shadow: 4px 4px 0px #0d9488;
+
 }
 
 .receipt-label {

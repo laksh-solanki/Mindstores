@@ -267,7 +267,7 @@
   max-width: 480px;
   background: #ffffff;
   border: 1px solid #0f172a;
-  box-shadow: 6px 6px 0px #0f172a;
+
 }
 .frame-header {
   height: 36px;

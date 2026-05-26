@@ -10,7 +10,6 @@
 
     <AppFooter v-if="!isAuthPage && !isAdminPage" />
     <CookieConsent />
-    <AIAssistant v-if="!isAdminPage" />
     <FullScreenLoader :model-value="showFullscreenLoader" />
   </v-app>
 </template>
@@ -19,7 +18,6 @@
   import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useTheme } from 'vuetify'
-  import AIAssistant from '@/components/AIAssistant.vue'
   import AppFooter from '@/components/AppFooter.vue'
   import AppHeader from '@/components/AppHeader.vue'
   import CookieConsent from '@/components/CookieConsent.vue'
@@ -149,13 +147,13 @@ body {
 .v-theme--dark .readiness-tracker-card {
   background-color: #121824 !important;
   border: 2px solid #f8fafc !important;
-  box-shadow: 4px 4px 0px #f8fafc !important;
+
   color: #f8fafc !important;
 }
 
 .v-theme--dark .stat-flat-box {
   border: 1px solid #f8fafc !important;
-  box-shadow: 2px 2px 0px #f8fafc !important;
+
 }
 
 .v-theme--dark .btn-flat-outline {
@@ -210,11 +208,11 @@ body {
   background-color: #1e293b !important;
 }
 .v-theme--dark .profile-menu-avatar {
-  box-shadow: 0 0 0 2px #f8fafc !important;
+
 }
 .v-theme--dark .flat-menu-content {
   border: 2px solid #f8fafc !important;
-  box-shadow: 6px 6px 0px #f8fafc !important;
+
   background-color: #121824 !important;
 }
 .v-theme--dark .flat-menu-content .v-list {
@@ -234,7 +232,7 @@ body {
 .v-theme--dark .dialog-frame-flat {
   background-color: #121824 !important;
   border: 2px solid #f8fafc !important;
-  box-shadow: 8px 8px 0px #f8fafc !important;
+
   color: #f8fafc !important;
 }
 .v-theme--dark .dialog-frame-flat .mac-titlebar {
@@ -344,10 +342,10 @@ body {
 .v-theme--dark .metric-card-flat {
   background-color: #121824 !important;
   border-color: #f8fafc !important;
-  box-shadow: 4px 4px 0px #f8fafc !important;
+
 }
 .v-theme--dark .metric-card-flat:hover {
-  box-shadow: 6px 6px 0px #f8fafc !important;
+
 }
 
 .v-theme--dark .metric-avatar-flat {

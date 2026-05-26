@@ -101,7 +101,7 @@
 .premium-wrapper {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 255, 0.9));
   backdrop-filter: blur(14px);
-  box-shadow: 0 30px 80px rgba(30, 40, 120, 0.12);
+
 }
 
 /* ===== Gradient Heading ===== */
@@ -132,7 +132,7 @@
   justify-content: center;
   background: linear-gradient(135deg, #eef1ff, #f6f4ff);
   color: #6a6cff;
-  box-shadow: inset 0 0 0 1px rgba(120, 120, 255, 0.15);
+
 }
 
 .section-content p {

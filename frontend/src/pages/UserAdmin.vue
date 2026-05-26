@@ -2109,7 +2109,7 @@
 .flat-card-container {
   background: #ffffff;
   border: 1px solid #0f172a;
-  box-shadow: 4px 4px 0px #0f172a;
+
   padding: 24px;
   margin-bottom: 24px;
 }
@@ -2194,15 +2194,14 @@
 .metric-card-flat {
   background: #ffffff;
   border: 1px solid #0f172a;
-  box-shadow: 4px 4px 0px #0f172a;
+
   padding: 18px;
   display: flex;
   flex-direction: column;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .metric-card-flat:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 6px 6px 0px #0f172a;
+
 }
 .metric-label {
   font-size: 11px;
@@ -2402,7 +2401,7 @@
 .dialog-frame-flat {
   background: #ffffff;
   border: 1px solid #0f172a;
-  box-shadow: 8px 8px 0px #0f172a;
+
   border-radius: 0 !important;
   max-height: 90vh;
 }
@@ -2463,13 +2462,12 @@
 }
 .image-chip-flat:hover {
   background: #f1f5f9;
-  transform: translateY(-1px);
-  box-shadow: 2px 2px 0px #0f172a;
+
 }
 .image-chip-flat.primary-chip {
   background: #f0fdfa;
   border-color: #0d9488;
-  box-shadow: 2px 2px 0px #0d9488;
+
 }
 .image-chip-flat.primary-chip .chip-label {
   color: #0d9488;
@@ -2545,7 +2543,7 @@
   border-radius: 0 !important;
   border: 1px solid #cbd5e1 !important;
   background: #ffffff !important;
-  box-shadow: none !important;
+
 }
 .flat-text-field :deep(.v-field--focused) {
   border-color: #0f172a !important;

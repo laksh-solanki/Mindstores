@@ -185,14 +185,14 @@
   background: var(--alert-surface);
   padding: 8px 10px;
   color: var(--alert-copy);
-  box-shadow: 0 4px 10px rgba(24, 43, 41, 0.08);
+
   position: relative;
   border-left: 3px solid var(--alert-icon-color);
 }
 
 .base-alert-wrap--floating .base-alert {
   pointer-events: auto;
-  box-shadow: 0 10px 20px rgba(24, 43, 41, 0.16);
+
 }
 
 .base-alert__icon {
@@ -286,7 +286,6 @@
 .base-alert-float-enter-from,
 .base-alert-float-leave-to {
   opacity: 0;
-  transform: translateY(12px);
 }
 
 @media (max-width: 600px) {

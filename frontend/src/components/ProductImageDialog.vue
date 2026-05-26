@@ -579,7 +579,6 @@
 
 .photo-trigger:hover,
 .image-trigger:hover {
-  transform: translateY(-2px);
 }
 
 .zoom-card {
@@ -624,7 +623,7 @@
   max-height: min(70vh, 760px);
   border-radius: 14px;
   border: 1px solid rgba(15, 143, 124, 0.14);
-  box-shadow: 0 16px 30px rgba(18, 38, 33, 0.08);
+
   transition: width 0.2s ease, height 0.2s ease;
   user-select: none;
   flex: none;

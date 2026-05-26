@@ -44,10 +44,11 @@
 
             <div class="gallery-carousel-wrap">
               <v-carousel
+                v-model="activeImageIndex"
                 v-if="productImageUrls.length > 0"
                 class="custom-carousel"
                 height="auto"
-                :hide-delimiters="productImageUrls.length <= 1"
+                hide-delimiters
                 :show-arrows="productImageUrls.length > 1 ? 'hover' : false"
               >
                 <v-carousel-item
@@ -74,6 +75,24 @@
               >
                 <v-icon color="grey-lighten-1" size="56">mdi-image-off-outline</v-icon>
                 <span>No preview available</span>
+              </div>
+
+              <!-- Thumbnail mini gallery -->
+              <div v-if="productImageUrls.length > 1" class="thumbnail-gallery">
+                <button
+                  v-for="(img, idx) in productImageUrls"
+                  :key="`thumb-${idx}`"
+                  class="thumbnail-btn"
+                  :class="{ 'thumbnail-active': activeImageIndex === idx }"
+                  @click="activeImageIndex = idx"
+                >
+                  <v-img
+                    :src="img"
+                    aspect-ratio="1"
+                    cover
+                    class="thumbnail-img"
+                  />
+                </button>
               </div>
             </div>
           </div>
@@ -439,6 +458,7 @@
   const snackbarText = ref('')
   const snackbarColor = ref('success')
   const imageDialog = ref(false)
+  const activeImageIndex = ref(0)
   const selectedImageIndex = ref(0)
   const reviews = ref([])
   const reviewsLoading = ref(false)
@@ -618,6 +638,7 @@
       const response = await fetchProductDetail(productId)
       product.value = response.data
       quantity.value = 1
+      activeImageIndex.value = 0
       imageDialog.value = false
       selectedImageIndex.value = 0
       await fetchReviews(product.value?.product_id || productId)
@@ -928,7 +949,7 @@
   width: 100%;
   background: #ffffff;
   border: 1px solid #0f172a;
-  box-shadow: 6px 6px 0px #0f172a;
+
 }
 .frame-header {
   height: 36px;
@@ -970,6 +991,7 @@
   padding: 16px;
   min-height: 360px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
 }
@@ -993,6 +1015,9 @@
 }
 
 /* Custom indicators & arrows override */
+.custom-carousel {
+  width: 100%;
+}
 .custom-carousel :deep(.v-window__container) {
   background: #fafafa;
 }
@@ -1036,7 +1061,7 @@
 .product-purchase-panel {
   background: #ffffff;
   border: 1px solid #0f172a;
-  box-shadow: 6px 6px 0px #0f172a;
+
   padding: 32px;
 }
 
@@ -1539,7 +1564,7 @@
   text-align: center;
   background: #ffffff;
   border: 1px solid #0f172a;
-  box-shadow: 6px 6px 0px #0f172a;
+
   padding: 48px 32px;
   display: flex;
   flex-direction: column;
@@ -1605,5 +1630,52 @@
     transform: none;
     margin-top: 4px;
   }
+}
+
+/* ── Thumbnail Gallery ── */
+.thumbnail-gallery {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 0 16px 16px;
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+}
+.thumbnail-gallery::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+.thumbnail-btn {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border: 2px solid transparent;
+  padding: 2px;
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+.thumbnail-btn:hover {
+  border-color: #cbd5e1;
+}
+.thumbnail-active {
+  border-color: #0f172a;
+}
+.thumbnail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 1px solid #e2e8f0;
+}
+
+:deep(.v-theme--dark) .thumbnail-active {
+  border-color: #f8fafc;
+}
+:deep(.v-theme--dark) .thumbnail-btn:hover:not(.thumbnail-active) {
+  border-color: #334155;
+}
+:deep(.v-theme--dark) .thumbnail-img {
+  border-color: #1e293b;
 }
 </style>

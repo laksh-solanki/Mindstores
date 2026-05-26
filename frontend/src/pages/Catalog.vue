@@ -749,7 +749,7 @@
 .flat-sidebar-card {
   background: #ffffff;
   border: 1px solid #0f172a;
-  box-shadow: 6px 6px 0px #0f172a;
+
   padding: 24px;
 }
 
@@ -810,7 +810,7 @@
   border-radius: 0 !important;
   border: 1px solid #0f172a !important;
   background: #ffffff !important;
-  box-shadow: none !important;
+
   transition: border-color 0.15s ease;
 }
 
@@ -1127,7 +1127,7 @@
 .custom-pagination :deep(.v-btn) {
   border-radius: 0 !important;
   border: 1px solid #cbd5e1 !important;
-  box-shadow: none !important;
+
   color: #0f172a !important;
   background: #ffffff !important;
   font-weight: 700 !important;
