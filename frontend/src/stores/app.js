@@ -161,14 +161,22 @@ function syncCurrencyPreferenceFromUser(user) {
     return;
   }
 
-  const countryCandidate =
-    user.country_code ||
-    user.countryCode ||
-    user.country ||
-    user.locale ||
-    user.language ||
-    "";
-  const resolvedCurrency = getCurrencyForCountry(countryCandidate, "");
+  let resolvedCurrency = "";
+  if (user.currency) {
+    resolvedCurrency = user.currency.trim().toUpperCase();
+  }
+
+  if (!resolvedCurrency) {
+    const countryCandidate =
+      user.country_code ||
+      user.countryCode ||
+      user.country ||
+      user.locale ||
+      user.language ||
+      "";
+    resolvedCurrency = getCurrencyForCountry(countryCandidate, "");
+  }
+
   if (!resolvedCurrency) {
     return;
   }

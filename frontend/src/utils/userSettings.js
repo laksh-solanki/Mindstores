@@ -3,7 +3,7 @@ const USER_SETTINGS_UPDATED_EVENT = 'mindstore:user-settings-updated'
 
 const DEFAULT_SETTINGS = {
   displayName: '',
-  currency: 'USD',
+  currency: 'INR',
   orderUpdates: true,
   promotionalEmails: false,
   quickCheckout: true,
@@ -151,6 +151,10 @@ function getBrowserCountryCode() {
 }
 
 function resolveCurrencyFromUserCountry(user = {}, fallbackCurrency = DEFAULT_SETTINGS.currency) {
+  if (user?.currency) {
+    return user.currency.trim().toUpperCase()
+  }
+
   const countryCandidates = [
     user?.country_code,
     user?.countryCode,

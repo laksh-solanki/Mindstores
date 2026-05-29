@@ -1,5 +1,6 @@
 import openSansRegularUrl from '@fontsource/open-sans/files/open-sans-latin-400-normal.woff2?url'
 import openSansBoldUrl from '@fontsource/open-sans/files/open-sans-latin-700-normal.woff2?url'
+import dancingScriptUrl from '@fontsource/dancing-script/files/dancing-script-latin-400-normal.woff2?url'
 import { PDFDocument } from 'pdf-lib'
 import brandLogoSvg from '@/assets/logo.svg?raw'
 
@@ -53,31 +54,36 @@ function arrayBufferToDataUrl(buffer, mimeType) {
 async function ensureInvoiceFontAssets() {
   if (!invoiceFontAssetsPromise) {
     invoiceFontAssetsPromise = (async () => {
-      const [regularResponse, boldResponse] = await Promise.all([
+      const [regularResponse, boldResponse, cursiveResponse] = await Promise.all([
         fetch(openSansRegularUrl),
-        fetch(openSansBoldUrl)
+        fetch(openSansBoldUrl),
+        fetch(dancingScriptUrl)
       ])
 
-      if (!regularResponse.ok || !boldResponse.ok) {
+      if (!regularResponse.ok || !boldResponse.ok || !cursiveResponse.ok) {
         throw new Error('Invoice font assets failed to load')
       }
 
-      const [regularBuffer, boldBuffer] = await Promise.all([
+      const [regularBuffer, boldBuffer, cursiveBuffer] = await Promise.all([
         regularResponse.arrayBuffer(),
-        boldResponse.arrayBuffer()
+        boldResponse.arrayBuffer(),
+        cursiveResponse.arrayBuffer()
       ])
 
       if (typeof FontFace !== 'undefined' && document?.fonts) {
         const regularFace = new FontFace(FONT_FAMILY, regularBuffer.slice(0), { weight: '400' })
         const boldFace = new FontFace(FONT_FAMILY, boldBuffer.slice(0), { weight: '700' })
-        await Promise.all([regularFace.load(), boldFace.load()])
+        const cursiveFace = new FontFace('Invoice Cursive', cursiveBuffer.slice(0), { weight: '400' })
+        await Promise.all([regularFace.load(), boldFace.load(), cursiveFace.load()])
         document.fonts.add(regularFace)
         document.fonts.add(boldFace)
+        document.fonts.add(cursiveFace)
       }
 
       return {
         regularDataUrl: arrayBufferToDataUrl(regularBuffer, 'font/woff2'),
-        boldDataUrl: arrayBufferToDataUrl(boldBuffer, 'font/woff2')
+        boldDataUrl: arrayBufferToDataUrl(boldBuffer, 'font/woff2'),
+        cursiveDataUrl: arrayBufferToDataUrl(cursiveBuffer, 'font/woff2')
       }
     })()
   }
@@ -141,9 +147,10 @@ function textNode({
   size = 10,
   weight = 400,
   fill = '#1E293B',
-  anchor = 'start'
+  anchor = 'start',
+  family = FONT_FAMILY
 }) {
-  return `<text x="${x}" y="${y}" font-family="${FONT_FAMILY}" font-size="${size}" font-weight="${weight}" fill="${fill}" text-anchor="${anchor}">${escapeXml(value)}</text>`
+  return `<text x="${x}" y="${y}" font-family="${family}" font-size="${size}" font-weight="${weight}" fill="${fill}" text-anchor="${anchor}">${escapeXml(value)}</text>`
 }
 
 function renderStatusBadge(status, x, y) {
@@ -153,35 +160,35 @@ function renderStatusBadge(status, x, y) {
   let label = 'PAID'
 
   switch (cleanStatus) {
-  case 'completed': 
-  case 'paid': 
-  case 'delivered': {
-    bg = '#E6F4EA'
-    text = '#137333'
-    label = 'PAID'
-  
-  break;
-  }
-  case 'pending': 
-  case 'processing': 
-  case 'ordered': {
-    bg = '#FEF7E0' // light gold/yellow
-    text = '#B06000'
-    label = 'PENDING'
-  
-  break;
-  }
-  case 'cancelled': 
-  case 'failed': {
-    bg = '#FCE8E6' // light red
-    text = '#C5221F'
-    label = 'CANCELLED'
-  
-  break;
-  }
-  default: {
-    label = cleanStatus.toUpperCase()
-  }
+    case 'completed':
+    case 'paid':
+    case 'delivered': {
+      bg = '#E6F4EA'
+      text = '#137333'
+      label = 'PAID'
+
+      break;
+    }
+    case 'pending':
+    case 'processing':
+    case 'ordered': {
+      bg = '#FEF7E0' // light gold/yellow
+      text = '#B06000'
+      label = 'PENDING'
+
+      break;
+    }
+    case 'cancelled':
+    case 'failed': {
+      bg = '#FCE8E6' // light red
+      text = '#C5221F'
+      label = 'CANCELLED'
+
+      break;
+    }
+    default: {
+      label = cleanStatus.toUpperCase()
+    }
   }
 
   const badgeWidth = 65
@@ -206,7 +213,8 @@ function buildOverlay({
   formatDate,
   measureContext,
   regularDataUrl,
-  boldDataUrl
+  boldDataUrl,
+  cursiveDataUrl
 }) {
   const sourceItems = Array.isArray(order.items) ? order.items : pageItems
   const subtotal = Number(order.subtotal_amount || sourceItems.reduce((sum, item) => {
@@ -214,7 +222,7 @@ function buildOverlay({
   }, 0))
   const discount = Number(order.discount_amount || 0)
   const total = Number(order.total_amount || Math.max(0, subtotal - discount))
-  
+
   const inkDark = '#0F172A' // Slate-900
   const inkMedium = '#475569' // Slate-600
   const inkLight = '#64748B' // Slate-500
@@ -265,18 +273,18 @@ function buildOverlay({
   const isLastPage = pageIndex === pageCount - 1
   const totalsBlock = isLastPage
     ? [
-        textNode({ x: 360, y: 542, value: 'Subtotal', size: 10, fill: inkMedium }),
-        textNode({ x: 540, y: 542, value: formatAmount(subtotal), size: 10, anchor: 'end', weight: 700 }),
-        textNode({ x: 360, y: 560, value: 'Discount', size: 10, fill: inkMedium }),
-        textNode({ x: 540, y: 560, value: formatAmount(discount), size: 10, anchor: 'end', weight: 700 }),
-        `<rect x="340" y="575" width="210.5" height="34" rx="4" fill="${brandTeal}" />`,
-        textNode({ x: 355, y: 596, value: 'Total Paid', size: 12, weight: 700, fill: '#FFFFFF' }),
-        textNode({ x: 530, y: 596, value: formatAmount(total), size: 13, weight: 700, fill: '#FFFFFF', anchor: 'end' })
-      ].join('')
+      textNode({ x: 360, y: 542, value: 'Subtotal', size: 10, fill: inkMedium }),
+      textNode({ x: 540, y: 542, value: formatAmount(subtotal), size: 10, anchor: 'end', weight: 700 }),
+      textNode({ x: 360, y: 560, value: 'Discount', size: 10, fill: inkMedium }),
+      textNode({ x: 540, y: 560, value: formatAmount(discount), size: 10, anchor: 'end', weight: 700 }),
+      `<rect x="340" y="575" width="210.5" height="34" rx="4" fill="${brandTeal}" />`,
+      textNode({ x: 355, y: 596, value: 'Total Paid', size: 12, weight: 700, fill: '#FFFFFF' }),
+      textNode({ x: 530, y: 596, value: formatAmount(total), size: 13, weight: 700, fill: '#FFFFFF', anchor: 'end' })
+    ].join('')
     : [
-        `<rect x="340" y="575" width="210.5" height="34" rx="4" fill="#F8FAFC" />`,
-        textNode({ x: 445, y: 596, value: 'Continued on next page', size: 10, weight: 700, fill: inkMedium, anchor: 'middle' })
-      ].join('')
+      `<rect x="340" y="575" width="210.5" height="34" rx="4" fill="#F8FAFC" />`,
+      textNode({ x: 445, y: 596, value: 'Continued on next page', size: 10, weight: 700, fill: inkMedium, anchor: 'middle' })
+    ].join('')
 
   // Build customer and store info
   const billedToName = billedToLines[0] || 'Customer'
@@ -295,6 +303,11 @@ function buildOverlay({
           src: url("${boldDataUrl}") format("woff2");
           font-weight: 700;
         }
+        @font-face {
+          font-family: "Invoice Cursive";
+          src: url("${cursiveDataUrl}") format("woff2");
+          font-weight: 400;
+        }
       </style>
 
       <!-- Clean Background Page -->
@@ -309,7 +322,7 @@ function buildOverlay({
       ${textNode({ x: 105, y: 64, value: 'Mindstores', size: 18, weight: 700, fill: inkDark })}
       ${textNode({ x: 105, y: 78, value: 'Digital Storefront', size: 10, fill: inkLight })}
       
-      ${textNode({ x: 550.5, y: 64, value: 'INVOICE', size: 22, weight: 700, fill: brandTeal, anchor: 'end' })}
+      ${textNode({ x: 550.5, y: 64, value: 'INVOICE', size: 36, weight: 400, fill: brandTeal, anchor: 'end', family: 'Invoice Cursive' })}
       ${pageCount > 1 ? textNode({ x: 550.5, y: 78, value: `Page ${pageIndex + 1} of ${pageCount}`, size: 9, fill: inkLight, anchor: 'end' }) : ''}
 
       <!-- Top Meta Info Divider -->
@@ -335,12 +348,12 @@ function buildOverlay({
       ${textNode({ x: 45, y: 178, value: 'BILLED TO', size: 9, weight: 700, fill: inkLight })}
       ${textNode({ x: 45, y: 196, value: billedToName, size: 11, weight: 700, fill: inkDark })}
       ${billedToDetails.map((line, index) => textNode({
-        x: 45,
-        y: 211 + (index * 15),
-        value: line,
-        size: 10,
-        fill: inkMedium
-      })).join('')}
+    x: 45,
+    y: 211 + (index * 15),
+    value: line,
+    size: 10,
+    fill: inkMedium
+  })).join('')}
 
       ${textNode({ x: 360, y: 178, value: 'FROM', size: 9, weight: 700, fill: inkLight })}
       ${textNode({ x: 360, y: 196, value: 'Mindstores Inc.', size: 11, weight: 700, fill: inkDark })}

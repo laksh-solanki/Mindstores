@@ -9,6 +9,7 @@
     </v-main>
 
     <AppFooter v-if="!isAuthPage && !isAdminPage" />
+    <DisclaimerDialog />
     <CookieConsent />
     <FullScreenLoader :model-value="showFullscreenLoader" />
   </v-app>
@@ -21,6 +22,7 @@
   import AppFooter from '@/components/AppFooter.vue'
   import AppHeader from '@/components/AppHeader.vue'
   import CookieConsent from '@/components/CookieConsent.vue'
+  import DisclaimerDialog from '@/components/DisclaimerDialog.vue'
   import FullScreenLoader from '@/components/FullScreenLoader.vue'
   import { useAppStore } from '@/stores/app'
 

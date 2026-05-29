@@ -11,13 +11,8 @@
       </v-breadcrumbs>
     </div>
 
-    <div v-else class="flat-empty-products text-center py-10">
-      <v-icon class="mb-3" color="warning" size="48">mdi-folder-alert-outline</v-icon>
-      <h2 class="empty-title">Category not found</h2>
-      <p class="empty-text">The requested category path is invalid.</p>
-      <div class="mt-4">
-        <v-btn class="action-btn-back" rounded="0" to="/" variant="flat">Back to Home</v-btn>
-      </div>
+    <div v-else class="d-flex justify-center align-center py-12">
+      <v-progress-circular color="teal-darken-1" indeterminate size="64" />
     </div>
 
     <v-row v-if="catalogEntry" class="ga-0">
@@ -100,8 +95,14 @@
                   label="Sort By"
                   variant="outlined"
                 />
-                
-                <v-btn class="flat-reset-btn" rounded="0" variant="outlined" @click="resetFilters">Reset Filters</v-btn>
+
+                <v-btn
+                  class="flat-reset-btn"
+                  rounded="0"
+                  variant="outlined"
+                  @click="resetFilters"
+                  >Reset Filters</v-btn
+                >
               </div>
             </v-expansion-panel-text>
           </v-expansion-panel>
@@ -113,7 +114,9 @@
           class="flat-sidebar-card position-sticky"
           style="top: 5.5rem"
         >
-          <div class="sidebar-header d-flex align-center justify-space-between ga-2">
+          <div
+            class="sidebar-header d-flex align-center justify-space-between ga-2"
+          >
             <span class="sidebar-title">Filters</span>
             <button class="flat-reset-link" @click="resetFilters">
               Reset
@@ -197,15 +200,12 @@
         </div>
 
         <v-row v-if="loading" v-slot no-gutters>
-          <v-col
-            v-for="n in 8"
-            :key="n"
-            class="pa-0"
-            cols="12"
-            lg="4"
-            sm="6"
-          >
-            <v-skeleton-loader class="border rounded-0" style="margin-right: -1px; margin-bottom: -1px;" type="image, article" />
+          <v-col v-for="n in 8" :key="n" class="pa-0" cols="12" lg="4" sm="6">
+            <v-skeleton-loader
+              class="border rounded-0"
+              style="margin-right: -1px; margin-bottom: -1px"
+              type="image, article"
+            />
           </v-col>
         </v-row>
 
@@ -234,24 +234,43 @@
                   :src="productImageUrl(product)"
                 />
                 <div v-else class="no-image-grid-placeholder">
-                  <v-icon color="grey-lighten-1" size="36">mdi-image-off-outline</v-icon>
+                  <v-icon color="grey-lighten-1" size="36"
+                    >mdi-image-off-outline</v-icon
+                  >
                 </div>
               </div>
 
               <div class="product-card-body">
                 <div class="product-card-meta">
-                  <span class="product-grid-category">{{ getCompanyLabel(product) }}</span>
-                  <span class="grid-badge-stock" :class="{ 'grid-badge-stock--out': isProductSoldOut(product) }">
+                  <span class="product-grid-category">{{
+                    getCompanyLabel(product)
+                  }}</span>
+                  <span
+                    class="grid-badge-stock"
+                    :class="{
+                      'grid-badge-stock--out': isProductSoldOut(product),
+                    }"
+                  >
                     <span class="status-dot" />
-                    {{ isProductSoldOut(product) ? 'Sold out' : `${Number(product.stock || 0)} left` }}
+                    {{
+                      isProductSoldOut(product)
+                        ? "Sold out"
+                        : `${Number(product.stock || 0)} left`
+                    }}
                   </span>
                 </div>
 
-                <h3 class="product-grid-name" :title="product.name">{{ product.name }}</h3>
-                <p class="product-grid-subcat">{{ product.subcategory || catalogEntry.category.label }}</p>
+                <h3 class="product-grid-name" :title="product.name">
+                  {{ product.name }}
+                </h3>
+                <p class="product-grid-subcat">
+                  {{ product.subcategory || catalogEntry.category.label }}
+                </p>
 
                 <div class="product-grid-footer">
-                  <span class="product-grid-price">{{ formatAmount(product.price) }}</span>
+                  <span class="product-grid-price">{{
+                    formatAmount(product.price)
+                  }}</span>
                   <button
                     :aria-label="`Add ${product.name} to cart`"
                     class="product-grid-cart-btn"
@@ -267,12 +286,19 @@
         </v-row>
 
         <div v-else class="flat-empty-products py-10">
-          <v-icon class="mb-3" color="grey-lighten-1" size="48">mdi-package-variant-remove</v-icon>
+          <v-icon class="mb-3" color="grey-lighten-1" size="48"
+            >mdi-package-variant-remove</v-icon
+          >
           <h3 class="empty-title">No products match your filters</h3>
-          <p class="empty-text">Change company, price, or stock filters to load more results.</p>
+          <p class="empty-text">
+            Change company, price, or stock filters to load more results.
+          </p>
         </div>
 
-        <div v-if="!loading && totalPages > 1" class="d-flex justify-center mt-6">
+        <div
+          v-if="!loading && totalPages > 1"
+          class="d-flex justify-center mt-6"
+        >
           <v-pagination
             v-model="currentPage"
             class="custom-pagination"
@@ -295,418 +321,447 @@
 </template>
 
 <script setup>
-  import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
-  import { useRoute, useRouter } from 'vue-router'
-  import { useDisplay } from 'vuetify'
-  import BaseAlert from '@/components/BaseAlert.vue'
-  import { useAppStore } from '@/stores/app'
-  import { useCartStore } from '@/stores/cart'
-  import { resolveCatalogEntryFromProducts } from '@/utils/catalog'
-  import { useCurrency } from '@/utils/currency'
-  import { safeDisplayImageUrl } from '@/utils/images'
-  import { PRODUCTS_CACHE_INVALIDATED_EVENT } from '@/utils/productCache'
-  import {
-    extractProductItems,
-    extractProductsMeta,
-    fetchProductList,
-  } from '@/utils/products'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useDisplay } from "vuetify";
+import BaseAlert from "@/components/BaseAlert.vue";
+import { useAppStore } from "@/stores/app";
+import { useCartStore } from "@/stores/cart";
+import { resolveCatalogEntryFromProducts } from "@/utils/catalog";
+import { useCurrency } from "@/utils/currency";
+import { safeDisplayImageUrl } from "@/utils/images";
+import { PRODUCTS_CACHE_INVALIDATED_EVENT } from "@/utils/productCache";
+import {
+  extractProductItems,
+  extractProductsMeta,
+  fetchProductList,
+} from "@/utils/products";
 
-  const route = useRoute()
-  const router = useRouter()
-  const appStore = useAppStore()
-  const cartStore = useCartStore()
-  const { formatAmount } = useCurrency()
-  const { smAndDown } = useDisplay()
+const route = useRoute();
+const router = useRouter();
+const appStore = useAppStore();
+const cartStore = useCartStore();
+const { formatAmount } = useCurrency();
+const { smAndDown } = useDisplay();
 
-  const snackbar = ref(false)
-  const snackbarText = ref('')
-  const snackbarColor = ref('success')
+const snackbar = ref(false);
+const snackbarText = ref("");
+const snackbarColor = ref("success");
 
-  const loadingSource = ref(false)
-  const loadingProducts = ref(false)
-  const loading = computed(() => loadingSource.value || loadingProducts.value)
-  const catalogEntry = ref(null)
-  const products = ref([])
-  const sourceProducts = ref([])
-  const totalItems = ref(0)
-  const totalPages = ref(1)
-  const currentPage = ref(1)
-  const pageSize = 12
-  const suppressFilterWatch = ref(false)
-  const priceBounds = ref({ min: 0, max: 0 })
-  const priceRange = ref([0, 0])
-  const sourceRequestVersion = ref(0)
-  const productsRequestVersion = ref(0)
-  const mobileFilterPanel = ref(null)
-  const filters = reactive({
-    search: '',
-    company: 'All',
-    inStock: false,
-    sort: 'newest',
-  })
-  const sortOptions = [
-    { label: 'Newest', value: 'newest' },
-    { label: 'Price: Low to High', value: 'price_asc' },
-    { label: 'Price: High to Low', value: 'price_desc' },
-    { label: 'Name: A to Z', value: 'name_asc' },
-  ]
+const loadingSource = ref(false);
+const loadingProducts = ref(false);
+const loading = computed(() => loadingSource.value || loadingProducts.value);
+const catalogEntry = ref(null);
+const products = ref([]);
+const sourceProducts = ref([]);
+const totalItems = ref(0);
+const totalPages = ref(1);
+const currentPage = ref(1);
+const pageSize = 12;
+const suppressFilterWatch = ref(false);
+const priceBounds = ref({ min: 0, max: 0 });
+const priceRange = ref([0, 0]);
+const sourceRequestVersion = ref(0);
+const productsRequestVersion = ref(0);
+const mobileFilterPanel = ref(null);
+const filters = reactive({
+  search: "",
+  company: "All",
+  inStock: false,
+  sort: "newest",
+});
+const sortOptions = [
+  { label: "Newest", value: "newest" },
+  { label: "Price: Low to High", value: "price_asc" },
+  { label: "Price: High to Low", value: "price_desc" },
+  { label: "Name: A to Z", value: "name_asc" },
+];
 
-  let filterFetchTimer = null
+let filterFetchTimer = null;
 
-  const isAllProductsRoute = computed(() => route.name === 'CatalogAll')
-  const isMobileFilters = computed(() => smAndDown.value)
-  const querySearchTerm = computed(() => String(route.query.search || '').trim().slice(0, 80))
+const isAllProductsRoute = computed(() => route.name === "CatalogAll");
+const isMobileFilters = computed(() => smAndDown.value);
+const querySearchTerm = computed(() =>
+  String(route.query.search || "")
+    .trim()
+    .slice(0, 80),
+);
 
-  const breadcrumbItems = computed(() => {
-    if (!catalogEntry.value) return []
+const breadcrumbItems = computed(() => {
+  if (!catalogEntry.value) return [];
 
-    const items = [
-      {
-        title: '/ Product',
-        to: '/products',
-      },
-    ]
+  const items = [
+    {
+      title: "/ Product",
+      to: "/products",
+    },
+  ];
 
-    if (!catalogEntry.value.isAll) {
+  if (!catalogEntry.value.isAll) {
+    items.push({
+      title: catalogEntry.value.category.label,
+      to: `/${catalogEntry.value.category.key}`,
+    });
+
+    if (catalogEntry.value.item) {
       items.push({
-        title: catalogEntry.value.category.label,
-        to: `/${catalogEntry.value.category.key}`,
-      })
-
-      if (catalogEntry.value.item) {
-        items.push({
-          title: catalogEntry.value.item.name,
-          to: catalogEntry.value.canonicalPath,
-        })
-      }
+        title: catalogEntry.value.item.name,
+        to: catalogEntry.value.canonicalPath,
+      });
     }
-
-    const activeSearch = String(filters.search || '').trim()
-    if (activeSearch) {
-      items.push({
-        title: activeSearch,
-      })
-    }
-
-    const activeItem = items.at(-1)
-    if (activeItem) {
-      activeItem.disabled = true
-      delete activeItem.to
-    }
-
-    return items
-  })
-
-  const companyOptions = computed(() => {
-    const companies = new Set()
-    for (const product of sourceProducts.value) {
-      companies.add(getCompanyLabel(product))
-    }
-    return ['All', ...Array.from(companies).filter(Boolean).toSorted((a, b) => a.localeCompare(b))]
-  })
-
-  const resultsLabel = computed(() => {
-    if (totalItems.value <= 0) return '0 items'
-    return `${products.value.length} of ${totalItems.value} items`
-  })
-
-  function getCompanyLabel(product) {
-    const explicitCompany = String(product?.company || '').trim()
-    if (explicitCompany) return explicitCompany
-    const fallbackNameToken = String(product?.name || '').trim().split(/\s+/)[0]
-    return fallbackNameToken || 'Unknown'
   }
 
-  function productImageUrl(product) {
-    return safeDisplayImageUrl(product?.image_url)
+  const activeSearch = String(filters.search || "").trim();
+  if (activeSearch) {
+    items.push({
+      title: activeSearch,
+    });
   }
 
-  function buildCategoryQuery() {
-    if (!catalogEntry.value) return {}
-    if (catalogEntry.value.isAll) return {}
-    if (!catalogEntry.value.item) {
-      return {
-        category: catalogEntry.value.category.apiCategory,
-      }
-    }
+  const activeItem = items.at(-1);
+  if (activeItem) {
+    activeItem.disabled = true;
+    delete activeItem.to;
+  }
+
+  return items;
+});
+
+const companyOptions = computed(() => {
+  const companies = new Set();
+  for (const product of sourceProducts.value) {
+    companies.add(getCompanyLabel(product));
+  }
+  return [
+    "All",
+    ...Array.from(companies)
+      .filter(Boolean)
+      .toSorted((a, b) => a.localeCompare(b)),
+  ];
+});
+
+const resultsLabel = computed(() => {
+  if (totalItems.value <= 0) return "0 items";
+  return `${products.value.length} of ${totalItems.value} items`;
+});
+
+function getCompanyLabel(product) {
+  const explicitCompany = String(product?.company || "").trim();
+  if (explicitCompany) return explicitCompany;
+  const fallbackNameToken = String(product?.name || "")
+    .trim()
+    .split(/\s+/)[0];
+  return fallbackNameToken || "Unknown";
+}
+
+function productImageUrl(product) {
+  return safeDisplayImageUrl(product?.image_url);
+}
+
+function buildCategoryQuery() {
+  if (!catalogEntry.value) return {};
+  if (catalogEntry.value.isAll) return {};
+  if (!catalogEntry.value.item) {
     return {
       category: catalogEntry.value.category.apiCategory,
-      subcategory: catalogEntry.value.item.apiSubcategory,
-    }
+    };
   }
+  return {
+    category: catalogEntry.value.category.apiCategory,
+    subcategory: catalogEntry.value.item.apiSubcategory,
+  };
+}
 
-  async function fetchSourceProducts() {
-    const requestId = ++sourceRequestVersion.value
-    loadingSource.value = true
+async function fetchSourceProducts() {
+  const requestId = ++sourceRequestVersion.value;
+  loadingSource.value = true;
 
-    try {
-      const response = await fetchProductList({
-        params: {
-          limit: 250,
-          sort: 'newest',
-        },
-      })
+  try {
+    const response = await fetchProductList({
+      params: {
+        limit: 250,
+        sort: "newest",
+      },
+    });
 
-      if (requestId !== sourceRequestVersion.value) return
-      const allProducts = extractProductItems(response.data)
+    if (requestId !== sourceRequestVersion.value) return;
+    const allProducts = extractProductItems(response.data);
 
-      const nextCatalogEntry = isAllProductsRoute.value
-        ? {
+    const nextCatalogEntry = isAllProductsRoute.value
+      ? {
           category: {
-            key: 'products',
-            label: 'Product',
-            apiCategory: '',
+            key: "products",
+            label: "Product",
+            apiCategory: "",
           },
           item: null,
           isAll: true,
-          canonicalPath: '/products',
+          canonicalPath: "/products",
         }
-        : resolveCatalogEntryFromProducts(
+      : resolveCatalogEntryFromProducts(
           allProducts,
           route.params.category,
           route.params.subcategory,
-        )
+        );
 
-      if (!nextCatalogEntry) {
-        catalogEntry.value = null
-        sourceProducts.value = []
-        products.value = []
-        totalItems.value = 0
-        totalPages.value = 1
-        currentPage.value = 1
-        return
-      }
-
-      catalogEntry.value = nextCatalogEntry
-
-      if (route.path !== nextCatalogEntry.canonicalPath) {
-        router.replace({
-          path: nextCatalogEntry.canonicalPath,
-          query: route.query,
-        })
-        return
-      }
-
-      sourceProducts.value = nextCatalogEntry.isAll
-        ? allProducts
-        : allProducts.filter((product) => {
-          if (product?.category !== nextCatalogEntry.category.apiCategory) {
-            return false
-          }
-          return !nextCatalogEntry.item || product?.subcategory === nextCatalogEntry.item.apiSubcategory
-        })
-
-      if (sourceProducts.value.length === 0) {
-        priceBounds.value = { min: 0, max: 0 }
-        priceRange.value = [0, 0]
-      } else {
-        const allPrices = sourceProducts.value.map((product) => Number(product.price || 0))
-        const minPrice = Math.floor(Math.min(...allPrices))
-        const maxPrice = Math.ceil(Math.max(...allPrices))
-        priceBounds.value = { min: minPrice, max: maxPrice }
-        priceRange.value = [minPrice, maxPrice]
-      }
-
-      suppressFilterWatch.value = true
-      filters.company = 'All'
-      filters.inStock = false
-      filters.sort = 'newest'
-      filters.search = querySearchTerm.value
-      currentPage.value = 1
-      suppressFilterWatch.value = false
-      await fetchProducts()
-    } catch (error) {
-      if (requestId !== sourceRequestVersion.value) return
-      console.error('Failed to fetch source products:', error)
-      catalogEntry.value = null
-      sourceProducts.value = []
-      products.value = []
-      totalItems.value = 0
-      totalPages.value = 1
-      currentPage.value = 1
-    } finally {
-      if (requestId === sourceRequestVersion.value) {
-        loadingSource.value = false
-      }
-    }
-  }
-
-  async function fetchProducts() {
-    if (!catalogEntry.value) {
-      products.value = []
-      return
+    if (!nextCatalogEntry) {
+      catalogEntry.value = null;
+      sourceProducts.value = [];
+      products.value = [];
+      totalItems.value = 0;
+      totalPages.value = 1;
+      currentPage.value = 1;
+      return;
     }
 
-    const requestId = ++productsRequestVersion.value
-    loadingProducts.value = true
-    try {
-      const params = {
-        ...buildCategoryQuery(),
-        sort: filters.sort,
-        include_meta: true,
-        page: currentPage.value,
-        page_size: pageSize,
-      }
+    catalogEntry.value = nextCatalogEntry;
 
-      if (filters.company && filters.company !== 'All') {
-        params.company = filters.company
-      }
-      const normalizedSearch = String(filters.search || '').trim()
-      if (normalizedSearch) {
-        params.search = normalizedSearch
-      }
-      if (filters.inStock) {
-        params.in_stock = true
-      }
-      const [minPrice, maxPrice] = priceRange.value
-      if (minPrice > priceBounds.value.min) {
-        params.min_price = minPrice
-      }
-      if (maxPrice < priceBounds.value.max) {
-        params.max_price = maxPrice
-      }
-
-      const response = await fetchProductList({ params })
-      if (requestId !== productsRequestVersion.value) return
-
-      const payload = response.data
-      const normalizedItems = extractProductItems(payload)
-      const normalizedMeta = extractProductsMeta(payload)
-
-      products.value = normalizedItems
-      totalItems.value = Number(normalizedMeta?.total ?? normalizedItems.length)
-      totalPages.value = Math.max(1, Number(normalizedMeta?.total_pages || 1))
-    } catch (error) {
-      if (requestId !== productsRequestVersion.value) return
-      console.error('Failed to fetch filtered products:', error)
-      products.value = []
-      totalItems.value = 0
-      totalPages.value = 1
-    } finally {
-      if (requestId === productsRequestVersion.value) {
-        loadingProducts.value = false
-      }
-    }
-  }
-
-  function scheduleFetchProducts() {
-    if (filterFetchTimer) {
-      clearTimeout(filterFetchTimer)
-    }
-    filterFetchTimer = setTimeout(() => {
-      fetchProducts()
-    }, 260)
-  }
-
-  function resetFilters() {
-    const wasPageOne = currentPage.value === 1
-    suppressFilterWatch.value = true
-    filters.search = ''
-    filters.company = 'All'
-    filters.inStock = false
-    filters.sort = 'newest'
-    priceRange.value = [priceBounds.value.min, priceBounds.value.max]
-    suppressFilterWatch.value = false
-    currentPage.value = 1
-
-    if (route.query.search) {
+    if (route.path !== nextCatalogEntry.canonicalPath) {
       router.replace({
-        path: route.path,
-        query: {
-          ...route.query,
-          search: undefined,
-        },
-      })
+        path: nextCatalogEntry.canonicalPath,
+        query: route.query,
+      });
+      return;
     }
 
-    if (wasPageOne) {
-      scheduleFetchProducts()
+    sourceProducts.value = nextCatalogEntry.isAll
+      ? allProducts
+      : allProducts.filter((product) => {
+          if (product?.category !== nextCatalogEntry.category.apiCategory) {
+            return false;
+          }
+          return (
+            !nextCatalogEntry.item ||
+            product?.subcategory === nextCatalogEntry.item.apiSubcategory
+          );
+        });
+
+    if (sourceProducts.value.length === 0) {
+      priceBounds.value = { min: 0, max: 0 };
+      priceRange.value = [0, 0];
+    } else {
+      const allPrices = sourceProducts.value.map((product) =>
+        Number(product.price || 0),
+      );
+      const minPrice = Math.floor(Math.min(...allPrices));
+      const maxPrice = Math.ceil(Math.max(...allPrices));
+      priceBounds.value = { min: minPrice, max: maxPrice };
+      priceRange.value = [minPrice, maxPrice];
+    }
+
+    suppressFilterWatch.value = true;
+    filters.company = "All";
+    filters.inStock = false;
+    filters.sort = "newest";
+    filters.search = querySearchTerm.value;
+    currentPage.value = 1;
+    suppressFilterWatch.value = false;
+    await fetchProducts();
+  } catch (error) {
+    if (requestId !== sourceRequestVersion.value) return;
+    console.error("Failed to fetch source products:", error);
+    catalogEntry.value = null;
+    sourceProducts.value = [];
+    products.value = [];
+    totalItems.value = 0;
+    totalPages.value = 1;
+    currentPage.value = 1;
+  } finally {
+    if (requestId === sourceRequestVersion.value) {
+      loadingSource.value = false;
     }
   }
+}
 
-  function openProduct(productId) {
-    router.push(`/product/${productId}`)
+async function fetchProducts() {
+  if (!catalogEntry.value) {
+    products.value = [];
+    return;
   }
 
-  const productStock = (product) => Number(product?.stock || 0)
-  const isProductSoldOut = (product) => productStock(product) <= 0
+  const requestId = ++productsRequestVersion.value;
+  loadingProducts.value = true;
+  try {
+    const params = {
+      ...buildCategoryQuery(),
+      sort: filters.sort,
+      include_meta: true,
+      page: currentPage.value,
+      page_size: pageSize,
+    };
 
-  async function quickAddToCart(product) {
-    if (!appStore.isAuthenticated) {
-      router.push('/login')
-      return
+    if (filters.company && filters.company !== "All") {
+      params.company = filters.company;
+    }
+    const normalizedSearch = String(filters.search || "").trim();
+    if (normalizedSearch) {
+      params.search = normalizedSearch;
+    }
+    if (filters.inStock) {
+      params.in_stock = true;
+    }
+    const [minPrice, maxPrice] = priceRange.value;
+    if (minPrice > priceBounds.value.min) {
+      params.min_price = minPrice;
+    }
+    if (maxPrice < priceBounds.value.max) {
+      params.max_price = maxPrice;
     }
 
-    if (isProductSoldOut(product)) {
-      snackbarText.value = 'This product is sold out'
-      snackbarColor.value = 'warning'
-      snackbar.value = true
-      return
-    }
+    const response = await fetchProductList({ params });
+    if (requestId !== productsRequestVersion.value) return;
 
-    try {
-      await cartStore.addToCart(product.product_id, 1)
-      snackbarText.value = 'Added to cart'
-      snackbarColor.value = 'success'
-      snackbar.value = true
-    } catch (error) {
-      snackbarText.value = error?.response?.data?.message || 'Unable to add item'
-      snackbarColor.value = 'warning'
-      snackbar.value = true
+    const payload = response.data;
+    const normalizedItems = extractProductItems(payload);
+    const normalizedMeta = extractProductsMeta(payload);
+
+    products.value = normalizedItems;
+    totalItems.value = Number(normalizedMeta?.total ?? normalizedItems.length);
+    totalPages.value = Math.max(1, Number(normalizedMeta?.total_pages || 1));
+  } catch (error) {
+    if (requestId !== productsRequestVersion.value) return;
+    console.error("Failed to fetch filtered products:", error);
+    products.value = [];
+    totalItems.value = 0;
+    totalPages.value = 1;
+  } finally {
+    if (requestId === productsRequestVersion.value) {
+      loadingProducts.value = false;
     }
   }
+}
 
-  watch(
-    () => [route.name, route.params.category, route.params.subcategory],
-    async () => {
-      await fetchSourceProducts()
-    },
-    { immediate: true },
-  )
+function scheduleFetchProducts() {
+  if (filterFetchTimer) {
+    clearTimeout(filterFetchTimer);
+  }
+  filterFetchTimer = setTimeout(() => {
+    fetchProducts();
+  }, 260);
+}
 
-  watch(querySearchTerm, () => {
-    if (!catalogEntry.value) return
-    if (filters.search === querySearchTerm.value) return
+function resetFilters() {
+  const wasPageOne = currentPage.value === 1;
+  suppressFilterWatch.value = true;
+  filters.search = "";
+  filters.company = "All";
+  filters.inStock = false;
+  filters.sort = "newest";
+  priceRange.value = [priceBounds.value.min, priceBounds.value.max];
+  suppressFilterWatch.value = false;
+  currentPage.value = 1;
 
-    suppressFilterWatch.value = true
-    filters.search = querySearchTerm.value
-    currentPage.value = 1
-    suppressFilterWatch.value = false
-    fetchProducts()
-  })
-
-  watch(
-    () => [filters.search, filters.company, filters.inStock, filters.sort, priceRange.value[0], priceRange.value[1]],
-    () => {
-      if (!catalogEntry.value) return
-      if (suppressFilterWatch.value) return
-      if (currentPage.value !== 1) {
-        currentPage.value = 1
-        return
-      }
-      scheduleFetchProducts()
-    },
-  )
-
-  watch(currentPage, () => {
-    if (!catalogEntry.value) return
-    fetchProducts()
-  })
-
-  function handleProductsInvalidated() {
-    fetchSourceProducts()
+  if (route.query.search) {
+    router.replace({
+      path: route.path,
+      query: {
+        ...route.query,
+        search: undefined,
+      },
+    });
   }
 
-  onMounted(() => {
-    window.addEventListener(PRODUCTS_CACHE_INVALIDATED_EVENT, handleProductsInvalidated)
-  })
+  if (wasPageOne) {
+    scheduleFetchProducts();
+  }
+}
 
-  onUnmounted(() => {
-    if (filterFetchTimer) {
-      clearTimeout(filterFetchTimer)
+function openProduct(productId) {
+  router.push(`/product/${productId}`);
+}
+
+const productStock = (product) => Number(product?.stock || 0);
+const isProductSoldOut = (product) => productStock(product) <= 0;
+
+async function quickAddToCart(product) {
+  if (!appStore.isAuthenticated) {
+    router.push("/login");
+    return;
+  }
+
+  if (isProductSoldOut(product)) {
+    snackbarText.value = "This product is sold out";
+    snackbarColor.value = "warning";
+    snackbar.value = true;
+    return;
+  }
+
+  try {
+    await cartStore.addToCart(product.product_id, 1);
+    snackbarText.value = "Added to cart";
+    snackbarColor.value = "success";
+    snackbar.value = true;
+  } catch (error) {
+    snackbarText.value = error?.response?.data?.message || "Unable to add item";
+    snackbarColor.value = "warning";
+    snackbar.value = true;
+  }
+}
+
+watch(
+  () => [route.name, route.params.category, route.params.subcategory],
+  async () => {
+    await fetchSourceProducts();
+  },
+  { immediate: true },
+);
+
+watch(querySearchTerm, () => {
+  if (!catalogEntry.value) return;
+  if (filters.search === querySearchTerm.value) return;
+
+  suppressFilterWatch.value = true;
+  filters.search = querySearchTerm.value;
+  currentPage.value = 1;
+  suppressFilterWatch.value = false;
+  fetchProducts();
+});
+
+watch(
+  () => [
+    filters.search,
+    filters.company,
+    filters.inStock,
+    filters.sort,
+    priceRange.value[0],
+    priceRange.value[1],
+  ],
+  () => {
+    if (!catalogEntry.value) return;
+    if (suppressFilterWatch.value) return;
+    if (currentPage.value !== 1) {
+      currentPage.value = 1;
+      return;
     }
-    window.removeEventListener(PRODUCTS_CACHE_INVALIDATED_EVENT, handleProductsInvalidated)
-  })
+    scheduleFetchProducts();
+  },
+);
+
+watch(currentPage, () => {
+  if (!catalogEntry.value) return;
+  fetchProducts();
+});
+
+function handleProductsInvalidated() {
+  fetchSourceProducts();
+}
+
+onMounted(() => {
+  window.addEventListener(
+    PRODUCTS_CACHE_INVALIDATED_EVENT,
+    handleProductsInvalidated,
+  );
+});
+
+onUnmounted(() => {
+  if (filterFetchTimer) {
+    clearTimeout(filterFetchTimer);
+  }
+  window.removeEventListener(
+    PRODUCTS_CACHE_INVALIDATED_EVENT,
+    handleProductsInvalidated,
+  );
+});
 </script>
 
 <style scoped>
@@ -735,7 +790,8 @@
   color: #0f172a !important;
 }
 
-.flat-breadcrumb-wrap :deep(.v-breadcrumbs-item:hover:not(.v-breadcrumbs-item--disabled)) {
+.flat-breadcrumb-wrap
+  :deep(.v-breadcrumbs-item:hover:not(.v-breadcrumbs-item--disabled)) {
   color: #0d9488 !important;
 }
 
@@ -949,7 +1005,10 @@
   cursor: pointer;
   position: relative;
   z-index: 0;
-  transition: background-color 0.2s ease, border-color 0.2s ease, z-index 0s;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    z-index 0s;
 }
 
 .product-joint-card:hover {

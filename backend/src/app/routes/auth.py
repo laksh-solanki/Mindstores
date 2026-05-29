@@ -97,7 +97,7 @@ async def firebase_login(request: Request, ctx: RequestContext = Depends(get_con
         )
 
         locale = normalize_locale(decoded.get("locale")) or normalize_locale(data.get("locale")) or normalize_locale((existing or {}).get("locale")) or normalize_locale((existing_by_email or {}).get("locale"))
-        country_code = resolve_country_code(decoded, data, locale, existing or existing_by_email, email)
+        country_code = resolve_country_code(decoded, data, locale, existing or existing_by_email, email) or "IN"
         profile_name = normalize_profile_name(decoded.get("name")) or normalize_profile_name((existing or {}).get("name")) or normalize_profile_name((existing_by_email or {}).get("name")) or "User"
         profile_picture = normalize_image_url(decoded.get("picture")) or normalize_image_url((existing or {}).get("picture")) or normalize_image_url((existing_by_email or {}).get("picture"))
         is_admin = await ctx.admin_access.is_admin_email(email)
