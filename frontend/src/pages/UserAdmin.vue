@@ -320,17 +320,113 @@
                   </div>
                 </div>
 
+                <v-row class="mb-4" dense>
+                  <v-col cols="12" md="4">
+                    <v-select
+                      v-model="productStatusFilter"
+                      class="flat-text-field"
+                      density="compact"
+                      hide-details
+                      item-title="title"
+                      item-value="value"
+                      :items="productStatusFilterOptions"
+                      label="Status"
+                      variant="outlined"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="4">
+                    <v-select
+                      v-model="productStockFilter"
+                      class="flat-text-field"
+                      density="compact"
+                      hide-details
+                      item-title="title"
+                      item-value="value"
+                      :items="productStockFilterOptions"
+                      label="Stock"
+                      variant="outlined"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="4">
+                    <button class="btn-flat-outline btn-with-icon w-100" @click="selectLowStockDrafts">
+                      <v-icon class="mr-1" icon="mdi-alert-outline" size="18" />
+                      Select Low Stock
+                    </button>
+                  </v-col>
+                </v-row>
+
+                <div class="flat-card-container pa-4 mb-4 bg-light">
+                  <div class="d-flex flex-column flex-lg-row align-lg-center justify-space-between ga-3">
+                    <div>
+                      <div class="font-weight-bold text-slate-800">Bulk draft controls</div>
+                      <div class="text-caption text-slate-500">
+                        {{ selectedDraftProducts.length }} selected drafts.
+                      </div>
+                    </div>
+                    <div class="d-flex flex-column flex-md-row ga-2 flex-grow-1 justify-end">
+                      <v-select
+                        v-model="bulkDraftStatus"
+                        class="flat-text-field"
+                        density="compact"
+                        hide-details
+                        item-title="title"
+                        item-value="value"
+                        :items="statusOptions"
+                        label="Set status"
+                        max-width="180"
+                        variant="outlined"
+                      />
+                      <button
+                        class="btn-flat-solid btn-with-icon"
+                        :disabled="selectedDraftProducts.length === 0 || bulkActionLoading"
+                        @click="applyBulkDraftStatus"
+                      >
+                        <v-icon class="mr-1" icon="mdi-check" size="18" />
+                        Apply
+                      </button>
+                      <v-text-field
+                        v-model.number="bulkStockDelta"
+                        class="flat-text-field"
+                        density="compact"
+                        hide-details
+                        label="Stock +/-"
+                        max-width="120"
+                        type="number"
+                        variant="outlined"
+                      />
+                      <button
+                        class="btn-flat-outline btn-with-icon"
+                        :disabled="selectedDraftProducts.length === 0 || bulkActionLoading"
+                        @click="applyBulkStockDelta"
+                      >
+                        <v-icon class="mr-1" icon="mdi-plus-minus" size="18" />
+                        Update Stock
+                      </button>
+                      <button
+                        class="btn-flat-outline btn-with-icon"
+                        :disabled="selectedDraftProducts.length === 0"
+                        @click="clearDraftSelection"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 <v-progress-linear v-if="loading" class="mb-4" color="teal-darken-1" indeterminate />
                 <v-alert v-else-if="filteredProducts.length === 0" class="custom-flat-alert info-alert" type="info" variant="tonal">
                   {{ products.length === 0 ? 'Add your first product.' : 'No matching products found.' }}
                 </v-alert>
                 <v-data-table
                   v-else
+                  v-model:selected="selectedProductIds"
                   class="custom-admin-table"
                   density="comfortable"
                   :headers="productHeaders"
+                  item-value="product_id"
                   :items="filteredProducts"
                   :items-per-page="8"
+                  show-select
                 >
                   <template #item.name="{ item }">
                     <div class="d-flex align-center ga-3 py-2">
@@ -467,24 +563,38 @@
                 <div class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 mb-4">
                   <div>
                     <h2 class="section-title">Reviews</h2>
-                    <div class="section-subtitle">{{ reviews.length }} public reviews on your products.</div>
+                    <div class="section-subtitle">{{ filteredReviews.length }} of {{ reviews.length }} public reviews on your products.</div>
                   </div>
-                  <button
-                    class="btn-flat-outline btn-with-icon"
-                    @click="loadConsole"
-                  >
-                    <v-icon class="mr-1" icon="mdi-refresh" size="18" />
-                    Refresh
-                  </button>
+                  <div class="d-flex flex-column flex-sm-row ga-2">
+                    <v-select
+                      v-model="reviewRatingFilter"
+                      class="flat-text-field"
+                      density="compact"
+                      hide-details
+                      item-title="title"
+                      item-value="value"
+                      :items="reviewRatingFilterOptions"
+                      label="Rating"
+                      min-width="170"
+                      variant="outlined"
+                    />
+                    <button
+                      class="btn-flat-outline btn-with-icon"
+                      @click="loadConsole"
+                    >
+                      <v-icon class="mr-1" icon="mdi-refresh" size="18" />
+                      Refresh
+                    </button>
+                  </div>
                 </div>
 
                 <v-progress-linear v-if="reviewsLoading" class="mb-4" color="teal-darken-1" indeterminate />
-                <v-alert v-else-if="reviews.length === 0" class="custom-flat-alert info-alert" type="info" variant="tonal">
-                  No product reviews yet.
+                <v-alert v-else-if="filteredReviews.length === 0" class="custom-flat-alert info-alert" type="info" variant="tonal">
+                  {{ reviews.length === 0 ? 'No product reviews yet.' : 'No reviews match this filter.' }}
                 </v-alert>
                 <div v-else class="reviews-list-flat">
                   <div
-                    v-for="(review, index) in reviews"
+                    v-for="(review, index) in filteredReviews"
                     :key="review.review_id || `${review.product_id}-${index}`"
                     class="review-item-flat"
                   >
@@ -531,21 +641,35 @@
                 <div class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 mb-4">
                   <div>
                     <h2 class="section-title">Messages</h2>
-                    <div class="section-subtitle">{{ messages.length }} notifications.</div>
+                    <div class="section-subtitle">{{ filteredMessages.length }} of {{ messages.length }} notifications.</div>
                   </div>
-                  <button class="btn-flat-outline btn-with-icon" @click="loadConsole">
-                    <v-icon class="mr-1" icon="mdi-refresh" size="18" />
-                    Refresh
-                  </button>
+                  <div class="d-flex flex-column flex-sm-row ga-2">
+                    <v-select
+                      v-model="messageStatusFilter"
+                      class="flat-text-field"
+                      density="compact"
+                      hide-details
+                      item-title="title"
+                      item-value="value"
+                      :items="messageStatusFilterOptions"
+                      label="Status"
+                      min-width="170"
+                      variant="outlined"
+                    />
+                    <button class="btn-flat-outline btn-with-icon" @click="loadConsole">
+                      <v-icon class="mr-1" icon="mdi-refresh" size="18" />
+                      Refresh
+                    </button>
+                  </div>
                 </div>
 
                 <v-progress-linear v-if="loading" class="mb-4" color="teal-darken-1" indeterminate />
-                <v-alert v-else-if="messages.length === 0" class="custom-flat-alert info-alert" type="info" variant="tonal">
-                  No messages yet.
+                <v-alert v-else-if="filteredMessages.length === 0" class="custom-flat-alert info-alert" type="info" variant="tonal">
+                  {{ messages.length === 0 ? 'No messages yet.' : 'No messages match this filter.' }}
                 </v-alert>
                 <div v-else class="reviews-list-flat">
                   <div
-                    v-for="msg in messages"
+                    v-for="msg in filteredMessages"
                     :key="msg.message_id"
                     class="review-item-flat d-flex justify-space-between"
                     :style="!msg.read ? 'border-left: 4px solid #0f766e; background-color: #f0fdfa;' : ''"
@@ -554,12 +678,29 @@
                       <div class="font-weight-bold">{{ msg.message }}</div>
                       <div class="text-caption text-slate-500 mt-1">Product: {{ msg.product_name }} | Order: {{ msg.order_id }}</div>
                       <div v-if="msg.type === 'order_request'" class="text-caption text-slate-600 mt-1">
-                         Payment: <span class="text-uppercase">{{ msg.payment_method }}</span> ({{ msg.payment_status }})
+                        Payment: <span class="text-uppercase">{{ msg.payment_method }}</span> ({{ msg.payment_status }})
                       </div>
                       <div class="text-caption text-slate-400 mt-1">{{ formatDate(msg.created_at) }}</div>
                       <div v-if="msg.type === 'order_request' && msg.status === 'pending'" class="mt-2">
-                        <v-btn size="small" color="success" variant="flat" class="mr-2" :loading="orderActionLoading === msg.message_id" @click="approveOrder(msg)">Approve</v-btn>
-                        <v-btn size="small" color="error" variant="flat" :loading="orderActionLoading === msg.message_id" @click="cancelOrder(msg)">Cancel</v-btn>
+                        <v-btn
+                          class="mr-2"
+                          color="success"
+                          :loading="orderActionLoading === msg.message_id"
+                          size="small"
+                          variant="flat"
+                          @click="approveOrder(msg)"
+                        >
+                          Approve
+                        </v-btn>
+                        <v-btn
+                          color="error"
+                          :loading="orderActionLoading === msg.message_id"
+                          size="small"
+                          variant="flat"
+                          @click="cancelOrder(msg)"
+                        >
+                          Cancel
+                        </v-btn>
                       </div>
                       <div v-else-if="msg.type === 'order_request'" class="mt-2 font-weight-bold" :class="msg.status === 'approved' ? 'text-success' : 'text-error'">
                         {{ msg.status === 'approved' ? 'Approved' : 'Cancelled' }}
@@ -584,25 +725,39 @@
               <div class="pa-4">
                 <div class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 mb-4">
                   <div>
-                    <h2 class="section-title">Completed Deliveries</h2>
-                    <div class="section-subtitle">{{ deliveries.filter(d => d.order_status === 'completed' && d.delivery_status !== 'cancelled').length }} successful deliveries.</div>
+                    <h2 class="section-title">Deliveries</h2>
+                    <div class="section-subtitle">{{ filteredDeliveries.length }} of {{ deliveries.length }} delivery records.</div>
                   </div>
-                  <button class="btn-flat-outline btn-with-icon" @click="loadConsole">
-                    <v-icon class="mr-1" icon="mdi-refresh" size="18" />
-                    Refresh
-                  </button>
+                  <div class="d-flex flex-column flex-sm-row ga-2">
+                    <v-select
+                      v-model="deliveryStatusFilter"
+                      class="flat-text-field"
+                      density="compact"
+                      hide-details
+                      item-title="title"
+                      item-value="value"
+                      :items="deliveryStatusFilterOptions"
+                      label="Status"
+                      min-width="180"
+                      variant="outlined"
+                    />
+                    <button class="btn-flat-outline btn-with-icon" @click="loadConsole">
+                      <v-icon class="mr-1" icon="mdi-refresh" size="18" />
+                      Refresh
+                    </button>
+                  </div>
                 </div>
 
                 <v-progress-linear v-if="loading" class="mb-4" color="teal-darken-1" indeterminate />
-                <v-alert v-else-if="deliveries.length === 0" class="custom-flat-alert info-alert" type="info" variant="tonal">
-                  No completed deliveries yet.
+                <v-alert v-else-if="filteredDeliveries.length === 0" class="custom-flat-alert info-alert" type="info" variant="tonal">
+                  {{ deliveries.length === 0 ? 'No deliveries yet.' : 'No deliveries match this filter.' }}
                 </v-alert>
                 <v-data-table
                   v-else
                   class="custom-admin-table"
                   density="comfortable"
                   :headers="[ {title: 'Order ID', key: 'order_id'}, {title: 'Product', key: 'name'}, {title: 'Quantity', key: 'quantity'}, {title: 'Customer', key: 'customer'}, {title: 'Date', key: 'order_created_at'} ]"
-                  :items="deliveries.filter(d => d.order_status === 'completed' && d.delivery_status !== 'cancelled')"
+                  :items="filteredDeliveries"
                   :items-per-page="10"
                 >
                   <template #item="{ item }">
@@ -1027,23 +1182,25 @@
 </template>
 
 <script>
+  import axios from 'axios'
   import { computed, onMounted, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import BaseAlert from '@/components/BaseAlert.vue'
   import { useAppStore } from '@/stores/app'
-  import { loadUserSettings, saveUserSettings } from '@/utils/userSettings'
+  import { API_URL, buildAuthenticatedRequestConfig } from '@/utils/api'
   import { safeDisplayImageUrl, safeDisplayImageUrls } from '@/utils/images'
   import {
     createUserAdminProduct,
     deleteUserAdminProduct,
+    fetchUserAdminDeliveries,
+    fetchUserAdminMessages,
     fetchUserAdminProducts,
     fetchUserAdminProfile,
     fetchUserAdminReviews,
-    updateUserAdminProduct,
-    fetchUserAdminMessages,
     markUserAdminMessageRead,
-    fetchUserAdminDeliveries
+    updateUserAdminProduct
   } from '@/utils/userAdmin'
+  import { loadUserSettings, saveUserSettings } from '@/utils/userSettings'
 
   const EMPTY_FORM = {
     name: '',
@@ -1097,6 +1254,44 @@
     { title: 'Actions', key: 'actions', sortable: false }
   ]
 
+  const productStatusFilterOptions = [
+    { title: 'All statuses', value: 'all' },
+    { title: 'Active', value: 'active' },
+    { title: 'Draft', value: 'draft' },
+    { title: 'Discontinued', value: 'discontinued' }
+  ]
+
+  const productStockFilterOptions = [
+    { title: 'All stock', value: 'all' },
+    { title: 'Low stock', value: 'low' },
+    { title: 'Out of stock', value: 'out' },
+    { title: 'In stock', value: 'active' }
+  ]
+
+  const reviewRatingFilterOptions = [
+    { title: 'All ratings', value: 'all' },
+    { title: '5 stars', value: 5 },
+    { title: '4 stars', value: 4 },
+    { title: '3 stars', value: 3 },
+    { title: '2 stars', value: 2 },
+    { title: '1 star', value: 1 }
+  ]
+
+  const messageStatusFilterOptions = [
+    { title: 'All messages', value: 'all' },
+    { title: 'Unread', value: 'unread' },
+    { title: 'Pending orders', value: 'pending' },
+    { title: 'Approved', value: 'approved' },
+    { title: 'Cancelled', value: 'cancelled' }
+  ]
+
+  const deliveryStatusFilterOptions = [
+    { title: 'Completed', value: 'completed' },
+    { title: 'All deliveries', value: 'all' },
+    { title: 'Pending', value: 'pending' },
+    { title: 'Cancelled', value: 'cancelled' }
+  ]
+
   const userAdminNavItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'mdi-view-dashboard-outline' },
     { id: 'products', label: 'Products', icon: 'mdi-package-variant-closed' },
@@ -1143,6 +1338,15 @@
       const messages = ref([])
       const deliveries = ref([])
       const productSearch = ref('')
+      const productStatusFilter = ref('all')
+      const productStockFilter = ref('all')
+      const selectedProductIds = ref([])
+      const bulkDraftStatus = ref('active')
+      const bulkStockDelta = ref(1)
+      const bulkActionLoading = ref(false)
+      const reviewRatingFilter = ref('all')
+      const messageStatusFilter = ref('all')
+      const deliveryStatusFilter = ref('completed')
       const productForm = ref({ ...EMPTY_FORM })
       const productImageFiles = ref([])
       const productImageInputValue = ref('')
@@ -1234,16 +1438,48 @@
 
       const filteredProducts = computed(() => {
         const query = String(productSearch.value || '').trim().toLowerCase()
-        if (!query) {
-          return products.value
-        }
         return products.value.filter((product) =>
-          [product.name, product.company, product.category, product.subcategory, product.description]
+          (!query || [product.name, product.company, product.category, product.subcategory, product.description]
             .join(' ')
             .toLowerCase()
-            .includes(query)
+            .includes(query)) &&
+          (productStatusFilter.value === 'all' || String(product.status || 'draft').toLowerCase() === productStatusFilter.value) &&
+          (productStockFilter.value === 'all' || stockStatusKey(product) === productStockFilter.value)
         )
       })
+
+      const selectedDraftProducts = computed(() => {
+        const selectedIds = new Set(selectedProductIds.value.map(String))
+        return products.value.filter((product) => selectedIds.has(String(product.product_id)))
+      })
+
+      const filteredReviews = computed(() => {
+        if (reviewRatingFilter.value === 'all') {
+          return reviews.value
+        }
+        return reviews.value.filter((review) => Number(review.rating || 0) === Number(reviewRatingFilter.value))
+      })
+
+      const filteredMessages = computed(() =>
+        messages.value.filter((message) => {
+          if (messageStatusFilter.value === 'all') return true
+          if (messageStatusFilter.value === 'unread') return !message.read
+          return String(message.status || '').toLowerCase() === messageStatusFilter.value
+        })
+      )
+
+      const filteredDeliveries = computed(() =>
+        deliveries.value.filter((delivery) => {
+          if (deliveryStatusFilter.value === 'all') return true
+          if (deliveryStatusFilter.value === 'completed') {
+            return delivery.order_status === 'completed' && delivery.delivery_status !== 'cancelled'
+          }
+          if (deliveryStatusFilter.value === 'cancelled') {
+            return delivery.delivery_status === 'cancelled'
+          }
+          return String(delivery.delivery_status || delivery.order_status || 'pending').toLowerCase() === deliveryStatusFilter.value
+        })
+      )
 
       const lowStockCount = computed(() =>
         products.value.filter((product) => {
@@ -1744,6 +1980,16 @@
         return subcategory ? `${category} / ${subcategory}` : category
       }
 
+      function stockStatusKey(product) {
+        const stock = Number(product?.stock || 0)
+        const threshold = product?.low_stock_threshold !== null && product?.low_stock_threshold !== undefined
+          ? Number(product.low_stock_threshold)
+          : 5
+        if (stock <= 0) return 'out'
+        if (stock < threshold) return 'low'
+        return 'active'
+      }
+
       watch(
         () => [appStore.loading, appStore.isAuthenticated],
         () => {
@@ -1821,6 +2067,73 @@
         } finally {
           saving.value = false
         }
+      }
+
+      const clearDraftSelection = () => {
+        selectedProductIds.value = []
+      }
+
+      const selectLowStockDrafts = () => {
+        selectedProductIds.value = filteredProducts.value
+          .filter((product) => stockStatusKey(product) !== 'active')
+          .map((product) => product.product_id)
+          .filter(Boolean)
+        const hasSelection = selectedProductIds.value.length > 0
+        showMessage(
+          hasSelection ? 'Low-stock drafts selected' : 'No low-stock drafts in this view',
+          hasSelection ? 'success' : 'info'
+        )
+      }
+
+      const updateSelectedDrafts = async (payloadFactory, successMessage) => {
+        if (selectedDraftProducts.value.length === 0) {
+          showMessage('Select at least one draft first', 'warning')
+          return
+        }
+
+        bulkActionLoading.value = true
+        let updatedCount = 0
+        const failed = []
+        try {
+          for (const product of selectedDraftProducts.value) {
+            try {
+              await updateUserAdminProduct(product.product_id, payloadFactory(product))
+              updatedCount += 1
+            } catch (error) {
+              failed.push(product.name || product.product_id)
+              console.error('Failed to update selected draft:', error)
+            }
+          }
+
+          products.value = await fetchUserAdminProducts()
+          if (failed.length > 0) {
+            showMessage(`${updatedCount} updated, ${failed.length} failed`, updatedCount > 0 ? 'warning' : 'error')
+            return
+          }
+          showMessage(successMessage)
+        } finally {
+          bulkActionLoading.value = false
+        }
+      }
+
+      const applyBulkDraftStatus = async () => {
+        await updateSelectedDrafts(
+          () => ({ status: bulkDraftStatus.value }),
+          'Draft status updated'
+        )
+      }
+
+      const applyBulkStockDelta = async () => {
+        const delta = Math.trunc(Number(bulkStockDelta.value || 0))
+        if (!Number.isFinite(delta) || delta === 0) {
+          showMessage('Enter a non-zero stock change', 'warning')
+          return
+        }
+        bulkStockDelta.value = delta
+        await updateSelectedDrafts(
+          (product) => ({ stock: Math.max(0, Number(product.stock || 0) + delta) }),
+          'Draft stock updated'
+        )
       }
 
       const escapeCSVCell = (val) => {
@@ -1915,7 +2228,7 @@
               p.stock || 0,
               p.image_url || '',
               allUrls
-            ].map(escapeCSVCell).join(',')
+            ].map((cell) => escapeCSVCell(cell)).join(',')
           })
 
           const csvContent = [headers.join(','), ...rows].join('\r\n')
@@ -1967,7 +2280,18 @@
         profile,
         products,
         reviews,
+        filteredReviews,
         productSearch,
+        productStatusFilter,
+        productStockFilter,
+        selectedProductIds,
+        selectedDraftProducts,
+        bulkDraftStatus,
+        bulkStockDelta,
+        bulkActionLoading,
+        reviewRatingFilter,
+        messageStatusFilter,
+        deliveryStatusFilter,
         productForm,
         productImageFiles,
         productImageInputValue,
@@ -1989,6 +2313,11 @@
         priceCurrencyOptions,
         descriptionBulletOptions,
         statusOptions,
+        productStatusFilterOptions,
+        productStockFilterOptions,
+        reviewRatingFilterOptions,
+        messageStatusFilterOptions,
+        deliveryStatusFilterOptions,
         userAdminNavItems,
         cashOnDeliveryEnabled,
         updateCashOnDelivery,
@@ -1998,6 +2327,8 @@
         availableSubcategories,
         hasPinAccess,
         filteredProducts,
+        filteredMessages,
+        filteredDeliveries,
         lowStockCount,
         productsWithImagesCount,
         totalInventoryValue,
@@ -2027,6 +2358,10 @@
         adjustingStockId,
         adjustStock,
         duplicateProduct,
+        selectLowStockDrafts,
+        clearDraftSelection,
+        applyBulkDraftStatus,
+        applyBulkStockDelta,
         exportToCSV,
         exportToJSON,
         messages,

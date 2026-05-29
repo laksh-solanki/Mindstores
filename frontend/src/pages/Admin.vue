@@ -564,7 +564,7 @@
           </v-card-title>
           <v-card-text>
             <v-row dense>
-              <v-col cols="12" md="8">
+              <v-col cols="12" md="5">
                 <v-text-field
                   v-model="userSearch"
                   density="comfortable"
@@ -574,7 +574,7 @@
                   variant="outlined"
                 />
               </v-col>
-              <v-col cols="12" md="4">
+              <v-col cols="12" md="3" sm="6">
                 <v-select
                   v-model="userRoleFilter"
                   density="comfortable"
@@ -583,6 +583,18 @@
                   item-value="value"
                   :items="userRoleOptions"
                   label="Role"
+                  variant="outlined"
+                />
+              </v-col>
+              <v-col cols="12" md="4" sm="6">
+                <v-select
+                  v-model="userAdminStatusFilter"
+                  density="comfortable"
+                  hide-details
+                  item-title="title"
+                  item-value="value"
+                  :items="userAdminStatusOptions"
+                  label="User Admin"
                   variant="outlined"
                 />
               </v-col>
@@ -706,13 +718,95 @@
               </v-col>
             </v-row>
 
+            <v-card class="mt-4" color="teal-lighten-5" rounded="lg" variant="tonal">
+              <v-card-text>
+                <div class="d-flex flex-column flex-lg-row align-lg-center justify-space-between ga-3">
+                  <div>
+                    <div class="text-body-1 font-weight-bold">Bulk product controls</div>
+                    <div class="text-body-2 text-medium-emphasis">
+                      {{ formatNumber(selectedProducts.length) }} selected from {{ formatNumber(filteredProducts.length) }} visible products.
+                    </div>
+                  </div>
+                  <div class="d-flex flex-column flex-md-row ga-2">
+                    <v-btn
+                      prepend-icon="mdi-alert-outline"
+                      rounded="lg"
+                      text="Select low stock"
+                      variant="outlined"
+                      @click="selectLowStockProducts"
+                    />
+                    <v-btn
+                      :disabled="selectedProductIds.length === 0"
+                      prepend-icon="mdi-selection-remove"
+                      rounded="lg"
+                      text="Clear"
+                      variant="text"
+                      @click="clearProductSelection"
+                    />
+                  </div>
+                </div>
+                <v-row class="mt-3" dense>
+                  <v-col cols="12" md="4">
+                    <v-select
+                      v-model="bulkProductStatus"
+                      density="comfortable"
+                      hide-details
+                      item-title="title"
+                      item-value="value"
+                      :items="statusOptions"
+                      label="Set status"
+                      variant="outlined"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="2" sm="6">
+                    <v-btn
+                      block
+                      color="teal-darken-1"
+                      :disabled="selectedProductIds.length === 0"
+                      :loading="productBulkSaving"
+                      rounded="lg"
+                      text="Apply"
+                      variant="flat"
+                      @click="applyBulkProductStatus"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="4">
+                    <v-text-field
+                      v-model.number="bulkLowStockThreshold"
+                      density="comfortable"
+                      hide-details
+                      label="Low stock threshold"
+                      min="0"
+                      type="number"
+                      variant="outlined"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="2" sm="6">
+                    <v-btn
+                      block
+                      color="teal-darken-1"
+                      :disabled="selectedProductIds.length === 0"
+                      :loading="productBulkSaving"
+                      rounded="lg"
+                      text="Set"
+                      variant="outlined"
+                      @click="applyBulkLowStockThreshold"
+                    />
+                  </v-col>
+                </v-row>
+              </v-card-text>
+            </v-card>
+
             <v-data-table
+              v-model:selected="selectedProductIds"
               class=" mt-4"
               density="comfortable"
               :headers="productHeaders"
+              item-value="product_id"
               :items="filteredProducts"
               :items-per-page="8"
               :loading="productLoading"
+              show-select
             >
               <template #item.name="{ item }">
                 <div class="d-flex align-center ga-3 py-2">
@@ -1103,34 +1197,98 @@
         <v-card v-else-if="activePanel === 'deliveries'" border rounded="lg" variant="flat">
           <v-card-title class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 my-2">
             <span>Platform Deliveries</span>
-            <v-btn
-              color="teal-darken-1"
-              :loading="deliveriesLoading"
-              prepend-icon="mdi-refresh"
-              rounded="lg"
-              text="Deliveries"
-              variant="flat"
-              @click="fetchDeliveries"
-            />
+            <div class="d-flex flex-column flex-sm-row ga-2">
+              <v-btn
+                color="teal-darken-1"
+                prepend-icon="mdi-download-outline"
+                rounded="lg"
+                text="Export CSV"
+                variant="outlined"
+                @click="downloadFilteredDeliveries"
+              />
+              <v-btn
+                color="teal-darken-1"
+                :loading="deliveriesLoading"
+                prepend-icon="mdi-refresh"
+                rounded="lg"
+                text="Deliveries"
+                variant="flat"
+                @click="fetchDeliveries"
+              />
+            </div>
           </v-card-title>
           <v-card-text>
+            <v-row dense>
+              <v-col
+                v-for="metric in deliveryMetricCards"
+                :key="metric.label"
+                cols="12"
+                md="3"
+                sm="6"
+              >
+                <v-card class="h-100" rounded="lg" variant="outlined">
+                  <v-card-text class="d-flex align-center justify-space-between ga-3">
+                    <div>
+                      <div class="text-caption text-medium-emphasis">{{ metric.label }}</div>
+                      <div class="text-h6 font-weight-bold">{{ metric.value }}</div>
+                    </div>
+                    <v-avatar :color="metric.color" size="42" variant="tonal">
+                      <v-icon :color="metric.color">{{ metric.icon }}</v-icon>
+                    </v-avatar>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+            </v-row>
+            <v-row class="mt-2" dense>
+              <v-col cols="12" md="8">
+                <v-text-field
+                  v-model="deliverySearch"
+                  density="comfortable"
+                  hide-details
+                  label="Search orders, products, or customers"
+                  prepend-inner-icon="mdi-magnify"
+                  variant="outlined"
+                />
+              </v-col>
+              <v-col cols="12" md="4">
+                <v-select
+                  v-model="deliveryStatusFilter"
+                  density="comfortable"
+                  hide-details
+                  item-title="title"
+                  item-value="value"
+                  :items="deliveryStatusOptions"
+                  label="Delivery status"
+                  variant="outlined"
+                />
+              </v-col>
+            </v-row>
             <v-data-table
               class="mt-4"
               density="comfortable"
-              :headers="[ {title: 'Order ID', key: 'order_id'}, {title: 'Product', key: 'name'}, {title: 'Quantity', key: 'quantity'}, {title: 'Status', key: 'order_status'}, {title: 'Delivery', key: 'delivery_status'}, {title: 'Date', key: 'order_created_at'} ]"
-              :items="deliveries"
+              :headers="deliveryHeaders"
+              :items="filteredDeliveries"
               :items-per-page="15"
               :loading="deliveriesLoading"
             >
-              <template #item="{ item }">
-                <tr :style="item.delivery_status === 'cancelled' ? 'background-color: #ffe4e6;' : (item.order_status === 'completed' && item.delivery_status !== 'cancelled' ? 'background-color: #dcfce7; color: #000; ' : '')">
-                  <td>{{ item.order_id }}</td>
-                  <td>{{ item.name }}</td>
-                  <td>{{ item.quantity }}</td>
-                  <td>{{ item.order_status }}</td>
-                  <td>{{ item.delivery_status }}</td>
-                  <td>{{ new Date(item.order_created_at).toLocaleDateString() }}</td>
-                </tr>
+              <template #item.order_id="{ item }">
+                <span class="font-weight-medium">{{ resolveTableItem(item)?.order_id }}</span>
+              </template>
+              <template #item.customer="{ item }">
+                {{ formatDeliveryCustomer(resolveTableItem(item)) }}
+              </template>
+              <template #item.order_status="{ item }">
+                <v-chip :color="deliveryStatusColor(resolveTableItem(item))" size="small" variant="tonal">
+                  {{ resolveTableItem(item)?.order_status || 'pending' }}
+                </v-chip>
+              </template>
+              <template #item.delivery_status="{ item }">
+                <v-chip :color="deliveryStatusColor(resolveTableItem(item))" size="small" variant="flat">
+                  {{ resolveTableItem(item)?.delivery_status || 'pending' }}
+                </v-chip>
+              </template>
+              <template #item.order_created_at="{ item }">
+                {{ formatDate(resolveTableItem(item)?.order_created_at) }}
               </template>
             </v-data-table>
           </v-card-text>
@@ -1772,8 +1930,13 @@
   const productSearch = ref("");
   const categoryFilter = ref("all");
   const stockFilter = ref("all");
+  const selectedProductIds = ref([]);
+  const bulkProductStatus = ref("active");
+  const bulkLowStockThreshold = ref(5);
+  const productBulkSaving = ref(false);
   const userSearch = ref("");
   const userRoleFilter = ref("all");
+  const userAdminStatusFilter = ref("all");
   const accessSearch = ref("");
   const accessEmailInput = ref("");
   const accessEditOriginalEmail = ref("");
@@ -1783,6 +1946,8 @@
   const restockTargetStock = ref(DEFAULT_RESTOCK_TARGET);
   const restockSearch = ref("");
   const restockUrgencyFilter = ref("all");
+  const deliverySearch = ref("");
+  const deliveryStatusFilter = ref("all");
   const lastSyncedAt = ref(null);
   const adminQuickSearch = ref("");
   const adminSearchResult = ref("");
@@ -1867,6 +2032,15 @@
     { title: "Updated", key: "updated_at" },
     { title: "Console Block", key: "user_admin_blocked", sortable: false },
   ];
+  const deliveryHeaders = [
+    { title: "Order ID", key: "order_id" },
+    { title: "Product", key: "name" },
+    { title: "Quantity", key: "quantity" },
+    { title: "Customer", key: "customer" },
+    { title: "Status", key: "order_status" },
+    { title: "Delivery", key: "delivery_status" },
+    { title: "Date", key: "order_created_at" },
+  ];
   const accessHeaders = [
     { title: "Email", key: "email" },
     { title: "Updated", key: "updated_at" },
@@ -1892,6 +2066,12 @@
     { title: "Admins", value: "admin" },
     { title: "Customers", value: "customer" },
   ];
+  const userAdminStatusOptions = [
+    { title: "All User Admin", value: "all" },
+    { title: "PIN created", value: "pin" },
+    { title: "Blocked", value: "blocked" },
+    { title: "Not blocked", value: "active" },
+  ];
   const logTypeOptions = [
     { title: "All notifications", value: "all" },
     { title: "Warnings", value: "warning" },
@@ -1903,6 +2083,12 @@
     { title: "Critical", value: "critical" },
     { title: "High", value: "high" },
     { title: "Planned", value: "planned" },
+  ];
+  const deliveryStatusOptions = [
+    { title: "All deliveries", value: "all" },
+    { title: "Pending", value: "pending" },
+    { title: "Completed", value: "completed" },
+    { title: "Cancelled", value: "cancelled" },
   ];
   const adminSearchTargets = [
     {
@@ -1929,6 +2115,11 @@
       panel: "logs",
       label: "Notifications",
       keywords: ["notifications", "notification", "logs", "activity", "warnings", "warning", "system", "api"],
+    },
+    {
+      panel: "deliveries",
+      label: "Deliveries",
+      keywords: ["deliveries", "delivery", "orders", "shipping", "completed", "cancelled"],
     },
     {
       panel: "settings",
@@ -1979,9 +2170,12 @@
     if (activePanel.value === "logs") {
       return activitySearch.value;
     }
+    if (activePanel.value === "deliveries") {
+      return deliverySearch.value;
+    }
     return "";
   });
-  const isRefreshing = computed(() => productLoading.value || userLoading.value || accessLoading.value);
+  const isRefreshing = computed(() => productLoading.value || userLoading.value || accessLoading.value || deliveriesLoading.value || productBulkSaving.value);
   const lastSyncedLabel = computed(() => (lastSyncedAt.value ? `Synced ${formatDate(lastSyncedAt.value)}` : "Ready"));
   const userInitials = computed(() => initialsFor(userName.value));
   const selectedPriceCurrency = computed(() => normalizeProductCurrency(formData.value.price_currency));
@@ -2155,7 +2349,39 @@
         userRoleFilter.value === "all" ||
         (userRoleFilter.value === "admin" && user.is_admin) ||
         (userRoleFilter.value === "customer" && !user.is_admin);
-      return matchesSearch && matchesRole;
+      const matchesUserAdmin =
+        userAdminStatusFilter.value === "all" ||
+        (userAdminStatusFilter.value === "pin" && Boolean(user.has_user_admin_pin || user.user_admin_pin_created_at)) ||
+        (userAdminStatusFilter.value === "blocked" && Boolean(user.user_admin_blocked)) ||
+        (userAdminStatusFilter.value === "active" && !user.user_admin_blocked);
+      return matchesSearch && matchesRole && matchesUserAdmin;
+    }),
+  );
+
+  const selectedProducts = computed(() => {
+    const selectedIds = new Set(selectedProductIds.value.map(String));
+    return products.value.filter((product) => selectedIds.has(String(product.product_id)));
+  });
+
+  const filteredDeliveries = computed(() =>
+    deliveries.value.filter((delivery) => {
+      const query = normalizeText(deliverySearch.value).toLowerCase();
+      const deliveryStatus = normalizeText(delivery.delivery_status || delivery.order_status || "pending").toLowerCase();
+      const matchesStatus =
+        deliveryStatusFilter.value === "all" ||
+        deliveryStatus === deliveryStatusFilter.value ||
+        (deliveryStatusFilter.value === "completed" && delivery.order_status === "completed" && delivery.delivery_status !== "cancelled") ||
+        (deliveryStatusFilter.value === "cancelled" && delivery.delivery_status === "cancelled");
+      const matchesSearch = !query || searchMatchesValues([
+        delivery.order_id,
+        delivery.name,
+        delivery.product_name,
+        delivery.product_id,
+        formatDeliveryCustomer(delivery),
+        delivery.order_status,
+        delivery.delivery_status,
+      ], query);
+      return matchesStatus && matchesSearch;
     }),
   );
 
@@ -2242,6 +2468,32 @@
     {
       label: "Low stock",
       value: formatNumber(lowStockCount.value),
+    },
+  ]);
+  const deliveryMetricCards = computed(() => [
+    {
+      label: "Total rows",
+      value: formatNumber(deliveries.value.length),
+      icon: "mdi-truck-outline",
+      color: "primary",
+    },
+    {
+      label: "Completed",
+      value: formatNumber(deliveries.value.filter((delivery) => delivery.order_status === "completed" && delivery.delivery_status !== "cancelled").length),
+      icon: "mdi-check-circle-outline",
+      color: "success",
+    },
+    {
+      label: "Pending",
+      value: formatNumber(deliveries.value.filter((delivery) => (delivery.delivery_status || delivery.order_status || "pending") === "pending").length),
+      icon: "mdi-clock-outline",
+      color: "warning",
+    },
+    {
+      label: "Cancelled",
+      value: formatNumber(deliveries.value.filter((delivery) => delivery.delivery_status === "cancelled").length),
+      icon: "mdi-cancel",
+      color: "error",
     },
   ]);
   const topCatalogValueProducts = computed(() =>
@@ -2457,6 +2709,7 @@
       buildSearchGroup("settings", "Settings", settingsSearchResults(query)),
       buildSearchGroup("planner", "Planner", plannerSearchResults(query)),
       buildSearchGroup("logs", "Notifications", notificationSearchResults(query)),
+      buildSearchGroup("deliveries", "Deliveries", deliverySearchResults(query)),
     ].filter((group) => group.items.length > 0);
   });
   const globalSearchResultCount = computed(() =>
@@ -2575,6 +2828,10 @@
       openLogsSearch(query, result.logType || "");
       return;
     }
+    if (result.panel === "deliveries") {
+      openDeliveriesSearch(query);
+      return;
+    }
 
     clearSearchFilters();
     openPanelFromSearch(result.panel, `Opened ${result.title}`);
@@ -2611,17 +2868,26 @@
     openPanelFromSearch("logs", query ? `Searching notifications: ${query}` : "Opened Notifications");
   }
 
+  function openDeliveriesSearch(query) {
+    deliverySearch.value = query;
+    deliveryStatusFilter.value = "all";
+    openPanelFromSearch("deliveries", query ? `Searching deliveries: ${query}` : "Opened Deliveries");
+  }
+
   function clearSearchFilters() {
     productSearch.value = "";
     userSearch.value = "";
     accessSearch.value = "";
     restockSearch.value = "";
     activitySearch.value = "";
+    deliverySearch.value = "";
     categoryFilter.value = "all";
     stockFilter.value = "all";
     userRoleFilter.value = "all";
+    userAdminStatusFilter.value = "all";
     restockUrgencyFilter.value = "all";
     logTypeFilter.value = "all";
+    deliveryStatusFilter.value = "all";
   }
 
   function buildSearchGroup(id, label, items) {
@@ -2749,6 +3015,23 @@
       }));
   }
 
+  function deliverySearchResults(query) {
+    return deliveries.value
+      .filter((delivery) => deliveryMatchesQuery(delivery, query))
+      .map((delivery, index) => ({
+        id: `delivery-${delivery.order_id || delivery.product_id || index}`,
+        panel: "deliveries",
+        icon: "mdi-truck-outline",
+        color: deliveryStatusColor(delivery),
+        title: delivery.order_id || "Delivery",
+        subtitle: [delivery.name, formatDeliveryCustomer(delivery), delivery.delivery_status || delivery.order_status]
+          .filter(Boolean)
+          .join(" | "),
+        meta: "Delivery",
+        applyQuery: true,
+      }));
+  }
+
   function resolveLogTypeSearch(query) {
     const normalizedQuery = normalizeText(query).toLowerCase();
     const matchedOption = logTypeOptions.find((option) => {
@@ -2787,6 +3070,8 @@
       user?.country_code,
       user?.is_admin ? "admin" : "customer",
       user?.is_admin ? "admin user" : "customer user",
+      user?.user_admin_blocked ? "user admin blocked" : "user admin active",
+      user?.has_user_admin_pin || user?.user_admin_pin_created_at ? "pin created" : "no pin",
     ], query);
   }
 
@@ -2817,6 +3102,20 @@
       log?.message,
       log?.type,
       log?.time,
+    ], query);
+  }
+
+  function deliveryMatchesQuery(delivery, query) {
+    return searchMatchesValues([
+      delivery?.order_id,
+      delivery?.product_id,
+      delivery?.name,
+      delivery?.product_name,
+      delivery?.order_status,
+      delivery?.delivery_status,
+      delivery?.payment_method,
+      formatDeliveryCustomer(delivery),
+      formatDate(delivery?.order_created_at),
     ], query);
   }
 
@@ -3006,6 +3305,28 @@
 
   function formatProductOwner(product) {
     return normalizeEmail(product?.owner_email || product?.created_by || product?.updated_by) || "Private admin";
+  }
+
+  function formatDeliveryCustomer(delivery) {
+    const customer = [
+      delivery?.billing_profile?.name,
+      delivery?.customer,
+      delivery?.customer_name,
+      delivery?.buyer_email,
+      delivery?.user_email,
+    ].find((value) => normalizeText(value));
+    return normalizeText(customer) || "Customer";
+  }
+
+  function deliveryStatusColor(delivery) {
+    const deliveryStatus = normalizeText(delivery?.delivery_status || delivery?.order_status).toLowerCase();
+    if (deliveryStatus === "cancelled") {
+      return "error";
+    }
+    if (deliveryStatus === "completed" || (delivery?.order_status === "completed" && delivery?.delivery_status !== "cancelled")) {
+      return "success";
+    }
+    return "warning";
   }
 
   function formatNumber(value) {
@@ -3225,6 +3546,106 @@
     notify("Product CSV exported");
   }
 
+  function downloadFilteredDeliveries() {
+    if (filteredDeliveries.value.length === 0) {
+      notify("No matching deliveries to export", "info");
+      return;
+    }
+
+    const rows = [
+      ["Order ID", "Product", "Product ID", "Quantity", "Customer", "Order Status", "Delivery Status", "Date"],
+      ...filteredDeliveries.value.map((delivery) => [
+        delivery.order_id || "",
+        delivery.name || delivery.product_name || "",
+        delivery.product_id || "",
+        delivery.quantity || 0,
+        formatDeliveryCustomer(delivery),
+        delivery.order_status || "",
+        delivery.delivery_status || "",
+        formatDate(delivery.order_created_at),
+      ]),
+    ];
+    const csv = rows.map((row) => row.map((value) => escapeCsv(value)).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `mindstores-deliveries-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    notify("Delivery CSV exported");
+  }
+
+  function clearProductSelection() {
+    selectedProductIds.value = [];
+  }
+
+  function selectLowStockProducts() {
+    selectedProductIds.value = filteredProducts.value
+      .filter((product) => stockStatus(product).key !== "active")
+      .map((product) => product.product_id)
+      .filter(Boolean);
+    const hasSelection = selectedProductIds.value.length > 0;
+    notify(hasSelection ? "Low-stock products selected" : "No low-stock products in this view", hasSelection ? "success" : "info");
+  }
+
+  async function bulkUpdateSelectedProducts(payloadFactory, successMessage) {
+    if (selectedProducts.value.length === 0) {
+      notify("Select at least one product first", "warning");
+      return;
+    }
+
+    productBulkSaving.value = true;
+    let updatedCount = 0;
+    const failed = [];
+    try {
+      for (const product of selectedProducts.value) {
+        try {
+          await runAdminRequest(async (forceRefresh) =>
+            requestProductApi(
+              `/products/${encodeURIComponent(product.product_id)}`,
+              {
+                ...(await buildAdminRequestConfig({}, forceRefresh)),
+                method: "put",
+                data: payloadFactory(product),
+              },
+            ),
+          );
+          updatedCount += 1;
+        } catch (error) {
+          failed.push(product.name || product.product_id);
+          console.error("Bulk product update failed:", error);
+        }
+      }
+
+      clearProductsCache();
+      await fetchProducts();
+      if (failed.length > 0) {
+        notify(`${formatNumber(updatedCount)} updated, ${formatNumber(failed.length)} failed`, updatedCount > 0 ? "warning" : "error");
+        return;
+      }
+      notify(successMessage);
+    } finally {
+      productBulkSaving.value = false;
+    }
+  }
+
+  async function applyBulkProductStatus() {
+    await bulkUpdateSelectedProducts(
+      () => ({ status: bulkProductStatus.value }),
+      "Product status updated",
+    );
+  }
+
+  async function applyBulkLowStockThreshold() {
+    const threshold = Math.max(0, Math.trunc(Number(bulkLowStockThreshold.value || 0)));
+    bulkLowStockThreshold.value = threshold;
+    await bulkUpdateSelectedProducts(
+      () => ({ low_stock_threshold: threshold }),
+      "Low-stock threshold updated",
+    );
+  }
+
   function escapeCsv(value) {
     return `"${String(value ?? "").replace(/"/g, '""')}"`;
   }
@@ -3268,7 +3689,13 @@
       const response = await runAdminRequest(async (forceRefresh) =>
         axios.get(`${API_URL}/admin/deliveries`, await buildAdminRequestConfig({}, forceRefresh)),
       );
-      deliveries.value = Array.isArray(response.data?.items) ? response.data.items : Array.isArray(response.data) ? response.data : [];
+      if (Array.isArray(response.data?.items)) {
+        deliveries.value = response.data.items;
+      } else if (Array.isArray(response.data)) {
+        deliveries.value = response.data;
+      } else {
+        deliveries.value = [];
+      }
     } catch (error) {
       console.error("Failed to fetch deliveries:", error);
       notify(error.response?.data?.message || "Failed to fetch deliveries", "error");
