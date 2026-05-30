@@ -4,11 +4,11 @@ const USER_SETTINGS_UPDATED_EVENT = 'mindstore:user-settings-updated'
 const DEFAULT_SETTINGS = {
   displayName: '',
   currency: 'INR',
-  orderUpdates: true,
+  orderUpdates: false,
   promotionalEmails: false,
-  quickCheckout: true,
-  lowStockAlerts: true,
-  saveDeliveryDetails: true,
+  quickCheckout: false,
+  lowStockAlerts: false,
+  saveDeliveryDetails: false,
   cashOnDeliveryEnabled: true,
   deliveryProfile: {
     phone: '',
@@ -127,28 +127,7 @@ function getCurrencyForCountry(countryOrLocale, fallbackCurrency = DEFAULT_SETTI
   return ALLOWED_CURRENCIES.includes(mappedCurrency) ? mappedCurrency : fallbackCurrency
 }
 
-function getBrowserCountryCode() {
-  if (!isBrowser) {
-    return ''
-  }
 
-  const localeCandidates = []
-  if (Array.isArray(window.navigator?.languages)) {
-    localeCandidates.push(...window.navigator.languages)
-  }
-  if (window.navigator?.language) {
-    localeCandidates.push(window.navigator.language)
-  }
-
-  for (const locale of localeCandidates) {
-    const countryCode = extractCountryCodeFromLocale(locale)
-    if (countryCode) {
-      return countryCode
-    }
-  }
-
-  return ''
-}
 
 function resolveCurrencyFromUserCountry(user = {}, fallbackCurrency = DEFAULT_SETTINGS.currency) {
   if (user?.currency) {
@@ -158,9 +137,7 @@ function resolveCurrencyFromUserCountry(user = {}, fallbackCurrency = DEFAULT_SE
   const countryCandidates = [
     user?.country_code,
     user?.countryCode,
-    user?.country,
-    user?.locale,
-    user?.language
+    user?.country
   ]
 
   for (const candidate of countryCandidates) {
@@ -170,7 +147,7 @@ function resolveCurrencyFromUserCountry(user = {}, fallbackCurrency = DEFAULT_SE
     }
   }
 
-  return getCurrencyForCountry(getBrowserCountryCode(), fallbackCurrency)
+  return fallbackCurrency
 }
 
 function loadUserSettings() {
@@ -245,47 +222,11 @@ function subscribeToUserSettings(onChange) {
   }
 }
 
-function getCountryFromEmail(email) {
-  if (typeof email !== 'string') {
-    return ''
-  }
-  const trimmed = email.trim().toLowerCase()
-  const domain = trimmed.split('@')[1]
-  if (!domain) {
-    return ''
-  }
 
-  const suffixMap = {
-    '.in': 'IN',
-    '.uk': 'GB',
-    '.ca': 'CA',
-    '.au': 'AU',
-    '.de': 'DE',
-    '.fr': 'FR',
-    '.it': 'IT',
-    '.es': 'ES',
-    '.nl': 'NL',
-    '.ae': 'AE',
-    '.sg': 'SG',
-    '.jp': 'JP',
-    '.br': 'BR',
-    '.mx': 'MX',
-    '.us': 'US'
-  }
-
-  for (const [suffix, code] of Object.entries(suffixMap)) {
-    if (domain.endsWith(suffix) || domain.includes(suffix + '.')) {
-      return code
-    }
-  }
-
-  return ''
-}
 
 export {
   ALLOWED_CURRENCIES,
   DEFAULT_SETTINGS,
-  getCountryFromEmail,
   getCurrencyForCountry,
   hasSavedCurrencyPreference,
   loadUserSettings,

@@ -90,16 +90,10 @@ async def firebase_login(request: Request, ctx: RequestContext = Depends(get_con
         now = now_iso()
         existing = await ctx.db.collection("users").find_one({"user_id": user_id}, {"projection": {"_id": 0}})
         
-        # Look up by email (Google ID email) to fetch country, mobile, address details
-        existing_by_email = await ctx.db.collection("users").find_one(
-            {"email": email, "user_id": {"$ne": user_id}},
-            {"projection": {"_id": 0}}
-        )
-
-        locale = normalize_locale(decoded.get("locale")) or normalize_locale(data.get("locale")) or normalize_locale((existing or {}).get("locale")) or normalize_locale((existing_by_email or {}).get("locale"))
-        country_code = resolve_country_code(decoded, data, locale, existing or existing_by_email, email) or "IN"
-        profile_name = normalize_profile_name(decoded.get("name")) or normalize_profile_name((existing or {}).get("name")) or normalize_profile_name((existing_by_email or {}).get("name")) or "User"
-        profile_picture = normalize_image_url(decoded.get("picture")) or normalize_image_url((existing or {}).get("picture")) or normalize_image_url((existing_by_email or {}).get("picture"))
+        locale = normalize_locale(decoded.get("locale")) or normalize_locale(data.get("locale")) or normalize_locale((existing or {}).get("locale"))
+        country_code = resolve_country_code(decoded, data, locale, existing, email) or "IN"
+        profile_name = normalize_profile_name(decoded.get("name")) or normalize_profile_name((existing or {}).get("name")) or "User"
+        profile_picture = normalize_image_url(decoded.get("picture")) or normalize_image_url((existing or {}).get("picture"))
         is_admin = await ctx.admin_access.is_admin_email(email)
 
         updates_set = {
@@ -113,9 +107,9 @@ async def firebase_login(request: Request, ctx: RequestContext = Depends(get_con
         }
 
         # Merge country, mobile/phone, and delivery profile address
-        merged_delivery_profile = (existing or {}).get("delivery_profile") or (existing_by_email or {}).get("delivery_profile")
-        merged_phone = (existing or {}).get("phone") or (existing_by_email or {}).get("phone")
-        merged_mobile = (existing or {}).get("mobile") or (existing_by_email or {}).get("mobile")
+        merged_delivery_profile = (existing or {}).get("delivery_profile")
+        merged_phone = (existing or {}).get("phone")
+        merged_mobile = (existing or {}).get("mobile")
 
         if merged_delivery_profile:
             updates_set["delivery_profile"] = merged_delivery_profile
@@ -133,8 +127,6 @@ async def firebase_login(request: Request, ctx: RequestContext = Depends(get_con
             "save_delivery_details",
         ]:
             val = (existing or {}).get(pref_key)
-            if val is None and existing_by_email:
-                val = existing_by_email.get(pref_key)
             if val is not None:
                 updates_set[pref_key] = val
 
@@ -287,6 +279,35 @@ async def logout(request: Request, ctx: RequestContext = Depends(get_context)):
     if token:
         await ctx.db.collection("user_sessions").delete_many({"$or": [{"session_token_hash": sha256_hex(token)}, {"session_token": token}]})
     response = json_response({"message": "Logged out successfully"}, 200, {"Cache-Control": "no-store"})
+    response.set_cookie(
+        "session_token",
+        "",
+        httponly=True,
+        secure=ctx.config.use_secure_cookies,
+        samesite=ctx.config.cookie_samesite,
+        path="/",
+        max_age=0,
+    )
+    return response
+
+
+@router.delete("/auth/account")
+async def delete_account(request: Request, ctx: RequestContext = Depends(get_context)):
+    if not ctx.user:
+        return error_response(401, "Not authenticated")
+    
+    user_id = ctx.user.get("user_id")
+
+    await ctx.db.collection("products").delete_many({"owner_user_id": user_id})
+    await ctx.db.collection("user_products").delete_many({"owner_user_id": user_id})
+    await ctx.db.collection("product_reviews").delete_many({"reviewer_user_id": user_id})
+    await ctx.db.collection("user_sessions").delete_many({"user_id": user_id})
+    await ctx.db.collection("carts").delete_many({"user_id": user_id})
+    await ctx.db.collection("orders").delete_many({"user_id": user_id})
+    await ctx.db.collection("messages").delete_many({"$or": [{"user_id": user_id}, {"recipient_user_id": user_id}]})
+    await ctx.db.collection("users").delete_one({"user_id": user_id})
+    
+    response = json_response({"message": "Account deleted successfully"}, 200, {"Cache-Control": "no-store"})
     response.set_cookie(
         "session_token",
         "",

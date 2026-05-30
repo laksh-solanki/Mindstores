@@ -9,6 +9,7 @@ import {
   signInWithPopup,
   signOut,
   updateProfile,
+  deleteUser,
 } from "firebase/auth";
 import { defineStore } from "pinia";
 // Import initialized firebase app
@@ -34,34 +35,7 @@ const PROFILE_IMAGE_CACHE_PREFIX = "mindstores.profile-image.";
 let backendSessionPromise = null;
 let backendSessionUid = null;
 
-function extractCountryCodeFromLocale(locale = "") {
-  if (typeof locale !== "string") {
-    return "";
-  }
 
-  const match = locale.trim().match(/^[a-z]{2,3}[-_]([a-z]{2})(?:[-_].*)?$/i);
-  return match ? match[1].toUpperCase() : "";
-}
-
-function getClientLocale() {
-  if (typeof window === "undefined") {
-    return "";
-  }
-
-  const primaryLocale = window.navigator?.language;
-  if (typeof primaryLocale === "string" && primaryLocale.trim()) {
-    return primaryLocale.trim();
-  }
-
-  if (Array.isArray(window.navigator?.languages)) {
-    const firstLocale = window.navigator.languages.find(
-      (locale) => typeof locale === "string" && locale.trim(),
-    );
-    return firstLocale ? firstLocale.trim() : "";
-  }
-
-  return "";
-}
 
 function normalizeCountryCode(value) {
   if (typeof value !== "string") {
@@ -171,8 +145,6 @@ function syncCurrencyPreferenceFromUser(user) {
       user.country_code ||
       user.countryCode ||
       user.country ||
-      user.locale ||
-      user.language ||
       "";
     resolvedCurrency = getCurrencyForCountry(countryCandidate, "");
   }
@@ -265,8 +237,6 @@ export const useAppStore = defineStore("app", {
                 `${API_URL}/auth/firebase-login`,
                 {
                   idToken,
-                  locale: getClientLocale(),
-                  country_code: extractCountryCodeFromLocale(getClientLocale()),
                 },
                 {
                   headers: {
@@ -451,6 +421,41 @@ export const useAppStore = defineStore("app", {
         console.error("Firebase logout failed:", error);
       } finally {
         this.loading = false;
+      }
+    },
+
+    async deleteAccount() {
+      this.loading = true;
+      const cartStore = useCartStore();
+      cartStore.clearCart();
+
+      if (typeof window !== "undefined") {
+        try {
+          window.localStorage.removeItem('mindstore_profile_settings');
+          if (auth.currentUser?.uid) {
+            window.localStorage.removeItem(`mindstores.profile-image.${auth.currentUser.uid}`);
+          }
+        } catch (e) {
+          console.warn("Failed to clear local storage", e);
+        }
+      }
+
+      try {
+        await axios.delete(`${API_URL}/auth/account`, await buildAuthenticatedRequestConfig());
+      } catch (error) {
+        console.warn("Backend account deletion failed or not found, proceeding.", error);
+      }
+
+      try {
+        if (auth.currentUser) {
+          await deleteUser(auth.currentUser);
+        }
+      } catch (error) {
+        console.error("Firebase user deletion failed:", error);
+      } finally {
+        this.loading = false;
+        this.user = null;
+        this.isAuthenticated = false;
       }
     },
 

@@ -34,6 +34,15 @@
             Refresh
           </button>
           <button
+            v-if="isReadonly"
+            class="btn-flat-outline btn-with-icon"
+            @click="isEditing = true"
+          >
+            <v-icon size="18" start>mdi-pencil</v-icon>
+            Edit Profile
+          </button>
+          <button
+            v-else
             class="btn-flat-solid btn-with-icon"
             :disabled="!isFormDirty || savingAll"
             @click="saveAll"
@@ -67,6 +76,23 @@
 
       <!-- Profile Workspace -->
       <template v-else>
+        <!-- First Time Alert -->
+        <v-alert
+          v-if="profileCompletion < 100"
+          class="custom-flat-alert error-alert mb-4"
+          type="error"
+          variant="tonal"
+        >
+          <div class="guest-alert">
+            <div>
+              <strong>Please complete your profile.</strong>
+              <p>
+                Fill up the missing details below to unlock all features.
+              </p>
+            </div>
+          </div>
+        </v-alert>
+
         <v-row class="align-start">
           <!-- Sidebar -->
           <v-col cols="12" lg="4" xl="3">
@@ -249,6 +275,8 @@
                             label="Full Name"
                             maxlength="120"
                             variant="outlined"
+                            :error="!profileForm.name"
+                            :readonly="isReadonly"
                           />
                         </v-col>
                         <v-col cols="12" md="6">
@@ -271,16 +299,20 @@
                             :items="countryOptions"
                             label="Country"
                             variant="outlined"
+                            :error="!profileForm.countryCode"
+                            :readonly="isReadonly"
                           />
                         </v-col>
                         <v-col cols="12" md="6">
-                          <v-text-field
+                          <v-select
+                            v-model="settings.currency"
                             class="flat-text-field"
                             density="comfortable"
+                            :items="ALLOWED_CURRENCIES"
                             label="Currency"
-                            :model-value="`${settings.currency} (Auto)`"
-                            readonly
                             variant="outlined"
+                            :error="!settings.currency"
+                            :readonly="isReadonly"
                           />
                         </v-col>
                       </v-row>
@@ -299,14 +331,6 @@
                             Used to prefill checkout.
                           </p>
                         </div>
-                        <v-switch
-                          v-model="settings.saveDeliveryDetails"
-                          class="flat-switch"
-                          color="teal-darken-1"
-                          density="compact"
-                          hide-details
-                          inset
-                        />
                       </div>
 
                       <v-row class="mt-2" dense>
@@ -318,6 +342,8 @@
                             label="Phone Number"
                             maxlength="32"
                             variant="outlined"
+                            :error="!settings.deliveryProfile.phone"
+                            :readonly="isReadonly"
                           />
                         </v-col>
                         <v-col cols="12" md="6">
@@ -328,6 +354,8 @@
                             label="Postal Code"
                             maxlength="32"
                             variant="outlined"
+                            :error="!settings.deliveryProfile.postalCode"
+                            :readonly="isReadonly"
                           />
                         </v-col>
                         <v-col cols="12">
@@ -338,6 +366,8 @@
                             label="Street Address"
                             maxlength="220"
                             variant="outlined"
+                            :error="!settings.deliveryProfile.address"
+                            :readonly="isReadonly"
                           />
                         </v-col>
                         <v-col cols="12" md="6">
@@ -348,6 +378,8 @@
                             label="City"
                             maxlength="96"
                             variant="outlined"
+                            :error="!settings.deliveryProfile.city"
+                            :readonly="isReadonly"
                           />
                         </v-col>
                         <v-col cols="12" md="6">
@@ -358,6 +390,8 @@
                             label="State"
                             maxlength="96"
                             variant="outlined"
+                            :error="!settings.deliveryProfile.state"
+                            :readonly="isReadonly"
                           />
                         </v-col>
                         <v-col cols="12">
@@ -370,6 +404,7 @@
                             maxlength="240"
                             rows="2"
                             variant="outlined"
+                            :readonly="isReadonly"
                           />
                         </v-col>
                       </v-row>
@@ -403,23 +438,7 @@
                               color="teal-darken-1"
                               hide-details
                               inset
-                            />
-                          </div>
-                        </v-col>
-                        <v-col cols="12" md="6">
-                          <div class="preference-flat-card">
-                            <div class="pref-details">
-                              <strong>Promotional emails</strong>
-                              <span class="pref-desc"
-                                >Offers and seasonal drops</span
-                              >
-                            </div>
-                            <v-switch
-                              v-model="settings.promotionalEmails"
-                              class="flat-switch"
-                              color="teal-darken-1"
-                              hide-details
-                              inset
+                              :readonly="isReadonly"
                             />
                           </div>
                         </v-col>
@@ -437,23 +456,7 @@
                               color="teal-darken-1"
                               hide-details
                               inset
-                            />
-                          </div>
-                        </v-col>
-                        <v-col cols="12" md="6">
-                          <div class="preference-flat-card">
-                            <div class="pref-details">
-                              <strong>Low stock alerts</strong>
-                              <span class="pref-desc"
-                                >Show inventory reminders</span
-                              >
-                            </div>
-                            <v-switch
-                              v-model="settings.lowStockAlerts"
-                              class="flat-switch"
-                              color="teal-darken-1"
-                              hide-details
-                              inset
+                              :readonly="isReadonly"
                             />
                           </div>
                         </v-col>
@@ -461,24 +464,14 @@
 
                       <!-- Save strip flat -->
                       <div class="save-strip-flat">
-                        <span v-if="isFormDirty" class="dirty-state-text">
-                          <v-icon color="warning" size="16"
-                            >mdi-alert-circle-outline</v-icon
-                          >
-                          Unsaved changes pending
-                        </span>
-                        <span v-else class="clean-state-text">
-                          <v-icon color="success" size="16"
-                            >mdi-check-circle-outline</v-icon
-                          >
-                          Profile is up to date
-                        </span>
                         <button
-                          class="btn-flat-solid save-btn"
-                          :disabled="!isFormDirty || savingAll"
-                          @click="saveAll"
+                          class="btn-flat-solid w-100"
+                          style="background-color: #ef4444; color: white; border-color: #ef4444;"
+                          :disabled="deletingAccount"
+                          @click="deleteAccount"
                         >
-                          Save Changes
+                          <v-icon size="16" start>mdi-delete</v-icon>
+                          Delete Account
                         </button>
                       </div>
                     </div>
@@ -675,7 +668,7 @@ import {
   parseMobileNumber,
 } from "@/utils/userAdmin";
 import {
-  getCountryFromEmail,
+  ALLOWED_CURRENCIES,
   getCurrencyForCountry,
   loadUserSettings,
   normalizeCountryCode,
@@ -835,6 +828,7 @@ export default {
     const orderSearch = ref("");
     const orderStatusFilter = ref("all");
     const orderSort = ref("newest");
+    const deletingAccount = ref(false);
     const userAdminDialog = ref(false);
     const userAdminPinMode = ref("verify");
     const userAdminPinSaving = ref(false);
@@ -1103,19 +1097,7 @@ export default {
       });
     });
 
-    const deriveCurrencyForSelectedCountry = () => {
-      const fallbackCurrency = resolveCurrencyFromUserCountry(
-        appStore.user,
-        settings.value.currency || DEFAULT_CURRENCY,
-      );
-      const countryCode = profileForm.value.countryCode || DEFAULT_COUNTRY_CODE;
-      return getCurrencyForCountry(countryCode, fallbackCurrency);
-    };
 
-    const syncCurrencyWithCountry = () => {
-      const derivedCurrency = deriveCurrencyForSelectedCountry();
-      settings.value.currency = derivedCurrency || DEFAULT_CURRENCY;
-    };
 
     const resolveDefaultMobileCountryCode = () => {
       const storedMobileCountryCode = normalizeMobileCountryCode(
@@ -1147,14 +1129,12 @@ export default {
     };
 
     const loadProfileForm = () => {
-      const emailCountry = getCountryFromEmail(appStore.user?.email);
       profileForm.value = {
         name: appStore.user?.name || "",
         email: appStore.user?.email || "",
         countryCode: normalizeCountryCode(
           appStore.user?.country_code ||
             appStore.user?.country ||
-            emailCountry ||
             DEFAULT_COUNTRY_CODE,
         ),
         picture: profileImage.value || "",
@@ -1211,7 +1191,6 @@ export default {
             : appStore.user.save_delivery_details,
         deliveryProfile,
       });
-      syncCurrencyWithCountry();
       settingsBaseline.value = cloneSettings(settings.value);
     };
 
@@ -1508,6 +1487,7 @@ export default {
 
         loadProfileForm();
         loadSettings();
+        isEditing.value = false;
         showMessage("Profile saved");
       } catch (error) {
         const errorMessage =
@@ -1575,6 +1555,21 @@ export default {
         }
       } finally {
         refreshing.value = false;
+      }
+    };
+
+    const deleteAccount = async () => {
+      if (!window.confirm("Are you sure you want to delete your account? This action cannot be undone and will delete all your products and data.")) {
+        return;
+      }
+      deletingAccount.value = true;
+      try {
+        await appStore.deleteAccount();
+        router.push("/");
+      } catch (error) {
+        showMessage(error?.message || "Failed to delete account", "error");
+      } finally {
+        deletingAccount.value = false;
       }
     };
 
@@ -1695,12 +1690,13 @@ export default {
       { immediate: true },
     );
 
-    watch(
-      () => profileForm.value.countryCode,
-      () => {
-        syncCurrencyWithCountry();
-      },
+    const isEditing = ref(false);
+
+    const isReadonly = computed(
+      () => profileCompletion.value === 100 && !isFormDirty.value && !isEditing.value,
     );
+
+
 
     watch(
       () => [appStore.isAuthenticated, appStore.loading],
@@ -1787,11 +1783,16 @@ export default {
       saveAll,
       fetchOrders,
       refreshProfile,
+      deleteAccount,
+      deletingAccount,
       downloadInvoice,
       logout,
       formatDate,
       formatAmount,
       statusColor,
+      isReadonly,
+      isEditing,
+      ALLOWED_CURRENCIES,
     };
   },
 };
