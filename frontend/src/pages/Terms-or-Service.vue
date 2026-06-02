@@ -9,15 +9,15 @@
             <span class="tag-label">TERMS OF SERVICE</span>
           </div>
           <h1 class="page-title ml-2">
-            Terms <span class="highlight-serif">of Service</span>
+            Terms <span class="highlight-serif">of Demo Use</span>
           </h1>
           <p class="page-subtitle ml-2 mt-2 d-flex align-center gap-2">
             <v-icon size="16">mdi-clock-outline</v-icon>
-            Last updated: February 22, 2026
+            Last updated: June 2, 2026
             <span
               class="d-none d-sm-inline ml-2 pl-2"
               style="border-left: 1px solid #cbd5e1"
-            >8 min read</span>
+            >5 min read</span>
           </p>
         </div>
       </section>
@@ -119,63 +119,63 @@
       num: "01",
       title: "Acceptance of Terms",
       content:
-        "By accessing, browsing, or using the Mindstore website and related services, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. If you do not agree with any part of these terms, you must not use our services. We reserve the right, at our sole discretion, to modify, add, or remove portions of these terms at any time. Your continued use of the website following the posting of changes means that you accept and agree to the changes.",
+        "By accessing or using Mindstore, you acknowledge that this website is a portfolio demonstration. Products, prices, promotions, checkout options, shipping estimates, and order updates are sample content. If you do not agree with these terms, do not use the website. These terms may be updated when project behavior changes.",
     },
     {
       id: "accounts",
       num: "02",
       title: "User Accounts & Security",
       content:
-        "To access certain features of our platform, including fast checkout and order history, you may be required to register for an account. You are solely responsible for maintaining the confidentiality of your account credentials, including your password, and for restricting access to your computer or device. You agree to accept responsibility for all activities that occur under your account. You must notify us immediately of any unauthorized use of your account or any other breach of security.",
+        "Some demonstration features, including cart actions, reviews, profile settings, and order history, require an account. Keep your account credentials private and use only information you are comfortable providing to a portfolio project. Do not share passwords or reuse sensitive credentials created for other services.",
     },
     {
       id: "orders",
       num: "03",
       title: "Orders, Pricing & Payments",
       content:
-        "All prices displayed on Mindstore are subject to change without notice. We make every effort to display accurate product descriptions and pricing, however, errors may occur. In the event a product is listed at an incorrect price, we reserve the right to refuse or cancel any orders placed for that product. Payment must be received by us before our acceptance of an order. We accept major credit cards and other designated payment methods. By submitting your payment information, you grant us the right to provide such information to third parties for purposes of facilitating the transaction.",
+        "Mindstore does not sell products or process real payments. Catalog prices, stock counts, promotion codes, payment methods, and totals are demonstration values used to show interface behavior. Never enter a real card number, CVV, UPI identifier, or other sensitive payment information. A confirmed demo order may appear in your account history for testing purposes only.",
     },
     {
       id: "shipping",
       num: "04",
       title: "Shipping, Delivery & Returns",
       content:
-        "Delivery times are estimates only and are not guaranteed. Risk of loss and title for items purchased from Mindstore pass to you upon delivery of the items to the carrier. If you are not completely satisfied with your purchase, you may return it within our designated return period in accordance with our Return Policy. Items must be returned in their original condition, unworn, unwashed, and with all tags attached. Refunds will be issued to the original method of payment.",
+        "Mindstore does not arrange shipments, deliveries, returns, refunds, or exchanges. Any shipping cost, delivery estimate, tracking state, cancellation action, or return-related text shown in the interface is sample content designed to demonstrate a storefront workflow.",
     },
     {
       id: "ip",
       num: "05",
       title: "Intellectual Property Rights",
       content:
-        "All content included on the Mindstore website, such as text, graphics, logos, images, audio clips, digital downloads, and data compilations, is the property of Mindstore or its content suppliers and is protected by international copyright, trademark, and other intellectual property laws. The compilation of all content on this site is the exclusive property of Mindstore. You may not extract or re-utilize parts of the contents without our express written consent.",
+        "Website source code, branding, layout, and original project content remain subject to their applicable ownership and license terms. Product images, names, and third-party materials remain the property of their respective owners where applicable. Do not reuse protected content without permission.",
     },
     {
       id: "conduct",
       num: "06",
       title: "Prohibited User Conduct",
       content:
-        "You agree not to use the Mindstore website for any unlawful purpose or in any way that might harm, damage, or disparage any other party. You may not attempt to gain unauthorized access to any portion of the site, other accounts, computer systems, or networks connected to the site. Prohibited activities include, but are not limited to: transmitting harmful code, engaging in data mining, attempting to interfere with the proper working of the site, or using the site to harass or harm others.",
+        "Do not use the website for unlawful activity, attempt unauthorized access, interfere with application availability, submit harmful content, scrape data at disruptive rates, or access another person's account. Use the project only for legitimate evaluation and demonstration purposes.",
     },
     {
       id: "privacy",
       num: "07",
       title: "Data Privacy & User Information",
       content:
-        "Your privacy is critical to us. We collect, store, and use your personal information in accordance with our Privacy Policy. By using Mindstore, you consent to such processing and you warrant that all data provided by you is accurate. Please review our Privacy Policy to understand our practices regarding your data, including how we handle cookies, analytics, and third-party integrations.",
+        "Account details, preferences, cart actions, reviews, and generated demo-order history may be used to support the workflows you explore. Read the Privacy Policy for more detail. Use sample information wherever practical and never submit sensitive payment data.",
     },
     {
       id: "liability",
       num: "08",
       title: "Limitation of Liability & Disclaimers",
       content:
-        'The Mindstore website and all information, content, materials, products, and services included on or otherwise made available to you through this site are provided on an "as is" and "as available" basis. We make no representations or warranties of any kind, express or implied, as to the operation of the site or the information, content, materials, or products included on it. In no event shall Mindstore, its directors, officers, employees, or agents be liable for any indirect, incidental, special, consequential, or punitive damages arising out of or related to your use of the site.',
+        'Mindstore is provided on an "as is" and "as available" basis as a portfolio demonstration. No representation is made that catalog items are available for sale or that sample checkout, payment, shipment, return, or support workflows are commercial services. Use the project at your own discretion.',
     },
     {
       id: "governing",
       num: "09",
       title: "Governing Law & Dispute Resolution",
       content:
-        "These Terms of Service and any separate agreements whereby we provide you services shall be governed by and construed in accordance with the laws of the jurisdiction in which Mindstore operates, without regard to its conflict of law provisions. Any dispute arising from or relating to the subject matter of these terms shall be finally settled by arbitration in accordance with the applicable rules, except that either party may seek equitable relief in a court of competent jurisdiction.",
+        "Questions about these demonstration terms should be directed to the project contact listed on the website. Any legal rights or obligations that apply independently of this page remain governed by the applicable law in the relevant jurisdiction.",
     },
   ];
 

@@ -12,14 +12,6 @@
     <!-- Empty State -->
     <div v-if="cartStore.items.length === 0" class="cart-empty-wrapper">
       <div class="gallery-frame empty-cart-frame">
-        <div class="frame-header">
-          <div class="frame-dots">
-            <span class="dot-red" />
-            <span class="dot-yellow" />
-            <span class="dot-green" />
-          </div>
-          <div class="frame-title-display">cart_session.json</div>
-        </div>
         <div class="empty-cart-body text-center">
           <div class="brand-tagline">
             <span class="tag-label">SHOPPING CART</span>
@@ -147,14 +139,6 @@
       <!-- Order Summary Card -->
       <v-col cols="12" md="4">
         <div class="gallery-frame summary-frame">
-          <div class="frame-header">
-            <div class="frame-dots">
-              <span class="dot-red" />
-              <span class="dot-yellow" />
-              <span class="dot-green" />
-            </div>
-            <div class="frame-title-display">order_summary.json</div>
-          </div>
           <div class="summary-card-body">
             <h2 class="summary-title">Order <span class="highlight-serif">Summary</span></h2>
             
@@ -235,11 +219,11 @@
                 <span>-{{ formatAmount(promoDiscount) }}</span>
               </div>
               <div class="price-row">
-                <span>Shipping</span>
-                <span class="free-badge">Free</span>
+                <span>Demo Shipping</span>
+                <span class="free-badge">Sample: Free</span>
               </div>
               <div class="price-row" style="font-size: 0.85rem; color: #64748b;">
-                <span>Estimated Delivery</span>
+                <span>Example Delivery</span>
                 <span>3-5 Business Days</span>
               </div>
               <div class="price-divider my-3" />
@@ -248,6 +232,10 @@
                 <span class="total-amount">{{ formatAmount(finalTotalAmount) }}</span>
               </div>
             </div>
+
+            <p class="summary-demo-note mt-4">
+              Demo only: totals, promotions, and delivery estimates are sample values. No real purchase is created.
+            </p>
 
             <!-- Checkout CTA -->
             <v-btn
@@ -259,7 +247,7 @@
               size="large"
               @click="checkout"
             >
-              Place Order
+              Continue to Demo Checkout
             </v-btn>
           </div>
         </div>
@@ -977,40 +965,6 @@
   top: 88px;
 }
 
-.frame-header {
-  height: 36px;
-  background: #f8fafc;
-  border-bottom: 1px solid #0f172a;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  position: relative;
-}
-.frame-dots {
-  display: flex;
-  gap: 6px;
-}
-.frame-dots span {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  border: 1px solid #0f172a;
-  display: inline-block;
-}
-.dot-red { background: #ff5f56; }
-.dot-yellow { background: #ffbd2e; }
-.dot-green { background: #27c93f; }
-
-.frame-title-display {
-  font-family: monospace;
-  font-size: 11px;
-  font-weight: 600;
-  color: #64748b;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
 .summary-card-body {
   padding: 24px;
 }
@@ -1067,6 +1021,13 @@
   border: 1px solid #cbd5e1;
   padding: 16px;
   background: #f8fafc;
+}
+
+.summary-demo-note {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.6;
 }
 
 .promo-label {

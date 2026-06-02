@@ -12,16 +12,6 @@
     <!-- Center stage Grid wrapper -->
     <div class="auth-grid-wrapper">
       <div class="gallery-frame auth-frame">
-        <!-- macOS-style frame header -->
-        <div class="frame-header">
-          <div class="frame-dots">
-            <span class="dot-red" />
-            <span class="dot-yellow" />
-            <span class="dot-green" />
-          </div>
-          <div class="frame-title-display">secure_signup.json</div>
-        </div>
-
         <!-- Form container -->
         <div class="auth-card-body">
           <div class="brand-tagline">
@@ -328,40 +318,6 @@
   border: 1px solid #0f172a;
 
 }
-.frame-header {
-  height: 36px;
-  background: #f8fafc;
-  border-bottom: 1px solid #0f172a;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  position: relative;
-}
-.frame-dots {
-  display: flex;
-  gap: 6px;
-}
-.frame-dots span {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  border: 1px solid #0f172a;
-  display: inline-block;
-}
-.dot-red { background: #ff5f56; }
-.dot-yellow { background: #ffbd2e; }
-.dot-green { background: #27c93f; }
-
-.frame-title-display {
-  font-family: monospace;
-  font-size: 11px;
-  font-weight: 600;
-  color: #64748b;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
 .auth-card-body {
   padding: 40px 32px;
 }

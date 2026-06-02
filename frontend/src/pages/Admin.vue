@@ -1266,34 +1266,104 @@
                 />
               </v-col>
             </v-row>
-            <v-data-table
+            <v-progress-linear v-if="deliveriesLoading" class="mt-4" color="teal-darken-1" indeterminate />
+            <v-alert
+              v-else-if="filteredDeliveryOrders.length === 0"
               class="mt-4"
-              density="comfortable"
-              :headers="deliveryHeaders"
-              :items="filteredDeliveries"
-              :items-per-page="15"
-              :loading="deliveriesLoading"
+              type="info"
+              variant="tonal"
             >
-              <template #item.order_id="{ item }">
-                <span class="font-weight-medium">{{ resolveTableItem(item)?.order_id }}</span>
-              </template>
-              <template #item.customer="{ item }">
-                {{ formatDeliveryCustomer(resolveTableItem(item)) }}
-              </template>
-              <template #item.order_status="{ item }">
-                <v-chip :color="deliveryStatusColor(resolveTableItem(item))" size="small" variant="tonal">
-                  {{ resolveTableItem(item)?.order_status || 'pending' }}
-                </v-chip>
-              </template>
-              <template #item.delivery_status="{ item }">
-                <v-chip :color="deliveryStatusColor(resolveTableItem(item))" size="small" variant="flat">
-                  {{ resolveTableItem(item)?.delivery_status || 'pending' }}
-                </v-chip>
-              </template>
-              <template #item.order_created_at="{ item }">
-                {{ formatDate(resolveTableItem(item)?.order_created_at) }}
-              </template>
-            </v-data-table>
+              {{ deliveries.length === 0 ? 'No deliveries yet.' : 'No deliveries match this filter.' }}
+            </v-alert>
+            <v-expansion-panels v-else class="mt-4" variant="accordion">
+              <v-expansion-panel
+                v-for="order in filteredDeliveryOrders"
+                :key="order.order_id"
+                elevation="0"
+              >
+                <v-expansion-panel-title>
+                  <div class="d-flex flex-column flex-lg-row align-lg-center justify-space-between ga-3 w-100 pr-3">
+                    <div>
+                      <div class="font-weight-bold">Order #{{ order.order_id }}</div>
+                      <div class="text-caption text-medium-emphasis">
+                        {{ formatDeliveryCustomer(order) }} | {{ formatDate(order.order_created_at) }}
+                      </div>
+                    </div>
+                    <div class="d-flex flex-wrap align-center ga-2">
+                      <v-chip color="primary" size="small" variant="tonal">
+                        {{ order.items.length }} {{ order.items.length === 1 ? 'product' : 'products' }}
+                      </v-chip>
+                      <v-chip color="secondary" size="small" variant="tonal">
+                        {{ order.total_quantity }} units
+                      </v-chip>
+                      <v-chip :color="deliveryStatusColor({ order_status: order.order_status })" size="small" variant="flat">
+                        {{ order.order_status || 'pending' }}
+                      </v-chip>
+                    </div>
+                  </div>
+                </v-expansion-panel-title>
+                <v-expansion-panel-text>
+                  <div class="overflow-x-auto">
+                    <v-table density="comfortable">
+                      <thead>
+                        <tr>
+                          <th>Product</th>
+                          <th>Quantity</th>
+                          <th>Delivery</th>
+                          <th>Approved</th>
+                          <th>Last Delivery</th>
+                          <th>Confirmed</th>
+                          <th>Cancelled</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="delivery in order.items" :key="deliveryActionKey(delivery)">
+                          <td>
+                            <div class="font-weight-medium">{{ delivery.name || delivery.product_name || 'Product' }}</div>
+                            <div class="text-caption text-medium-emphasis">{{ delivery.product_id }}</div>
+                          </td>
+                          <td>{{ delivery.quantity || 1 }}</td>
+                          <td>
+                            <v-chip :color="deliveryStatusColor(delivery)" size="small" variant="flat">
+                              {{ delivery.delivery_status || 'pending' }}
+                            </v-chip>
+                          </td>
+                          <td>{{ formatDate(delivery.approved_at) }}</td>
+                          <td>{{ formatDate(delivery.scheduled_delivery_date) }}</td>
+                          <td>{{ formatDate(delivery.delivery_confirmed_at) }}</td>
+                          <td>{{ formatDate(delivery.cancelled_at) }}</td>
+                          <td>
+                            <div class="d-flex flex-wrap ga-2">
+                              <v-btn
+                                v-if="canConfirmDelivery(delivery)"
+                                color="success"
+                                :loading="deliveryActionLoadingId === deliveryActionKey(delivery)"
+                                rounded="lg"
+                                size="small"
+                                text="Confirm Delivery"
+                                variant="flat"
+                                @click.stop="confirmAdminDelivery(delivery)"
+                              />
+                              <v-btn
+                                v-if="canCancelDelivery(delivery)"
+                                color="error"
+                                :loading="deliveryActionLoadingId === deliveryActionKey(delivery)"
+                                rounded="lg"
+                                size="small"
+                                text="Cancel Delivery"
+                                variant="outlined"
+                                @click.stop="cancelAdminDelivery(delivery)"
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </v-table>
+                  </div>
+                </v-expansion-panel-text>
+              </v-expansion-panel>
+            </v-expansion-panels>
           </v-card-text>
         </v-card>
 
@@ -1917,6 +1987,7 @@
   const users = ref([]);
   const deliveries = ref([]);
   const deliveriesLoading = ref(false);
+  const deliveryActionLoadingId = ref("");
   const adminAccessEntries = ref([]);
   const productLoading = ref(false);
   const userLoading = ref(false);
@@ -2036,15 +2107,6 @@
     { title: "Updated", key: "updated_at" },
     { title: "Actions", key: "actions", sortable: false },
   ];
-  const deliveryHeaders = [
-    { title: "Order ID", key: "order_id" },
-    { title: "Product", key: "name" },
-    { title: "Quantity", key: "quantity" },
-    { title: "Customer", key: "customer" },
-    { title: "Status", key: "order_status" },
-    { title: "Delivery", key: "delivery_status" },
-    { title: "Date", key: "order_created_at" },
-  ];
   const accessHeaders = [
     { title: "Email", key: "email" },
     { title: "Updated", key: "updated_at" },
@@ -2091,6 +2153,7 @@
   const deliveryStatusOptions = [
     { title: "All deliveries", value: "all" },
     { title: "Pending", value: "pending" },
+    { title: "Continue shipping", value: "continue shipping" },
     { title: "Completed", value: "completed" },
     { title: "Cancelled", value: "cancelled" },
   ];
@@ -2367,27 +2430,46 @@
     return products.value.filter((product) => selectedIds.has(String(product.product_id)));
   });
 
-  const filteredDeliveries = computed(() =>
-    deliveries.value.filter((delivery) => {
-      const query = normalizeText(deliverySearch.value).toLowerCase();
-      const deliveryStatus = normalizeText(delivery.delivery_status || delivery.order_status || "pending").toLowerCase();
-      const matchesStatus =
-        deliveryStatusFilter.value === "all" ||
-        deliveryStatus === deliveryStatusFilter.value ||
-        (deliveryStatusFilter.value === "completed" && delivery.order_status === "completed" && delivery.delivery_status !== "cancelled") ||
-        (deliveryStatusFilter.value === "cancelled" && delivery.delivery_status === "cancelled");
-      const matchesSearch = !query || searchMatchesValues([
-        delivery.order_id,
-        delivery.name,
-        delivery.product_name,
-        delivery.product_id,
-        formatDeliveryCustomer(delivery),
-        delivery.order_status,
-        delivery.delivery_status,
-      ], query);
-      return matchesStatus && matchesSearch;
-    }),
-  );
+  const filteredDeliveries = computed(() => deliveries.value.filter((delivery) => deliveryMatchesFilters(delivery)));
+
+  const filteredDeliveryOrders = computed(() => {
+    const groupedOrders = new Map();
+    for (const [index, delivery] of deliveries.value.entries()) {
+      const orderId = normalizeText(delivery.order_id) || `delivery-${index + 1}`;
+      if (!groupedOrders.has(orderId)) {
+        groupedOrders.set(orderId, {
+          ...delivery,
+          order_id: orderId,
+          items: [],
+          total_quantity: 0,
+        });
+      }
+      const order = groupedOrders.get(orderId);
+      order.items.push(delivery);
+      order.total_quantity += Number(delivery.quantity || 1);
+    }
+    return [...groupedOrders.values()].filter((order) => order.items.some((delivery) => deliveryMatchesFilters(delivery)));
+  });
+
+  function deliveryMatchesFilters(delivery) {
+    const query = normalizeText(deliverySearch.value).toLowerCase();
+    const deliveryStatus = normalizeText(delivery.delivery_status || delivery.order_status || "pending").toLowerCase();
+    const matchesStatus =
+      deliveryStatusFilter.value === "all" ||
+      deliveryStatus === deliveryStatusFilter.value ||
+      (deliveryStatusFilter.value === "completed" && delivery.order_status === "completed" && delivery.delivery_status !== "cancelled") ||
+      (deliveryStatusFilter.value === "cancelled" && delivery.delivery_status === "cancelled");
+    const matchesSearch = !query || searchMatchesValues([
+      delivery.order_id,
+      delivery.name,
+      delivery.product_name,
+      delivery.product_id,
+      formatDeliveryCustomer(delivery),
+      delivery.order_status,
+      delivery.delivery_status,
+    ], query);
+    return matchesStatus && matchesSearch;
+  }
 
   const filteredAdminAccess = computed(() => {
     const query = normalizeText(accessSearch.value).toLowerCase();
@@ -2483,7 +2565,7 @@
     },
     {
       label: "Completed",
-      value: formatNumber(deliveries.value.filter((delivery) => delivery.order_status === "completed" && delivery.delivery_status !== "cancelled").length),
+      value: formatNumber(deliveries.value.filter((delivery) => delivery.delivery_status === "completed").length),
       icon: "mdi-check-circle-outline",
       color: "success",
     },
@@ -3120,6 +3202,10 @@
       delivery?.payment_method,
       formatDeliveryCustomer(delivery),
       formatDate(delivery?.order_created_at),
+      formatDate(delivery?.approved_at),
+      formatDate(delivery?.scheduled_delivery_date),
+      formatDate(delivery?.delivery_confirmed_at),
+      formatDate(delivery?.cancelled_at),
     ], query);
   }
 
@@ -3329,6 +3415,9 @@
     }
     if (deliveryStatus === "completed" || (delivery?.order_status === "completed" && delivery?.delivery_status !== "cancelled")) {
       return "success";
+    }
+    if (deliveryStatus === "continue shipping") {
+      return "info";
     }
     return "warning";
   }
@@ -3557,7 +3646,7 @@
     }
 
     const rows = [
-      ["Order ID", "Product", "Product ID", "Quantity", "Customer", "Order Status", "Delivery Status", "Date"],
+      ["Order ID", "Product", "Product ID", "Quantity", "Customer", "Order Status", "Delivery Status", "Placed", "Approved", "Last Delivery", "Confirmed", "Cancelled"],
       ...filteredDeliveries.value.map((delivery) => [
         delivery.order_id || "",
         delivery.name || delivery.product_name || "",
@@ -3567,6 +3656,10 @@
         delivery.order_status || "",
         delivery.delivery_status || "",
         formatDate(delivery.order_created_at),
+        formatDate(delivery.approved_at),
+        formatDate(delivery.scheduled_delivery_date),
+        formatDate(delivery.delivery_confirmed_at),
+        formatDate(delivery.cancelled_at),
       ]),
     ];
     const csv = rows.map((row) => row.map((value) => escapeCsv(value)).join(",")).join("\n");
@@ -3706,6 +3799,54 @@
     } finally {
       deliveriesLoading.value = false;
     }
+  }
+
+  function deliveryActionKey(delivery) {
+    return [delivery?.order_id, delivery?.product_id].filter(Boolean).join(":");
+  }
+
+  function canConfirmDelivery(delivery) {
+    return ["pending", "continue shipping"].includes(normalizeText(delivery?.delivery_status || "pending").toLowerCase());
+  }
+
+  function canCancelDelivery(delivery) {
+    return ["pending", "continue shipping"].includes(normalizeText(delivery?.delivery_status || "pending").toLowerCase());
+  }
+
+  async function updateAdminDelivery(delivery, action) {
+    if (!delivery?.order_id || !delivery?.product_id) {
+      notify("Delivery record is incomplete", "error");
+      return;
+    }
+    if (action === "cancel-delivery" && !confirm(`Cancel delivery for ${delivery.name || delivery.product_id}?`)) {
+      return;
+    }
+
+    deliveryActionLoadingId.value = deliveryActionKey(delivery);
+    try {
+      await runAdminRequest(async (forceRefresh) =>
+        axios.post(
+          `${API_URL}/admin/orders/${encodeURIComponent(delivery.order_id)}/items/${encodeURIComponent(delivery.product_id)}/${action}`,
+          {},
+          await buildAdminRequestConfig({}, forceRefresh),
+        ),
+      );
+      notify(action === "confirm-delivery" ? "Delivery confirmed" : "Delivery cancelled");
+      await fetchDeliveries();
+    } catch (error) {
+      console.error("Failed to update delivery:", error);
+      notify(error.response?.data?.message || "Failed to update delivery", "error");
+    } finally {
+      deliveryActionLoadingId.value = "";
+    }
+  }
+
+  async function confirmAdminDelivery(delivery) {
+    await updateAdminDelivery(delivery, "confirm-delivery");
+  }
+
+  async function cancelAdminDelivery(delivery) {
+    await updateAdminDelivery(delivery, "cancel-delivery");
   }
 
   async function fetchProducts() {

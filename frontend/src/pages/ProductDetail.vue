@@ -33,15 +33,6 @@
         <!-- LEFT COLUMN: Image Gallery mock macOS Frame & specs -->
         <div class="detail-left-col">
           <div class="gallery-frame">
-            <div class="frame-header">
-              <div class="frame-dots">
-                <span class="dot-red" />
-                <span class="dot-yellow" />
-                <span class="dot-green" />
-              </div>
-              <div class="frame-title-display">product_stage.json</div>
-            </div>
-
             <div class="gallery-carousel-wrap">
               <v-carousel
                 v-if="productImageUrls.length > 0"
@@ -114,9 +105,9 @@
         <div class="detail-right-col">
           <div class="product-purchase-panel">
             <div class="panel-meta">
-              <span class="meta-item">Inclusive of all taxes</span>
+              <span class="meta-item">Portfolio demo catalog</span>
               <span class="meta-dot">•</span>
-              <span class="meta-item">Curated by Mindstores</span>
+              <span class="meta-item">Sample checkout available</span>
             </div>
 
             <h1 class="product-title">{{ product.name }}</h1>
@@ -240,7 +231,7 @@
         </div>
 
         <div class="promise-sidebar-card">
-          <h2 class="details-section-title">Service Promise</h2>
+          <h2 class="details-section-title">Demo Guidance</h2>
           <div class="promise-list">
             <div
               v-for="(detail, index) in atelierDetails"
@@ -468,7 +459,7 @@
     comment: ''
   })
 
-  const fallbackDescription = 'A design-first piece crafted to blend visual calm with daily utility.'
+  const fallbackDescription = 'Explore this catalog item, review its current availability, and add it to your demo cart.'
   const reviewCommentMaxLength = 1000
   const productImageUrls = computed(() => safeDisplayImageUrls(product.value?.image_urls, product.value?.image_url))
 
@@ -577,38 +568,26 @@
   const stockText = computed(() => {
     const stock = Number(product.value?.stock || 0)
     if (stock <= 0) return 'Currently unavailable'
-    if (stock <= 5) return `Only ${stock} pieces left`
-    return `${stock} pieces ready to ship`
-  })
-
-  const materialLabel = computed(() => {
-    const category = String(product.value?.category || '').toLowerCase()
-    if (category.includes('furniture')) return 'Premium engineered wood'
-    if (category.includes('electronics')) return 'Precision electronic finish'
-    if (category.includes('clothing')) return 'Soft premium fabric blend'
-    return 'Handpicked premium materials'
+    if (stock <= 5) return `Only ${stock} available`
+    return `${stock} available in catalog`
   })
 
   const visualPanels = computed(() => {
     return [
-      { title: 'Material', value: materialLabel.value },
-      { title: 'Dispatch', value: stockReady.value ? 'Within 24 hours' : 'Restock in progress' },
-      { title: 'Delivery', value: stockReady.value ? 'Est. in 3-5 days' : 'Unavailable' },
-      { title: 'Returns', value: '30-day easy return' },
+      { title: 'Availability', value: stockReady.value ? 'Available in demo catalog' : 'Currently unavailable' },
+      { title: 'Checkout', value: 'Demonstration flow only' },
+      { title: 'Account', value: 'Sign in to save cart items' },
+      { title: 'Support', value: 'Help Center guidance' },
     ]
   })
 
   const trustChips = computed(() => {
     const chips = [
-      { icon: 'mdi-shield-check', label: 'Quality checked' },
-      { icon: 'mdi-truck-fast-outline', label: 'Tracked shipping' },
-      { icon: 'mdi-credit-card-check-outline', label: 'Secure checkout' },
-      { icon: 'mdi-refresh-circle', label: 'Easy returns' },
+      { icon: 'mdi-package-variant', label: 'Live stock indicator' },
+      { icon: 'mdi-text-box-check-outline', label: 'Product details' },
+      { icon: 'mdi-clipboard-check-outline', label: 'Demo checkout' },
+      { icon: 'mdi-receipt-text-outline', label: 'Account order history' },
     ]
-
-    if (stockReady.value) {
-      chips.unshift({ icon: 'mdi-clock-fast', label: 'Priority dispatch' })
-    }
 
     return chips.slice(0, 4)
   })
@@ -618,16 +597,16 @@
 
     return [
       {
-        title: 'Curated Build',
-        copy: `Each ${category.toLowerCase()} item is selected for long-term everyday use and visual harmony.`
+        title: 'Catalog Transparency',
+        copy: `This ${category.toLowerCase()} item shows the current demo-catalog details and inventory indicator.`
       },
       {
-        title: 'Refined Experience',
-        copy: 'Protective packaging, quality checks, and smooth post-purchase support are standard with every order.'
+        title: 'Account Workflow',
+        copy: 'Sign in to save cart items, continue to checkout review, and view generated demo-order history.'
       },
       {
-        title: 'Mindstore Promise',
-        copy: 'Transparent details, fast fulfillment, and reliable after-sales service with no hidden surprises.'
+        title: 'Demo Notice',
+        copy: 'Use sample details only. This portfolio project does not create a real payment, shipment, or return.'
       },
     ]
   })
@@ -951,40 +930,6 @@
   border: 1px solid #0f172a;
 
 }
-.frame-header {
-  height: 36px;
-  background: #f8fafc;
-  border-bottom: 1px solid #0f172a;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  position: relative;
-}
-.frame-dots {
-  display: flex;
-  gap: 6px;
-}
-.frame-dots span {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  border: 1px solid #0f172a;
-  display: inline-block;
-}
-.dot-red { background: #ff5f56; }
-.dot-yellow { background: #ffbd2e; }
-.dot-green { background: #27c93f; }
-
-.frame-title-display {
-  font-family: monospace;
-  font-size: 11px;
-  font-weight: 600;
-  color: #64748b;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
 .gallery-carousel-wrap {
   position: relative;
   background: #fafafa;

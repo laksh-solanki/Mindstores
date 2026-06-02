@@ -11,7 +11,7 @@
           </div>
           <h1 class="page-title ml-2">Privacy <span class="highlight-serif">Policy</span></h1>
           <p class="page-subtitle ml-2 mt-2">
-            We respect your privacy and are committed to protecting your personal data with transparency and security.
+            Learn how account, preference, and demonstration data are used while you explore this portfolio project.
           </p>
         </div>
       </section>
@@ -35,9 +35,9 @@
           <div class="d-flex align-center gap-4">
             <v-icon color="teal-darken-1" size="32">mdi-email-arrow-right-outline</v-icon>
             <div class="ms-4">
-              <div class="contact-title">Privacy Requests</div>
+              <div class="contact-title">Privacy Questions</div>
               <div class="contact-subtitle">
-                Contact us anytime at <strong>lakshsolanki848@gmail.com</strong>
+                Contact the project developer at <strong>lakshsolanki848@gmail.com</strong>
               </div>
             </div>
           </div>
@@ -50,32 +50,32 @@
 <script setup>
   const sections = [
     {
-      title: 'Information We Collect',
-      text: 'We collect limited personal information such as contact details, device data, and usage analytics to improve performance and security.',
+      title: 'About This Demonstration',
+      text: 'Mindstore is a portfolio storefront. Products, promotions, checkout options, and delivery updates are sample content and do not represent real commercial transactions.',
     },
     {
-      title: 'How We Use Data',
-      text: 'Your data helps us personalize the experience, maintain system stability, prevent abuse, and provide customer support.',
+      title: 'Information Used by the App',
+      text: 'If you create an account, the app may use your name, email address, profile preferences, saved delivery details, cart selections, reviews, and generated demo-order history to support the interface workflows you choose to explore.',
     },
     {
-      title: 'Cookies & Tracking',
-      text: 'We use cookies to remember preferences, analyze behavior, and optimize our platform functionality.',
+      title: 'Payment Information',
+      text: 'Do not enter real card numbers, CVVs, UPI identifiers, or other sensitive payment information. The checkout page is a demonstration and does not process real payments.',
     },
     {
-      title: 'Data Protection',
-      text: 'We follow industry best practices including encryption, access controls, and secure infrastructure to protect your data.',
+      title: 'Cookies & Preferences',
+      text: 'Essential browser storage supports login, cart, and consent preferences. Optional analytics and marketing preferences remain under your control in the cookie settings dialog.',
     },
     {
-      title: 'Third-Party Integrations',
-      text: 'We may use trusted partners such as analytics, hosting, and payment providers. They process data only under strict agreements.',
+      title: 'Authentication & Integrations',
+      text: 'The demonstration uses authentication and hosting integrations to support account access and application delivery. Review the services you choose to use before providing personal details.',
     },
     {
-      title: 'Your Rights',
-      text: 'You may request access, correction, export, or deletion of your data at any time.',
+      title: 'Your Choices',
+      text: 'You can avoid creating an account, change cookie preferences, update saved profile details, and contact the project developer with questions about stored demonstration data.',
     },
     {
       title: 'Policy Updates',
-      text: 'We may revise this policy occasionally to reflect legal or product changes. Updates will appear on this page.',
+      text: 'This page may be revised when project behavior changes. The latest version will remain available from the website footer.',
     },
   ];
 </script>

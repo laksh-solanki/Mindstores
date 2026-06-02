@@ -4,12 +4,19 @@
     <div class="payment-header-bar">
       <div>
         <div class="brand-tagline">
-          <span class="tag-label">SECURE CHECKOUT</span>
+          <span class="tag-label">DEMO CHECKOUT</span>
           <span class="tag-dot">•</span>
-          <span class="tag-label">PERSONAL PAYMENT</span>
+          <span class="tag-label">ORDER REVIEW</span>
         </div>
-        <h1 class="page-title">Personal <span class="highlight-serif">Payment</span></h1>
-        <p class="page-subtitle">Finalize your order with encrypted payment and curated delivery details.</p>
+        <h1 class="page-title">Demo <span class="highlight-serif">Checkout</span></h1>
+        <p class="page-subtitle">Review sample billing details and confirm a portfolio-demo order.</p>
+      </div>
+    </div>
+
+    <div class="custom-flat-alert info-alert mb-6">
+      <v-icon class="alert-icon" size="18">mdi-information-outline</v-icon>
+      <div class="alert-content">
+        Use test details only. This page does not process a real payment, purchase, or delivery.
       </div>
     </div>
 
@@ -20,7 +27,7 @@
         <!-- Billing Details Flat Card -->
         <div class="flat-card-container">
           <div class="panel-head">
-            <h2 class="panel-title">Contact & Billing</h2>
+            <h2 class="panel-title">Sample Contact & Billing</h2>
           </div>
           <div class="panel-body mt-4">
             <v-row dense>
@@ -104,7 +111,7 @@
         <!-- Payment Method Flat Card -->
         <div class="flat-card-container mt-6">
           <div class="panel-head">
-            <h2 class="panel-title">Payment Method</h2>
+            <h2 class="panel-title">Demo Payment Method</h2>
           </div>
           <div class="panel-body mt-4">
             <div class="tabs-header-flat mb-5">
@@ -137,7 +144,7 @@
                 <div class="custom-flat-alert info-alert mb-4">
                   <v-icon class="alert-icon" size="18">mdi-information-outline</v-icon>
                   <div class="alert-content">
-                    Use any UPI app linked to your bank account.
+                    Demo only. Enter a test UPI ID such as demo@okaxis. Do not enter a real payment identifier.
                   </div>
                 </div>
                 <v-row dense>
@@ -156,6 +163,12 @@
               </v-tabs-window-item>
 
               <v-tabs-window-item value="card">
+                <div class="custom-flat-alert info-alert mb-4">
+                  <v-icon class="alert-icon" size="18">mdi-information-outline</v-icon>
+                  <div class="alert-content">
+                    Demo only. Use test card details and never enter a real card number or CVV.
+                  </div>
+                </div>
                 <!-- High-contrast Credit Card Mockup -->
                 <div class="editorial-card-preview mb-6">
                   <div class="card-inner-frame">
@@ -225,7 +238,7 @@
                 <div class="custom-flat-alert info-alert mb-4">
                   <v-icon class="alert-icon" size="18">mdi-information-outline</v-icon>
                   <div class="alert-content">
-                    Pay with cash when your order is delivered.
+                    Demo only. This option records a sample cash-on-delivery selection.
                   </div>
                 </div>
               </v-tabs-window-item>
@@ -237,14 +250,6 @@
       <!-- Order Summary Card -->
       <v-col cols="12" md="4">
         <div class="gallery-frame summary-frame">
-          <div class="frame-header">
-            <div class="frame-dots">
-              <span class="dot-red" />
-              <span class="dot-yellow" />
-              <span class="dot-green" />
-            </div>
-            <div class="frame-title-display">order_receipt.json</div>
-          </div>
           <div class="summary-card-body">
             <h2 class="summary-title">Order <span class="highlight-serif">Summary</span></h2>
 
@@ -290,8 +295,8 @@
                 <span>-{{ formatAmount(promoDiscount) }}</span>
               </div>
               <div class="price-row">
-                <span>Shipping</span>
-                <span class="free-badge">Free</span>
+                <span>Demo Shipping</span>
+                <span class="free-badge">Sample: Free</span>
               </div>
               <div class="price-divider-thick my-3" />
               <div class="price-row total-row">
@@ -311,7 +316,7 @@
               variant="flat"
               @click="submitPayment"
             >
-              Pay {{ formatAmount(payableAmount) }}
+              Confirm Demo Order {{ formatAmount(payableAmount) }}
             </v-btn>
 
             <v-btn
@@ -322,7 +327,7 @@
               variant="outlined"
               @click="cancelPayment"
             >
-              Cancel Payment
+              Cancel Checkout
             </v-btn>
           </div>
         </div>
@@ -333,18 +338,10 @@
     <v-row v-else>
       <v-col class="d-flex justify-center" cols="12">
         <div class="gallery-frame empty-payment-frame">
-          <div class="frame-header">
-            <div class="frame-dots">
-              <span class="dot-red" />
-              <span class="dot-yellow" />
-              <span class="dot-green" />
-            </div>
-            <div class="frame-title-display">payment_checkout.json</div>
-          </div>
           <div class="empty-payment-body text-center pa-8">
             <v-icon color="teal-darken-1" size="48">mdi-cart-off-outline</v-icon>
             <h2 class="empty-title mt-4">No Selected Items</h2>
-            <p class="empty-subtitle mt-2">Go back to your cart and select products before payment.</p>
+            <p class="empty-subtitle mt-2">Go back to your cart and select products before checkout review.</p>
             <div class="mt-6">
               <v-btn
                 class="action-btn-flat"
@@ -616,10 +613,10 @@
             return
           }
 
-          throw new Error('Payment failed')
+          throw new Error('Demo order confirmation failed')
         } catch (error) {
-          console.error('Payment failed:', error)
-          snackbarText.value = error.response?.data?.message || 'Payment failed. Please try again.'
+          console.error('Demo order confirmation failed:', error)
+          snackbarText.value = error.response?.data?.message || 'Demo order confirmation failed. Please try again.'
           snackbarColor.value = 'error'
           snackbar.value = true
         } finally {
@@ -887,41 +884,6 @@
   flex-direction: column;
 }
 
-.frame-header {
-  height: 36px;
-  background: #f1f5f9;
-  border-bottom: 1px solid #0f172a;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  position: relative;
-}
-
-.frame-dots {
-  display: flex;
-  gap: 6px;
-}
-
-.dot-red, .dot-yellow, .dot-green {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-}
-.dot-red { background: #ef4444; }
-.dot-yellow { background: #eab308; }
-.dot-green { background: #22c55e; }
-
-.frame-title-display {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  font-family: monospace;
-  font-size: 11px;
-  font-weight: 700;
-  color: #64748b;
-}
-
 .summary-card-body {
   padding: 24px;
 }
@@ -1113,4 +1075,3 @@
   flex-grow: 1;
 }
 </style>
-  

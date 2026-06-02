@@ -2,28 +2,20 @@
   <v-container class="bespoke-success-container" fluid>
     <v-row justify="center">
       <v-col cols="12" lg="7" md="9">
-        <!-- macOS mockup window frame -->
         <div class="gallery-frame success-frame-window">
-          <div class="frame-header">
-            <div class="frame-dots">
-              <span class="dot-red" @click="$router.push('/')" />
-              <span class="dot-yellow" />
-              <span class="dot-green" />
-            </div>
-            <div class="frame-title-display">payment_confirmed.json</div>
-          </div>
-          
+
           <div class="success-body text-center pa-6 pa-md-10">
             <!-- Custom Flat Success Badge -->
             <div class="custom-success-badge mb-5">
               <v-icon class="mr-1" icon="mdi-check-circle" size="18" />
-              Payment Confirmed
+              Demo Order Confirmed
             </div>
 
             <!-- Serif Highlight Title -->
             <h1 class="success-title">Order <span class="highlight-serif">Confirmed</span></h1>
             <p class="success-subtitle mt-3">
-              Thank you for your purchase. Your order is now in progress and will appear in your profile.
+              Your sample order has been recorded and will appear in your profile. This portfolio demonstration does
+              not create a real purchase, payment, or delivery.
             </p>
 
             <!-- Flat Receipt Reference Box -->
@@ -57,9 +49,9 @@
                 rounded="0"
                 size="large"
                 variant="flat"
-                @click="$router.push('/profile')"
+                @click="$router.push('/orders')"
               >
-                View Orders
+                View Demo Orders
               </v-btn>
               <v-btn
                 class="action-btn-flat-outline px-8"
@@ -110,52 +102,6 @@
   justify-content: center;
 }
 
-/* ════════════════════════════════ macOS FRAME ══ */
-.gallery-frame {
-  background: #ffffff;
-  border: 1px solid #0f172a;
-
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-}
-
-.frame-header {
-  height: 38px;
-  background: #f1f5f9;
-  border-bottom: 1px solid #0f172a;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  position: relative;
-}
-
-.frame-dots {
-  display: flex;
-  gap: 6px;
-}
-
-.dot-red, .dot-yellow, .dot-green {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-}
-.dot-red { background: #ef4444; cursor: pointer; }
-.dot-yellow { background: #eab308; }
-.dot-green { background: #22c55e; }
-
-.frame-title-display {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  font-family: monospace;
-  font-size: 11px;
-  font-weight: 700;
-  color: #64748b;
-}
-
-/* ════════════════════════════════ BODY ════════ */
 .success-body {
   display: flex;
   flex-direction: column;

@@ -88,13 +88,16 @@ async def place_order(request: Request, ctx: RequestContext = Depends(get_contex
         if product:
             product_entries[product_id] = (product, checkout_collection_name(product_source))
 
+    now_dt = datetime.datetime.now(datetime.timezone.utc)
+    now = now_dt.isoformat().replace("+00:00", "Z")
+    scheduled_date = (now_dt + datetime.timedelta(days=5)).isoformat().replace("+00:00", "Z")
     order_items = []
     subtotal = 0.0
     for cart_item in items_to_checkout:
         product_entry = product_entries.get(cart_item["product_id"])
         if not product_entry:
             return error_response(400, f"Product not found: {cart_item['product_id']}")
-        product, _collection_name = product_entry
+        product, collection_name = product_entry
         stock = int(product.get("stock") or 0)
         if stock < cart_item["quantity"]:
             return error_response(400, f"Insufficient stock for {product.get('name') or cart_item['product_id']}")
@@ -109,7 +112,10 @@ async def place_order(request: Request, ctx: RequestContext = Depends(get_contex
                 "price_currency": product.get("price_currency") or product.get("currency") or "USD",
                 "quantity": cart_item["quantity"],
                 "vendor_id": product.get("owner_user_id") or product.get("user_id") or "admin",
+                "inventory_collection": collection_name,
                 "delivery_status": "pending",
+                "delivery_requested_at": now,
+                "delivery_updated_at": now,
             }
         )
     applied_promo = None
@@ -124,9 +130,6 @@ async def place_order(request: Request, ctx: RequestContext = Depends(get_contex
         applied_promo = promo["code"]
     total = max(0, round(subtotal - discount, 2))
     order_id = random_compact_id("order")
-    now_dt = datetime.datetime.now(datetime.timezone.utc)
-    now = now_dt.isoformat().replace("+00:00", "Z")
-    scheduled_date = (now_dt + datetime.timedelta(days=5)).isoformat().replace("+00:00", "Z")
     decremented = []
     try:
         for item in items_to_checkout:

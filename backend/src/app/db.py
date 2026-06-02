@@ -15,6 +15,9 @@ from .utils import deep_clone
 def _get_path(doc: dict[str, Any], path: str) -> Any:
     value: Any = doc
     for part in path.split("."):
+        if isinstance(value, list):
+            value = [item[part] for item in value if isinstance(item, dict) and part in item]
+            continue
         if not isinstance(value, dict):
             return None
         value = value.get(part)
@@ -60,6 +63,10 @@ def _matches(doc: dict[str, Any], query: dict[str, Any] | None) -> bool:
                     return False
             continue
 
+        if isinstance(actual, list):
+            if expected not in actual:
+                return False
+            continue
         if actual != expected:
             return False
 

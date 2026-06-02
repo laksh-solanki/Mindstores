@@ -17,8 +17,8 @@
           </h1>
 
           <p class="hero-subtitle">
-            A minimalist online store curating premium essentials. Hand-selected for exceptional craft, clean lines, and
-            absolute functionality.
+            A portfolio storefront for exploring useful essentials, live catalog navigation, account-based shopping,
+            and a clearly marked demo checkout experience.
           </p>
 
           <div class="hero-button-group">
@@ -50,15 +50,15 @@
           <div class="value-props">
             <div class="prop-item">
               <v-icon class="prop-icon" size="14">mdi-check-circle-outline</v-icon>
-              <span class="prop-text">Authentic Design</span>
+              <span class="prop-text">Live Catalog</span>
             </div>
             <div class="prop-item">
-              <v-icon class="prop-icon" size="14">mdi-truck-fast-outline</v-icon>
-              <span class="prop-text">Carbon-Neutral Delivery</span>
+              <v-icon class="prop-icon" size="14">mdi-account-check-outline</v-icon>
+              <span class="prop-text">Account-Based Cart</span>
             </div>
             <div class="prop-item">
-              <v-icon class="prop-icon" size="14">mdi-reload</v-icon>
-              <span class="prop-text">30-Day Trial</span>
+              <v-icon class="prop-icon" size="14">mdi-clipboard-check-outline</v-icon>
+              <span class="prop-text">Demo Checkout</span>
             </div>
           </div>
         </div>
@@ -187,6 +187,37 @@
       </div>
     </div>
 
+    <section class="journey-section">
+      <div class="journey-heading">
+        <p class="journey-label">SHOP WITH CLARITY</p>
+        <h2>Everything you need to explore the storefront.</h2>
+        <p>
+          Browse the catalog, manage a signed-in cart, and review the sample checkout flow with clear guidance at
+          every step.
+        </p>
+      </div>
+      <div class="journey-grid">
+        <router-link v-for="guide in shoppingGuides" :key="guide.title" class="journey-card" :to="guide.to">
+          <div class="journey-card-icon">
+            <v-icon :icon="guide.icon" size="20" />
+          </div>
+          <h3>{{ guide.title }}</h3>
+          <p>{{ guide.copy }}</p>
+          <span class="journey-link">
+            {{ guide.link }}
+            <v-icon size="15">mdi-arrow-right</v-icon>
+          </span>
+        </router-link>
+      </div>
+      <div class="journey-notice">
+        <v-icon color="teal-darken-1" size="20">mdi-information-outline</v-icon>
+        <p>
+          Mindstore is a portfolio demonstration. Use sample details only: no real payment, purchase, or delivery is
+          created.
+        </p>
+      </div>
+    </section>
+
 
     <div ref="productsSection" class="products-anchor" />
 
@@ -200,7 +231,7 @@
       </div>
     </div>
 
-    <v-row v-if="loading" v-slot class="mt-8" no-gutters>
+    <v-row v-if="loading" class="mt-8" no-gutters>
       <v-col
         v-for="n in 8"
         :key="n"
@@ -324,6 +355,29 @@
   const snackbarText = ref('')
   const snackbarColor = ref('success')
   const productsSection = ref(null)
+  const shoppingGuides = [
+    {
+      icon: 'mdi-view-grid-outline',
+      title: 'Browse thoughtfully',
+      copy: 'Use categories, filters, search, and product details to find the right catalog item.',
+      link: 'View all products',
+      to: '/products',
+    },
+    {
+      icon: 'mdi-account-outline',
+      title: 'Use your account',
+      copy: 'Sign in to keep cart items, review profile settings, and access order history.',
+      link: 'Open account',
+      to: '/profile',
+    },
+    {
+      icon: 'mdi-help-circle-outline',
+      title: 'Get clear guidance',
+      copy: 'Read practical answers about the demo checkout, sample values, and account workflow.',
+      link: 'Visit Help Center',
+      to: '/help',
+    },
+  ]
 
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -507,12 +561,138 @@
   padding: 0;
 }
 
+.journey-section {
+  padding: 88px max(24px, 5vw);
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.journey-heading {
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.journey-label {
+  margin: 0 0 12px;
+  color: #0d9488;
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.journey-heading h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.08;
+}
+
+.journey-heading p,
+.journey-card p,
+.journey-notice p {
+  color: #475569;
+  line-height: 1.7;
+}
+
+.journey-heading p {
+  margin: 16px 0 0;
+  font-size: 15px;
+}
+
+.journey-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 1200px;
+  margin: 36px auto 0;
+  background: #0f172a;
+  gap: 1px;
+  border: 1px solid #0f172a;
+}
+
+.journey-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 252px;
+  padding: 24px;
+  background: #ffffff;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.journey-card:hover {
+  background: #f0fdfa;
+}
+
+.journey-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  color: #0d9488;
+  border: 1px solid #0f172a;
+}
+
+.journey-card h3 {
+  margin: 24px 0 8px;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.journey-card p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.journey-link {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 20px;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.journey-notice {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  max-width: 1200px;
+  padding: 16px;
+  margin: 20px auto 0;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+}
+
+.journey-notice p {
+  margin: 0;
+  font-size: 13px;
+}
+
 
 /* ════════════════════════════════ EDITORIAL SECTION ═══ */
 .editorial-section {
   padding: 100px max(24px, 5vw);
   background: #fbfbfb;
   border-bottom: 1px solid #eaeaea;
+}
+
+@media (max-width: 959px) {
+  .journey-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .journey-card {
+    min-height: auto;
+  }
 }
 
 .editorial-header {

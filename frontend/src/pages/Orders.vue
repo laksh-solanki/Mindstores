@@ -13,6 +13,10 @@
         </div>
       </section>
 
+      <v-alert class="custom-flat-alert info-alert mb-4" type="info" variant="tonal">
+        This archive contains portfolio-demo orders only. It does not represent real purchases, payments, or deliveries.
+      </v-alert>
+
       <!-- Guest Alert -->
       <v-alert
         v-if="!appStore.loading && !appStore.isAuthenticated"
@@ -39,7 +43,7 @@
                 <div class="flat-card-container">
                   <div class="panel-head orders-head d-flex justify-space-between align-center">
                     <div>
-                      <h2 class="panel-title">Orders Archive</h2>
+                      <h2 class="panel-title">Demo Orders Archive</h2>
                       <p class="panel-subtitle">{{ orders.length }} total, {{ completedOrderCount }} completed.</p>
                     </div>
                     <button
@@ -194,7 +198,7 @@
                               <v-icon :class="{ 'mdi-spin': invoiceLoadingOrderId === order.order_id }" size="16" start>
                                 {{ invoiceLoadingOrderId === order.order_id ? 'mdi-loading' : 'mdi-file-download-outline' }}
                               </v-icon>
-                              {{ invoiceLoadingOrderId === order.order_id ? 'Generating...' : 'Invoice Download' }}
+                              {{ invoiceLoadingOrderId === order.order_id ? 'Generating...' : 'Demo Summary Download' }}
                             </button>
                           </div>
                         </v-expansion-panel-text>
@@ -227,18 +231,9 @@
       width="100%"
     >
       <div class="gallery-frame dialog-frame-flat h-100">
-        <!-- macOS-style frame header -->
-        <div class="frame-header">
-          <div class="frame-dots">
-            <span class="dot-red" @click="userAdminDialog = false" />
-            <span class="dot-yellow" />
-            <span class="dot-green" />
-          </div>
-          <div class="frame-title-display">admin_gatekeeper.json</div>
-          <button class="dialog-close-btn" @click="userAdminDialog = false">
-            <v-icon>mdi-close</v-icon>
-          </button>
-        </div>
+        <button aria-label="Close dialog" class="dialog-close-btn" @click="userAdminDialog = false">
+          <v-icon>mdi-close</v-icon>
+        </button>
 
         <div class="dialog-card-body d-flex flex-column pa-6">
           <div class="brand-tagline">
@@ -1184,15 +1179,15 @@
           const url = URL.createObjectURL(blob)
           const link = document.createElement('a')
           link.href = url
-          link.download = `invoice-${order.order_id}.pdf`
+          link.download = `demo-order-summary-${order.order_id}.pdf`
           document.body.append(link)
           link.click()
           link.remove()
           window.setTimeout(() => URL.revokeObjectURL(url), 1000)
-          showMessage('Invoice downloaded')
+          showMessage('Demo order summary downloaded')
         } catch (error) {
-          console.error('Failed to generate invoice:', error)
-          showMessage('Failed to generate invoice.', 'error')
+          console.error('Failed to generate demo order summary:', error)
+          showMessage('Failed to generate demo order summary.', 'error')
         } finally {
           invoiceLoadingOrderId.value = ''
         }
@@ -2099,50 +2094,14 @@
   border: 2px solid #0f172a;
 
   color: #0f172a;
-  transition: all 0.3s ease;
-}
-
-.dialog-frame-flat .frame-header {
-  background: #f8fafc;
-  border-bottom: 2px solid #0f172a;
-  padding: 10px 16px;
-  display: flex;
-  align-items: center;
   position: relative;
-  height: 38px;
-}
-
-.dialog-frame-flat .frame-dots {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-
-.dialog-frame-flat .frame-dots span {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  display: inline-block;
-  cursor: pointer;
-  border: 1px solid #0f172a;
-}
-
-.dialog-frame-flat .dot-red { background: #ff5f56; }
-.dialog-frame-flat .dot-yellow { background: #ffbd2e; }
-.dialog-frame-flat .dot-green { background: #27c93f; }
-
-.dialog-frame-flat .frame-title-display {
-  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', Courier, monospace;
-  font-size: 12px;
-  color: #64748b;
-  letter-spacing: 0.5px;
-  margin-left: 12px;
-  flex-grow: 1;
+  transition: all 0.3s ease;
 }
 
 .dialog-close-btn {
   position: absolute;
   right: 12px;
+  top: 12px;
   background: transparent;
   border: none;
   cursor: pointer;

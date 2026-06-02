@@ -322,14 +322,14 @@ function buildOverlay({
       ${textNode({ x: 105, y: 64, value: 'Mindstores', size: 18, weight: 700, fill: inkDark })}
       ${textNode({ x: 105, y: 78, value: 'Digital Storefront', size: 10, fill: inkLight })}
       
-      ${textNode({ x: 550.5, y: 64, value: 'INVOICE', size: 36, weight: 400, fill: brandTeal, anchor: 'end', family: 'Invoice Cursive' })}
+      ${textNode({ x: 550.5, y: 64, value: 'DEMO SUMMARY', size: 30, weight: 400, fill: brandTeal, anchor: 'end', family: 'Invoice Cursive' })}
       ${pageCount > 1 ? textNode({ x: 550.5, y: 78, value: `Page ${pageIndex + 1} of ${pageCount}`, size: 9, fill: inkLight, anchor: 'end' }) : ''}
 
       <!-- Top Meta Info Divider -->
       <line x1="45" y1="105" x2="550.5" y2="105" stroke="${borderLight}" stroke-width="1" />
 
       <!-- Metadata Grid -->
-      ${textNode({ x: 45, y: 124, value: 'INVOICE NO.', size: 9, weight: 700, fill: inkLight })}
+      ${textNode({ x: 45, y: 124, value: 'DEMO ORDER NO.', size: 9, weight: 700, fill: inkLight })}
       ${textNode({ x: 45, y: 142, value: safeOrderId, size: 11, weight: 700, fill: inkDark })}
 
       ${textNode({ x: 185, y: 124, value: 'INVOICE DATE', size: 9, weight: 700, fill: inkLight })}
@@ -356,9 +356,9 @@ function buildOverlay({
   })).join('')}
 
       ${textNode({ x: 360, y: 178, value: 'FROM', size: 9, weight: 700, fill: inkLight })}
-      ${textNode({ x: 360, y: 196, value: 'Mindstores Inc.', size: 11, weight: 700, fill: inkDark })}
-      ${textNode({ x: 360, y: 211, value: 'support@mindstores.com', size: 10, fill: inkMedium })}
-      ${textNode({ x: 360, y: 226, value: 'www.mindstores.com', size: 10, fill: inkMedium })}
+      ${textNode({ x: 360, y: 196, value: 'Mindstore Portfolio Demo', size: 11, weight: 700, fill: inkDark })}
+      ${textNode({ x: 360, y: 211, value: 'lakshsolanki848@gmail.com', size: 10, fill: inkMedium })}
+      ${textNode({ x: 360, y: 226, value: 'No real payment or delivery', size: 10, fill: inkMedium })}
 
       <!-- Table Area -->
       <!-- Table Header Backing -->
@@ -384,16 +384,16 @@ function buildOverlay({
 
       <!-- Footer Columns -->
       ${textNode({ x: 45, y: 665, value: 'PAYMENT DETAILS', size: 9, weight: 700, fill: inkLight })}
-      ${textNode({ x: 45, y: 683, value: 'Payment Method: Card Payment', size: 10, fill: inkMedium })}
+      ${textNode({ x: 45, y: 683, value: `Demo Method: ${sanitizeText(order.payment_method || 'Sample selection')}`, size: 10, fill: inkMedium })}
       ${textNode({ x: 45, y: 699, value: `Promo Code: ${sanitizeText(order.promo_code || 'None')}`, size: 10, fill: inkMedium })}
       ${textNode({ x: 45, y: 715, value: `Taxes (Included): ${formatAmount(0)}`, size: 10, fill: inkMedium })}
 
       ${textNode({ x: 360, y: 665, value: 'NEED HELP?', size: 9, weight: 700, fill: inkLight })}
-      ${textNode({ x: 360, y: 683, value: 'Please email: support@mindstores.com', size: 10, fill: inkMedium })}
-      ${textNode({ x: 360, y: 699, value: 'Check status at: www.mindstores.com', size: 10, fill: inkMedium })}
+      ${textNode({ x: 360, y: 683, value: 'Email: lakshsolanki848@gmail.com', size: 10, fill: inkMedium })}
+      ${textNode({ x: 360, y: 699, value: 'Help Center: open /help in Mindstore', size: 10, fill: inkMedium })}
 
-      ${textNode({ x: 45, y: 760, value: 'Thank you for shopping at Mindstores!', size: 10, weight: 700, fill: brandTeal })}
-      ${textNode({ x: 45, y: 775, value: 'Your support means the world to our independent digital merchants.', size: 9.5, fill: inkMedium })}
+      ${textNode({ x: 45, y: 760, value: 'Mindstore portfolio demonstration', size: 10, weight: 700, fill: brandTeal })}
+      ${textNode({ x: 45, y: 775, value: 'This summary does not represent a real purchase, payment, or delivery.', size: 9.5, fill: inkMedium })}
     </svg>
   `
 }

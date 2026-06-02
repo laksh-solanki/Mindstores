@@ -92,14 +92,6 @@
           <!-- Navigation Sidebar -->
           <v-col cols="12" lg="2" md="3">
             <div class="flat-card-container pa-0 mb-4">
-              <div class="panel-window-header">
-                <div class="window-dots">
-                  <span class="dot dot-red" />
-                  <span class="dot dot-yellow" />
-                  <span class="dot dot-green" />
-                </div>
-                <div class="window-title-display">NAVIGATION</div>
-              </div>
               <v-list class="custom-admin-nav bg-transparent" density="compact" nav>
                 <v-list-item
                   v-for="item in userAdminNavItems"
@@ -148,15 +140,8 @@
                 <!-- Product Analysis -->
                 <v-col class="mb-4" cols="12" lg="4">
                   <div class="flat-card-container pa-0 h-100">
-                    <div class="panel-window-header-mini">
-                      <div class="window-dots">
-                        <span class="dot dot-red" />
-                        <span class="dot dot-yellow" />
-                        <span class="dot dot-green" />
-                      </div>
-                      <div class="window-title-mini">Product Analysis</div>
-                    </div>
                     <div class="pa-4">
+                      <h3 class="subsection-title mb-4">Product Analysis</h3>
                       <div
                         v-for="segment in categoryStats"
                         :key="segment.name"
@@ -180,15 +165,8 @@
                 <!-- Inventory Stats -->
                 <v-col class="mb-4" cols="12" lg="4">
                   <div class="flat-card-container pa-0 h-100">
-                    <div class="panel-window-header-mini">
-                      <div class="window-dots">
-                        <span class="dot dot-red" />
-                        <span class="dot dot-yellow" />
-                        <span class="dot dot-green" />
-                      </div>
-                      <div class="window-title-mini">Inventory</div>
-                    </div>
                     <div class="pa-4">
+                      <h3 class="subsection-title mb-4">Inventory</h3>
                       <v-list class="bg-transparent custom-stat-list py-0" density="compact">
                         <v-list-item class="px-0 py-2 border-bottom-dashed">
                           <template #prepend>
@@ -219,15 +197,8 @@
                 <!-- Top Value Products -->
                 <v-col class="mb-4" cols="12" lg="4">
                   <div class="flat-card-container pa-0 h-100">
-                    <div class="panel-window-header-mini">
-                      <div class="window-dots">
-                        <span class="dot dot-red" />
-                        <span class="dot dot-yellow" />
-                        <span class="dot dot-green" />
-                      </div>
-                      <div class="window-title-mini">Top Value Products</div>
-                    </div>
                     <div class="pa-4">
+                      <h3 class="subsection-title mb-4">Top Value Products</h3>
                       <v-list v-if="topValueProducts.length > 0" class="bg-transparent py-0 custom-top-products-list" density="compact">
                         <v-list-item
                           v-for="product in topValueProducts"
@@ -260,14 +231,6 @@
 
             <!-- Products Table View -->
             <div v-else-if="activePanel === 'products'" class="flat-card-container pa-0">
-              <div class="panel-window-header">
-                <div class="window-dots">
-                  <span class="dot dot-red" />
-                  <span class="dot dot-yellow" />
-                  <span class="dot dot-green" />
-                </div>
-                <div class="window-title-display">Console / Products</div>
-              </div>
               <div class="pa-4">
                 <div class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 mb-4">
                   <div>
@@ -551,14 +514,6 @@
 
             <!-- Reviews List View -->
             <div v-else-if="activePanel === 'reviews'" class="flat-card-container pa-0">
-              <div class="panel-window-header">
-                <div class="window-dots">
-                  <span class="dot dot-red" />
-                  <span class="dot dot-yellow" />
-                  <span class="dot dot-green" />
-                </div>
-                <div class="window-title-display">Console / Reviews</div>
-              </div>
               <div class="pa-4">
                 <div class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 mb-4">
                   <div>
@@ -629,14 +584,6 @@
             </div>
             <!-- Messages List View -->
             <div v-else-if="activePanel === 'messages'" class="flat-card-container pa-0">
-              <div class="panel-window-header">
-                <div class="window-dots">
-                  <span class="dot dot-red" />
-                  <span class="dot dot-yellow" />
-                  <span class="dot dot-green" />
-                </div>
-                <div class="window-title-display">Console / Messages</div>
-              </div>
               <div class="pa-4">
                 <div class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 mb-4">
                   <div>
@@ -714,14 +661,6 @@
 
             <!-- Deliveries View -->
             <div v-else-if="activePanel === 'deliveries'" class="flat-card-container pa-0">
-              <div class="panel-window-header">
-                <div class="window-dots">
-                  <span class="dot dot-red" />
-                  <span class="dot dot-yellow" />
-                  <span class="dot dot-green" />
-                </div>
-                <div class="window-title-display">Console / Deliveries</div>
-              </div>
               <div class="pa-4">
                 <div class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 mb-4">
                   <div>
@@ -756,17 +695,57 @@
                   v-else
                   class="custom-admin-table"
                   density="comfortable"
-                  :headers="[ {title: 'Order ID', key: 'order_id'}, {title: 'Product', key: 'name'}, {title: 'Quantity', key: 'quantity'}, {title: 'Customer', key: 'customer'}, {title: 'Date', key: 'order_created_at'} ]"
+                  :headers="deliveryHeaders"
                   :items="filteredDeliveries"
                   :items-per-page="10"
                 >
                   <template #item="{ item }">
-                    <tr style="background-color: #dcfce7;">
+                    <tr :style="deliveryRowStyle(item)">
                       <td>{{ item.order_id }}</td>
                       <td>{{ item.name }}</td>
                       <td>{{ item.quantity }}</td>
                       <td>{{ item.billing_profile?.name || 'Customer' }}</td>
+                      <td>{{ deliveryStatusLabel(item.order_status) }}</td>
+                      <td>{{ deliveryStatusLabel(item.delivery_status) }}</td>
                       <td>{{ formatDate(item.order_created_at) }}</td>
+                      <td>{{ formatDate(item.approved_at) }}</td>
+                      <td>{{ formatDate(item.scheduled_delivery_date) }}</td>
+                      <td>{{ formatDate(item.delivery_confirmed_at) }}</td>
+                      <td>{{ formatDate(item.cancelled_at) }}</td>
+                      <td>
+                        <div class="d-flex flex-wrap ga-2">
+                          <v-btn
+                            v-if="canApproveDelivery(item)"
+                            color="info"
+                            :loading="orderActionLoading === deliveryActionKey(item)"
+                            size="small"
+                            variant="flat"
+                            @click="approveOrder(item)"
+                          >
+                            Approve
+                          </v-btn>
+                          <v-btn
+                            v-if="canConfirmDelivery(item)"
+                            color="success"
+                            :loading="orderActionLoading === deliveryActionKey(item)"
+                            size="small"
+                            variant="flat"
+                            @click="confirmDelivery(item)"
+                          >
+                            Confirm Delivery
+                          </v-btn>
+                          <v-btn
+                            v-if="canCancelDelivery(item)"
+                            color="error"
+                            :loading="orderActionLoading === deliveryActionKey(item)"
+                            size="small"
+                            variant="outlined"
+                            @click="cancelOrder(item)"
+                          >
+                            Cancel Delivery
+                          </v-btn>
+                        </div>
+                      </td>
                     </tr>
                   </template>
                 </v-data-table>
@@ -775,14 +754,6 @@
 
             <!-- Settings View -->
             <div v-else-if="activePanel === 'settings'" class="flat-card-container pa-0">
-              <div class="panel-window-header">
-                <div class="window-dots">
-                  <span class="dot dot-red" />
-                  <span class="dot dot-yellow" />
-                  <span class="dot dot-green" />
-                </div>
-                <div class="window-title-display">Console / Settings</div>
-              </div>
               <div class="pa-4">
                 <div class="d-flex flex-column flex-md-row align-md-center justify-space-between ga-3 mb-4">
                   <div>
@@ -822,21 +793,13 @@
     <!-- Add/Edit Product Dialog -->
     <v-dialog v-model="productDialog" max-width="1180" scrollable>
       <div class="flat-card-container dialog-frame-flat pa-0 w-100 d-flex flex-column">
-        <!-- Dialog Header -->
-        <div class="panel-window-header">
-          <div class="window-dots">
-            <span class="dot dot-red" @click="productDialog = false" />
-            <span class="dot dot-yellow" />
-            <span class="dot dot-green" />
-          </div>
-          <div class="window-title-display">{{ editProductId ? 'Edit Product Draft' : 'Add New Product Draft' }}</div>
-          <button aria-label="Close dialog" class="dialog-close-btn" @click="productDialog = false">
-            <v-icon icon="mdi-close" size="18" />
-          </button>
-        </div>
+        <button aria-label="Close dialog" class="dialog-close-btn" @click="productDialog = false">
+          <v-icon icon="mdi-close" size="18" />
+        </button>
 
         <!-- Dialog Scroll Body -->
         <div class="dialog-scroll-body pa-6 flex-grow-1 overflow-y-auto">
+          <h2 class="section-title mb-4 pr-8">{{ editProductId ? 'Edit Product Draft' : 'Add New Product Draft' }}</h2>
           <v-alert
             v-if="dialogAlert.message"
             :class="['mb-4', 'custom-flat-alert', dialogAlert.type === 'error' ? 'error-alert' : dialogAlert.type === 'warning' ? 'warning-alert' : 'info-alert']"
@@ -1136,15 +1099,11 @@
     <!-- Catalog Option Dialog -->
     <v-dialog v-model="catalogOptionDialog" max-width="460">
       <div class="flat-card-container dialog-frame-flat pa-0 w-100">
-        <div class="panel-window-header">
-          <div class="window-dots">
-            <span class="dot dot-red" @click="catalogOptionDialog = false" />
-            <span class="dot dot-yellow" />
-            <span class="dot dot-green" />
-          </div>
-          <div class="window-title-display">{{ catalogOptionDialogTitle }}</div>
-        </div>
+        <button aria-label="Close dialog" class="dialog-close-btn" @click="catalogOptionDialog = false">
+          <v-icon icon="mdi-close" size="18" />
+        </button>
         <div class="pa-6">
+          <h2 class="section-title mb-4 pr-8">{{ catalogOptionDialogTitle }}</h2>
           <v-alert
             v-if="catalogOptionAlert.message"
             :class="['mb-4', 'custom-flat-alert', catalogOptionAlert.type === 'error' ? 'error-alert' : catalogOptionAlert.type === 'warning' ? 'warning-alert' : 'info-alert']"
@@ -1286,10 +1245,26 @@
   ]
 
   const deliveryStatusFilterOptions = [
-    { title: 'Completed', value: 'completed' },
     { title: 'All deliveries', value: 'all' },
     { title: 'Pending', value: 'pending' },
+    { title: 'Continue shipping', value: 'continue shipping' },
+    { title: 'Completed', value: 'completed' },
     { title: 'Cancelled', value: 'cancelled' }
+  ]
+
+  const deliveryHeaders = [
+    { title: 'Order ID', key: 'order_id' },
+    { title: 'Product', key: 'name' },
+    { title: 'Quantity', key: 'quantity' },
+    { title: 'Customer', key: 'customer' },
+    { title: 'Order Status', key: 'order_status' },
+    { title: 'Delivery', key: 'delivery_status' },
+    { title: 'Placed', key: 'order_created_at' },
+    { title: 'Approved', key: 'approved_at' },
+    { title: 'Last Delivery', key: 'scheduled_delivery_date' },
+    { title: 'Confirmed', key: 'delivery_confirmed_at' },
+    { title: 'Cancelled', key: 'cancelled_at' },
+    { title: 'Actions', key: 'actions', sortable: false }
   ]
 
   const userAdminNavItems = [
@@ -1346,7 +1321,7 @@
       const bulkActionLoading = ref(false)
       const reviewRatingFilter = ref('all')
       const messageStatusFilter = ref('all')
-      const deliveryStatusFilter = ref('completed')
+      const deliveryStatusFilter = ref('all')
       const productForm = ref({ ...EMPTY_FORM })
       const productImageFiles = ref([])
       const productImageInputValue = ref('')
@@ -1472,7 +1447,7 @@
         deliveries.value.filter((delivery) => {
           if (deliveryStatusFilter.value === 'all') return true
           if (deliveryStatusFilter.value === 'completed') {
-            return delivery.order_status === 'completed' && delivery.delivery_status !== 'cancelled'
+            return delivery.delivery_status === 'completed'
           }
           if (deliveryStatusFilter.value === 'cancelled') {
             return delivery.delivery_status === 'cancelled'
@@ -2147,23 +2122,61 @@
       const markMessageRead = async (messageId) => {
         try {
           await markUserAdminMessageRead(messageId)
-          await fetchMessages()
+          messages.value = await fetchUserAdminMessages()
         } catch (error) {
           showMessage(error.response?.data?.message || 'Failed to mark message read', 'error')
         }
       }
 
+      function deliveryActionKey(delivery) {
+        return delivery?.message_id || [delivery?.order_id, delivery?.product_id].filter(Boolean).join(':')
+      }
+
+      function deliveryStatusLabel(value) {
+        const status = String(value || 'pending').trim().toLowerCase()
+        return status.replace(/\b\w/g, letter => letter.toUpperCase())
+      }
+
+      function deliveryRowStyle(delivery) {
+        const status = String(delivery?.delivery_status || 'pending').trim().toLowerCase()
+        if (status === 'completed') return 'background-color: #dcfce7;'
+        if (status === 'cancelled') return 'background-color: #fee2e2;'
+        if (status === 'continue shipping') return 'background-color: #dbeafe;'
+        return 'background-color: #fef3c7;'
+      }
+
+      function canApproveDelivery(delivery) {
+        return String(delivery?.delivery_status || 'pending').trim().toLowerCase() === 'pending'
+      }
+
+      function canConfirmDelivery(delivery) {
+        return String(delivery?.delivery_status || '').trim().toLowerCase() === 'continue shipping'
+      }
+
+      function canCancelDelivery(delivery) {
+        return ['pending', 'continue shipping'].includes(String(delivery?.delivery_status || 'pending').trim().toLowerCase())
+      }
+
+      async function refreshDeliveryData() {
+        const [nextMessages, nextDeliveries] = await Promise.all([
+          fetchUserAdminMessages(),
+          fetchUserAdminDeliveries()
+        ])
+        messages.value = nextMessages
+        deliveries.value = nextDeliveries
+      }
+
       async function approveOrder(msg) {
         if (!msg.order_id || !msg.product_id) return
-        orderActionLoading.value = msg.message_id
+        orderActionLoading.value = deliveryActionKey(msg)
         try {
           await axios.post(
-            `${API_URL}/user-admin/orders/${msg.order_id}/items/${msg.product_id}/approve`,
+            `${API_URL}/user-admin/orders/${encodeURIComponent(msg.order_id)}/items/${encodeURIComponent(msg.product_id)}/approve`,
             {},
             await buildAuthenticatedRequestConfig()
           )
           showMessage('Order item approved successfully')
-          await fetchMessages()
+          await refreshDeliveryData()
         } catch (error) {
           showMessage(error.response?.data?.message || 'Failed to approve order item', 'error')
         } finally {
@@ -2173,17 +2186,36 @@
 
       async function cancelOrder(msg) {
         if (!msg.order_id || !msg.product_id) return
-        orderActionLoading.value = msg.message_id
+        if (!confirm(`Cancel delivery for ${msg.name || msg.product_name || msg.product_id}?`)) return
+        orderActionLoading.value = deliveryActionKey(msg)
         try {
           await axios.post(
-            `${API_URL}/user-admin/orders/${msg.order_id}/items/${msg.product_id}/cancel`,
+            `${API_URL}/user-admin/orders/${encodeURIComponent(msg.order_id)}/items/${encodeURIComponent(msg.product_id)}/cancel`,
             {},
             await buildAuthenticatedRequestConfig()
           )
           showMessage('Order item cancelled successfully')
-          await fetchMessages()
+          await refreshDeliveryData()
         } catch (error) {
           showMessage(error.response?.data?.message || 'Failed to cancel order item', 'error')
+        } finally {
+          orderActionLoading.value = ''
+        }
+      }
+
+      async function confirmDelivery(delivery) {
+        if (!delivery.order_id || !delivery.product_id) return
+        orderActionLoading.value = deliveryActionKey(delivery)
+        try {
+          await axios.post(
+            `${API_URL}/user-admin/orders/${encodeURIComponent(delivery.order_id)}/items/${encodeURIComponent(delivery.product_id)}/confirm-delivery`,
+            {},
+            await buildAuthenticatedRequestConfig()
+          )
+          showMessage('Delivery confirmed successfully')
+          await refreshDeliveryData()
+        } catch (error) {
+          showMessage(error.response?.data?.message || 'Failed to confirm delivery', 'error')
         } finally {
           orderActionLoading.value = ''
         }
@@ -2318,6 +2350,7 @@
         reviewRatingFilterOptions,
         messageStatusFilterOptions,
         deliveryStatusFilterOptions,
+        deliveryHeaders,
         userAdminNavItems,
         cashOnDeliveryEnabled,
         updateCashOnDelivery,
@@ -2367,8 +2400,15 @@
         messages,
         deliveries,
         markMessageRead,
+        deliveryActionKey,
+        deliveryStatusLabel,
+        deliveryRowStyle,
+        canApproveDelivery,
+        canConfirmDelivery,
+        canCancelDelivery,
         approveOrder,
         cancelOrder,
+        confirmDelivery,
         orderActionLoading,
         formatDate
       }
@@ -2450,60 +2490,6 @@
 }
 
 /* ════════════════════════════════ WINDOW HEADERS ════ */
-.panel-window-header {
-  height: 36px;
-  background: #f8fafc;
-  border-bottom: 1px solid #0f172a;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  position: relative;
-}
-.panel-window-header-mini {
-  height: 30px;
-  background: #f8fafc;
-  border-bottom: 1px solid #0f172a;
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  position: relative;
-}
-
-.window-dots {
-  display: flex;
-  gap: 6px;
-  z-index: 2;
-}
-.window-dots .dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  border: 1px solid #0f172a;
-  display: inline-block;
-}
-.dot-red { background: #ff5f56; }
-.dot-yellow { background: #ffbd2e; }
-.dot-green { background: #27c93f; }
-
-.window-title-display {
-  font-family: monospace;
-  font-size: 11px;
-  font-weight: 800;
-  color: #64748b;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  letter-spacing: 0.05em;
-}
-.window-title-mini {
-  font-family: monospace;
-  font-size: 10px;
-  font-weight: 700;
-  color: #64748b;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-}
 
 /* ════════════════════════════════ SIDEBAR NAV ══ */
 .custom-admin-nav {
@@ -2599,6 +2585,11 @@
   font-size: 20px;
   font-weight: 800;
   color: #0f172a;
+}
+.subsection-title {
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 800;
 }
 .section-subtitle {
   font-size: 12px;
@@ -2739,6 +2730,7 @@
 
   border-radius: 0 !important;
   max-height: 90vh;
+  position: relative;
 }
 .dialog-scroll-body {
   max-height: 70vh;
@@ -2747,6 +2739,8 @@
 .dialog-close-btn {
   position: absolute;
   right: 12px;
+  top: 12px;
+  z-index: 1;
   background: transparent;
   border: none;
   cursor: pointer;

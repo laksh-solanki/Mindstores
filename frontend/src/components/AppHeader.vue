@@ -180,6 +180,13 @@
                   to="/cart"
                 />
                 <v-list-item
+                  class="menu-list-item"
+                  prepend-icon="mdi-help-circle-outline"
+                  rounded="0"
+                  title="Help Center"
+                  to="/help"
+                />
+                <v-list-item
                   v-if="canAccessAdmin"
                   class="mb-1 menu-list-item"
                   prepend-icon="mdi-shield-star-outline"
@@ -293,6 +300,13 @@
             />
           </template>
         </v-list-item>
+        <v-list-item
+          prepend-icon="mdi-help-circle-outline"
+          rounded="0"
+          title="Help Center"
+          to="/help"
+          @click="closeMobileMenu"
+        />
         <v-list-item
           v-if="appStore.isAuthenticated"
           prepend-icon="mdi-account-outline"

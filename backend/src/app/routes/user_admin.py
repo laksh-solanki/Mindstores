@@ -11,6 +11,14 @@ from urllib.parse import unquote
 from fastapi import APIRouter, Depends, Request
 
 from ..context import RequestContext, error_response, get_context, json_response, read_json_body
+from ..delivery import (
+    DELIVERY_STATUS_COMPLETED,
+    DELIVERY_STATUS_PENDING,
+    DELIVERY_STATUS_SHIPPING,
+    cancel_delivery_item,
+    find_delivery_item_index,
+    transition_delivery_item,
+)
 from ..utils import normalize_text, now_iso, random_compact_id
 from .products import normalize_price_currency, normalize_product_image_urls
 
@@ -546,7 +554,8 @@ async def list_user_admin_deliveries(ctx: RequestContext = Depends(get_context))
                     "order_created_at": order.get("created_at"),
                     "scheduled_delivery_date": order.get("scheduled_delivery_date"),
                     "billing_profile": order.get("billing_profile"),
-                    "order_status": order.get("status")
+                    "order_status": order.get("status"),
+                    "order_updated_at": order.get("updated_at"),
                 }
                 deliveries.append(delivery_item)
                 
@@ -562,32 +571,53 @@ async def user_admin_approve_order_item(order_id: str, product_id: str, ctx: Req
     if not order:
         return error_response(404, "Order not found")
 
-    item_index = -1
-    item = None
-    for i, it in enumerate(order.get("items", [])):
-        if it.get("product_id") == product_id and it.get("vendor_id") == ctx.user.get("user_id"):
-            item_index = i
-            item = it
-            break
-
-    if not item:
+    item_index = find_delivery_item_index(order, product_id, ctx.user.get("user_id"))
+    if item_index < 0:
         return error_response(404, "Item not found in order for this vendor")
 
-    now = now_iso()
-    await ctx.db.collection("orders").update_one(
-        {"order_id": order_id},
-        {"$set": {
-            f"items.{item_index}.delivery_status": "continue shipping",
-            "status": "continue shipping",
-            "updated_at": now
-        }}
+    _updates, error = await transition_delivery_item(
+        ctx,
+        order,
+        item_index,
+        DELIVERY_STATUS_SHIPPING,
+        {DELIVERY_STATUS_PENDING},
     )
+    if error:
+        return error_response(400, error)
     
     await ctx.db.collection("messages").update_many(
         {"order_id": order_id, "product_id": product_id, "recipient_user_id": ctx.user.get("user_id")},
-        {"$set": {"status": "approved", "updated_at": now}}
+        {"$set": {"status": "approved", "updated_at": now_iso()}}
     )
     return json_response({"message": "Order item approved"}, 200)
+
+
+@router.post("/user-admin/orders/{order_id}/items/{product_id}/confirm-delivery")
+async def user_admin_confirm_delivery(order_id: str, product_id: str, ctx: RequestContext = Depends(get_context)):
+    denied = require_pin_access(ctx)
+    if denied:
+        return denied
+
+    order = await ctx.db.collection("orders").find_one({"order_id": order_id})
+    if not order:
+        return error_response(404, "Order not found")
+
+    item_index = find_delivery_item_index(order, product_id, ctx.user.get("user_id"))
+    if item_index < 0:
+        return error_response(404, "Item not found in order for this vendor")
+
+    _updates, error = await transition_delivery_item(
+        ctx,
+        order,
+        item_index,
+        DELIVERY_STATUS_COMPLETED,
+        {DELIVERY_STATUS_SHIPPING},
+    )
+    if error:
+        return error_response(400, error)
+
+    return json_response({"message": "Delivery confirmed"}, 200)
+
 
 @router.post("/user-admin/orders/{order_id}/items/{product_id}/cancel")
 async def user_admin_cancel_order_item(order_id: str, product_id: str, ctx: RequestContext = Depends(get_context)):
@@ -599,41 +629,16 @@ async def user_admin_cancel_order_item(order_id: str, product_id: str, ctx: Requ
     if not order:
         return error_response(404, "Order not found")
 
-    item_index = -1
-    item = None
-    for i, it in enumerate(order.get("items", [])):
-        if it.get("product_id") == product_id and it.get("vendor_id") == ctx.user.get("user_id"):
-            item_index = i
-            item = it
-            break
-
-    if not item:
+    item_index = find_delivery_item_index(order, product_id, ctx.user.get("user_id"))
+    if item_index < 0:
         return error_response(404, "Item not found in order for this vendor")
 
-    now = now_iso()
-    await ctx.db.collection("orders").update_one(
-        {"order_id": order_id},
-        {"$set": {
-            f"items.{item_index}.delivery_status": "cancelled",
-            "updated_at": now
-        }}
-    )
-
-    all_cancelled = True
-    updated_order = await ctx.db.collection("orders").find_one({"order_id": order_id})
-    for it in updated_order.get("items", []):
-        if it.get("delivery_status") != "cancelled":
-            all_cancelled = False
-            break
-            
-    if all_cancelled:
-        await ctx.db.collection("orders").update_one(
-            {"order_id": order_id},
-            {"$set": {"status": "cancelled", "updated_at": now}}
-        )
+    _updates, error = await cancel_delivery_item(ctx, order, item_index)
+    if error:
+        return error_response(400, error)
 
     await ctx.db.collection("messages").update_many(
         {"order_id": order_id, "product_id": product_id, "recipient_user_id": ctx.user.get("user_id")},
-        {"$set": {"status": "cancelled", "updated_at": now}}
+        {"$set": {"status": "cancelled", "updated_at": now_iso()}}
     )
     return json_response({"message": "Order item cancelled"}, 200)

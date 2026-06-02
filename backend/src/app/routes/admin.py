@@ -7,6 +7,14 @@ from fastapi import APIRouter, Depends, Request
 
 from ..admin_access import normalize_admin_email
 from ..context import RequestContext, error_response, get_context, json_response, read_json_body
+from ..delivery import (
+    DELIVERY_STATUS_COMPLETED,
+    DELIVERY_STATUS_PENDING,
+    DELIVERY_STATUS_SHIPPING,
+    cancel_delivery_item,
+    find_delivery_item_index,
+    transition_delivery_item,
+)
 from ..utils import escape_regex, normalize_text, parse_int_param, now_iso
 
 router = APIRouter()
@@ -214,8 +222,67 @@ async def get_admin_deliveries(ctx: RequestContext = Depends(get_context)):
                 "order_created_at": order.get("created_at"),
                 "scheduled_delivery_date": order.get("scheduled_delivery_date"),
                 "billing_profile": order.get("billing_profile"),
-                "order_status": order.get("status")
+                "order_status": order.get("status"),
+                "order_updated_at": order.get("updated_at"),
             }
             deliveries.append(delivery_item)
             
     return json_response({"items": deliveries}, 200, {"Cache-Control": "no-store"})
+
+
+@router.post("/admin/orders/{order_id}/items/{product_id}/confirm-delivery")
+async def admin_confirm_delivery(order_id: str, product_id: str, ctx: RequestContext = Depends(get_context)):
+    denied = require_admin(ctx)
+    if denied:
+        return denied
+
+    order = await ctx.db.collection("orders").find_one({"order_id": unquote(order_id)})
+    if not order:
+        return error_response(404, "Order not found")
+
+    normalized_product_id = unquote(product_id)
+    item_index = find_delivery_item_index(order, normalized_product_id)
+    if item_index < 0:
+        return error_response(404, "Item not found in order")
+
+    _updates, error = await transition_delivery_item(
+        ctx,
+        order,
+        item_index,
+        DELIVERY_STATUS_COMPLETED,
+        {DELIVERY_STATUS_PENDING, DELIVERY_STATUS_SHIPPING},
+    )
+    if error:
+        return error_response(400, error)
+
+    await ctx.db.collection("messages").update_many(
+        {"order_id": unquote(order_id), "product_id": normalized_product_id},
+        {"$set": {"status": "approved", "updated_at": now_iso()}},
+    )
+    return json_response({"message": "Delivery confirmed"}, 200)
+
+
+@router.post("/admin/orders/{order_id}/items/{product_id}/cancel-delivery")
+async def admin_cancel_delivery(order_id: str, product_id: str, ctx: RequestContext = Depends(get_context)):
+    denied = require_admin(ctx)
+    if denied:
+        return denied
+
+    order = await ctx.db.collection("orders").find_one({"order_id": unquote(order_id)})
+    if not order:
+        return error_response(404, "Order not found")
+
+    normalized_product_id = unquote(product_id)
+    item_index = find_delivery_item_index(order, normalized_product_id)
+    if item_index < 0:
+        return error_response(404, "Item not found in order")
+
+    _updates, error = await cancel_delivery_item(ctx, order, item_index)
+    if error:
+        return error_response(400, error)
+
+    await ctx.db.collection("messages").update_many(
+        {"order_id": unquote(order_id), "product_id": normalized_product_id},
+        {"$set": {"status": "cancelled", "updated_at": now_iso()}},
+    )
+    return json_response({"message": "Delivery cancelled"}, 200)

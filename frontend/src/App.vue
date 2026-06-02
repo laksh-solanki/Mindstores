@@ -358,21 +358,6 @@ body {
   border-right-color: #f8fafc !important;
 }
 
-.v-theme--dark .panel-window-header,
-.v-theme--dark .panel-window-header-mini {
-  background-color: #1e293b !important;
-  border-bottom-color: #f8fafc !important;
-}
-
-.v-theme--dark .window-dots .dot {
-  border-color: #f8fafc !important;
-}
-
-.v-theme--dark .window-title-display,
-.v-theme--dark .window-title-mini {
-  color: #cbd5e1 !important;
-}
-
 .v-theme--dark .custom-nav-item {
   color: #f8fafc !important;
 }

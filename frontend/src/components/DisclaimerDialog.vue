@@ -11,7 +11,9 @@
       <v-card-text class="pt-2 pb-6 px-6 text-center">
         <h2 class="disclaimer-title mb-3">Welcome to Mindstores</h2>
         <p class="disclaimer-text">
-          Please note that this website is a portfolio demonstration. All products and features listed here are for showcase purposes only, and no actual purchases can be made.
+          Mindstores is a portfolio demonstration of an online storefront. Products, prices, promotions, checkout
+          options, and order updates are sample content. Please do not enter real payment information. No real purchase,
+          payment, or delivery is created.
         </p>
       </v-card-text>
       
