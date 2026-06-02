@@ -2,6 +2,7 @@ import axios from "axios";
 // Firebase imports
 import {
   createUserWithEmailAndPassword,
+  deleteUser,
   getAuth,
   GoogleAuthProvider,
   onAuthStateChanged,
@@ -9,7 +10,6 @@ import {
   signInWithPopup,
   signOut,
   updateProfile,
-  deleteUser,
 } from "firebase/auth";
 import { defineStore } from "pinia";
 // Import initialized firebase app
@@ -410,6 +410,17 @@ export const useAppStore = defineStore("app", {
       const cartStore = useCartStore();
       cartStore.clearCart();
 
+      if (typeof window !== "undefined") {
+        try {
+          window.localStorage.removeItem('mindstore_profile_settings');
+          if (auth.currentUser?.uid) {
+            window.localStorage.removeItem(`mindstores.profile-image.${auth.currentUser.uid}`);
+          }
+        } catch (error) {
+          console.warn("Failed to clear local storage", error);
+        }
+      }
+
       try {
         await axios
           .post(`${API_URL}/auth/logout`, {}, { withCredentials: true })
@@ -435,13 +446,15 @@ export const useAppStore = defineStore("app", {
           if (auth.currentUser?.uid) {
             window.localStorage.removeItem(`mindstores.profile-image.${auth.currentUser.uid}`);
           }
-        } catch (e) {
-          console.warn("Failed to clear local storage", e);
+        } catch (error) {
+          console.warn("Failed to clear local storage", error);
         }
       }
 
+      let backendDeleted = false;
       try {
         await axios.delete(`${API_URL}/auth/account`, await buildAuthenticatedRequestConfig());
+        backendDeleted = true;
       } catch (error) {
         console.warn("Backend account deletion failed or not found, proceeding.", error);
       }
@@ -452,6 +465,12 @@ export const useAppStore = defineStore("app", {
         }
       } catch (error) {
         console.error("Firebase user deletion failed:", error);
+        if (error?.code === 'auth/requires-recent-login') {
+           throw new Error("Please log out and log back in to verify your identity before deleting your account.");
+        }
+        // If backend deleted but Firebase failed, we are in a broken state. 
+        // We should throw so the user knows.
+        throw error;
       } finally {
         this.loading = false;
         this.user = null;

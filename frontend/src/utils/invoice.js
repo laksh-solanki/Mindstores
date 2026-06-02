@@ -1,6 +1,6 @@
+import dancingScriptUrl from '@fontsource/dancing-script/files/dancing-script-latin-400-normal.woff2?url'
 import openSansRegularUrl from '@fontsource/open-sans/files/open-sans-latin-400-normal.woff2?url'
 import openSansBoldUrl from '@fontsource/open-sans/files/open-sans-latin-700-normal.woff2?url'
-import dancingScriptUrl from '@fontsource/dancing-script/files/dancing-script-latin-400-normal.woff2?url'
 import { PDFDocument } from 'pdf-lib'
 import brandLogoSvg from '@/assets/logo.svg?raw'
 

@@ -31,21 +31,21 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+  import { onMounted, ref } from 'vue'
 
-const dialog = ref(false)
+  const dialog = ref(false)
 
-onMounted(() => {
-  const hasSeenDisclaimer = localStorage.getItem('mindstores_disclaimer_seen')
-  if (!hasSeenDisclaimer) {
-    dialog.value = true
+  onMounted(() => {
+    const hasSeenDisclaimer = localStorage.getItem('mindstores_disclaimer_seen')
+    if (!hasSeenDisclaimer) {
+      dialog.value = true
+    }
+  })
+
+  function closeDialog() {
+    dialog.value = false
+    localStorage.setItem('mindstores_disclaimer_seen', 'true')
   }
-})
-
-function closeDialog() {
-  dialog.value = false
-  localStorage.setItem('mindstores_disclaimer_seen', 'true')
-}
 </script>
 
 <style scoped>
@@ -88,20 +88,20 @@ function closeDialog() {
 }
 
 /* Dark theme overrides */
-:global(.v-theme--dark) .disclaimer-card {
-  background-color: #121824 !important;
+:global(.v-theme--dark .disclaimer-card) {
+  background: #121824 !important;
   border-color: #f8fafc !important;
 }
-:global(.v-theme--dark) .disclaimer-title {
+:global(.v-theme--dark .disclaimer-title) {
   color: #f8fafc !important;
 }
-:global(.v-theme--dark) .disclaimer-text {
+:global(.v-theme--dark .disclaimer-text) {
   color: #cbd5e1 !important;
 }
-:global(.v-theme--dark) .close-btn {
+:global(.v-theme--dark .close-btn) {
   color: #94a3b8 !important;
 }
-:global(.v-theme--dark) .close-btn:hover {
+:global(.v-theme--dark .close-btn:hover) {
   color: #f8fafc !important;
 }
 </style>

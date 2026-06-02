@@ -22,12 +22,25 @@
           </p>
 
           <div class="hero-button-group">
-            <v-btn class="action-btn-primary" elevation="0" rounded="0" size="large" to="/products" variant="flat">
+            <v-btn
+              class="action-btn-primary"
+              elevation="0"
+              rounded="0"
+              size="large"
+              to="/products"
+              variant="flat"
+            >
               Explore Collection
               <v-icon end size="16">mdi-arrow-right</v-icon>
             </v-btn>
 
-            <v-btn class="action-btn-text" rounded="0" size="large" variant="text" @click="scrollToProducts">
+            <v-btn
+              class="action-btn-text"
+              rounded="0"
+              size="large"
+              variant="text"
+              @click="scrollToProducts"
+            >
               Browse Catalog
               <span class="underline-hover" />
             </v-btn>
@@ -53,12 +66,24 @@
         <!-- RIGHT PANEL: Image Gallery -->
         <div class="hero-right-panel">
           <div class="image-gallery-collage">
-            <template v-if="galleryProducts.length">
-              <div v-for="(product, idx) in galleryProducts" :key="product.product_id" class="gallery-collage-item"
-                :class="`item-${idx + 1}`" role="button" tabindex="0" @click="goToProduct(product.product_id)"
-                @keydown.enter="goToProduct(product.product_id)">
-                <v-img :alt="product.name" class="collage-img" cover height="100%"
-                  :src="productImageUrl(product) || heroFallbackImage" />
+            <template v-if="galleryProducts.length > 0">
+              <div
+                v-for="(product, idx) in galleryProducts"
+                :key="product.product_id"
+                class="gallery-collage-item"
+                :class="`item-${idx + 1}`"
+                role="button"
+                tabindex="0"
+                @click="goToProduct(product.product_id)"
+                @keydown.enter="goToProduct(product.product_id)"
+              >
+                <v-img
+                  :alt="product.name"
+                  class="collage-img"
+                  cover
+                  height="100%"
+                  :src="productImageUrl(product) || heroFallbackImage"
+                />
                 <div class="collage-overlay">
                   <span class="collage-prod-name">{{ product.name }}</span>
                 </div>
@@ -78,19 +103,27 @@
     <div class="editorial-section">
       <div class="editorial-header">
         <h2 class="editorial-title">Curated Aesthetics</h2>
-        <div class="editorial-line"></div>
+        <div class="editorial-line" />
         <p class="editorial-subtitle">Explore the intersection of form, function, and enduring design.</p>
       </div>
 
       <div class="editorial-gallery">
         <template v-if="lookbookProducts.length >= 3">
           <!-- Featured large image -->
-          <div class="editorial-item featured" role="button" tabindex="0"
+          <div
+            class="editorial-item featured"
+            role="button"
+            tabindex="0"
             @click="goToProduct(lookbookProducts[0].product_id)"
-            @keydown.enter="goToProduct(lookbookProducts[0].product_id)">
+            @keydown.enter="goToProduct(lookbookProducts[0].product_id)"
+          >
             <div class="ed-image-wrap">
-              <v-img :alt="lookbookProducts[0].name" class="ed-img" contain
-                :src="productImageUrl(lookbookProducts[0]) || heroFallbackImage" />
+              <v-img
+                :alt="lookbookProducts[0].name"
+                class="ed-img"
+                contain
+                :src="productImageUrl(lookbookProducts[0]) || heroFallbackImage"
+              />
             </div>
             <div class="ed-meta">
               <span class="ed-cat">01 — {{ normalizeCategory(lookbookProducts[0].category) }}</span>
@@ -101,12 +134,20 @@
 
           <!-- Right column for 2 smaller images -->
           <div class="editorial-side">
-            <div class="editorial-item secondary" role="button" tabindex="0"
+            <div
+              class="editorial-item secondary"
+              role="button"
+              tabindex="0"
               @click="goToProduct(lookbookProducts[1].product_id)"
-              @keydown.enter="goToProduct(lookbookProducts[1].product_id)">
+              @keydown.enter="goToProduct(lookbookProducts[1].product_id)"
+            >
               <div class="ed-image-wrap">
-                <v-img :alt="lookbookProducts[1].name" class="ed-img" contain
-                  :src="productImageUrl(lookbookProducts[1]) || heroFallbackImage" />
+                <v-img
+                  :alt="lookbookProducts[1].name"
+                  class="ed-img"
+                  contain
+                  :src="productImageUrl(lookbookProducts[1]) || heroFallbackImage"
+                />
               </div>
               <div class="ed-meta">
                 <span class="ed-cat">02 — {{ normalizeCategory(lookbookProducts[1].category) }}</span>
@@ -115,12 +156,20 @@
               </div>
             </div>
 
-            <div class="editorial-item tertiary" role="button" tabindex="0"
+            <div
+              class="editorial-item tertiary"
+              role="button"
+              tabindex="0"
               @click="goToProduct(lookbookProducts[2].product_id)"
-              @keydown.enter="goToProduct(lookbookProducts[2].product_id)">
+              @keydown.enter="goToProduct(lookbookProducts[2].product_id)"
+            >
               <div class="ed-image-wrap">
-                <v-img :alt="lookbookProducts[2].name" class="ed-img" contain
-                  :src="productImageUrl(lookbookProducts[2]) || heroFallbackImage" />
+                <v-img
+                  :alt="lookbookProducts[2].name"
+                  class="ed-img"
+                  contain
+                  :src="productImageUrl(lookbookProducts[2]) || heroFallbackImage"
+                />
               </div>
               <div class="ed-meta">
                 <span class="ed-cat">03 — {{ normalizeCategory(lookbookProducts[2].category) }}</span>
@@ -131,7 +180,7 @@
           </div>
         </template>
         <template v-else>
-          <div class="editorial-item" v-for="n in 3" :key="`ed-skel-${n}`">
+          <div v-for="n in 3" :key="`ed-skel-${n}`" class="editorial-item">
             <v-skeleton-loader class="h-100" type="image, article" />
           </div>
         </template>
@@ -152,19 +201,48 @@
     </div>
 
     <v-row v-if="loading" v-slot class="mt-8" no-gutters>
-      <v-col v-for="n in 8" :key="n" class="pa-0" cols="12" lg="3" md="4" sm="6">
-        <v-skeleton-loader class="border rounded-0" style="margin-right: -1px; margin-bottom: -1px;"
-          type="image, article" />
+      <v-col
+        v-for="n in 8"
+        :key="n"
+        class="pa-0"
+        cols="12"
+        lg="3"
+        md="4"
+        sm="6"
+      >
+        <v-skeleton-loader
+          class="border rounded-0"
+          style="margin-right: -1px; margin-bottom: -1px;"
+          type="image, article"
+        />
       </v-col>
     </v-row>
 
     <v-row v-else-if="products.length > 0" class="mt-8" no-gutters>
-      <v-col v-for="product in products" :key="product.product_id" cols="12" lg="3" md="4" sm="6">
-        <div class="product-joint-card" role="button" tabindex="0" @click="goToProduct(product.product_id)"
-          @keydown.enter="goToProduct(product.product_id)">
+      <v-col
+        v-for="product in products"
+        :key="product.product_id"
+        cols="12"
+        lg="3"
+        md="4"
+        sm="6"
+      >
+        <div
+          class="product-joint-card"
+          role="button"
+          tabindex="0"
+          @click="goToProduct(product.product_id)"
+          @keydown.enter="goToProduct(product.product_id)"
+        >
           <div class="product-image-wrap">
-            <v-img v-if="productImageUrl(product)" :alt="product.name" aspect-ratio="1" class="product-grid-image"
-              contain :src="productImageUrl(product)" />
+            <v-img
+              v-if="productImageUrl(product)"
+              :alt="product.name"
+              aspect-ratio="1"
+              class="product-grid-image"
+              contain
+              :src="productImageUrl(product)"
+            />
             <div v-else class="no-image-grid-placeholder">
               <v-icon color="grey-lighten-1" size="36">mdi-image-off-outline</v-icon>
             </div>
@@ -182,8 +260,12 @@
 
             <div class="product-grid-footer">
               <span class="product-grid-price">{{ formatAmount(product.price) }}</span>
-              <button :aria-label="`Add ${product.name} to cart`" class="product-grid-cart-btn"
-                :disabled="isProductSoldOut(product)" @click.stop="quickAddToCart(product)">
+              <button
+                :aria-label="`Add ${product.name} to cart`"
+                class="product-grid-cart-btn"
+                :disabled="isProductSoldOut(product)"
+                @click.stop="quickAddToCart(product)"
+              >
                 <v-icon icon="mdi-cart-plus" size="18" />
               </button>
             </div>
@@ -198,217 +280,223 @@
       <p class="empty-text">Refresh the catalog or check back later.</p>
     </div>
 
-    <BaseAlert v-model="snackbar" floating :message="snackbarText" :timeout="2200" :type="snackbarColor" />
+    <BaseAlert
+      v-model="snackbar"
+      floating
+      :message="snackbarText"
+      :timeout="2200"
+      :type="snackbarColor"
+    />
   </v-container>
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import heroFallbackImage from '@/assets/DeskImg.jpg'
-import BaseAlert from '@/components/BaseAlert.vue'
-import { useAppStore } from '@/stores/app'
-import { useCartStore } from '@/stores/cart'
-import { useCurrency } from '@/utils/currency'
-import { safeDisplayImageUrl } from '@/utils/images'
-import {
-  PRODUCTS_CACHE_INVALIDATED_EVENT,
-  readProductsCache,
-  writeProductsCache,
-} from '@/utils/productCache'
-import { extractProductItems, fetchProductList } from '@/utils/products'
+  import { computed, onMounted, onUnmounted, ref } from 'vue'
+  import { useRouter } from 'vue-router'
+  import heroFallbackImage from '@/assets/DeskImg.jpg'
+  import BaseAlert from '@/components/BaseAlert.vue'
+  import { useAppStore } from '@/stores/app'
+  import { useCartStore } from '@/stores/cart'
+  import { useCurrency } from '@/utils/currency'
+  import { safeDisplayImageUrl } from '@/utils/images'
+  import {
+    PRODUCTS_CACHE_INVALIDATED_EVENT,
+    readProductsCache,
+    writeProductsCache,
+  } from '@/utils/productCache'
+  import { extractProductItems, fetchProductList } from '@/utils/products'
 
-const CACHE_TTL_MS = 60 * 1000
-const PRODUCT_REQUEST_TIMEOUT_MS = 20_000
-const PRODUCT_FETCH_RETRIES = 2
+  const CACHE_TTL_MS = 60 * 1000
+  const PRODUCT_REQUEST_TIMEOUT_MS = 20_000
+  const PRODUCT_FETCH_RETRIES = 2
 
-let cachedProducts = null
-let cacheExpiresAt = 0
+  let cachedProducts = null
+  let cacheExpiresAt = 0
 
-const router = useRouter()
-const cartStore = useCartStore()
-const appStore = useAppStore()
-const { formatAmount } = useCurrency()
+  const router = useRouter()
+  const cartStore = useCartStore()
+  const appStore = useAppStore()
+  const { formatAmount } = useCurrency()
 
-const products = ref([])
-const loading = ref(false)
-const snackbar = ref(false)
-const snackbarText = ref('')
-const snackbarColor = ref('success')
-const productsSection = ref(null)
+  const products = ref([])
+  const loading = ref(false)
+  const snackbar = ref(false)
+  const snackbarText = ref('')
+  const snackbarColor = ref('success')
+  const productsSection = ref(null)
 
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
-function normalizeCategory(category) {
-  const value = String(category || '').trim()
-  if (!value) return 'Other'
-  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
-}
-
-const galleryProducts = computed(() => products.value.slice(0, 3))
-const lookbookProducts = computed(() => products.value.slice(3, 7))
-
-const productImageUrl = (product) => safeDisplayImageUrl(product?.image_url)
-const productStock = (product) => Number(product?.stock || 0)
-const isProductSoldOut = (product) => productStock(product) <= 0
-
-// Quick-category strip built from live products
-const quickCategories = computed(() => {
-  const emojiMap = {
-    electronics: '⚡', clothing: '👕', footwear: '👟', shoes: '👟',
-    books: '📚', furniture: '🛋️', beauty: '✨', sports: '🏃',
-    toys: '🎮', food: '🍎', jewelry: '💍', watches: '⌚',
-    bags: '👜', health: '💊', automotive: '🚗', home: '🏠',
-    garden: '🌿', music: '🎵', art: '🎨', office: '💼',
+  function normalizeCategory(category) {
+    const value = String(category || '').trim()
+    if (!value) return 'Other'
+    return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
   }
-  const seen = new Set()
-  const cats = []
-  for (const p of products.value) {
-    const key = String(p.category || '').trim().toLowerCase().replace(/\s+/g, '-')
-    if (key && !seen.has(key) && cats.length < 8) {
-      seen.add(key)
-      const label = normalizeCategory(p.category)
-      const emoji = emojiMap[key] || emojiMap[label.toLowerCase()] || '🛒'
-      cats.push({ key, label, emoji })
+
+  const galleryProducts = computed(() => products.value.slice(0, 3))
+  const lookbookProducts = computed(() => products.value.slice(3, 7))
+
+  const productImageUrl = (product) => safeDisplayImageUrl(product?.image_url)
+  const productStock = (product) => Number(product?.stock || 0)
+  const isProductSoldOut = (product) => productStock(product) <= 0
+
+  // Quick-category strip built from live products
+  const quickCategories = computed(() => {
+    const emojiMap = {
+      electronics: '⚡', clothing: '👕', footwear: '👟', shoes: '👟',
+      books: '📚', furniture: '🛋️', beauty: '✨', sports: '🏃',
+      toys: '🎮', food: '🍎', jewelry: '💍', watches: '⌚',
+      bags: '👜', health: '💊', automotive: '🚗', home: '🏠',
+      garden: '🌿', music: '🎵', art: '🎨', office: '💼',
     }
-  }
-  return cats
-})
-
-// Particle positions — seeded per index so they are stable
-function particleStyle(n) {
-  const seed = n * 137.508
-  const left = ((seed * 1.618) % 100).toFixed(1)
-  const top = ((seed * 2.414) % 100).toFixed(1)
-  const size = (4 + (n % 5)).toFixed(0)
-  const delay = ((n * 0.37) % 4).toFixed(2)
-  const dur = (3 + (n % 4)).toFixed(1)
-  return {
-    left: `${left}%`,
-    top: `${top}%`,
-    width: `${size}px`,
-    height: `${size}px`,
-    animationDelay: `${delay}s`,
-    animationDuration: `${dur}s`,
-  }
-}
-
-function isRetryableProductsError(error) {
-  const status = error?.response?.status
-  if (status && status < 500 && status !== 429) {
-    return false
-  }
-  return error?.code === 'ECONNABORTED' || !error?.response || status >= 500 || status === 429
-}
-
-async function fetchProducts(force = false) {
-  const now = Date.now()
-  if (force) {
-    cachedProducts = null
-    cacheExpiresAt = 0
-  }
-
-  if (cachedProducts && cacheExpiresAt > now) {
-    products.value = cachedProducts
-    return
-  }
-
-  if (!cachedProducts) {
-    const persistedCache = readProductsCache()
-    if (persistedCache) {
-      cachedProducts = persistedCache.products
-      cacheExpiresAt = persistedCache.expiresAt
-      products.value = persistedCache.products
-      if (cacheExpiresAt > now) {
-        return
+    const seen = new Set()
+    const cats = []
+    for (const p of products.value) {
+      const key = String(p.category || '').trim().toLowerCase().replace(/\s+/g, '-')
+      if (key && !seen.has(key) && cats.length < 8) {
+        seen.add(key)
+        const label = normalizeCategory(p.category)
+        const emoji = emojiMap[key] || emojiMap[label.toLowerCase()] || '🛒'
+        cats.push({ key, label, emoji })
       }
     }
+    return cats
+  })
+
+  // Particle positions — seeded per index so they are stable
+  function particleStyle(n) {
+    const seed = n * 137.508
+    const left = ((seed * 1.618) % 100).toFixed(1)
+    const top = ((seed * 2.414) % 100).toFixed(1)
+    const size = (4 + (n % 5)).toFixed(0)
+    const delay = ((n * 0.37) % 4).toFixed(2)
+    const dur = (3 + (n % 4)).toFixed(1)
+    return {
+      left: `${left}%`,
+      top: `${top}%`,
+      width: `${size}px`,
+      height: `${size}px`,
+      animationDelay: `${delay}s`,
+      animationDuration: `${dur}s`,
+    }
   }
 
-  loading.value = products.value.length === 0
-  let lastError = null
+  function isRetryableProductsError(error) {
+    const status = error?.response?.status
+    if (status && status < 500 && status !== 429) {
+      return false
+    }
+    return error?.code === 'ECONNABORTED' || !error?.response || status >= 500 || status === 429
+  }
 
-  try {
-    for (let attempt = 0; attempt <= PRODUCT_FETCH_RETRIES; attempt++) {
-      try {
-        const response = await fetchProductList({
-          params: { limit: 250 },
-          timeout: PRODUCT_REQUEST_TIMEOUT_MS,
-        })
-        const fetchedProducts = extractProductItems(response.data)
-        products.value = fetchedProducts
-        cachedProducts = fetchedProducts
-        cacheExpiresAt = Date.now() + CACHE_TTL_MS
-        if (fetchedProducts.length > 0) {
-          writeProductsCache(fetchedProducts, cacheExpiresAt)
+  async function fetchProducts(force = false) {
+    const now = Date.now()
+    if (force) {
+      cachedProducts = null
+      cacheExpiresAt = 0
+    }
+
+    if (cachedProducts && cacheExpiresAt > now) {
+      products.value = cachedProducts
+      return
+    }
+
+    if (!cachedProducts) {
+      const persistedCache = readProductsCache()
+      if (persistedCache) {
+        cachedProducts = persistedCache.products
+        cacheExpiresAt = persistedCache.expiresAt
+        products.value = persistedCache.products
+        if (cacheExpiresAt > now) {
+          return
         }
-        return
-      } catch (error) {
-        lastError = error
-        const shouldRetry = attempt < PRODUCT_FETCH_RETRIES && isRetryableProductsError(error)
-        if (!shouldRetry) break
-        await wait((attempt + 1) * 600)
       }
     }
-  } finally {
-    if (lastError) {
-      if (products.value.length > 0) {
-        console.warn('Failed to refresh products. Showing cached products.', lastError)
-      } else {
-        console.error('Failed to fetch products:', lastError)
+
+    loading.value = products.value.length === 0
+    let lastError = null
+
+    try {
+      for (let attempt = 0; attempt <= PRODUCT_FETCH_RETRIES; attempt++) {
+        try {
+          const response = await fetchProductList({
+            params: { limit: 250 },
+            timeout: PRODUCT_REQUEST_TIMEOUT_MS,
+          })
+          const fetchedProducts = extractProductItems(response.data)
+          products.value = fetchedProducts
+          cachedProducts = fetchedProducts
+          cacheExpiresAt = Date.now() + CACHE_TTL_MS
+          if (fetchedProducts.length > 0) {
+            writeProductsCache(fetchedProducts, cacheExpiresAt)
+          }
+          return
+        } catch (error) {
+          lastError = error
+          const shouldRetry = attempt < PRODUCT_FETCH_RETRIES && isRetryableProductsError(error)
+          if (!shouldRetry) break
+          await wait((attempt + 1) * 600)
+        }
       }
+    } finally {
+      if (lastError) {
+        if (products.value.length > 0) {
+          console.warn('Failed to refresh products. Showing cached products.', lastError)
+        } else {
+          console.error('Failed to fetch products:', lastError)
+        }
+      }
+      loading.value = false
     }
-    loading.value = false
-  }
-}
-
-function goToProduct(productId) {
-  if (!productId) return
-  router.push(`/product/${productId}`)
-}
-
-async function quickAddToCart(product) {
-  if (!appStore.isAuthenticated) {
-    router.push('/login')
-    return
   }
 
-  if (isProductSoldOut(product)) {
-    snackbarText.value = 'This product is sold out'
-    snackbarColor.value = 'warning'
-    snackbar.value = true
-    return
+  function goToProduct(productId) {
+    if (!productId) return
+    router.push(`/product/${productId}`)
   }
 
-  try {
-    await cartStore.addToCart(product.product_id, 1)
-    snackbarText.value = 'Added to cart'
-    snackbarColor.value = 'success'
-    snackbar.value = true
-  } catch (error) {
-    snackbarText.value = error?.response?.data?.message || 'Unable to add item'
-    snackbarColor.value = 'warning'
-    snackbar.value = true
+  async function quickAddToCart(product) {
+    if (!appStore.isAuthenticated) {
+      router.push('/login')
+      return
+    }
+
+    if (isProductSoldOut(product)) {
+      snackbarText.value = 'This product is sold out'
+      snackbarColor.value = 'warning'
+      snackbar.value = true
+      return
+    }
+
+    try {
+      await cartStore.addToCart(product.product_id, 1)
+      snackbarText.value = 'Added to cart'
+      snackbarColor.value = 'success'
+      snackbar.value = true
+    } catch (error) {
+      snackbarText.value = error?.response?.data?.message || 'Unable to add item'
+      snackbarColor.value = 'warning'
+      snackbar.value = true
+    }
   }
-}
 
-function scrollToProducts() {
-  const sectionNode = productsSection.value?.$el || productsSection.value
-  sectionNode?.scrollIntoView({ behavior: 'smooth' })
-}
+  function scrollToProducts() {
+    const sectionNode = productsSection.value?.$el || productsSection.value
+    sectionNode?.scrollIntoView({ behavior: 'smooth' })
+  }
 
-function handleProductsInvalidated() {
-  fetchProducts(true)
-}
+  function handleProductsInvalidated() {
+    fetchProducts(true)
+  }
 
-onMounted(() => {
-  window.addEventListener(PRODUCTS_CACHE_INVALIDATED_EVENT, handleProductsInvalidated)
-  fetchProducts()
-})
+  onMounted(() => {
+    window.addEventListener(PRODUCTS_CACHE_INVALIDATED_EVENT, handleProductsInvalidated)
+    fetchProducts()
+  })
 
-onUnmounted(() => {
-  window.removeEventListener(PRODUCTS_CACHE_INVALIDATED_EVENT, handleProductsInvalidated)
-})
+  onUnmounted(() => {
+    window.removeEventListener(PRODUCTS_CACHE_INVALIDATED_EVENT, handleProductsInvalidated)
+  })
 </script>
 
 <style scoped>

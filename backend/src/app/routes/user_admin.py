@@ -102,7 +102,8 @@ def serialize_user_admin_profile(user: dict[str, Any] | None) -> dict[str, Any]:
         "user_admin_pin_created_at": user.get("user_admin_pin_created_at") if pin_created else None,
         "user_admin_pin_verified_at": user.get("user_admin_pin_verified_at") if pin_created else None,
         "user_admin_pin_unlocked_until": user.get("user_admin_pin_unlocked_until") if pin_created else None,
-        "user_admin_blocked": bool(user.get("user_admin_blocked", False))
+        "user_admin_blocked": bool(user.get("user_admin_blocked", False)),
+        "user_admin_hidden": bool(user.get("user_admin_hidden", False))
     }
 
 

@@ -187,17 +187,17 @@ body {
   border-color: #1e293b !important;
 }
 
-.v-theme--dark .flat-switch :deep(.v-selection-control__input) {
+.v-theme--dark .flat-switch .v-selection-control__input {
   color: #f8fafc !important;
 }
 
-.v-theme--dark .flat-text-field :deep(.v-field) {
+.v-theme--dark .flat-text-field .v-field {
+  border: 1px solid #334155 !important;
+}
+.v-theme--dark .flat-text-field .v-field--focused {
   border-color: #f8fafc !important;
 }
-.v-theme--dark .flat-text-field :deep(.v-field--focused) {
-  border-color: #f8fafc !important;
-}
-.v-theme--dark .flat-text-field :deep(.v-label) {
+.v-theme--dark .flat-text-field .v-label {
   color: #cbd5e1 !important;
 }
 
@@ -209,9 +209,7 @@ body {
   border-bottom: 2px solid #f8fafc !important;
   background-color: #1e293b !important;
 }
-.v-theme--dark .profile-menu-avatar {
 
-}
 .v-theme--dark .flat-menu-content {
   border: 2px solid #f8fafc !important;
 
@@ -251,12 +249,12 @@ body {
 /* Admin Page Dark Theme Enhancements */
 .v-theme--dark .admin-page .v-card {
   background-color: #121824 !important;
-  border-color: rgba(248, 250, 252, 0.15) !important;
+  border: 1px solid #334155 !important;
   color: #f8fafc !important;
 }
 .v-theme--dark .admin-page .v-sheet {
   background-color: #121824 !important;
-  border-color: rgba(248, 250, 252, 0.15) !important;
+  border: 1px solid #334155 !important;
 }
 .v-theme--dark .admin-page .v-data-table {
   background-color: #121824 !important;
@@ -344,10 +342,6 @@ body {
 .v-theme--dark .metric-card-flat {
   background-color: #121824 !important;
   border-color: #f8fafc !important;
-
-}
-.v-theme--dark .metric-card-flat:hover {
-
 }
 
 .v-theme--dark .metric-avatar-flat {
@@ -392,13 +386,13 @@ body {
   border-color: #f8fafc !important;
 }
 
-.v-theme--dark .custom-admin-table :deep(thead th) {
+.v-theme--dark .custom-admin-table thead th {
   border-bottom: 2px solid #f8fafc !important;
   color: #f8fafc !important;
   background-color: #1e293b !important;
 }
 
-.v-theme--dark .custom-admin-table :deep(tbody td) {
+.v-theme--dark .custom-admin-table tbody td {
   border-bottom: 1px solid #1e293b !important;
   color: #cbd5e1 !important;
 }

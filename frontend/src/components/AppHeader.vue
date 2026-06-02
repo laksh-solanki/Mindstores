@@ -132,13 +132,13 @@
               class="profile-menu-card"
               elevation="0"
               rounded="0"
-              width="340"
+              width="320"
             >
               <v-sheet class="profile-menu-cover" color="grey-lighten-4" height="95" />
               <div class="profile-menu-identity">
                 <v-avatar
                   v-if="profileImage"
-                  class="profile-menu-avatar"
+                  class="profile-menu-avatar pa-1"
                   :image="profileImage"
                   rounded="lg"
                   size="88"
@@ -644,8 +644,7 @@
 }
 
 .profile-menu-avatar {
-  border: 3px solid #ffffff;
-
+  border: 2px solid #000000;
 }
 
 .menu-list-item {

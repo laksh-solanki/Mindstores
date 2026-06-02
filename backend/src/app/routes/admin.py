@@ -26,6 +26,7 @@ def serialize_user(user: dict[str, Any], admin_entries: list[dict[str, Any]]) ->
         "created_at": user.get("created_at"),
         "updated_at": user.get("updated_at"),
         "user_admin_blocked": bool(user.get("user_admin_blocked", False)),
+        "user_admin_hidden": bool(user.get("user_admin_hidden", False)),
     }
 
 
@@ -46,6 +47,7 @@ def merge_user_record(current: dict[str, Any], duplicate: dict[str, Any]) -> dic
     ):
         merged["created_at"] = duplicate["created_at"]
     merged["user_admin_blocked"] = current.get("user_admin_blocked") or duplicate.get("user_admin_blocked") or False
+    merged["user_admin_hidden"] = current.get("user_admin_hidden") or duplicate.get("user_admin_hidden") or False
     return merged
 
 
@@ -172,6 +174,24 @@ async def toggle_block_user_admin(user_id: str, request: Request, ctx: RequestCo
     if result.matchedCount == 0:
         return error_response(404, "User not found")
     return json_response({"message": "User admin status updated", "blocked": blocked}, 200, {"Cache-Control": "no-store"})
+
+
+@router.put("/admin/users/{user_id}/hide")
+async def toggle_hide_user_admin(user_id: str, request: Request, ctx: RequestContext = Depends(get_context)):
+    denied = require_admin(ctx)
+    if denied:
+        return denied
+    body = await read_json_body(request, ctx.config.max_body_bytes)
+    data = body if isinstance(body, dict) else {}
+    hidden = bool(data.get("hidden", False))
+    
+    result = await ctx.db.collection("users").update_one(
+        {"user_id": unquote(user_id)},
+        {"$set": {"user_admin_hidden": hidden, "updated_at": now_iso()}}
+    )
+    if result.matchedCount == 0:
+        return error_response(404, "User not found")
+    return json_response({"message": "User admin visibility updated", "hidden": hidden}, 200, {"Cache-Control": "no-store"})
 
 
 @router.get("/admin/deliveries")

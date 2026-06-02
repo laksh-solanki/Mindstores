@@ -174,9 +174,9 @@
                                   v-if="canCancelItem(order, item)"
                                   class="action-btn-flat text-error"
                                   color="error"
+                                  :loading="cancelingItemId === item.product_id"
                                   size="small"
                                   variant="outlined"
-                                  :loading="cancelingItemId === item.product_id"
                                   @click.stop="cancelItem(order.order_id, item.product_id)"
                                 >
                                   Cancel
@@ -372,7 +372,6 @@
     parseMobileNumber
   } from '@/utils/userAdmin'
   import {
-    getCountryFromEmail,
     getCurrencyForCountry,
     loadUserSettings,
     normalizeCountryCode,
@@ -461,10 +460,8 @@
   function normalizeOrder(order = {}) {
     let status = String(order.status || 'processing').trim() || 'processing'
     
-    if (status === 'continue shipping' && order.scheduled_delivery_date) {
-      if (new Date(order.scheduled_delivery_date) < new Date()) {
-        status = 'completed'
-      }
+    if (status === 'continue shipping' && order.scheduled_delivery_date && new Date(order.scheduled_delivery_date) < new Date()) {
+      status = 'completed'
     }
 
     return {
@@ -750,12 +747,11 @@
       }
 
       const loadProfileForm = () => {
-        const emailCountry = getCountryFromEmail(appStore.user?.email)
         profileForm.value = {
           name: appStore.user?.name || '',
           email: appStore.user?.email || '',
           countryCode: normalizeCountryCode(
-            appStore.user?.country_code || appStore.user?.country || emailCountry || DEFAULT_COUNTRY_CODE
+            appStore.user?.country_code || appStore.user?.country || DEFAULT_COUNTRY_CODE
           ),
           picture: profileImage.value || ''
         }
@@ -1395,10 +1391,6 @@
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15);
 }
 
-.flat-card-container:hover {
-
-}
-
 :deep(.v-theme--dark) .flat-card-container {
   background-color: #121824 !important;
   border: 2px solid #f8fafc !important;
@@ -1406,9 +1398,6 @@
   color: #f8fafc !important;
 }
 
-:deep(.v-theme--dark) .flat-card-container:hover {
-
-}
 
 .avatar-wrap {
   display: flex;
@@ -1464,10 +1453,6 @@
 .avatar-action-btn:hover {
 
   background: #f1f5f9;
-}
-
-.avatar-action-btn:active {
-
 }
 
 .avatar-action-btn.delete-photo:hover:not(:disabled) {
@@ -1791,9 +1776,6 @@
   border: 2px solid #f8fafc !important;
   background-color: #121824 !important;
 }
-:deep(.v-theme--dark) .flat-text-field :deep(.v-field--focused) {
-
-}
 
 /* Preference Box */
 .preference-flat-card {
@@ -1925,9 +1907,7 @@
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
   background: #ffffff !important;
 }
-.flat-expansion-panels :deep(.v-expansion-panel:hover) {
 
-}
 .flat-expansion-panels :deep(.v-expansion-panel--active) {
   border-color: #0f172a !important;
 
@@ -1940,12 +1920,6 @@
   border: 2px solid #f8fafc !important;
 
   background: #121824 !important;
-}
-:deep(.v-theme--dark) .flat-expansion-panels :deep(.v-expansion-panel:hover) {
-
-}
-:deep(.v-theme--dark) .flat-expansion-panels :deep(.v-expansion-panel--active) {
-
 }
 
 .order-title-row-flat {
@@ -2428,10 +2402,6 @@
 
 }
 
-.dialog-actions-flat .btn-flat-solid:active {
-
-}
-
 /* ════════════════════════════════ BUTTON GENERAL ═ */
 .btn-flat-solid {
   padding: 12px 24px;
@@ -2453,9 +2423,7 @@
   border-color: #1e293b;
 
 }
-.btn-flat-solid:active:not(:disabled) {
 
-}
 .btn-flat-solid:disabled {
   background: #cbd5e1;
   border-color: #cbd5e1;
@@ -2484,9 +2452,7 @@
   background: #f8fafc;
 
 }
-.btn-flat-outline:active:not(:disabled) {
 
-}
 .btn-flat-outline:disabled {
   border-color: #e2e8f0;
   color: #94a3b8;
@@ -2548,6 +2514,14 @@
   .bespoke-profile-container {
     padding: 24px 16px 60px !important;
   }
+  .orders-head {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 16px;
+  }
+  .orders-head button {
+    width: 100%;
+  }
   .order-title-row-flat {
     flex-direction: column;
     align-items: flex-start;
@@ -2556,6 +2530,18 @@
   .order-summary-right {
     width: 100%;
     justify-content: space-between;
+  }
+  .order-product-row-flat {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 8px;
+  }
+  .order-product-row-flat > .d-flex {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .prod-id.mr-4 {
+    margin-right: 0 !important;
   }
   .dialog-actions-flat {
     flex-direction: column;

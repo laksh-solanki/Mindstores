@@ -9,9 +9,7 @@
             <v-avatar color="white" rounded="0" size="33">
               <v-img alt="Mindstore logo" src="../assets/logo.svg" width="20" />
             </v-avatar>
-            <span class="brand-name text-subtitle-1 font-weight-black"
-              >MINDSTORE</span
-            >
+            <span class="brand-name text-subtitle-1 font-weight-black">MINDSTORE</span>
           </div>
           <p class="footer-desc mb-6">
             A meticulously curated gallery of everyday essentials. Hand-selected
@@ -58,19 +56,22 @@
           <h4 class="footer-title">SHOP CATALOG</h4>
           <ul class="footer-links-list">
             <li>
-              <router-link class="footer-link" to="/electronics"
-                >Electronics</router-link
-              >
+              <router-link
+                class="footer-link"
+                to="/electronics"
+              >Electronics</router-link>
             </li>
             <li>
-              <router-link class="footer-link" to="/clothing"
-                >Clothing</router-link
-              >
+              <router-link
+                class="footer-link"
+                to="/clothing"
+              >Clothing</router-link>
             </li>
             <li>
-              <router-link class="footer-link" to="/footwear"
-                >Footwear</router-link
-              >
+              <router-link
+                class="footer-link"
+                to="/footwear"
+              >Footwear</router-link>
             </li>
             <li>
               <router-link class="footer-link" to="/books">Books</router-link>
@@ -83,24 +84,28 @@
           <h4 class="footer-title">CUSTOMER SERVICES</h4>
           <ul class="footer-links-list">
             <li>
-              <router-link class="footer-link" to="/profile"
-                >My Account</router-link
-              >
+              <router-link
+                class="footer-link"
+                to="/profile"
+              >My Account</router-link>
             </li>
             <li>
-              <router-link class="footer-link" to="/cart"
-                >Shopping Cart</router-link
-              >
+              <router-link
+                class="footer-link"
+                to="/cart"
+              >Shopping Cart</router-link>
             </li>
             <li>
-              <router-link class="footer-link" to="/privacy"
-                >Privacy Policy</router-link
-              >
+              <router-link
+                class="footer-link"
+                to="/privacy"
+              >Privacy Policy</router-link>
             </li>
             <li>
-              <router-link class="footer-link" to="/terms"
-                >Terms & Conditions</router-link
-              >
+              <router-link
+                class="footer-link"
+                to="/terms"
+              >Terms & Conditions</router-link>
             </li>
           </ul>
         </div>
@@ -121,7 +126,7 @@
                 placeholder="Enter email address"
                 required
                 type="email"
-              />
+              >
               <button
                 aria-label="Subscribe"
                 class="newsletter-btn"
@@ -148,7 +153,7 @@
         </div>
       </div>
 
-      <hr class="footer-divider" />
+      <hr class="footer-divider">
 
       <!-- Bottom Bar -->
       <div class="footer-bottom-row">
@@ -157,9 +162,7 @@
           developers, for utility.
         </div>
         <div class="payment-methods d-flex ga-2 align-center">
-          <span class="payment-methods-title d-none d-sm-inline"
-            >ACCEPTED PAYMENTS:</span
-          >
+          <span class="payment-methods-title d-none d-sm-inline">ACCEPTED PAYMENTS:</span>
           <div class="payment-badge">VISA</div>
           <div class="payment-badge">MC</div>
           <div class="payment-badge">UPI</div>
@@ -172,20 +175,20 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+  import { ref } from "vue";
 
-const email = ref("");
-const subscribed = ref(false);
+  const email = ref("");
+  const subscribed = ref(false);
 
-function handleSubscribe() {
-  if (email.value.trim()) {
-    subscribed.value = true;
-    email.value = "";
-    setTimeout(() => {
-      subscribed.value = false;
-    }, 4000);
+  function handleSubscribe() {
+    if (email.value.trim()) {
+      subscribed.value = true;
+      email.value = "";
+      setTimeout(() => {
+        subscribed.value = false;
+      }, 4000);
+    }
   }
-}
 </script>
 
 <style scoped>

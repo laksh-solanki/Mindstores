@@ -195,14 +195,13 @@
             <div class="text-body-2 text-medium-emphasis">{{ lastSyncedLabel }}</div>
           </v-col>
           <v-col cols="12" lg="7" md="6">
-            <v-form class="d-flex flex-column flex-lg-row justify-md-end ga-2" @submit.prevent="runAdminSearch">
+            <v-form class="d-flex flex-column flex-md-row justify-md-end w-100 ga-2" @submit.prevent="runAdminSearch">
               <v-text-field
                 v-model="adminQuickSearch"
                 clearable
                 density="comfortable"
                 hide-details
                 label="Search admin"
-                max-width="360"
                 prepend-inner-icon="mdi-magnify"
                 rounded="lg"
                 variant="outlined"
@@ -564,7 +563,7 @@
           </v-card-title>
           <v-card-text>
             <v-row dense>
-              <v-col cols="12" md="5">
+              <v-col cols="12" md="8">
                 <v-text-field
                   v-model="userSearch"
                   density="comfortable"
@@ -574,7 +573,7 @@
                   variant="outlined"
                 />
               </v-col>
-              <v-col cols="12" md="3" sm="6">
+              <v-col cols="12" md="4">
                 <v-select
                   v-model="userRoleFilter"
                   density="comfortable"
@@ -583,18 +582,6 @@
                   item-value="value"
                   :items="userRoleOptions"
                   label="Role"
-                  variant="outlined"
-                />
-              </v-col>
-              <v-col cols="12" md="4" sm="6">
-                <v-select
-                  v-model="userAdminStatusFilter"
-                  density="comfortable"
-                  hide-details
-                  item-title="title"
-                  item-value="value"
-                  :items="userAdminStatusOptions"
-                  label="User Admin"
                   variant="outlined"
                 />
               </v-col>
@@ -638,21 +625,37 @@
               <template #item.updated_at="{ item }">
                 {{ formatDate(resolveTableItem(item)?.updated_at) }}
               </template>
-              <template #item.user_admin_blocked="{ item }">
-                <v-btn
-                  v-if="resolveTableItem(item)"
-                  :color="resolveTableItem(item)?.user_admin_blocked ? 'error' : 'grey-darken-1'"
-                  icon
-                  :loading="blockingUserId === resolveTableItem(item)?.user_id"
-                  size="small"
-                  variant="text"
-                  @click="toggleUserAdminBlock(resolveTableItem(item))"
-                >
-                  <v-icon>{{ resolveTableItem(item)?.user_admin_blocked ? 'mdi-lock-outline' : 'mdi-lock-open-outline' }}</v-icon>
-                  <v-tooltip activator="parent" location="top">
-                    {{ resolveTableItem(item)?.user_admin_blocked ? 'Blocked (Click to Unblock)' : 'Active (Click to Block)' }}
-                  </v-tooltip>
-                </v-btn>
+              <template #item.actions="{ item }">
+                <div class="d-flex align-center">
+                  <v-btn
+                    v-if="resolveTableItem(item)"
+                    :color="resolveTableItem(item)?.user_admin_hidden ? 'success' : 'grey-darken-1'"
+                    icon
+                    :loading="hidingUserId === resolveTableItem(item)?.user_id"
+                    size="small"
+                    variant="text"
+                    @click="toggleUserAdminHide(resolveTableItem(item))"
+                  >
+                    <v-icon>{{ resolveTableItem(item)?.user_admin_hidden ? 'mdi-eye-off-outline' : 'mdi-eye-outline' }}</v-icon>
+                    <v-tooltip activator="parent" location="top">
+                      {{ resolveTableItem(item)?.user_admin_hidden ? 'Show User Admin Button' : 'Hide User Admin Button' }}
+                    </v-tooltip>
+                  </v-btn>
+                  <v-btn
+                    v-if="resolveTableItem(item)"
+                    :color="resolveTableItem(item)?.user_admin_blocked ? 'error' : 'grey-darken-1'"
+                    icon
+                    :loading="blockingUserId === resolveTableItem(item)?.user_id"
+                    size="small"
+                    variant="text"
+                    @click="toggleUserAdminBlock(resolveTableItem(item))"
+                  >
+                    <v-icon>{{ resolveTableItem(item)?.user_admin_blocked ? 'mdi-lock-outline' : 'mdi-lock-open-outline' }}</v-icon>
+                    <v-tooltip activator="parent" location="top">
+                      {{ resolveTableItem(item)?.user_admin_blocked ? 'Blocked (Click to Unblock)' : 'Active (Click to Block)' }}
+                    </v-tooltip>
+                  </v-btn>
+                </div>
               </template>
             </v-data-table>
           </v-card-text>
@@ -1918,6 +1921,7 @@
   const productLoading = ref(false);
   const userLoading = ref(false);
   const blockingUserId = ref("");
+  const hidingUserId = ref("");
   const accessLoading = ref(false);
   const productSaving = ref(false);
   const accessSaving = ref(false);
@@ -2030,7 +2034,7 @@
     { title: "Role", key: "is_admin" },
     { title: "Country", key: "country_code" },
     { title: "Updated", key: "updated_at" },
-    { title: "Console Block", key: "user_admin_blocked", sortable: false },
+    { title: "Actions", key: "actions", sortable: false },
   ];
   const deliveryHeaders = [
     { title: "Order ID", key: "order_id" },
@@ -3806,6 +3810,28 @@
     }
   }
 
+  async function toggleUserAdminHide(user) {
+    if (!user?.user_id) return;
+    hidingUserId.value = user.user_id;
+    try {
+      const newHidden = !user.user_admin_hidden;
+      await runAdminRequest(async (forceRefresh) =>
+        axios.put(
+          `${API_URL}/admin/users/${encodeURIComponent(user.user_id)}/hide`,
+          { hidden: newHidden },
+          await buildAdminRequestConfig({}, forceRefresh),
+        ),
+      );
+      user.user_admin_hidden = newHidden;
+      notify(newHidden ? "User admin button hidden" : "User admin button visible");
+    } catch (error) {
+      console.error("Failed to update hide status:", error);
+      notify(error.response?.data?.message || "Failed to update hide status", "error");
+    } finally {
+      hidingUserId.value = "";
+    }
+  }
+
   async function fetchAdminAccess() {
     if (!canShowAdmin.value) {
       return;
@@ -4293,3 +4319,14 @@
     router.push("/login");
   }
 </script>
+
+<style scoped>
+.admin-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.admin-page > .v-container {
+  flex-grow: 1;
+}
+</style>

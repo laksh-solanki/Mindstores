@@ -44,8 +44,8 @@
 
             <div class="gallery-carousel-wrap">
               <v-carousel
-                v-model="activeImageIndex"
                 v-if="productImageUrls.length > 0"
+                v-model="activeImageIndex"
                 class="custom-carousel"
                 height="auto"
                 hide-delimiters
@@ -87,10 +87,10 @@
                   @click="activeImageIndex = idx"
                 >
                   <v-img
-                    :src="img"
                     aspect-ratio="1"
-                    cover
                     class="thumbnail-img"
+                    cover
+                    :src="img"
                   />
                 </button>
               </div>

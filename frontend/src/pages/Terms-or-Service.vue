@@ -17,8 +17,7 @@
             <span
               class="d-none d-sm-inline ml-2 pl-2"
               style="border-left: 1px solid #cbd5e1"
-              >8 min read</span
-            >
+            >8 min read</span>
           </p>
         </div>
       </section>
@@ -67,7 +66,7 @@
               </section>
             </div>
 
-            <hr class="flat-divider my-10" />
+            <hr class="flat-divider my-10">
 
             <footer
               class="d-flex flex-column flex-sm-row justify-space-between align-center gap-4"
@@ -76,11 +75,12 @@
                 <p class="footer-label mb-1">
                   Have questions about these terms?
                 </p>
-                <router-link class="text-link" to="/privacy"
-                  >View our Privacy Policy</router-link
-                >
+                <router-link
+                  class="text-link"
+                  to="/privacy"
+                >View our Privacy Policy</router-link>
               </div>
-              <button class="btn-flat-solid" @click="downloadPdf" :disabled="isDownloading">
+              <button class="btn-flat-solid" :disabled="isDownloading" @click="downloadPdf">
                 <v-icon size="18" start>mdi-download</v-icon>
                 {{ isDownloading ? 'Generating...' : 'Download PDF' }}
               </button>
@@ -93,147 +93,147 @@
 </template>
 
 <script setup>
-import html2pdf from "html2pdf.js";
-import { onMounted, onUnmounted, ref } from "vue";
+  import html2pdf from "html2pdf.js";
+  import { onMounted, onUnmounted, ref } from "vue";
 
-const scrollProgress = ref(0);
-const activeSection = ref("acceptance");
-const pdfContent = ref(null);
-const isDownloading = ref(false);
+  const scrollProgress = ref(0);
+  const activeSection = ref("acceptance");
+  const pdfContent = ref(null);
+  const isDownloading = ref(false);
 
-const menuItems = [
-  { id: "acceptance", title: "Acceptance of Terms" },
-  { id: "accounts", title: "User Accounts" },
-  { id: "orders", title: "Orders & Payments" },
-  { id: "shipping", title: "Shipping & Returns" },
-  { id: "ip", title: "Intellectual Property" },
-  { id: "conduct", title: "User Conduct" },
-  { id: "privacy", title: "Data Privacy" },
-  { id: "liability", title: "Limitation of Liability" },
-  { id: "governing", title: "Governing Law" },
-];
+  const menuItems = [
+    { id: "acceptance", title: "Acceptance of Terms" },
+    { id: "accounts", title: "User Accounts" },
+    { id: "orders", title: "Orders & Payments" },
+    { id: "shipping", title: "Shipping & Returns" },
+    { id: "ip", title: "Intellectual Property" },
+    { id: "conduct", title: "User Conduct" },
+    { id: "privacy", title: "Data Privacy" },
+    { id: "liability", title: "Limitation of Liability" },
+    { id: "governing", title: "Governing Law" },
+  ];
 
-const sections = [
-  {
-    id: "acceptance",
-    num: "01",
-    title: "Acceptance of Terms",
-    content:
-      "By accessing, browsing, or using the Mindstore website and related services, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. If you do not agree with any part of these terms, you must not use our services. We reserve the right, at our sole discretion, to modify, add, or remove portions of these terms at any time. Your continued use of the website following the posting of changes means that you accept and agree to the changes.",
-  },
-  {
-    id: "accounts",
-    num: "02",
-    title: "User Accounts & Security",
-    content:
-      "To access certain features of our platform, including fast checkout and order history, you may be required to register for an account. You are solely responsible for maintaining the confidentiality of your account credentials, including your password, and for restricting access to your computer or device. You agree to accept responsibility for all activities that occur under your account. You must notify us immediately of any unauthorized use of your account or any other breach of security.",
-  },
-  {
-    id: "orders",
-    num: "03",
-    title: "Orders, Pricing & Payments",
-    content:
-      "All prices displayed on Mindstore are subject to change without notice. We make every effort to display accurate product descriptions and pricing, however, errors may occur. In the event a product is listed at an incorrect price, we reserve the right to refuse or cancel any orders placed for that product. Payment must be received by us before our acceptance of an order. We accept major credit cards and other designated payment methods. By submitting your payment information, you grant us the right to provide such information to third parties for purposes of facilitating the transaction.",
-  },
-  {
-    id: "shipping",
-    num: "04",
-    title: "Shipping, Delivery & Returns",
-    content:
-      "Delivery times are estimates only and are not guaranteed. Risk of loss and title for items purchased from Mindstore pass to you upon delivery of the items to the carrier. If you are not completely satisfied with your purchase, you may return it within our designated return period in accordance with our Return Policy. Items must be returned in their original condition, unworn, unwashed, and with all tags attached. Refunds will be issued to the original method of payment.",
-  },
-  {
-    id: "ip",
-    num: "05",
-    title: "Intellectual Property Rights",
-    content:
-      "All content included on the Mindstore website, such as text, graphics, logos, images, audio clips, digital downloads, and data compilations, is the property of Mindstore or its content suppliers and is protected by international copyright, trademark, and other intellectual property laws. The compilation of all content on this site is the exclusive property of Mindstore. You may not extract or re-utilize parts of the contents without our express written consent.",
-  },
-  {
-    id: "conduct",
-    num: "06",
-    title: "Prohibited User Conduct",
-    content:
-      "You agree not to use the Mindstore website for any unlawful purpose or in any way that might harm, damage, or disparage any other party. You may not attempt to gain unauthorized access to any portion of the site, other accounts, computer systems, or networks connected to the site. Prohibited activities include, but are not limited to: transmitting harmful code, engaging in data mining, attempting to interfere with the proper working of the site, or using the site to harass or harm others.",
-  },
-  {
-    id: "privacy",
-    num: "07",
-    title: "Data Privacy & User Information",
-    content:
-      "Your privacy is critical to us. We collect, store, and use your personal information in accordance with our Privacy Policy. By using Mindstore, you consent to such processing and you warrant that all data provided by you is accurate. Please review our Privacy Policy to understand our practices regarding your data, including how we handle cookies, analytics, and third-party integrations.",
-  },
-  {
-    id: "liability",
-    num: "08",
-    title: "Limitation of Liability & Disclaimers",
-    content:
-      'The Mindstore website and all information, content, materials, products, and services included on or otherwise made available to you through this site are provided on an "as is" and "as available" basis. We make no representations or warranties of any kind, express or implied, as to the operation of the site or the information, content, materials, or products included on it. In no event shall Mindstore, its directors, officers, employees, or agents be liable for any indirect, incidental, special, consequential, or punitive damages arising out of or related to your use of the site.',
-  },
-  {
-    id: "governing",
-    num: "09",
-    title: "Governing Law & Dispute Resolution",
-    content:
-      "These Terms of Service and any separate agreements whereby we provide you services shall be governed by and construed in accordance with the laws of the jurisdiction in which Mindstore operates, without regard to its conflict of law provisions. Any dispute arising from or relating to the subject matter of these terms shall be finally settled by arbitration in accordance with the applicable rules, except that either party may seek equitable relief in a court of competent jurisdiction.",
-  },
-];
+  const sections = [
+    {
+      id: "acceptance",
+      num: "01",
+      title: "Acceptance of Terms",
+      content:
+        "By accessing, browsing, or using the Mindstore website and related services, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. If you do not agree with any part of these terms, you must not use our services. We reserve the right, at our sole discretion, to modify, add, or remove portions of these terms at any time. Your continued use of the website following the posting of changes means that you accept and agree to the changes.",
+    },
+    {
+      id: "accounts",
+      num: "02",
+      title: "User Accounts & Security",
+      content:
+        "To access certain features of our platform, including fast checkout and order history, you may be required to register for an account. You are solely responsible for maintaining the confidentiality of your account credentials, including your password, and for restricting access to your computer or device. You agree to accept responsibility for all activities that occur under your account. You must notify us immediately of any unauthorized use of your account or any other breach of security.",
+    },
+    {
+      id: "orders",
+      num: "03",
+      title: "Orders, Pricing & Payments",
+      content:
+        "All prices displayed on Mindstore are subject to change without notice. We make every effort to display accurate product descriptions and pricing, however, errors may occur. In the event a product is listed at an incorrect price, we reserve the right to refuse or cancel any orders placed for that product. Payment must be received by us before our acceptance of an order. We accept major credit cards and other designated payment methods. By submitting your payment information, you grant us the right to provide such information to third parties for purposes of facilitating the transaction.",
+    },
+    {
+      id: "shipping",
+      num: "04",
+      title: "Shipping, Delivery & Returns",
+      content:
+        "Delivery times are estimates only and are not guaranteed. Risk of loss and title for items purchased from Mindstore pass to you upon delivery of the items to the carrier. If you are not completely satisfied with your purchase, you may return it within our designated return period in accordance with our Return Policy. Items must be returned in their original condition, unworn, unwashed, and with all tags attached. Refunds will be issued to the original method of payment.",
+    },
+    {
+      id: "ip",
+      num: "05",
+      title: "Intellectual Property Rights",
+      content:
+        "All content included on the Mindstore website, such as text, graphics, logos, images, audio clips, digital downloads, and data compilations, is the property of Mindstore or its content suppliers and is protected by international copyright, trademark, and other intellectual property laws. The compilation of all content on this site is the exclusive property of Mindstore. You may not extract or re-utilize parts of the contents without our express written consent.",
+    },
+    {
+      id: "conduct",
+      num: "06",
+      title: "Prohibited User Conduct",
+      content:
+        "You agree not to use the Mindstore website for any unlawful purpose or in any way that might harm, damage, or disparage any other party. You may not attempt to gain unauthorized access to any portion of the site, other accounts, computer systems, or networks connected to the site. Prohibited activities include, but are not limited to: transmitting harmful code, engaging in data mining, attempting to interfere with the proper working of the site, or using the site to harass or harm others.",
+    },
+    {
+      id: "privacy",
+      num: "07",
+      title: "Data Privacy & User Information",
+      content:
+        "Your privacy is critical to us. We collect, store, and use your personal information in accordance with our Privacy Policy. By using Mindstore, you consent to such processing and you warrant that all data provided by you is accurate. Please review our Privacy Policy to understand our practices regarding your data, including how we handle cookies, analytics, and third-party integrations.",
+    },
+    {
+      id: "liability",
+      num: "08",
+      title: "Limitation of Liability & Disclaimers",
+      content:
+        'The Mindstore website and all information, content, materials, products, and services included on or otherwise made available to you through this site are provided on an "as is" and "as available" basis. We make no representations or warranties of any kind, express or implied, as to the operation of the site or the information, content, materials, or products included on it. In no event shall Mindstore, its directors, officers, employees, or agents be liable for any indirect, incidental, special, consequential, or punitive damages arising out of or related to your use of the site.',
+    },
+    {
+      id: "governing",
+      num: "09",
+      title: "Governing Law & Dispute Resolution",
+      content:
+        "These Terms of Service and any separate agreements whereby we provide you services shall be governed by and construed in accordance with the laws of the jurisdiction in which Mindstore operates, without regard to its conflict of law provisions. Any dispute arising from or relating to the subject matter of these terms shall be finally settled by arbitration in accordance with the applicable rules, except that either party may seek equitable relief in a court of competent jurisdiction.",
+    },
+  ];
 
-function scrollTo(id) {
-  const el = document.querySelector(`#${id}`);
-  if (!el) return;
-  activeSection.value = id;
-  el.scrollIntoView({ behavior: "smooth", block: "start" });
-}
+  function scrollTo(id) {
+    const el = document.querySelector(`#${id}`);
+    if (!el) return;
+    activeSection.value = id;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
-function handleScroll() {
-  const winScroll = window.scrollY || document.documentElement.scrollTop;
-  const height =
-    document.documentElement.scrollHeight -
-    document.documentElement.clientHeight;
-  scrollProgress.value = (winScroll / height) * 100;
+  function handleScroll() {
+    const winScroll = window.scrollY || document.documentElement.scrollTop;
+    const height =
+      document.documentElement.scrollHeight -
+      document.documentElement.clientHeight;
+    scrollProgress.value = (winScroll / height) * 100;
 
-  for (const section of sections) {
-    const el = document.querySelector(`#${section.id}`);
-    if (el && winScroll >= el.offsetTop - 100) {
-      activeSection.value = section.id;
+    for (const section of sections) {
+      const el = document.querySelector(`#${section.id}`);
+      if (el && winScroll >= el.offsetTop - 100) {
+        activeSection.value = section.id;
+      }
     }
   }
-}
 
-async function downloadPdf() {
-  if (!pdfContent.value) return;
-  isDownloading.value = true;
+  async function downloadPdf() {
+    if (!pdfContent.value) return;
+    isDownloading.value = true;
   
-  try {
-    const contentWidth = pdfContent.value.scrollWidth || 800;
-    const contentHeight = pdfContent.value.scrollHeight + 40;
+    try {
+      const contentWidth = pdfContent.value.scrollWidth || 800;
+      const contentHeight = pdfContent.value.scrollHeight + 40;
     
-    const opt = {
-      margin: 20,
-      filename: "Terms_of_Service.pdf",
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      // By setting the jsPDF height to match the element's scrollHeight, the output is exactly 1 page
-      jsPDF: { unit: "px", format: [contentWidth + 40, contentHeight], orientation: "portrait" }
-    };
+      const opt = {
+        margin: 20,
+        filename: "Terms_of_Service.pdf",
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        // By setting the jsPDF height to match the element's scrollHeight, the output is exactly 1 page
+        jsPDF: { unit: "px", format: [contentWidth + 40, contentHeight], orientation: "portrait" }
+      };
     
-    await html2pdf().set(opt).from(pdfContent.value).save();
-  } catch (error) {
-    console.error("PDF generation failed", error);
-  } finally {
-    isDownloading.value = false;
+      await html2pdf().set(opt).from(pdfContent.value).save();
+    } catch (error) {
+      console.error("PDF generation failed", error);
+    } finally {
+      isDownloading.value = false;
+    }
   }
-}
 
-onMounted(() => {
-  handleScroll();
-  window.addEventListener("scroll", handleScroll);
-});
+  onMounted(() => {
+    handleScroll();
+    window.addEventListener("scroll", handleScroll);
+  });
 
-onUnmounted(() => {
-  window.removeEventListener("scroll", handleScroll);
-});
+  onUnmounted(() => {
+    window.removeEventListener("scroll", handleScroll);
+  });
 </script>
 
 <style scoped>
