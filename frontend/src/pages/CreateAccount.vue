@@ -14,6 +14,7 @@
       <div class="gallery-frame auth-frame">
         <!-- Form container -->
         <div class="auth-card-body">
+
           <div class="brand-tagline">
             <span class="tag-label">SECURE GATEWAY</span>
             <span class="tag-dot">•</span>
@@ -254,7 +255,7 @@
 .bespoke-auth-container {
   min-height: 100vh;
   background: #f8fafc;
-  padding: 40px max(16px, 4vw) 80px !important;
+  padding: 20px max(16px, 4vw) 40px !important;
   display: flex;
   flex-direction: column;
 }
@@ -319,8 +320,9 @@
 
 }
 .auth-card-body {
-  padding: 40px 32px;
+  padding: 32px 32px;
 }
+
 
 /* ════════════════════════════════ TYPOGRAPHY ══ */
 .brand-tagline {

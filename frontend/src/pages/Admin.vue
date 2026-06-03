@@ -18,7 +18,7 @@
 
       <div class="d-inline-flex align-center ga-3 flex-shrink-0">
         <v-avatar color="surface" rounded="lg" size="42" variant="flat">
-          <v-img alt="Mindstore logo" class="brand-logo" src="../assets/logo.svg" width="32" />
+          <v-img alt="Mindstore logo" class="brand-logo" src="../assets/icon.svg" width="32" />
         </v-avatar>
         <div>
           <p class="text-subtitle-1 font-weight-bold mb-0">Mindstores Admin</p>

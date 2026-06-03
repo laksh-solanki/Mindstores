@@ -29,9 +29,11 @@
             :disabled="refreshing"
             @click="refreshProfile"
           >
-            <v-icon :class="{ 'mdi-spin': refreshing }" size="18" start
-              >mdi-refresh</v-icon
-            >
+            <v-icon
+              :class="{ 'mdi-spin': refreshing }"
+              size="18"
+              start
+            >mdi-refresh</v-icon>
             Refresh
           </button>
           <button
@@ -69,9 +71,11 @@
               your account.
             </p>
           </div>
-          <v-btn class="btn-flat-solid mt-2 mt-sm-0" to="/login" variant="flat"
-            >Login</v-btn
-          >
+          <v-btn
+            class="btn-flat-solid mt-2 mt-sm-0"
+            to="/login"
+            variant="flat"
+          >Login</v-btn>
         </div>
       </v-alert>
 
@@ -143,7 +147,7 @@
                         class="sr-only"
                         type="file"
                         @change="onPhotoSelected"
-                      />
+                      >
 
                       <h2 class="profile-name">{{ displayName }}</h2>
                       <p class="profile-email">
@@ -168,32 +172,36 @@
                       <!-- Sidebar Stats Grid -->
                       <div class="stats-flat-grid mt-4">
                         <div class="stat-flat-box">
-                          <v-icon color="teal-darken-1" size="20"
-                            >mdi-package-variant-closed</v-icon
-                          >
+                          <v-icon
+                            color="teal-darken-1"
+                            size="20"
+                          >mdi-package-variant-closed</v-icon>
                           <span class="stat-value">{{ orders.length }}</span>
                           <span class="stat-label">Orders</span>
                         </div>
                         <div class="stat-flat-box">
-                          <v-icon color="teal-darken-1" size="20"
-                            >mdi-cart-outline</v-icon
-                          >
+                          <v-icon
+                            color="teal-darken-1"
+                            size="20"
+                          >mdi-cart-outline</v-icon>
                           <span class="stat-value">{{
                             cartStore.itemCount
                           }}</span>
                           <span class="stat-label">Cart</span>
                         </div>
                         <div class="stat-flat-box">
-                          <v-icon color="teal-darken-1" size="20"
-                            >mdi-cash-multiple</v-icon
-                          >
+                          <v-icon
+                            color="teal-darken-1"
+                            size="20"
+                          >mdi-cash-multiple</v-icon>
                           <span class="stat-value">{{ totalSpentDisplay }}</span>
                           <span class="stat-label">Spent</span>
                         </div>
                         <div class="stat-flat-box">
-                          <v-icon color="teal-darken-1" size="20"
-                            >mdi-currency-usd</v-icon
-                          >
+                          <v-icon
+                            color="teal-darken-1"
+                            size="20"
+                          >mdi-currency-usd</v-icon>
                           <span class="stat-value">{{ settings.currency }}</span>
                           <span class="stat-label">Currency</span>
                         </div>
@@ -273,11 +281,11 @@
                               v-model="profileForm.name"
                               class="flat-text-field"
                               density="comfortable"
+                              :error="!profileForm.name"
                               label="Full Name"
                               maxlength="120"
-                              variant="outlined"
-                              :error="!profileForm.name"
                               :readonly="isReadonly"
+                              variant="outlined"
                             />
                           </v-col>
                           <v-col cols="12" md="6">
@@ -295,13 +303,13 @@
                               v-model="profileForm.countryCode"
                               class="flat-text-field"
                               density="comfortable"
+                              :error="!profileForm.countryCode"
                               item-title="label"
                               item-value="code"
                               :items="countryOptions"
                               label="Country"
-                              variant="outlined"
-                              :error="!profileForm.countryCode"
                               :readonly="isReadonly"
+                              variant="outlined"
                             />
                           </v-col>
                           <v-col cols="12" md="6">
@@ -309,11 +317,11 @@
                               v-model="settings.currency"
                               class="flat-text-field"
                               density="comfortable"
+                              :error="!settings.currency"
                               :items="ALLOWED_CURRENCIES"
                               label="Currency"
-                              variant="outlined"
-                              :error="!settings.currency"
                               :readonly="isReadonly"
+                              variant="outlined"
                             />
                           </v-col>
                         </v-row>
@@ -340,11 +348,11 @@
                               v-model="settings.deliveryProfile.phone"
                               class="flat-text-field"
                               density="comfortable"
+                              :error="!settings.deliveryProfile.phone"
                               label="Phone Number"
                               maxlength="32"
-                              variant="outlined"
-                              :error="!settings.deliveryProfile.phone"
                               :readonly="isReadonly"
+                              variant="outlined"
                             />
                           </v-col>
                           <v-col cols="12" md="6">
@@ -352,11 +360,11 @@
                               v-model="settings.deliveryProfile.postalCode"
                               class="flat-text-field"
                               density="comfortable"
+                              :error="!settings.deliveryProfile.postalCode"
                               label="Postal Code"
                               maxlength="32"
-                              variant="outlined"
-                              :error="!settings.deliveryProfile.postalCode"
                               :readonly="isReadonly"
+                              variant="outlined"
                             />
                           </v-col>
                           <v-col cols="12">
@@ -364,11 +372,11 @@
                               v-model="settings.deliveryProfile.address"
                               class="flat-text-field"
                               density="comfortable"
+                              :error="!settings.deliveryProfile.address"
                               label="Street Address"
                               maxlength="220"
-                              variant="outlined"
-                              :error="!settings.deliveryProfile.address"
                               :readonly="isReadonly"
+                              variant="outlined"
                             />
                           </v-col>
                           <v-col cols="12" md="6">
@@ -376,11 +384,11 @@
                               v-model="settings.deliveryProfile.city"
                               class="flat-text-field"
                               density="comfortable"
+                              :error="!settings.deliveryProfile.city"
                               label="City"
                               maxlength="96"
-                              variant="outlined"
-                              :error="!settings.deliveryProfile.city"
                               :readonly="isReadonly"
+                              variant="outlined"
                             />
                           </v-col>
                           <v-col cols="12" md="6">
@@ -388,11 +396,11 @@
                               v-model="settings.deliveryProfile.state"
                               class="flat-text-field"
                               density="comfortable"
+                              :error="!settings.deliveryProfile.state"
                               label="State"
                               maxlength="96"
-                              variant="outlined"
-                              :error="!settings.deliveryProfile.state"
                               :readonly="isReadonly"
+                              variant="outlined"
                             />
                           </v-col>
                           <v-col cols="12">
@@ -403,9 +411,9 @@
                               density="comfortable"
                               label="Delivery Notes"
                               maxlength="240"
+                              :readonly="isReadonly"
                               rows="2"
                               variant="outlined"
-                              :readonly="isReadonly"
                             />
                           </v-col>
                         </v-row>
@@ -429,9 +437,7 @@
                             <div class="preference-flat-card">
                               <div class="pref-details">
                                 <strong>Order updates</strong>
-                                <span class="pref-desc"
-                                  >Email order status changes</span
-                                >
+                                <span class="pref-desc">Email order status changes</span>
                               </div>
                               <v-switch
                                 v-model="settings.orderUpdates"
@@ -447,9 +453,7 @@
                             <div class="preference-flat-card">
                               <div class="pref-details">
                                 <strong>Quick checkout</strong>
-                                <span class="pref-desc"
-                                  >Select cart items automatically</span
-                                >
+                                <span class="pref-desc">Select cart items automatically</span>
                               </div>
                               <v-switch
                                 v-model="settings.quickCheckout"
@@ -465,9 +469,7 @@
                             <div class="preference-flat-card">
                               <div class="pref-details">
                                 <strong>Promotional emails</strong>
-                                <span class="pref-desc"
-                                  >Receive offers and marketing emails</span
-                                >
+                                <span class="pref-desc">Receive offers and marketing emails</span>
                               </div>
                               <v-switch
                                 v-model="settings.promotionalEmails"
@@ -483,9 +485,7 @@
                             <div class="preference-flat-card">
                               <div class="pref-details">
                                 <strong>Low stock alerts</strong>
-                                <span class="pref-desc"
-                                  >Notify when cart items are low in stock</span
-                                >
+                                <span class="pref-desc">Notify when cart items are low in stock</span>
                               </div>
                               <v-switch
                                 v-model="settings.lowStockAlerts"
@@ -501,9 +501,7 @@
                             <div class="preference-flat-card">
                               <div class="pref-details">
                                 <strong>Save delivery details</strong>
-                                <span class="pref-desc"
-                                  >Remember for future demo checkouts</span
-                                >
+                                <span class="pref-desc">Remember for future demo checkouts</span>
                               </div>
                               <v-switch
                                 v-model="settings.saveDeliveryDetails"
@@ -521,8 +519,8 @@
                         <div class="save-strip-flat mt-6">
                           <button
                             class="btn-flat-solid w-100"
-                            style="background-color: #ef4444; color: white; border-color: #ef4444;"
                             :disabled="deletingAccount"
+                            style="background-color: #ef4444; color: white; border-color: #ef4444;"
                             @click="deleteAccount"
                           >
                             <v-icon size="16" start>mdi-delete</v-icon>
@@ -693,1156 +691,1156 @@
 </template>
 
 <script>
-import axios from "axios";
-import { computed, onMounted, ref, watch } from "vue";
-import { useRouter } from "vue-router";
-import { useDisplay } from "vuetify";
-import BaseAlert from "@/components/BaseAlert.vue";
-import { useAppStore } from "@/stores/app";
-import { useCartStore } from "@/stores/cart";
-import { API_URL, buildAuthenticatedRequestConfig } from "@/utils/api";
-import {
-  convertUsdAmount,
-  fetchExchangeRates,
-  formatCurrencyAmount,
-} from "@/utils/currency";
-import { safeDisplayImageUrl } from "@/utils/images";
-import {
-  formatMobileNumber,
-  MOBILE_COUNTRY_OPTIONS,
-  normalizeMobileCountryCode,
-  normalizeMobileNumber,
-  parseMobileNumber,
-} from "@/utils/userAdmin";
-import {
-  ALLOWED_CURRENCIES,
-  getCurrencyForCountry,
-  loadUserSettings,
-  normalizeCountryCode,
-  normalizeDeliveryProfile,
-  resolveCurrencyFromUserCountry,
-  saveUserSettings,
-  DEFAULT_SETTINGS as USER_SETTINGS_DEFAULTS,
-} from "@/utils/userSettings";
+  import axios from "axios";
+  import { computed, onMounted, ref, watch } from "vue";
+  import { useRouter } from "vue-router";
+  import { useDisplay } from "vuetify";
+  import BaseAlert from "@/components/BaseAlert.vue";
+  import { useAppStore } from "@/stores/app";
+  import { useCartStore } from "@/stores/cart";
+  import { API_URL, buildAuthenticatedRequestConfig } from "@/utils/api";
+  import {
+    convertUsdAmount,
+    fetchExchangeRates,
+    formatCurrencyAmount,
+  } from "@/utils/currency";
+  import { safeDisplayImageUrl } from "@/utils/images";
+  import {
+    formatMobileNumber,
+    MOBILE_COUNTRY_OPTIONS,
+    normalizeMobileCountryCode,
+    normalizeMobileNumber,
+    parseMobileNumber,
+  } from "@/utils/userAdmin";
+  import {
+    ALLOWED_CURRENCIES,
+    getCurrencyForCountry,
+    loadUserSettings,
+    normalizeCountryCode,
+    normalizeDeliveryProfile,
+    resolveCurrencyFromUserCountry,
+    saveUserSettings,
+    DEFAULT_SETTINGS as USER_SETTINGS_DEFAULTS,
+  } from "@/utils/userSettings";
 
-const COUNTRY_OPTIONS_BASE = [
-  { code: "US", label: "United States" },
-  { code: "IN", label: "India" },
-  { code: "GB", label: "United Kingdom" },
-  { code: "CA", label: "Canada" },
-  { code: "AU", label: "Australia" },
-  { code: "DE", label: "Germany" },
-  { code: "FR", label: "France" },
-  { code: "IT", label: "Italy" },
-  { code: "ES", label: "Spain" },
-  { code: "NL", label: "Netherlands" },
-  { code: "AE", label: "United Arab Emirates" },
-  { code: "SG", label: "Singapore" },
-  { code: "JP", label: "Japan" },
-  { code: "BR", label: "Brazil" },
-  { code: "MX", label: "Mexico" },
-];
+  const COUNTRY_OPTIONS_BASE = [
+    { code: "US", label: "United States" },
+    { code: "IN", label: "India" },
+    { code: "GB", label: "United Kingdom" },
+    { code: "CA", label: "Canada" },
+    { code: "AU", label: "Australia" },
+    { code: "DE", label: "Germany" },
+    { code: "FR", label: "France" },
+    { code: "IT", label: "Italy" },
+    { code: "ES", label: "Spain" },
+    { code: "NL", label: "Netherlands" },
+    { code: "AE", label: "United Arab Emirates" },
+    { code: "SG", label: "Singapore" },
+    { code: "JP", label: "Japan" },
+    { code: "BR", label: "Brazil" },
+    { code: "MX", label: "Mexico" },
+  ];
 
-const DEFAULT_COUNTRY_CODE = "IN";
-const DEFAULT_MOBILE_COUNTRY_CODE = "+91";
-const USER_ADMIN_PIN_LENGTH = 6;
-const COUNTRY_TO_MOBILE_CODE = {
-  US: "+1",
-  CA: "+1",
-  IN: "+91",
-  GB: "+44",
-  AU: "+61",
-  AE: "+971",
-  SG: "+65",
-  DE: "+49",
-  FR: "+33",
-  IT: "+39",
-  ES: "+34",
-  NL: "+31",
-  JP: "+81",
-  BR: "+55",
-  MX: "+52",
-};
-const DEFAULT_CURRENCY = USER_SETTINGS_DEFAULTS.currency;
-const MAX_PHOTO_FILE_BYTES = 512 * 1024;
-const MAX_PHOTO_DATA_URL_LENGTH = 700_000;
-const DEFAULT_SETTINGS = {
-  currency: DEFAULT_CURRENCY,
-  orderUpdates: USER_SETTINGS_DEFAULTS.orderUpdates,
-  promotionalEmails: USER_SETTINGS_DEFAULTS.promotionalEmails,
-  quickCheckout: USER_SETTINGS_DEFAULTS.quickCheckout,
-  lowStockAlerts: USER_SETTINGS_DEFAULTS.lowStockAlerts,
-  saveDeliveryDetails: USER_SETTINGS_DEFAULTS.saveDeliveryDetails,
-  deliveryProfile: { ...USER_SETTINGS_DEFAULTS.deliveryProfile },
-};
-
-const orderSortOptions = [
-  { value: "newest", label: "Newest" },
-  { value: "oldest", label: "Oldest" },
-  { value: "highest", label: "Highest Total" },
-  { value: "lowest", label: "Lowest Total" },
-];
-
-function cloneSettings(settings) {
-  return {
-    ...settings,
-    deliveryProfile: { ...settings.deliveryProfile },
+  const DEFAULT_COUNTRY_CODE = "IN";
+  const DEFAULT_MOBILE_COUNTRY_CODE = "+91";
+  const USER_ADMIN_PIN_LENGTH = 6;
+  const COUNTRY_TO_MOBILE_CODE = {
+    US: "+1",
+    CA: "+1",
+    IN: "+91",
+    GB: "+44",
+    AU: "+61",
+    AE: "+971",
+    SG: "+65",
+    DE: "+49",
+    FR: "+33",
+    IT: "+39",
+    ES: "+34",
+    NL: "+31",
+    JP: "+81",
+    BR: "+55",
+    MX: "+52",
   };
-}
+  const DEFAULT_CURRENCY = USER_SETTINGS_DEFAULTS.currency;
+  const MAX_PHOTO_FILE_BYTES = 512 * 1024;
+  const MAX_PHOTO_DATA_URL_LENGTH = 700_000;
+  const DEFAULT_SETTINGS = {
+    currency: DEFAULT_CURRENCY,
+    orderUpdates: USER_SETTINGS_DEFAULTS.orderUpdates,
+    promotionalEmails: USER_SETTINGS_DEFAULTS.promotionalEmails,
+    quickCheckout: USER_SETTINGS_DEFAULTS.quickCheckout,
+    lowStockAlerts: USER_SETTINGS_DEFAULTS.lowStockAlerts,
+    saveDeliveryDetails: USER_SETTINGS_DEFAULTS.saveDeliveryDetails,
+    deliveryProfile: { ...USER_SETTINGS_DEFAULTS.deliveryProfile },
+  };
 
-function getCountryNameFromCode(code) {
-  const normalizedCode = normalizeCountryCode(code || DEFAULT_COUNTRY_CODE);
+  const orderSortOptions = [
+    { value: "newest", label: "Newest" },
+    { value: "oldest", label: "Oldest" },
+    { value: "highest", label: "Highest Total" },
+    { value: "lowest", label: "Lowest Total" },
+  ];
 
-  try {
-    const displayNames = new Intl.DisplayNames(["en"], { type: "region" });
-    return displayNames.of(normalizedCode) || normalizedCode;
-  } catch {
-    return normalizedCode;
+  function cloneSettings(settings) {
+    return {
+      ...settings,
+      deliveryProfile: { ...settings.deliveryProfile },
+    };
   }
-}
 
-function normalizeOrder(order = {}) {
-  return {
-    ...order,
-    order_id: order.order_id || order.id || "pending",
-    status: String(order.status || "processing").trim() || "processing",
-    subtotal_amount: Number(
-      order.subtotal_amount ||
-        order.subtotal ||
-        order.total_amount ||
-        order.total ||
-        0,
-    ),
-    discount_amount: Number(order.discount_amount || order.discount || 0),
-    total_amount: Number(order.total_amount || order.total || 0),
-    created_at: order.created_at || order.createdAt || null,
-    items: Array.isArray(order.items) ? order.items : [],
-    billing_profile: normalizeInvoiceProfile(
-      order.billing_profile || order.billingProfile || {},
-    ),
-  };
-}
+  function getCountryNameFromCode(code) {
+    const normalizedCode = normalizeCountryCode(code || DEFAULT_COUNTRY_CODE);
 
-function normalizeInvoiceProfile(profile = {}) {
-  return {
-    name: String(profile.name || profile.full_name || "").trim(),
-    email: String(profile.email || "").trim(),
-    phone: String(profile.phone || "").trim(),
-    address: String(profile.address || "").trim(),
-    city: String(profile.city || "").trim(),
-    state: String(profile.state || "").trim(),
-    postalCode: String(
-      profile.postal_code || profile.postalCode || profile.zip || "",
-    ).trim(),
-  };
-}
+    try {
+      const displayNames = new Intl.DisplayNames(["en"], { type: "region" });
+      return displayNames.of(normalizedCode) || normalizedCode;
+    } catch {
+      return normalizedCode;
+    }
+  }
 
-function createSettingsSnapshot(settings) {
-  return JSON.stringify({
-    currency: settings.currency,
-    orderUpdates: settings.orderUpdates,
-    promotionalEmails: settings.promotionalEmails,
-    quickCheckout: settings.quickCheckout,
-    lowStockAlerts: settings.lowStockAlerts,
-    saveDeliveryDetails: settings.saveDeliveryDetails,
-    deliveryProfile: normalizeDeliveryProfile(settings.deliveryProfile),
-  });
-}
-
-export default {
-  name: "Profile",
-  components: {
-    BaseAlert,
-  },
-  setup() {
-    const router = useRouter();
-    const { smAndDown, xs } = useDisplay();
-    const appStore = useAppStore();
-    const cartStore = useCartStore();
-    const orders = ref([]);
-    const loading = ref(false);
-    const refreshing = ref(false);
-    const profileLoaded = ref(false);
-    const savingAll = ref(false);
-    const invoiceLoadingOrderId = ref("");
-    const snackbar = ref(false);
-    const snackbarText = ref("");
-    const snackbarColor = ref("success");
-    const fileInput = ref(null);
-    const selectedPhotoName = ref("");
-    const pictureChanged = ref(false);
-    const activeTab = ref("profile");
-    const orderSearch = ref("");
-    const orderStatusFilter = ref("all");
-    const orderSort = ref("newest");
-    const deletingAccount = ref(false);
-    const userAdminDialog = ref(false);
-    const userAdminPinMode = ref("verify");
-    const userAdminPinSaving = ref(false);
-    const userAdminAlert = ref(null);
-    const userAdminPinForm = ref({
-      mobileCountryCode: DEFAULT_MOBILE_COUNTRY_CODE,
-      mobileNumber: "",
-      pin: "",
-    });
-
-    const settings = ref(cloneSettings(DEFAULT_SETTINGS));
-    const settingsBaseline = ref(cloneSettings(DEFAULT_SETTINGS));
-
-    const profileForm = ref({
-      name: "",
-      email: "",
-      countryCode: "",
-      picture: "",
-    });
-
-    const displayName = computed(() => {
-      return profileForm.value.name || appStore.user?.name || "Mindstore User";
-    });
-
-    const profileInitials = computed(() => {
-      const source = displayName.value || appStore.user?.email || "MS";
-      return (
-        String(source)
-          .split(/\s+|@/)
-          .filter(Boolean)
-          .slice(0, 2)
-          .map((part) => part[0]?.toUpperCase())
-          .join("") || "MS"
-      );
-    });
-
-    const profileImage = computed(() =>
-      safeDisplayImageUrl(
-        appStore.user?.picture ||
-          appStore.user?.photoURL ||
-          appStore.user?.photo_url,
+  function normalizeOrder(order = {}) {
+    return {
+      ...order,
+      order_id: order.order_id || order.id || "pending",
+      status: String(order.status || "processing").trim() || "processing",
+      subtotal_amount: Number(
+        order.subtotal_amount ||
+          order.subtotal ||
+          order.total_amount ||
+          order.total ||
+          0,
       ),
-    );
-
-    const profilePreviewImage = computed(() => {
-      if (pictureChanged.value) {
-        return safeDisplayImageUrl(profileForm.value.picture);
-      }
-      return profileImage.value;
-    });
-
-    const isAdmin = computed(() => Boolean(appStore.user?.is_admin));
-    const userAdminDialogMaxWidth = computed(() =>
-      xs.value ? undefined : 680,
-    );
-    const hasUserAdminPin = computed(() =>
-      Boolean(
-        appStore.user?.has_user_admin_pin ||
-        appStore.user?.user_admin_pin_created_at,
+      discount_amount: Number(order.discount_amount || order.discount || 0),
+      total_amount: Number(order.total_amount || order.total || 0),
+      created_at: order.created_at || order.createdAt || null,
+      items: Array.isArray(order.items) ? order.items : [],
+      billing_profile: normalizeInvoiceProfile(
+        order.billing_profile || order.billingProfile || {},
       ),
-    );
-    const userAdminRequiresMobile = computed(
-      () => !hasUserAdminPin.value || userAdminPinMode.value === "reset",
-    );
-    const canResetUserAdminPin = computed(
-      () => hasUserAdminPin.value && userAdminPinMode.value !== "reset",
-    );
-    const canRecoverUserAdminMobile = computed(
-      () => userAdminPinMode.value === "reset",
-    );
-    const userAdminPinActionLabel = computed(() => {
-      if (userAdminPinMode.value === "reset") {
-        return "Create New PIN";
-      }
-      return hasUserAdminPin.value ? "Open User Admin" : "Create PIN";
-    });
-    const userAdminPinHelpText = computed(() => {
-      if (userAdminPinMode.value === "reset") {
-        return "Enter the same mobile number used for User Admin and create a new 6 digit PIN.";
-      }
-      return hasUserAdminPin.value
-        ? "Enter your User Admin PIN to open your product controls."
-        : "Add your mobile number and create a 6 digit User Admin PIN. You will create this PIN only once.";
-    });
-    const userAdminPinIcon = computed(() => {
-      if (userAdminPinMode.value === "reset") {
-        return "mdi-lock-reset";
-      }
-      return hasUserAdminPin.value
-        ? "mdi-lock-check-outline"
-        : "mdi-lock-plus-outline";
-    });
-
-    const countryDisplayName = computed(() => {
-      const countryCode =
-        normalizeCountryCode(profileForm.value.countryCode) ||
-        normalizeCountryCode(appStore.user?.country_code) ||
-        DEFAULT_COUNTRY_CODE;
-      return getCountryNameFromCode(countryCode);
-    });
-
-    const countryOptions = computed(() => {
-      const selectedCountryCode = normalizeCountryCode(
-        profileForm.value.countryCode,
-      );
-      if (
-        !selectedCountryCode ||
-        COUNTRY_OPTIONS_BASE.some((item) => item.code === selectedCountryCode)
-      ) {
-        return COUNTRY_OPTIONS_BASE;
-      }
-
-      return [
-        ...COUNTRY_OPTIONS_BASE,
-        {
-          code: selectedCountryCode,
-          label: getCountryNameFromCode(selectedCountryCode),
-        },
-      ];
-    });
-
-    const mobileCountryOptions = computed(() => {
-      const selectedMobileCode = normalizeMobileCountryCode(
-        userAdminPinForm.value.mobileCountryCode,
-      );
-      if (
-        !selectedMobileCode ||
-        MOBILE_COUNTRY_OPTIONS.some((item) => item.code === selectedMobileCode)
-      ) {
-        return MOBILE_COUNTRY_OPTIONS;
-      }
-
-      return [
-        ...MOBILE_COUNTRY_OPTIONS,
-        { code: selectedMobileCode, label: selectedMobileCode },
-      ];
-    });
-
-    const isProfileDirty = computed(() => {
-      const formName = String(profileForm.value.name || "").trim();
-      const userName = String(appStore.user?.name || "").trim();
-      const formCountry = normalizeCountryCode(
-        profileForm.value.countryCode || "",
-      );
-      const userCountry = normalizeCountryCode(
-        appStore.user?.country_code || DEFAULT_COUNTRY_CODE,
-      );
-      return (
-        formName !== userName ||
-        formCountry !== userCountry ||
-        pictureChanged.value
-      );
-    });
-
-    const isSettingsDirty = computed(
-      () =>
-        createSettingsSnapshot(settings.value) !==
-        createSettingsSnapshot(settingsBaseline.value),
-    );
-    const isFormDirty = computed(
-      () => isProfileDirty.value || isSettingsDirty.value,
-    );
-
-    const totalSpent = computed(() =>
-      orders.value.reduce(
-        (total, order) => total + Number(order.total_amount || 0),
-        0,
-      ),
-    );
-    const totalSpentDisplay = computed(() => formatAmount(totalSpent.value));
-    const completedOrderCount = computed(
-      () =>
-        orders.value.filter(
-          (order) => String(order.status || "").toLowerCase() === "completed",
-        ).length,
-    );
-
-    const deliveryIsComplete = computed(() => {
-      const delivery = settings.value.deliveryProfile || {};
-      return Boolean(
-        delivery.phone &&
-        delivery.address &&
-        delivery.city &&
-        delivery.postalCode,
-      );
-    });
-
-    const profileChecklist = computed(() => [
-      {
-        label: "Name",
-        complete: Boolean(String(profileForm.value.name || "").trim()),
-      },
-      { label: "Email", complete: Boolean(appStore.user?.email) },
-      {
-        label: "Country",
-        complete: Boolean(normalizeCountryCode(profileForm.value.countryCode)),
-      },
-      { label: "Photo", complete: Boolean(profilePreviewImage.value) },
-      { label: "Delivery", complete: deliveryIsComplete.value },
-    ]);
-
-    const completedProfileItems = computed(
-      () => profileChecklist.value.filter((item) => item.complete).length,
-    );
-
-    const profileCompletion = computed(() =>
-      Math.round(
-        (completedProfileItems.value / profileChecklist.value.length) * 100,
-      ),
-    );
-
-    const orderStatusOptions = computed(() => {
-      const statuses = [
-        ...new Set(
-          orders.value
-            .map((order) => String(order.status || "").toLowerCase())
-            .filter(Boolean),
-        ),
-      ];
-      return [
-        { value: "all", label: "All Status" },
-        ...statuses.map((status) => ({
-          value: status,
-          label: status.replace(/(^|\s|-)\S/g, (match) => match.toUpperCase()),
-        })),
-      ];
-    });
-
-    const filteredOrders = computed(() => {
-      const query = String(orderSearch.value || "")
-        .trim()
-        .toLowerCase();
-      const status = String(orderStatusFilter.value || "all").toLowerCase();
-
-      const filtered = orders.value.filter((order) => {
-        const orderStatus = String(order.status || "").toLowerCase();
-        const matchesStatus = status === "all" || orderStatus === status;
-        const searchable = [
-          order.order_id,
-          order.status,
-          order.total_amount,
-          ...order.items.map((item) => item.name || item.product_id || ""),
-        ]
-          .join(" ")
-          .toLowerCase();
-        return matchesStatus && (!query || searchable.includes(query));
-      });
-
-      return filtered.toSorted((left, right) => {
-        if (orderSort.value === "highest") {
-          return (
-            Number(right.total_amount || 0) - Number(left.total_amount || 0)
-          );
-        }
-        if (orderSort.value === "lowest") {
-          return (
-            Number(left.total_amount || 0) - Number(right.total_amount || 0)
-          );
-        }
-
-        const leftDate = new Date(left.created_at || 0).getTime();
-        const rightDate = new Date(right.created_at || 0).getTime();
-        return orderSort.value === "oldest"
-          ? leftDate - rightDate
-          : rightDate - leftDate;
-      });
-    });
-
-
-
-    const resolveDefaultMobileCountryCode = () => {
-      const storedMobileCountryCode = normalizeMobileCountryCode(
-        appStore.user?.mobile_country_code,
-      );
-      if (storedMobileCountryCode) {
-        return storedMobileCountryCode;
-      }
-      const profileCountryCode = normalizeCountryCode(
-        profileForm.value.countryCode || appStore.user?.country_code,
-      );
-      return (
-        COUNTRY_TO_MOBILE_CODE[profileCountryCode] ||
-        DEFAULT_MOBILE_COUNTRY_CODE
-      );
     };
+  }
 
-    const resolveStoredMobileNumber = () => {
-      return normalizeMobileNumber(appStore.user?.mobile_number);
+  function normalizeInvoiceProfile(profile = {}) {
+    return {
+      name: String(profile.name || profile.full_name || "").trim(),
+      email: String(profile.email || "").trim(),
+      phone: String(profile.phone || "").trim(),
+      address: String(profile.address || "").trim(),
+      city: String(profile.city || "").trim(),
+      state: String(profile.state || "").trim(),
+      postalCode: String(
+        profile.postal_code || profile.postalCode || profile.zip || "",
+      ).trim(),
     };
+  }
 
-    const resolveStoredMobileDisplay = () => {
-      return (
-        formatMobileNumber(
-          appStore.user?.mobile_country_code,
-          appStore.user?.mobile_number,
-        ) || String(appStore.user?.mobile_full_number || "").trim()
-      );
-    };
+  function createSettingsSnapshot(settings) {
+    return JSON.stringify({
+      currency: settings.currency,
+      orderUpdates: settings.orderUpdates,
+      promotionalEmails: settings.promotionalEmails,
+      quickCheckout: settings.quickCheckout,
+      lowStockAlerts: settings.lowStockAlerts,
+      saveDeliveryDetails: settings.saveDeliveryDetails,
+      deliveryProfile: normalizeDeliveryProfile(settings.deliveryProfile),
+    });
+  }
 
-    const loadProfileForm = () => {
-      profileForm.value = {
-        name: appStore.user?.name || "",
-        email: appStore.user?.email || "",
-        countryCode: normalizeCountryCode(
-          appStore.user?.country_code ||
-            appStore.user?.country ||
-            DEFAULT_COUNTRY_CODE,
-        ),
-        picture: profileImage.value || "",
-      };
-      selectedPhotoName.value = "";
-      pictureChanged.value = false;
-    };
-
-    const loadSettings = () => {
-      const loaded = loadUserSettings();
-      const userDelivery = appStore.user?.delivery_profile || {};
-      const deliveryProfile = normalizeDeliveryProfile({
-        phone: userDelivery.phone || loaded.deliveryProfile?.phone || "",
-        address: userDelivery.address || loaded.deliveryProfile?.address || "",
-        city: userDelivery.city || loaded.deliveryProfile?.city || "",
-        state: userDelivery.state || loaded.deliveryProfile?.state || "",
-        postalCode:
-          userDelivery.postal_code ||
-          userDelivery.postalCode ||
-          loaded.deliveryProfile?.postalCode ||
-          "",
-        instructions:
-          userDelivery.instructions ||
-          loaded.deliveryProfile?.instructions ||
-          "",
-      });
-      const storedMobileDisplay = resolveStoredMobileDisplay();
-      if (storedMobileDisplay && !deliveryProfile.phone) {
-        deliveryProfile.phone = storedMobileDisplay;
-      }
-      settings.value = cloneSettings({
-        ...DEFAULT_SETTINGS,
-        currency:
-          appStore.user?.currency || loaded.currency || DEFAULT_CURRENCY,
-        orderUpdates:
-          appStore.user?.order_updates === undefined
-            ? loaded.orderUpdates
-            : appStore.user.order_updates,
-        promotionalEmails:
-          appStore.user?.promotional_emails === undefined
-            ? loaded.promotionalEmails
-            : appStore.user.promotional_emails,
-        quickCheckout:
-          appStore.user?.quick_checkout === undefined
-            ? loaded.quickCheckout
-            : appStore.user.quick_checkout,
-        lowStockAlerts:
-          appStore.user?.low_stock_alerts === undefined
-            ? loaded.lowStockAlerts
-            : appStore.user.low_stock_alerts,
-        saveDeliveryDetails:
-          appStore.user?.save_delivery_details === undefined
-            ? loaded.saveDeliveryDetails
-            : appStore.user.save_delivery_details,
-        deliveryProfile,
-      });
-      settingsBaseline.value = cloneSettings(settings.value);
-    };
-
-    const openPhotoPicker = () => {
-      fileInput.value?.click();
-    };
-
-    const showMessage = (message, color = "success") => {
-      snackbarText.value = message;
-      snackbarColor.value = color;
-      snackbar.value = true;
-    };
-
-    const normalizeUserAdminPin = () =>
-      String(userAdminPinForm.value.pin || "")
-        .replace(/\D+/g, "")
-        .slice(0, USER_ADMIN_PIN_LENGTH);
-
-    const getUserAdminMobilePayload = () => {
-      const mobileCountryCode = normalizeMobileCountryCode(
-        userAdminPinForm.value.mobileCountryCode,
-      );
-      const mobileNumber = normalizeMobileNumber(
-        userAdminPinForm.value.mobileNumber,
-      );
-      return { mobileCountryCode, mobileNumber };
-    };
-
-    const syncUserAdminMobileToDeliveryProfile = (
-      profile = {},
-      fallbackCountryCode = "",
-      fallbackMobileNumber = "",
-    ) => {
-      const savedMobile = formatMobileNumber(
-        profile.mobile_country_code || fallbackCountryCode,
-        profile.mobile_number || fallbackMobileNumber,
-      );
-      if (!savedMobile) {
-        return;
-      }
-      const existingSettings = loadUserSettings();
-      const deliveryProfile = {
-        ...normalizeDeliveryProfile(existingSettings.deliveryProfile),
-        phone: savedMobile,
-      };
-      saveUserSettings({
-        ...existingSettings,
-        deliveryProfile,
-      });
-      settings.value.deliveryProfile.phone = savedMobile;
-      settingsBaseline.value = cloneSettings(settings.value);
-    };
-
-    const resetUserAdminAccessFlow = (
-      mode = hasUserAdminPin.value ? "verify" : "create",
-    ) => {
-      userAdminPinMode.value = mode;
-      userAdminPinSaving.value = false;
-      userAdminAlert.value = null;
-      userAdminPinForm.value = {
-        mobileCountryCode: resolveDefaultMobileCountryCode(),
-        mobileNumber: mode === "reset" ? "" : resolveStoredMobileNumber(),
+  export default {
+    name: "Profile",
+    components: {
+      BaseAlert,
+    },
+    setup() {
+      const router = useRouter();
+      const { smAndDown, xs } = useDisplay();
+      const appStore = useAppStore();
+      const cartStore = useCartStore();
+      const orders = ref([]);
+      const loading = ref(false);
+      const refreshing = ref(false);
+      const profileLoaded = ref(false);
+      const savingAll = ref(false);
+      const invoiceLoadingOrderId = ref("");
+      const snackbar = ref(false);
+      const snackbarText = ref("");
+      const snackbarColor = ref("success");
+      const fileInput = ref(null);
+      const selectedPhotoName = ref("");
+      const pictureChanged = ref(false);
+      const activeTab = ref("profile");
+      const orderSearch = ref("");
+      const orderStatusFilter = ref("all");
+      const orderSort = ref("newest");
+      const deletingAccount = ref(false);
+      const userAdminDialog = ref(false);
+      const userAdminPinMode = ref("verify");
+      const userAdminPinSaving = ref(false);
+      const userAdminAlert = ref(null);
+      const userAdminPinForm = ref({
+        mobileCountryCode: DEFAULT_MOBILE_COUNTRY_CODE,
+        mobileNumber: "",
         pin: "",
-      };
-    };
+      });
 
-    const openUserAdminDialog = () => {
-      if (!appStore.isAuthenticated) {
-        showMessage("Please login before opening user admin.", "warning");
-        return;
-      }
+      const settings = ref(cloneSettings(DEFAULT_SETTINGS));
+      const settingsBaseline = ref(cloneSettings(DEFAULT_SETTINGS));
 
-      resetUserAdminAccessFlow();
-      userAdminDialog.value = true;
-    };
+      const profileForm = ref({
+        name: "",
+        email: "",
+        countryCode: "",
+        picture: "",
+      });
 
-    const startUserAdminPinReset = () => {
-      resetUserAdminAccessFlow("reset");
-    };
+      const displayName = computed(() => {
+        return profileForm.value.name || appStore.user?.name || "Mindstore User";
+      });
 
-    const recoverUserAdminMobile = () => {
-      let mobileNumber = resolveStoredMobileNumber();
-      let mobileCountryCode = resolveDefaultMobileCountryCode();
-
-      if (mobileNumber) {
-        // Parse the stored mobile number in case it contains country code or needs splitting
-        const parsed = parseMobileNumber(
-          formatMobileNumber(appStore.user?.mobile_country_code, mobileNumber),
+      const profileInitials = computed(() => {
+        const source = displayName.value || appStore.user?.email || "MS";
+        return (
+          String(source)
+            .split(/\s+|@/)
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((part) => part[0]?.toUpperCase())
+            .join("") || "MS"
         );
-        if (parsed.mobileNumber) {
-          mobileNumber = parsed.mobileNumber;
-          mobileCountryCode = parsed.countryCode || mobileCountryCode;
+      });
+
+      const profileImage = computed(() =>
+        safeDisplayImageUrl(
+          appStore.user?.picture ||
+            appStore.user?.photoURL ||
+            appStore.user?.photo_url,
+        ),
+      );
+
+      const profilePreviewImage = computed(() => {
+        if (pictureChanged.value) {
+          return safeDisplayImageUrl(profileForm.value.picture);
         }
-      } else {
-        // Fall back to delivery profile phone number
-        const deliveryPhone = settings.value.deliveryProfile?.phone;
-        if (deliveryPhone) {
-          const parsed = parseMobileNumber(deliveryPhone);
+        return profileImage.value;
+      });
+
+      const isAdmin = computed(() => Boolean(appStore.user?.is_admin));
+      const userAdminDialogMaxWidth = computed(() =>
+        xs.value ? undefined : 680,
+      );
+      const hasUserAdminPin = computed(() =>
+        Boolean(
+          appStore.user?.has_user_admin_pin ||
+            appStore.user?.user_admin_pin_created_at,
+        ),
+      );
+      const userAdminRequiresMobile = computed(
+        () => !hasUserAdminPin.value || userAdminPinMode.value === "reset",
+      );
+      const canResetUserAdminPin = computed(
+        () => hasUserAdminPin.value && userAdminPinMode.value !== "reset",
+      );
+      const canRecoverUserAdminMobile = computed(
+        () => userAdminPinMode.value === "reset",
+      );
+      const userAdminPinActionLabel = computed(() => {
+        if (userAdminPinMode.value === "reset") {
+          return "Create New PIN";
+        }
+        return hasUserAdminPin.value ? "Open User Admin" : "Create PIN";
+      });
+      const userAdminPinHelpText = computed(() => {
+        if (userAdminPinMode.value === "reset") {
+          return "Enter the same mobile number used for User Admin and create a new 6 digit PIN.";
+        }
+        return hasUserAdminPin.value
+          ? "Enter your User Admin PIN to open your product controls."
+          : "Add your mobile number and create a 6 digit User Admin PIN. You will create this PIN only once.";
+      });
+      const userAdminPinIcon = computed(() => {
+        if (userAdminPinMode.value === "reset") {
+          return "mdi-lock-reset";
+        }
+        return hasUserAdminPin.value
+          ? "mdi-lock-check-outline"
+          : "mdi-lock-plus-outline";
+      });
+
+      const countryDisplayName = computed(() => {
+        const countryCode =
+          normalizeCountryCode(profileForm.value.countryCode) ||
+          normalizeCountryCode(appStore.user?.country_code) ||
+          DEFAULT_COUNTRY_CODE;
+        return getCountryNameFromCode(countryCode);
+      });
+
+      const countryOptions = computed(() => {
+        const selectedCountryCode = normalizeCountryCode(
+          profileForm.value.countryCode,
+        );
+        if (
+          !selectedCountryCode ||
+          COUNTRY_OPTIONS_BASE.some((item) => item.code === selectedCountryCode)
+        ) {
+          return COUNTRY_OPTIONS_BASE;
+        }
+
+        return [
+          ...COUNTRY_OPTIONS_BASE,
+          {
+            code: selectedCountryCode,
+            label: getCountryNameFromCode(selectedCountryCode),
+          },
+        ];
+      });
+
+      const mobileCountryOptions = computed(() => {
+        const selectedMobileCode = normalizeMobileCountryCode(
+          userAdminPinForm.value.mobileCountryCode,
+        );
+        if (
+          !selectedMobileCode ||
+          MOBILE_COUNTRY_OPTIONS.some((item) => item.code === selectedMobileCode)
+        ) {
+          return MOBILE_COUNTRY_OPTIONS;
+        }
+
+        return [
+          ...MOBILE_COUNTRY_OPTIONS,
+          { code: selectedMobileCode, label: selectedMobileCode },
+        ];
+      });
+
+      const isProfileDirty = computed(() => {
+        const formName = String(profileForm.value.name || "").trim();
+        const userName = String(appStore.user?.name || "").trim();
+        const formCountry = normalizeCountryCode(
+          profileForm.value.countryCode || "",
+        );
+        const userCountry = normalizeCountryCode(
+          appStore.user?.country_code || DEFAULT_COUNTRY_CODE,
+        );
+        return (
+          formName !== userName ||
+          formCountry !== userCountry ||
+          pictureChanged.value
+        );
+      });
+
+      const isSettingsDirty = computed(
+        () =>
+          createSettingsSnapshot(settings.value) !==
+          createSettingsSnapshot(settingsBaseline.value),
+      );
+      const isFormDirty = computed(
+        () => isProfileDirty.value || isSettingsDirty.value,
+      );
+
+      const totalSpent = computed(() =>
+        orders.value.reduce(
+          (total, order) => total + Number(order.total_amount || 0),
+          0,
+        ),
+      );
+      const totalSpentDisplay = computed(() => formatAmount(totalSpent.value));
+      const completedOrderCount = computed(
+        () =>
+          orders.value.filter(
+            (order) => String(order.status || "").toLowerCase() === "completed",
+          ).length,
+      );
+
+      const deliveryIsComplete = computed(() => {
+        const delivery = settings.value.deliveryProfile || {};
+        return Boolean(
+          delivery.phone &&
+            delivery.address &&
+            delivery.city &&
+            delivery.postalCode,
+        );
+      });
+
+      const profileChecklist = computed(() => [
+        {
+          label: "Name",
+          complete: Boolean(String(profileForm.value.name || "").trim()),
+        },
+        { label: "Email", complete: Boolean(appStore.user?.email) },
+        {
+          label: "Country",
+          complete: Boolean(normalizeCountryCode(profileForm.value.countryCode)),
+        },
+        { label: "Photo", complete: Boolean(profilePreviewImage.value) },
+        { label: "Delivery", complete: deliveryIsComplete.value },
+      ]);
+
+      const completedProfileItems = computed(
+        () => profileChecklist.value.filter((item) => item.complete).length,
+      );
+
+      const profileCompletion = computed(() =>
+        Math.round(
+          (completedProfileItems.value / profileChecklist.value.length) * 100,
+        ),
+      );
+
+      const orderStatusOptions = computed(() => {
+        const statuses = [
+          ...new Set(
+            orders.value
+              .map((order) => String(order.status || "").toLowerCase())
+              .filter(Boolean),
+          ),
+        ];
+        return [
+          { value: "all", label: "All Status" },
+          ...statuses.map((status) => ({
+            value: status,
+            label: status.replace(/(^|\s|-)\S/g, (match) => match.toUpperCase()),
+          })),
+        ];
+      });
+
+      const filteredOrders = computed(() => {
+        const query = String(orderSearch.value || "")
+          .trim()
+          .toLowerCase();
+        const status = String(orderStatusFilter.value || "all").toLowerCase();
+
+        const filtered = orders.value.filter((order) => {
+          const orderStatus = String(order.status || "").toLowerCase();
+          const matchesStatus = status === "all" || orderStatus === status;
+          const searchable = [
+            order.order_id,
+            order.status,
+            order.total_amount,
+            ...order.items.map((item) => item.name || item.product_id || ""),
+          ]
+            .join(" ")
+            .toLowerCase();
+          return matchesStatus && (!query || searchable.includes(query));
+        });
+
+        return filtered.toSorted((left, right) => {
+          if (orderSort.value === "highest") {
+            return (
+              Number(right.total_amount || 0) - Number(left.total_amount || 0)
+            );
+          }
+          if (orderSort.value === "lowest") {
+            return (
+              Number(left.total_amount || 0) - Number(right.total_amount || 0)
+            );
+          }
+
+          const leftDate = new Date(left.created_at || 0).getTime();
+          const rightDate = new Date(right.created_at || 0).getTime();
+          return orderSort.value === "oldest"
+            ? leftDate - rightDate
+            : rightDate - leftDate;
+        });
+      });
+
+
+
+      const resolveDefaultMobileCountryCode = () => {
+        const storedMobileCountryCode = normalizeMobileCountryCode(
+          appStore.user?.mobile_country_code,
+        );
+        if (storedMobileCountryCode) {
+          return storedMobileCountryCode;
+        }
+        const profileCountryCode = normalizeCountryCode(
+          profileForm.value.countryCode || appStore.user?.country_code,
+        );
+        return (
+          COUNTRY_TO_MOBILE_CODE[profileCountryCode] ||
+          DEFAULT_MOBILE_COUNTRY_CODE
+        );
+      };
+
+      const resolveStoredMobileNumber = () => {
+        return normalizeMobileNumber(appStore.user?.mobile_number);
+      };
+
+      const resolveStoredMobileDisplay = () => {
+        return (
+          formatMobileNumber(
+            appStore.user?.mobile_country_code,
+            appStore.user?.mobile_number,
+          ) || String(appStore.user?.mobile_full_number || "").trim()
+        );
+      };
+
+      const loadProfileForm = () => {
+        profileForm.value = {
+          name: appStore.user?.name || "",
+          email: appStore.user?.email || "",
+          countryCode: normalizeCountryCode(
+            appStore.user?.country_code ||
+              appStore.user?.country ||
+              DEFAULT_COUNTRY_CODE,
+          ),
+          picture: profileImage.value || "",
+        };
+        selectedPhotoName.value = "";
+        pictureChanged.value = false;
+      };
+
+      const loadSettings = () => {
+        const loaded = loadUserSettings();
+        const userDelivery = appStore.user?.delivery_profile || {};
+        const deliveryProfile = normalizeDeliveryProfile({
+          phone: userDelivery.phone || loaded.deliveryProfile?.phone || "",
+          address: userDelivery.address || loaded.deliveryProfile?.address || "",
+          city: userDelivery.city || loaded.deliveryProfile?.city || "",
+          state: userDelivery.state || loaded.deliveryProfile?.state || "",
+          postalCode:
+            userDelivery.postal_code ||
+            userDelivery.postalCode ||
+            loaded.deliveryProfile?.postalCode ||
+            "",
+          instructions:
+            userDelivery.instructions ||
+            loaded.deliveryProfile?.instructions ||
+            "",
+        });
+        const storedMobileDisplay = resolveStoredMobileDisplay();
+        if (storedMobileDisplay && !deliveryProfile.phone) {
+          deliveryProfile.phone = storedMobileDisplay;
+        }
+        settings.value = cloneSettings({
+          ...DEFAULT_SETTINGS,
+          currency:
+            appStore.user?.currency || loaded.currency || DEFAULT_CURRENCY,
+          orderUpdates:
+            appStore.user?.order_updates === undefined
+              ? loaded.orderUpdates
+              : appStore.user.order_updates,
+          promotionalEmails:
+            appStore.user?.promotional_emails === undefined
+              ? loaded.promotionalEmails
+              : appStore.user.promotional_emails,
+          quickCheckout:
+            appStore.user?.quick_checkout === undefined
+              ? loaded.quickCheckout
+              : appStore.user.quick_checkout,
+          lowStockAlerts:
+            appStore.user?.low_stock_alerts === undefined
+              ? loaded.lowStockAlerts
+              : appStore.user.low_stock_alerts,
+          saveDeliveryDetails:
+            appStore.user?.save_delivery_details === undefined
+              ? loaded.saveDeliveryDetails
+              : appStore.user.save_delivery_details,
+          deliveryProfile,
+        });
+        settingsBaseline.value = cloneSettings(settings.value);
+      };
+
+      const openPhotoPicker = () => {
+        fileInput.value?.click();
+      };
+
+      const showMessage = (message, color = "success") => {
+        snackbarText.value = message;
+        snackbarColor.value = color;
+        snackbar.value = true;
+      };
+
+      const normalizeUserAdminPin = () =>
+        String(userAdminPinForm.value.pin || "")
+          .replace(/\D+/g, "")
+          .slice(0, USER_ADMIN_PIN_LENGTH);
+
+      const getUserAdminMobilePayload = () => {
+        const mobileCountryCode = normalizeMobileCountryCode(
+          userAdminPinForm.value.mobileCountryCode,
+        );
+        const mobileNumber = normalizeMobileNumber(
+          userAdminPinForm.value.mobileNumber,
+        );
+        return { mobileCountryCode, mobileNumber };
+      };
+
+      const syncUserAdminMobileToDeliveryProfile = (
+        profile = {},
+        fallbackCountryCode = "",
+        fallbackMobileNumber = "",
+      ) => {
+        const savedMobile = formatMobileNumber(
+          profile.mobile_country_code || fallbackCountryCode,
+          profile.mobile_number || fallbackMobileNumber,
+        );
+        if (!savedMobile) {
+          return;
+        }
+        const existingSettings = loadUserSettings();
+        const deliveryProfile = {
+          ...normalizeDeliveryProfile(existingSettings.deliveryProfile),
+          phone: savedMobile,
+        };
+        saveUserSettings({
+          ...existingSettings,
+          deliveryProfile,
+        });
+        settings.value.deliveryProfile.phone = savedMobile;
+        settingsBaseline.value = cloneSettings(settings.value);
+      };
+
+      const resetUserAdminAccessFlow = (
+        mode = hasUserAdminPin.value ? "verify" : "create",
+      ) => {
+        userAdminPinMode.value = mode;
+        userAdminPinSaving.value = false;
+        userAdminAlert.value = null;
+        userAdminPinForm.value = {
+          mobileCountryCode: resolveDefaultMobileCountryCode(),
+          mobileNumber: mode === "reset" ? "" : resolveStoredMobileNumber(),
+          pin: "",
+        };
+      };
+
+      const openUserAdminDialog = () => {
+        if (!appStore.isAuthenticated) {
+          showMessage("Please login before opening user admin.", "warning");
+          return;
+        }
+
+        resetUserAdminAccessFlow();
+        userAdminDialog.value = true;
+      };
+
+      const startUserAdminPinReset = () => {
+        resetUserAdminAccessFlow("reset");
+      };
+
+      const recoverUserAdminMobile = () => {
+        let mobileNumber = resolveStoredMobileNumber();
+        let mobileCountryCode = resolveDefaultMobileCountryCode();
+
+        if (mobileNumber) {
+          // Parse the stored mobile number in case it contains country code or needs splitting
+          const parsed = parseMobileNumber(
+            formatMobileNumber(appStore.user?.mobile_country_code, mobileNumber),
+          );
           if (parsed.mobileNumber) {
             mobileNumber = parsed.mobileNumber;
             mobileCountryCode = parsed.countryCode || mobileCountryCode;
           }
+        } else {
+          // Fall back to delivery profile phone number
+          const deliveryPhone = settings.value.deliveryProfile?.phone;
+          if (deliveryPhone) {
+            const parsed = parseMobileNumber(deliveryPhone);
+            if (parsed.mobileNumber) {
+              mobileNumber = parsed.mobileNumber;
+              mobileCountryCode = parsed.countryCode || mobileCountryCode;
+            }
+          }
         }
-      }
 
-      if (!mobileNumber) {
-        userAdminAlert.value = {
-          message: "No saved User Admin mobile number found.",
-          type: "warning",
+        if (!mobileNumber) {
+          userAdminAlert.value = {
+            message: "No saved User Admin mobile number found.",
+            type: "warning",
+          };
+          return;
+        }
+
+        userAdminPinForm.value = {
+          ...userAdminPinForm.value,
+          mobileCountryCode,
+          mobileNumber,
         };
-        return;
-      }
-
-      userAdminPinForm.value = {
-        ...userAdminPinForm.value,
-        mobileCountryCode,
-        mobileNumber,
+        userAdminAlert.value = {
+          message: `Saved mobile added. Ends with ${mobileNumber.slice(-4)}.`,
+          type: "success",
+        };
       };
-      userAdminAlert.value = {
-        message: `Saved mobile added. Ends with ${mobileNumber.slice(-4)}.`,
-        type: "success",
-      };
-    };
 
-    const submitUserAdminPin = async () => {
-      if (userAdminPinSaving.value) {
-        return;
-      }
+      const submitUserAdminPin = async () => {
+        if (userAdminPinSaving.value) {
+          return;
+        }
 
-      userAdminAlert.value = null;
-      const pin = normalizeUserAdminPin();
-      userAdminPinForm.value.pin = pin;
-      const requiresMobile = userAdminRequiresMobile.value;
-      const { mobileCountryCode, mobileNumber } = getUserAdminMobilePayload();
+        userAdminAlert.value = null;
+        const pin = normalizeUserAdminPin();
+        userAdminPinForm.value.pin = pin;
+        const requiresMobile = userAdminRequiresMobile.value;
+        const { mobileCountryCode, mobileNumber } = getUserAdminMobilePayload();
 
-      if (requiresMobile && !mobileCountryCode) {
-        userAdminAlert.value = {
-          message: "Select a valid country code.",
-          type: "warning",
-        };
-        return;
-      }
-      if (requiresMobile && !mobileNumber) {
-        userAdminAlert.value = {
-          message: "Enter the mobile number used for User Admin.",
-          type: "warning",
-        };
-        return;
-      }
-      if (!/^\d{6}$/.test(pin)) {
-        userAdminAlert.value = {
-          message: "Enter a 6 digit User Admin PIN.",
-          type: "warning",
-        };
-        return;
-      }
+        if (requiresMobile && !mobileCountryCode) {
+          userAdminAlert.value = {
+            message: "Select a valid country code.",
+            type: "warning",
+          };
+          return;
+        }
+        if (requiresMobile && !mobileNumber) {
+          userAdminAlert.value = {
+            message: "Enter the mobile number used for User Admin.",
+            type: "warning",
+          };
+          return;
+        }
+        if (!/^\d{6}$/.test(pin)) {
+          userAdminAlert.value = {
+            message: "Enter a 6 digit User Admin PIN.",
+            type: "warning",
+          };
+          return;
+        }
 
-      userAdminPinSaving.value = true;
-      try {
-        const response =
-          userAdminPinMode.value === "reset"
-            ? await appStore.resetUserAdminPin({
+        userAdminPinSaving.value = true;
+        try {
+          const response =
+            userAdminPinMode.value === "reset"
+              ? await appStore.resetUserAdminPin({
                 mobileCountryCode,
                 mobileNumber,
                 pin,
               })
-            : await appStore.submitUserAdminPin({
+              : await appStore.submitUserAdminPin({
                 mobileCountryCode: requiresMobile
                   ? mobileCountryCode
                   : undefined,
                 mobileNumber: requiresMobile ? mobileNumber : undefined,
                 pin,
               });
-        if (requiresMobile) {
-          syncUserAdminMobileToDeliveryProfile(
-            response?.profile,
-            mobileCountryCode,
-            mobileNumber,
-          );
+          if (requiresMobile) {
+            syncUserAdminMobileToDeliveryProfile(
+              response?.profile,
+              mobileCountryCode,
+              mobileNumber,
+            );
+          }
+          userAdminAlert.value = {
+            message:
+              response?.message ||
+              (hasUserAdminPin.value
+                ? "PIN verified. Redirecting..."
+                : "PIN created. Redirecting..."),
+            type: "success",
+          };
+          setTimeout(async () => {
+            userAdminDialog.value = false;
+            resetUserAdminAccessFlow();
+            await router.push("/user-admin");
+          }, 1500);
+        } catch (error) {
+          const errorMessage =
+            error?.response?.data?.message ||
+            error?.message ||
+            "Failed to submit User Admin PIN";
+          userAdminAlert.value = { message: errorMessage, type: "error" };
+        } finally {
+          // If successful, we keep loading state active until dialog closes/routes
+          if (!userAdminAlert.value || userAdminAlert.value.type !== "success") {
+            userAdminPinSaving.value = false;
+          }
         }
-        userAdminAlert.value = {
-          message:
-            response?.message ||
-            (hasUserAdminPin.value
-              ? "PIN verified. Redirecting..."
-              : "PIN created. Redirecting..."),
-          type: "success",
-        };
-        setTimeout(async () => {
-          userAdminDialog.value = false;
-          resetUserAdminAccessFlow();
-          await router.push("/user-admin");
-        }, 1500);
-      } catch (error) {
-        const errorMessage =
-          error?.response?.data?.message ||
-          error?.message ||
-          "Failed to submit User Admin PIN";
-        userAdminAlert.value = { message: errorMessage, type: "error" };
-      } finally {
-        // If successful, we keep loading state active until dialog closes/routes
-        if (!userAdminAlert.value || userAdminAlert.value.type !== "success") {
-          userAdminPinSaving.value = false;
-        }
-      }
-    };
+      };
 
-    const onPhotoSelected = (event) => {
-      const file = event?.target?.files?.[0];
-      event.target.value = "";
-      if (!file) {
-        return;
-      }
-
-      if (!file.type?.startsWith("image/")) {
-        showMessage("Please choose an image file.", "warning");
-        return;
-      }
-
-      if (file.size > MAX_PHOTO_FILE_BYTES) {
-        showMessage("Image too large. Maximum size is 512KB.", "warning");
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.addEventListener("load", () => {
-        const result = String(reader.result || "");
-        if (
-          result.length > MAX_PHOTO_DATA_URL_LENGTH ||
-          !result.startsWith("data:image/")
-        ) {
-          showMessage("Unsupported image format or size.", "warning");
+      const onPhotoSelected = (event) => {
+        const file = event?.target?.files?.[0];
+        event.target.value = "";
+        if (!file) {
           return;
         }
-        profileForm.value.picture = result;
-        selectedPhotoName.value = file.name;
+
+        if (!file.type?.startsWith("image/")) {
+          showMessage("Please choose an image file.", "warning");
+          return;
+        }
+
+        if (file.size > MAX_PHOTO_FILE_BYTES) {
+          showMessage("Image too large. Maximum size is 512KB.", "warning");
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.addEventListener("load", () => {
+          const result = String(reader.result || "");
+          if (
+            result.length > MAX_PHOTO_DATA_URL_LENGTH ||
+            !result.startsWith("data:image/")
+          ) {
+            showMessage("Unsupported image format or size.", "warning");
+            return;
+          }
+          profileForm.value.picture = result;
+          selectedPhotoName.value = file.name;
+          pictureChanged.value = true;
+        });
+        reader.addEventListener("error", () => {
+          showMessage("Unable to read image file.", "error");
+        });
+        reader.readAsDataURL(file);
+      };
+
+      const removePhoto = () => {
+        profileForm.value.picture = "";
+        selectedPhotoName.value = "";
         pictureChanged.value = true;
-      });
-      reader.addEventListener("error", () => {
-        showMessage("Unable to read image file.", "error");
-      });
-      reader.readAsDataURL(file);
-    };
+      };
 
-    const removePhoto = () => {
-      profileForm.value.picture = "";
-      selectedPhotoName.value = "";
-      pictureChanged.value = true;
-    };
+      const saveAll = async () => {
+        if (!appStore.isAuthenticated) {
+          showMessage("Please login before saving profile details.", "warning");
+          return;
+        }
 
-    const saveAll = async () => {
-      if (!appStore.isAuthenticated) {
-        showMessage("Please login before saving profile details.", "warning");
-        return;
-      }
+        const name = String(profileForm.value.name || "").trim();
+        if (!name) {
+          showMessage("Full name is required.", "warning");
+          return;
+        }
 
-      const name = String(profileForm.value.name || "").trim();
-      if (!name) {
-        showMessage("Full name is required.", "warning");
-        return;
-      }
+        savingAll.value = true;
+        try {
+          if (isFormDirty.value) {
+            await appStore.updateAccountProfile({
+              name,
+              countryCode: profileForm.value.countryCode,
+              picture: pictureChanged.value
+                ? profileForm.value.picture
+                : undefined,
+              deliveryProfile: settings.value.deliveryProfile,
+              currency: settings.value.currency,
+              orderUpdates: settings.value.orderUpdates,
+              promotionalEmails: settings.value.promotionalEmails,
+              quickCheckout: settings.value.quickCheckout,
+              lowStockAlerts: settings.value.lowStockAlerts,
+              saveDeliveryDetails: settings.value.saveDeliveryDetails,
+            });
+          }
 
-      savingAll.value = true;
-      try {
-        if (isFormDirty.value) {
-          await appStore.updateAccountProfile({
-            name,
-            countryCode: profileForm.value.countryCode,
-            picture: pictureChanged.value
-              ? profileForm.value.picture
-              : undefined,
-            deliveryProfile: settings.value.deliveryProfile,
+          const existingSettings = loadUserSettings();
+          saveUserSettings({
+            ...existingSettings,
+            displayName: name,
             currency: settings.value.currency,
             orderUpdates: settings.value.orderUpdates,
             promotionalEmails: settings.value.promotionalEmails,
             quickCheckout: settings.value.quickCheckout,
             lowStockAlerts: settings.value.lowStockAlerts,
             saveDeliveryDetails: settings.value.saveDeliveryDetails,
+            deliveryProfile: settings.value.deliveryProfile,
           });
+
+          loadProfileForm();
+          loadSettings();
+          isEditing.value = false;
+          showMessage("Profile saved");
+        } catch (error) {
+          const errorMessage =
+            error?.response?.data?.message || error?.message || "";
+          const isNotAuthenticated =
+            error?.response?.status === 401 ||
+            errorMessage === "Not authenticated";
+          showMessage(
+            isNotAuthenticated
+              ? "Not authenticated"
+              : errorMessage || "Failed to save profile",
+            "error",
+          );
+        } finally {
+          savingAll.value = false;
         }
-
-        const existingSettings = loadUserSettings();
-        saveUserSettings({
-          ...existingSettings,
-          displayName: name,
-          currency: settings.value.currency,
-          orderUpdates: settings.value.orderUpdates,
-          promotionalEmails: settings.value.promotionalEmails,
-          quickCheckout: settings.value.quickCheckout,
-          lowStockAlerts: settings.value.lowStockAlerts,
-          saveDeliveryDetails: settings.value.saveDeliveryDetails,
-          deliveryProfile: settings.value.deliveryProfile,
-        });
-
-        loadProfileForm();
-        loadSettings();
-        isEditing.value = false;
-        showMessage("Profile saved");
-      } catch (error) {
-        const errorMessage =
-          error?.response?.data?.message || error?.message || "";
-        const isNotAuthenticated =
-          error?.response?.status === 401 ||
-          errorMessage === "Not authenticated";
-        showMessage(
-          isNotAuthenticated
-            ? "Not authenticated"
-            : errorMessage || "Failed to save profile",
-          "error",
-        );
-      } finally {
-        savingAll.value = false;
-      }
-    };
-
-    const fetchOrders = async () => {
-      if (!appStore.isAuthenticated) {
-        orders.value = [];
-        return;
-      }
-
-      loading.value = true;
-      try {
-        const response = await axios.get(
-          `${API_URL}/orders`,
-          await buildAuthenticatedRequestConfig(),
-        );
-        const payload = Array.isArray(response.data)
-          ? response.data
-          : response.data?.orders || [];
-        orders.value = Array.isArray(payload)
-          ? payload.map((order) => normalizeOrder(order))
-          : [];
-      } catch (error) {
-        const isNotAuthenticated = error?.response?.status === 401;
-        if (isNotAuthenticated) {
-          orders.value = [];
-          return;
-        }
-        console.error("Failed to fetch orders:", error);
-        showMessage("Failed to load orders.", "error");
-      } finally {
-        loading.value = false;
-      }
-    };
-
-    const refreshProfile = async ({ silent = false } = {}) => {
-      if (!appStore.isAuthenticated) {
-        return;
-      }
-
-      refreshing.value = true;
-      try {
-        await Promise.allSettled([
-          appStore.refreshCurrentUser(),
-          cartStore.fetchCart(),
-        ]);
-        await fetchOrders();
-        profileLoaded.value = true;
-        if (!silent) {
-          showMessage("Profile refreshed");
-        }
-      } finally {
-        refreshing.value = false;
-      }
-    };
-
-    const deleteAccount = async () => {
-      if (!window.confirm("Are you sure you want to delete your account? This action cannot be undone and will delete all your products and data.")) {
-        return;
-      }
-      deletingAccount.value = true;
-      try {
-        await appStore.deleteAccount();
-        router.push("/");
-      } catch (error) {
-        showMessage(error?.message || "Failed to delete account", "error");
-      } finally {
-        deletingAccount.value = false;
-      }
-    };
-
-    const logout = async () => {
-      orders.value = [];
-      cartStore.clearCart();
-      await appStore.logout();
-      router.push("/");
-    };
-
-    const formatDate = (dateString) => {
-      const date = new Date(dateString || 0);
-      if (!Number.isFinite(date.getTime()) || date.getTime() <= 0) {
-        return "Not available";
-      }
-      return date.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    };
-
-    const formatAmount = (amount) => {
-      return formatCurrencyAmount(amount, settings.value.currency || "USD");
-    };
-
-    const formatPdfAmount = (amount) => {
-      const currency = settings.value.currency || DEFAULT_CURRENCY;
-      const converted = convertUsdAmount(amount, currency);
-      const formatted = new Intl.NumberFormat("en-US", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(converted);
-      return `${currency} ${formatted}`;
-    };
-
-    const formatInvoiceDate = (dateString) => {
-      const date = new Date(dateString || 0);
-      if (!Number.isFinite(date.getTime()) || date.getTime() <= 0) {
-        return "Date unavailable";
-      }
-      return new Intl.DateTimeFormat("en-US", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-      }).format(date);
-    };
-
-    const resolveInvoiceProfile = (order) => {
-      const savedProfile = normalizeInvoiceProfile(order.billing_profile);
-      const deliveryProfile = normalizeDeliveryProfile(
-        settings.value.deliveryProfile,
-      );
-      return {
-        name:
-          savedProfile.name ||
-          displayName.value ||
-          appStore.user?.name ||
-          "Customer",
-        email: savedProfile.email || appStore.user?.email || "",
-        phone: savedProfile.phone || deliveryProfile.phone || "",
-        address: savedProfile.address || deliveryProfile.address || "",
-        city: savedProfile.city || deliveryProfile.city || "",
-        state: savedProfile.state || deliveryProfile.state || "",
-        postalCode: savedProfile.postalCode || deliveryProfile.postalCode || "",
       };
-    };
 
-    const downloadInvoice = async (order) => {
-      if (!order?.order_id) {
-        showMessage("Order id not found.", "warning");
-        return;
-      }
-
-      invoiceLoadingOrderId.value = order.order_id;
-      try {
-        await fetchExchangeRates();
-        const profile = resolveInvoiceProfile(order);
-        const { createInvoicePdfBlob } = await import("@/utils/invoice");
-        const blob = await createInvoicePdfBlob({
-          order,
-          profile,
-          formatAmount: formatPdfAmount,
-          formatDate: formatInvoiceDate,
-        });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `demo-order-summary-${order.order_id}.pdf`;
-        document.body.append(link);
-        link.click();
-        link.remove();
-        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-        showMessage("Demo order summary downloaded");
-      } catch (error) {
-        console.error("Failed to generate demo order summary:", error);
-        showMessage("Failed to generate demo order summary.", "error");
-      } finally {
-        invoiceLoadingOrderId.value = "";
-      }
-    };
-
-    const statusColor = (status) => {
-      const normalizedStatus = String(status || "").toLowerCase();
-      if (normalizedStatus === "completed") return "success";
-      if (normalizedStatus === "cancelled" || normalizedStatus === "failed")
-        return "error";
-      if (normalizedStatus === "shipped") return "info";
-      return "warning";
-    };
-
-    watch(
-      () => appStore.user,
-      () => {
-        loadProfileForm();
-        loadSettings();
-      },
-      { immediate: true },
-    );
-
-    const isEditing = ref(false);
-
-    const isReadonly = computed(
-      () => profileCompletion.value === 100 && !isFormDirty.value && !isEditing.value,
-    );
-
-
-
-    watch(
-      () => [appStore.isAuthenticated, appStore.loading],
-      ([isAuthenticated, isLoading]) => {
-        if (isLoading) {
-          return;
-        }
-
-        if (!isAuthenticated) {
+      const fetchOrders = async () => {
+        if (!appStore.isAuthenticated) {
           orders.value = [];
-          profileLoaded.value = false;
           return;
         }
 
-        if (!profileLoaded.value) {
-          void refreshProfile({ silent: true });
+        loading.value = true;
+        try {
+          const response = await axios.get(
+            `${API_URL}/orders`,
+            await buildAuthenticatedRequestConfig(),
+          );
+          const payload = Array.isArray(response.data)
+            ? response.data
+            : response.data?.orders || [];
+          orders.value = Array.isArray(payload)
+            ? payload.map((order) => normalizeOrder(order))
+            : [];
+        } catch (error) {
+          const isNotAuthenticated = error?.response?.status === 401;
+          if (isNotAuthenticated) {
+            orders.value = [];
+            return;
+          }
+          console.error("Failed to fetch orders:", error);
+          showMessage("Failed to load orders.", "error");
+        } finally {
+          loading.value = false;
         }
-      },
-      { immediate: true },
-    );
+      };
 
-    onMounted(() => {
-      void fetchExchangeRates();
-    });
+      const refreshProfile = async ({ silent = false } = {}) => {
+        if (!appStore.isAuthenticated) {
+          return;
+        }
 
-    return {
-      appStore,
-      cartStore,
-      orders,
-      filteredOrders,
-      loading,
-      refreshing,
-      savingAll,
-      invoiceLoadingOrderId,
-      snackbar,
-      snackbarText,
-      snackbarColor,
-      userAdminDialog,
-      userAdminPinMode,
-      userAdminAlert,
-      userAdminPinForm,
-      userAdminPinLength: USER_ADMIN_PIN_LENGTH,
-      userAdminPinSaving,
-      userAdminPinActionLabel,
-      userAdminPinHelpText,
-      userAdminPinIcon,
-      userAdminRequiresMobile,
-      canResetUserAdminPin,
-      canRecoverUserAdminMobile,
-      hasUserAdminPin,
-      smAndDown,
-      xs,
-      userAdminDialogMaxWidth,
-      fileInput,
-      selectedPhotoName,
-      settings,
-      profileForm,
-      displayName,
-      profileInitials,
-      profilePreviewImage,
-      isAdmin,
-      countryDisplayName,
-      countryOptions,
-      mobileCountryOptions,
-      isFormDirty,
-      activeTab,
-      profileChecklist,
-      completedProfileItems,
-      profileCompletion,
-      totalSpentDisplay,
-      completedOrderCount,
-      orderSearch,
-      orderStatusFilter,
-      orderStatusOptions,
-      orderSort,
-      orderSortOptions,
-      openPhotoPicker,
-      onPhotoSelected,
-      removePhoto,
-      openUserAdminDialog,
-      startUserAdminPinReset,
-      recoverUserAdminMobile,
-      submitUserAdminPin,
-      saveAll,
-      fetchOrders,
-      refreshProfile,
-      deleteAccount,
-      deletingAccount,
-      downloadInvoice,
-      logout,
-      formatDate,
-      formatAmount,
-      statusColor,
-      isReadonly,
-      isEditing,
-      ALLOWED_CURRENCIES,
-    };
-  },
-};
+        refreshing.value = true;
+        try {
+          await Promise.allSettled([
+            appStore.refreshCurrentUser(),
+            cartStore.fetchCart(),
+          ]);
+          await fetchOrders();
+          profileLoaded.value = true;
+          if (!silent) {
+            showMessage("Profile refreshed");
+          }
+        } finally {
+          refreshing.value = false;
+        }
+      };
+
+      const deleteAccount = async () => {
+        if (!window.confirm("Are you sure you want to delete your account? This action cannot be undone and will delete all your products and data.")) {
+          return;
+        }
+        deletingAccount.value = true;
+        try {
+          await appStore.deleteAccount();
+          router.push("/");
+        } catch (error) {
+          showMessage(error?.message || "Failed to delete account", "error");
+        } finally {
+          deletingAccount.value = false;
+        }
+      };
+
+      const logout = async () => {
+        orders.value = [];
+        cartStore.clearCart();
+        await appStore.logout();
+        router.push("/");
+      };
+
+      const formatDate = (dateString) => {
+        const date = new Date(dateString || 0);
+        if (!Number.isFinite(date.getTime()) || date.getTime() <= 0) {
+          return "Not available";
+        }
+        return date.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+      };
+
+      const formatAmount = (amount) => {
+        return formatCurrencyAmount(amount, settings.value.currency || "USD");
+      };
+
+      const formatPdfAmount = (amount) => {
+        const currency = settings.value.currency || DEFAULT_CURRENCY;
+        const converted = convertUsdAmount(amount, currency);
+        const formatted = new Intl.NumberFormat("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(converted);
+        return `${currency} ${formatted}`;
+      };
+
+      const formatInvoiceDate = (dateString) => {
+        const date = new Date(dateString || 0);
+        if (!Number.isFinite(date.getTime()) || date.getTime() <= 0) {
+          return "Date unavailable";
+        }
+        return new Intl.DateTimeFormat("en-US", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        }).format(date);
+      };
+
+      const resolveInvoiceProfile = (order) => {
+        const savedProfile = normalizeInvoiceProfile(order.billing_profile);
+        const deliveryProfile = normalizeDeliveryProfile(
+          settings.value.deliveryProfile,
+        );
+        return {
+          name:
+            savedProfile.name ||
+            displayName.value ||
+            appStore.user?.name ||
+            "Customer",
+          email: savedProfile.email || appStore.user?.email || "",
+          phone: savedProfile.phone || deliveryProfile.phone || "",
+          address: savedProfile.address || deliveryProfile.address || "",
+          city: savedProfile.city || deliveryProfile.city || "",
+          state: savedProfile.state || deliveryProfile.state || "",
+          postalCode: savedProfile.postalCode || deliveryProfile.postalCode || "",
+        };
+      };
+
+      const downloadInvoice = async (order) => {
+        if (!order?.order_id) {
+          showMessage("Order id not found.", "warning");
+          return;
+        }
+
+        invoiceLoadingOrderId.value = order.order_id;
+        try {
+          await fetchExchangeRates();
+          const profile = resolveInvoiceProfile(order);
+          const { createInvoicePdfBlob } = await import("@/utils/invoice");
+          const blob = await createInvoicePdfBlob({
+            order,
+            profile,
+            formatAmount: formatPdfAmount,
+            formatDate: formatInvoiceDate,
+          });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `demo-order-summary-${order.order_id}.pdf`;
+          document.body.append(link);
+          link.click();
+          link.remove();
+          window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+          showMessage("Demo order summary downloaded");
+        } catch (error) {
+          console.error("Failed to generate demo order summary:", error);
+          showMessage("Failed to generate demo order summary.", "error");
+        } finally {
+          invoiceLoadingOrderId.value = "";
+        }
+      };
+
+      const statusColor = (status) => {
+        const normalizedStatus = String(status || "").toLowerCase();
+        if (normalizedStatus === "completed") return "success";
+        if (normalizedStatus === "cancelled" || normalizedStatus === "failed")
+          return "error";
+        if (normalizedStatus === "shipped") return "info";
+        return "warning";
+      };
+
+      watch(
+        () => appStore.user,
+        () => {
+          loadProfileForm();
+          loadSettings();
+        },
+        { immediate: true },
+      );
+
+      const isEditing = ref(false);
+
+      const isReadonly = computed(
+        () => profileCompletion.value === 100 && !isFormDirty.value && !isEditing.value,
+      );
+
+
+
+      watch(
+        () => [appStore.isAuthenticated, appStore.loading],
+        ([isAuthenticated, isLoading]) => {
+          if (isLoading) {
+            return;
+          }
+
+          if (!isAuthenticated) {
+            orders.value = [];
+            profileLoaded.value = false;
+            return;
+          }
+
+          if (!profileLoaded.value) {
+            void refreshProfile({ silent: true });
+          }
+        },
+        { immediate: true },
+      );
+
+      onMounted(() => {
+        void fetchExchangeRates();
+      });
+
+      return {
+        appStore,
+        cartStore,
+        orders,
+        filteredOrders,
+        loading,
+        refreshing,
+        savingAll,
+        invoiceLoadingOrderId,
+        snackbar,
+        snackbarText,
+        snackbarColor,
+        userAdminDialog,
+        userAdminPinMode,
+        userAdminAlert,
+        userAdminPinForm,
+        userAdminPinLength: USER_ADMIN_PIN_LENGTH,
+        userAdminPinSaving,
+        userAdminPinActionLabel,
+        userAdminPinHelpText,
+        userAdminPinIcon,
+        userAdminRequiresMobile,
+        canResetUserAdminPin,
+        canRecoverUserAdminMobile,
+        hasUserAdminPin,
+        smAndDown,
+        xs,
+        userAdminDialogMaxWidth,
+        fileInput,
+        selectedPhotoName,
+        settings,
+        profileForm,
+        displayName,
+        profileInitials,
+        profilePreviewImage,
+        isAdmin,
+        countryDisplayName,
+        countryOptions,
+        mobileCountryOptions,
+        isFormDirty,
+        activeTab,
+        profileChecklist,
+        completedProfileItems,
+        profileCompletion,
+        totalSpentDisplay,
+        completedOrderCount,
+        orderSearch,
+        orderStatusFilter,
+        orderStatusOptions,
+        orderSort,
+        orderSortOptions,
+        openPhotoPicker,
+        onPhotoSelected,
+        removePhoto,
+        openUserAdminDialog,
+        startUserAdminPinReset,
+        recoverUserAdminMobile,
+        submitUserAdminPin,
+        saveAll,
+        fetchOrders,
+        refreshProfile,
+        deleteAccount,
+        deletingAccount,
+        downloadInvoice,
+        logout,
+        formatDate,
+        formatAmount,
+        statusColor,
+        isReadonly,
+        isEditing,
+        ALLOWED_CURRENCIES,
+      };
+    },
+  };
 </script>
 
 <style scoped>

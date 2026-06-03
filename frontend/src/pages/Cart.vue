@@ -960,7 +960,6 @@
 .summary-frame {
   background: #ffffff;
   border: 1px solid #0f172a;
-
   position: sticky;
   top: 88px;
 }

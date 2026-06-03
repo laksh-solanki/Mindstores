@@ -3,11 +3,14 @@
     <v-container class="footer-container" fluid>
       <div class="footer-grid">
         <div class="footer-column brand-col">
-          <div class="brand-header d-flex align-center ga-2 mb-4">
-            <v-avatar color="white" rounded="0" size="33">
-              <v-img alt="Mindstore logo" src="../assets/logo.svg" width="20" />
-            </v-avatar>
-            <span class="brand-name text-subtitle-1 font-weight-black">MINDSTORE</span>
+          <div class="brand-header d-flex align-center mb-4">
+            <router-link aria-label="Mindstores home" class="footer-brand-logo" to="/">
+              <img
+                alt="Mindstores logo"
+                class="footer-brand-logo-img"
+                src="../assets/logo.svg"
+              >
+            </router-link>
           </div>
           <p class="footer-desc mb-6">
             A portfolio storefront for exploring a modern catalog, account-based
@@ -131,6 +134,28 @@
   flex-direction: column;
 }
 
+.footer-brand-logo {
+  position: relative;
+  display: block;
+  width: 185px;
+  height: 64px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  text-decoration: none;
+}
+
+.footer-brand-logo-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 360px;
+  height: 64px;
+  max-width: none;
+  transform: matrix(1.25, 0, 0, 1.25, -148, -8);
+  transform-origin: top left;
+  pointer-events: none;
+}
+
 .footer-desc {
   font-size: 13px;
   line-height: 1.6;
@@ -248,6 +273,10 @@
   .footer-grid {
     grid-template-columns: 1fr;
     gap: 30px;
+  }
+
+  .footer-brand-logo {
+    max-width: 100%;
   }
 
   .footer-bottom-row {

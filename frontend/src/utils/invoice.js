@@ -10,7 +10,10 @@ const ITEMS_PER_PAGE = 6
 const RENDER_SCALE = 3
 const FONT_FAMILY = 'Invoice Open Sans'
 const BRAND_LOGO_MARKUP = brandLogoSvg
-  .replace(/^<svg[^>]*>/, '<svg x="45" y="40" width="50" height="50" viewBox="0 0 100 100">')
+  .replace(
+    /^<svg[^>]*>/,
+    '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="6" y="4" width="200" height="80" viewBox="0 0 1500 599.999999" preserveAspectRatio="xMidYMid meet">',
+  )
   .replace(/<\/svg>\s*$/, '</svg>')
 
 let invoiceFontAssetsPromise
@@ -319,8 +322,7 @@ function buildOverlay({
 
       <!-- Header -->
       ${BRAND_LOGO_MARKUP}
-      ${textNode({ x: 105, y: 64, value: 'Mindstores', size: 18, weight: 700, fill: inkDark })}
-      ${textNode({ x: 105, y: 78, value: 'Digital Storefront', size: 10, fill: inkLight })}
+      ${textNode({ x: 45, y: 86, value: 'Digital Storefront', size: 10, fill: inkLight })}
       
       ${textNode({ x: 550.5, y: 64, value: 'DEMO SUMMARY', size: 30, weight: 400, fill: brandTeal, anchor: 'end', family: 'Invoice Cursive' })}
       ${pageCount > 1 ? textNode({ x: 550.5, y: 78, value: `Page ${pageIndex + 1} of ${pageCount}`, size: 9, fill: inkLight, anchor: 'end' }) : ''}

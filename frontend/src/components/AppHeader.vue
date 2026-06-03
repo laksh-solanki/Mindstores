@@ -2,13 +2,21 @@
   <template v-if="!isAuthPage">
     <v-app-bar app class="app-header" color="white" elevation="0">
       <v-container class="header-container d-flex align-center ga-md-5" fluid>
-        <router-link class="brand-link d-flex align-center text-decoration-none ga-2" to="/">
-          <v-avatar color="white" rounded="0" size="33">
-            <v-img alt="Mindstore logo" src="../assets/logo.svg" width="23" />
-          </v-avatar>
-          <div class="d-none d-sm-flex flex-column brand-text">
-            <span class="text-subtitle-1 font-weight-black">MINDSTORE</span>
-          </div>
+        <router-link class="brand-link d-flex align-center text-decoration-none" to="/">
+          <img
+            alt="Mindstores icon"
+            class="brand-icon d-sm-none"
+            src="../assets/icon.svg"
+          >
+          <span class="brand-wordmark-wrapper d-none d-sm-flex">
+            <span class="brand-wordmark-frame">
+              <img
+                alt="Mindstores logo"
+                class="brand-wordmark-img"
+                src="../assets/logo.svg"
+              >
+            </span>
+          </span>
         </router-link>
 
         <div class="desktop-category-nav d-none d-lg-flex align-center ga-1 overflow-x-auto flex-grow-1">
@@ -551,10 +559,42 @@
 .brand-link {
   flex: 0 0 auto;
   min-width: 0;
+  overflow: visible;
 }
 
-.brand-text {
-  color: #0f172a;
+.brand-icon {
+  display: block;
+  width: 40px;
+  height: 40px;
+}
+
+.brand-wordmark-wrapper {
+  display: flex;
+  align-items: center;
+  transform: scale(0.8);
+  transform-origin: left center;
+  width: calc(185px * 0.8);
+  height: calc(64px * 0.8);
+}
+
+.brand-wordmark-frame {
+  position: relative;
+  width: 185px;
+  height: 64px;
+  flex: 0 0 185px;
+  overflow: hidden;
+}
+
+.brand-wordmark-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 360px;
+  height: 64px;
+  max-width: none;
+  transform: matrix(1.25, 0, 0, 1.25, -148, -8);
+  transform-origin: top left;
+  pointer-events: none;
 }
 
 .desktop-category-nav {
@@ -736,13 +776,15 @@
   }
 }
 
+@media (min-width: 600px) {
+  .brand-wordmark-frame {
+    display: block;
+  }
+}
+
 @media (max-width: 599px) {
   .header-container {
     padding-inline: 8px !important;
-  }
-
-  .brand-link {
-    max-width: 44px;
   }
 
   .header-actions :deep(.v-btn) {

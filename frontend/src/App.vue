@@ -97,8 +97,53 @@ body {
 }
 
 /* ═════════════════════════════════════════════════════════════
+   GLOBAL CUSTOM SCROLLBAR (MATCHES FLAT EDITORIAL DESIGN)
+   ═════════════════════════════════════════════════════════════ */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f8fafc;
+  border-left: 1px solid #e2e8f0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #0f172a;
+  border: 2px solid #f8fafc;
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+html {
+  scrollbar-color: #0f172a #f8fafc;
+  scrollbar-width: thin;
+}
+
+/* ═════════════════════════════════════════════════════════════
    GLOBAL DARK MODE OVERRIDES (HIGH-CONTRAST FLAT EDITORIAL)
    ═════════════════════════════════════════════════════════════ */
+.v-theme--dark ::-webkit-scrollbar-track {
+  background: #090d16;
+  border-left: 1px solid #1e293b;
+}
+
+.v-theme--dark ::-webkit-scrollbar-thumb {
+  background: #f8fafc;
+  border: 2px solid #090d16;
+}
+
+.v-theme--dark ::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
+
+.v-theme--dark {
+  scrollbar-color: #f8fafc #090d16;
+}
 .v-theme--dark .profile-page,
 .v-theme--dark .bespoke-profile-container,
 .v-theme--dark .cart-page,
@@ -290,13 +335,6 @@ body {
   color: #f8fafc !important;
   border-bottom: 2px solid #f8fafc !important;
 }
-.v-theme--dark .app-header .brand-text {
-  color: #f8fafc !important;
-}
-.v-theme--dark .app-header .brand-avatar {
-  border-color: #f8fafc !important;
-  background-color: #090d16 !important;
-}
 .v-theme--dark .app-header .nav-btn {
   color: #f8fafc !important;
 }
@@ -350,12 +388,12 @@ body {
 }
 
 .v-theme--dark .custom-progress-container {
-  background-color: #1e293b !important;
-  border-color: #f8fafc !important;
+  background-color: #334155 !important;
+  border-color: #334155 !important;
 }
 
 .v-theme--dark .custom-progress-bar {
-  border-right-color: #f8fafc !important;
+  border-right-color: #0d9488 !important;
 }
 
 .v-theme--dark .custom-nav-item {
@@ -409,6 +447,23 @@ body {
 
 .v-theme--dark .review-item-flat {
   border-bottom-color: #1e293b !important;
+}
+
+/* Global Dark Theme Overrides for Text */
+.v-theme--dark .text-slate-900,
+.v-theme--dark .text-slate-800,
+.v-theme--dark .text-slate-700 {
+  color: #f8fafc !important;
+}
+
+.v-theme--dark .text-slate-600,
+.v-theme--dark .text-slate-500,
+.v-theme--dark .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+.v-theme--dark .bg-light {
+  background-color: #1e293b !important;
 }
 
 /* Stock adjuster button styles */
