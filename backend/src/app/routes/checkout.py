@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, Request
 
 from ..context import RequestContext, error_response, get_context, json_response, read_json_body
 from ..utils import normalize_text, now_iso, random_compact_id
-import datetime
 from .cart import normalize_product_id, sanitize_items
 from .products import find_catalog_product
 

@@ -198,7 +198,7 @@
           </span>
         </div>
 
-        <v-row v-if="loading" v-slot no-gutters>
+        <v-row v-if="loading" no-gutters>
           <v-col
             v-for="n in 8"
             :key="n"

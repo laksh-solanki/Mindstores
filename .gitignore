@@ -2,6 +2,7 @@
 **/node_modules/
 **/__pycache__/
 *.py[cod]
+*.log
 .venv/
 backend/.venv-workers/
 backend/python_modules/
@@ -19,3 +20,9 @@ frontend/.env
 frontend/.env.*
 !frontend/.env.example
 .vercel
+
+# Tooling metadata generated locally
+frontend/.eslintrc-auto-import.json
+frontend/.mdb/
+frontend/environments/
+scratch/

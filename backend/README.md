@@ -1,47 +1,30 @@
 # Mindstores Backend
 
-Python FastAPI backend for the Mindstores API contract, structured for Vercel.
+FastAPI service for the Mindstores Vue application.
 
-## Entry Points
+## Structure
 
-- `server.py` exports the FastAPI `app` for Vercel.
-- `run.py` starts the same app locally with Uvicorn.
-- `src/app/main.py` owns the FastAPI app, middleware, and route registration.
+- `src/app/main.py` creates the application, middleware, and route registration.
+- `src/app/routes/` contains API route modules grouped by domain.
+- `src/app/context.py` and `src/app/db.py` provide request and persistence services.
+- `run.py` is the local Uvicorn entrypoint.
+- `server.py` exports `app` for the root Vercel deployment adapter.
 
-## Run Locally
+## Local development
 
 ```powershell
 uv sync --all-groups
 uv run python run.py
 ```
 
-The service listens on `http://localhost:8000`.
+The service listens on `http://localhost:8000`. Copy `.env.example` to `.env` and set the Firebase, admin, CORS, and database values required for the environment. Without database credentials, local development uses the in-memory store.
 
-## Deploy On Vercel
-
-Create the backend project from the `backend/` directory and add the environment variables from `.env.example` in Vercel Project Settings.
+## Validation
 
 ```powershell
-pnpm dlx vercel@latest --prod --yes
+python -m compileall -q src run.py server.py
 ```
 
-## Environment
+## Deployment
 
-Required:
-
-- `FIREBASE_PROJECT_ID`
-- `FIREBASE_WEB_API_KEY`
-- `DB_NAME`
-- `CORS_ORIGINS`
-- `ADMIN_EMAILS`
-- `ENVIRONMENT`
-- `COOKIE_SECURE`
-- `COOKIE_SAMESITE`
-- `SESSION_DURATION_DAYS`
-
-Database, choose one:
-
-- `MONGO_URL`
-- `MONGO_ATLAS_DATA_API_URL`, `MONGO_ATLAS_DATA_API_KEY`, `MONGO_ATLAS_DATA_SOURCE`
-
-Without database credentials, the app uses an in-memory store for local development.
+The root `pyproject.toml` exposes `backend.server:app` to Vercel. Keep the backend environment variables configured in the deployment platform; do not commit `.env` or service-account credentials.

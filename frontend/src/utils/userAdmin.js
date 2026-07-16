@@ -39,7 +39,7 @@ export function parseMobileNumber(fullNumber) {
   // Sort country codes by length descending to match more specific ones first (+971 before +91)
   const sortedCodes = [...MOBILE_COUNTRY_OPTIONS]
     .map(opt => opt.code)
-    .sort((a, b) => b.length - a.length)
+    .toSorted((a, b) => b.length - a.length)
 
   for (const code of sortedCodes) {
     if (text.startsWith(code)) {

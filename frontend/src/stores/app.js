@@ -34,9 +34,6 @@ const AUTH_BOOT_TIMEOUT_MS = 6000;
 const PROFILE_IMAGE_CACHE_PREFIX = "mindstores.profile-image.";
 let backendSessionPromise = null;
 let backendSessionUid = null;
-
-
-
 function normalizeCountryCode(value) {
   if (typeof value !== "string") {
     return "";
@@ -71,7 +68,7 @@ function canSyncPictureToFirebase(picture) {
   }
 }
 
-function mapFirebaseUser (firebaseUser) {
+function mapFirebaseUser(firebaseUser) {
   if (!firebaseUser) {
     return null;
   }
@@ -177,6 +174,94 @@ function mergeBackendUser(firebaseProfile, backendUser = {}) {
     ...backendUser,
     picture,
   };
+}
+
+function buildDeliveryProfilePayload(deliveryProfile) {
+  if (!deliveryProfile || typeof deliveryProfile !== "object") {
+    return null;
+  }
+
+  const postalCode = deliveryProfile.postalCode || deliveryProfile.postal_code;
+  return {
+    phone: typeof deliveryProfile.phone === "string" ? deliveryProfile.phone.trim() : "",
+    address: typeof deliveryProfile.address === "string" ? deliveryProfile.address.trim() : "",
+    city: typeof deliveryProfile.city === "string" ? deliveryProfile.city.trim() : "",
+    state: typeof deliveryProfile.state === "string" ? deliveryProfile.state.trim() : "",
+    postal_code: typeof postalCode === "string" ? postalCode.trim() : "",
+    instructions:
+      typeof deliveryProfile.instructions === "string" ? deliveryProfile.instructions.trim() : "",
+  };
+}
+
+function buildProfileUpdatePayload({
+  name,
+  picture,
+  countryCode,
+  deliveryProfile,
+  currency,
+  orderUpdates,
+  promotionalEmails,
+  quickCheckout,
+  lowStockAlerts,
+  saveDeliveryDetails,
+}) {
+  const payload = {};
+  const normalizedName = typeof name === "string" ? name.trim() : "";
+  const normalizedPicture = typeof picture === "string" ? picture.trim() : "";
+  const normalizedCountryCode = normalizeCountryCode(countryCode);
+  const normalizedDeliveryProfile = buildDeliveryProfilePayload(deliveryProfile);
+
+  if (normalizedName) {
+    payload.name = normalizedName;
+  }
+  if (typeof picture === "string") {
+    payload.picture = normalizedPicture || null;
+  }
+  if (typeof countryCode === "string") {
+    payload.country_code = normalizedCountryCode || null;
+  }
+  if (normalizedDeliveryProfile) {
+    payload.delivery_profile = normalizedDeliveryProfile;
+  }
+  if (typeof currency === "string") {
+    payload.currency = currency.trim().toUpperCase();
+  }
+  if (typeof orderUpdates === "boolean") {
+    payload.order_updates = orderUpdates;
+  }
+  if (typeof promotionalEmails === "boolean") {
+    payload.promotional_emails = promotionalEmails;
+  }
+  if (typeof quickCheckout === "boolean") {
+    payload.quick_checkout = quickCheckout;
+  }
+  if (typeof lowStockAlerts === "boolean") {
+    payload.low_stock_alerts = lowStockAlerts;
+  }
+  if (typeof saveDeliveryDetails === "boolean") {
+    payload.save_delivery_details = saveDeliveryDetails;
+  }
+
+  return { normalizedName, normalizedPicture, payload };
+}
+
+async function syncFirebaseProfile(firebaseUser, normalizedName, normalizedPicture, picture) {
+  if (!firebaseUser) {
+    return;
+  }
+
+  const firebaseUpdates = {};
+  if (normalizedName) {
+    firebaseUpdates.displayName = normalizedName;
+  }
+  if (typeof picture === "string" && canSyncPictureToFirebase(normalizedPicture)) {
+    firebaseUpdates.photoURL = normalizedPicture || null;
+  }
+
+  if (Object.keys(firebaseUpdates).length > 0) {
+    await updateProfile(firebaseUser, firebaseUpdates);
+    await firebaseUser.getIdToken(true);
+  }
 }
 
 export const useAppStore = defineStore("app", {
@@ -451,10 +536,8 @@ export const useAppStore = defineStore("app", {
         }
       }
 
-      let backendDeleted = false;
       try {
         await axios.delete(`${API_URL}/auth/account`, await buildAuthenticatedRequestConfig());
-        backendDeleted = true;
       } catch (error) {
         console.warn("Backend account deletion failed or not found, proceeding.", error);
       }
@@ -468,8 +551,6 @@ export const useAppStore = defineStore("app", {
         if (error?.code === 'auth/requires-recent-login') {
            throw new Error("Please log out and log back in to verify your identity before deleting your account.");
         }
-        // If backend deleted but Firebase failed, we are in a broken state. 
-        // We should throw so the user knows.
         throw error;
       } finally {
         this.loading = false;
@@ -500,83 +581,11 @@ export const useAppStore = defineStore("app", {
       }
     },
 
-    async updateAccountProfile({
-      name,
-      picture,
-      countryCode,
-      deliveryProfile,
-      currency,
-      orderUpdates,
-      promotionalEmails,
-      quickCheckout,
-      lowStockAlerts,
-      saveDeliveryDetails
-    }) {
-      const payload = {};
-      const normalizedName = typeof name === "string" ? name.trim() : "";
-      const normalizedCountryCode = normalizeCountryCode(countryCode);
-      const normalizedPicture = typeof picture === "string" ? picture.trim() : "";
-
-      if (normalizedName) {
-        payload.name = normalizedName;
-      }
-
-      if (typeof picture === "string") {
-        payload.picture = normalizedPicture || null;
-      }
-
-      if (typeof countryCode === "string") {
-        payload.country_code = normalizedCountryCode || null;
-      }
-
-      if (deliveryProfile && typeof deliveryProfile === "object") {
-        payload.delivery_profile = {
-          phone: typeof deliveryProfile.phone === "string" ? deliveryProfile.phone.trim() : "",
-          address: typeof deliveryProfile.address === "string" ? deliveryProfile.address.trim() : "",
-          city: typeof deliveryProfile.city === "string" ? deliveryProfile.city.trim() : "",
-          state: typeof deliveryProfile.state === "string" ? deliveryProfile.state.trim() : "",
-          postal_code: typeof (deliveryProfile.postalCode || deliveryProfile.postal_code) === "string"
-            ? (deliveryProfile.postalCode || deliveryProfile.postal_code).trim()
-            : "",
-          instructions: typeof deliveryProfile.instructions === "string" ? deliveryProfile.instructions.trim() : ""
-        };
-      }
-
-      if (typeof currency === "string") {
-        payload.currency = currency.trim().toUpperCase();
-      }
-      if (typeof orderUpdates === "boolean") {
-        payload.order_updates = orderUpdates;
-      }
-      if (typeof promotionalEmails === "boolean") {
-        payload.promotional_emails = promotionalEmails;
-      }
-      if (typeof quickCheckout === "boolean") {
-        payload.quick_checkout = quickCheckout;
-      }
-      if (typeof lowStockAlerts === "boolean") {
-        payload.low_stock_alerts = lowStockAlerts;
-      }
-      if (typeof saveDeliveryDetails === "boolean") {
-        payload.save_delivery_details = saveDeliveryDetails;
-      }
-
+    async updateAccountProfile(profile) {
+      const { normalizedName, normalizedPicture, payload } = buildProfileUpdatePayload(profile);
       this.loading = true;
       try {
-        if (auth.currentUser) {
-          const firebaseUpdates = {};
-          if (normalizedName) {
-            firebaseUpdates.displayName = normalizedName;
-          }
-          if (typeof picture === "string" && canSyncPictureToFirebase(normalizedPicture)) {
-            firebaseUpdates.photoURL = normalizedPicture || null;
-          }
-
-          if (Object.keys(firebaseUpdates).length > 0) {
-            await updateProfile(auth.currentUser, firebaseUpdates);
-            await auth.currentUser.getIdToken(true);
-          }
-        }
+        await syncFirebaseProfile(auth.currentUser, normalizedName, normalizedPicture, profile.picture);
 
         const response = await axios.put(
           `${API_URL}/auth/profile`,
@@ -592,7 +601,7 @@ export const useAppStore = defineStore("app", {
           {
             ...this.user,
             picture:
-              typeof picture === "string"
+              typeof profile.picture === "string"
                 ? normalizedPicture || null
                 : this.user?.picture || null,
           },
