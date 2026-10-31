@@ -11,6 +11,31 @@ dependencies = [
   "python-dotenv==1.2.2",
 ]
 
+[tool.vercel]
+entrypoint = "backend.server:app"
+
+[vars]
+ENVIRONMENT= "production"
+DB_NAME= "mindstore"
+FIREBASE_PROJECT_ID= "mindstore-2912"
+FIREBASE_WEB_API_KEY= "AIzaSyAS25hauScHKxV0tNDNBFj4UU390l3QfdA"
+CORS_ORIGINS= "http://localhost:3000,http://localhost:5173,https://mindstores.vercel.app"
+ADMIN_EMAILS= "lakshsolanki848@gmail.com"
+COOKIE_SECURE= "true"
+COOKIE_SAMESITE= "none"
+SESSION_DURATION_DAYS= "7"
+ENFORCE_ORIGIN_CHECK= "true" 
+ALLOW_NULL_ORIGIN_ON_MUTATIONS= "false"
+MUTATION_RATE_LIMIT_MAX= "120"
+REQUEST_BODY_LIMIT_BYTES= "1048576"
+MONGO_URL= "mongodb+srv://audit29122006:QjXXubEu823WuZT@cluster0.nxbwtrv.mongodb.net/?appName=Cluster0"
+MONGO_ATLAS_DATA_SOURCE= "Cluster0"
+GOOGLE_CLIENT_ID= "572702042305-0mmivettn0tv430a0p0r2nvrfkq0qj16.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET= "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"
+GOOGLE_REDIRECT_URI= "http://localhost:8000/auth/google/callback"
+FRONTEND_URL= "http://localhost:3000"
+
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"
