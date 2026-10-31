@@ -3,23 +3,19 @@
     <v-app-bar app class="app-header" color="white" elevation="0">
       <v-container class="header-container d-flex align-center ga-md-5" fluid>
         <router-link class="brand-link d-flex align-center text-decoration-none" to="/">
-          <img
-            alt="Mindstores icon"
-            class="brand-icon d-sm-none"
-            src="../assets/icon.svg"
-          >
           <span class="brand-wordmark-wrapper d-none d-sm-flex">
             <span class="brand-wordmark-frame">
               <img
                 alt="Mindstores logo"
                 class="brand-wordmark-img"
-                src="../assets/logo.svg"
+                src="../assets/logo.png"
               >
             </span>
           </span>
+          <span class="brand-name-mobile d-sm-none font-weight-black">MINDSTORE</span>
         </router-link>
 
-        <div class="desktop-category-nav d-none d-lg-flex align-center ga-1 overflow-x-auto flex-grow-1">
+        <div class="desktop-category-nav d-none d-md-flex align-center ga-1 overflow-x-auto flex-grow-1">
           <v-btn
             class="nav-btn"
             :class="{ 'nav-btn--active': route.path === '/' }"
@@ -53,7 +49,7 @@
           </v-chip>
         </div>
 
-        <div class="header-search d-none d-md-block flex-grow-1">
+        <div class="header-search d-none d-lg-block flex-grow-1">
           <v-menu
             v-model="isSearchOpen"
             :close-on-content-click="false"
@@ -99,8 +95,19 @@
 
         <div class="header-actions">
           <v-btn
+            aria-label="Toggle Search"
+            class="search-toggle-btn d-lg-none"
+            icon
+            rounded="0"
+            variant="text"
+            @click="isMobileSearchVisible = !isMobileSearchVisible"
+          >
+            <v-icon size="20">{{ isMobileSearchVisible ? 'mdi-close' : 'mdi-magnify' }}</v-icon>
+          </v-btn>
+
+          <v-btn
             aria-label="Cart"
-            class="cart-action-btn mr-2"
+            class="cart-action-btn mr-1 mr-sm-2"
             icon
             rounded="0"
             to="/cart"
@@ -237,7 +244,7 @@
 
           <v-btn
             aria-label="Open menu"
-            class="d-lg-none menu-action"
+            class="d-md-none menu-action"
             icon
             rounded="0"
             variant="text"
@@ -247,6 +254,25 @@
           </v-btn>
         </div>
       </v-container>
+
+      <template v-if="isMobileSearchVisible" #extension>
+        <div class="mobile-search-strip d-lg-none w-100">
+          <div class="site-container py-2">
+            <v-text-field
+              v-model="searchQuery"
+              autofocus
+              clearable
+              density="compact"
+              hide-details
+              placeholder="Search products, categories, brands..."
+              prepend-inner-icon="mdi-magnify"
+              rounded="0"
+              variant="outlined"
+              @keydown.enter.prevent="submitSearch"
+            />
+          </div>
+        </div>
+      </template>
     </v-app-bar>
 
     <v-navigation-drawer
@@ -255,13 +281,42 @@
       elevation="0"
       location="right"
       temporary
-      width="320"
+      width="300"
     >
-      <v-sheet class="pa-4 border-b-sm" style="border-bottom-color: #0f172a !important;">
+      <div v-if="appStore.isAuthenticated" class="drawer-user-card pa-4 border-b">
+        <div class="d-flex align-center ga-3">
+          <v-avatar v-if="profileImage" :image="profileImage" rounded="lg" size="44" />
+          <v-avatar v-else color="black" rounded="lg" size="44">
+            <span class="text-white font-weight-bold">{{ userInitials }}</span>
+          </v-avatar>
+          <div class="min-width-0">
+            <div class="text-subtitle-2 font-weight-bold text-truncate">{{ userName }}</div>
+            <div class="text-caption text-grey-darken-1 text-truncate">{{ appStore.user?.email }}</div>
+          </div>
+        </div>
+      </div>
+      <div v-else class="drawer-guest-card pa-4 border-b d-flex align-center justify-space-between">
+        <div>
+          <div class="text-subtitle-2 font-weight-bold">Welcome</div>
+          <div class="text-caption text-grey-darken-1">Sign in to your account</div>
+        </div>
+        <v-btn
+          color="black"
+          rounded="0"
+          size="small"
+          to="/login"
+          variant="flat"
+          @click="closeMobileMenu"
+        >
+          Login
+        </v-btn>
+      </div>
+
+      <v-sheet class="pa-3 border-b">
         <v-text-field
           v-model="searchQuery"
           clearable
-          density="comfortable"
+          density="compact"
           hide-details
           label="Search products..."
           prepend-inner-icon="mdi-magnify"
@@ -368,6 +423,7 @@
 
 
   const isMobileMenuOpen = ref(false)
+  const isMobileSearchVisible = ref(false)
   const productsCache = ref([])
   const categoriesLoading = ref(false)
   const searchQuery = ref('')
@@ -534,6 +590,7 @@
     () => {
       closeMobileMenu()
       isSearchOpen.value = false
+      isMobileSearchVisible.value = false
     },
   )
 
@@ -550,10 +607,13 @@
 }
 
 .header-container {
+  max-width: 1280px;
   width: 100%;
   min-height: 64px;
+  margin-left: auto !important;
+  margin-right: auto !important;
   gap: 12px;
-  padding-inline: 12px !important;
+  padding-inline: clamp(16px, 3.5vw, 32px) !important;
 }
 
 .brand-link {
@@ -579,9 +639,9 @@
 
 .brand-wordmark-frame {
   position: relative;
-  width: 185px;
-  height: 64px;
-  flex: 0 0 185px;
+  width: 289px;
+  height: 65px;
+  flex: 0 0 289px;
   overflow: hidden;
 }
 
@@ -589,10 +649,10 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 360px;
-  height: 64px;
+  width: 180px;
+  height: 90px;
   max-width: none;
-  transform: matrix(1.25, 0, 0, 1.25, -148, -8);
+  transform: matrix(1.25, 0, 0, 1.25, -23, -24);
   transform-origin: top left;
   pointer-events: none;
 }

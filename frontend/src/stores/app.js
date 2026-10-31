@@ -1,19 +1,5 @@
 import axios from "axios";
-// Firebase imports
-import {
-  createUserWithEmailAndPassword,
-  deleteUser,
-  getAuth,
-  GoogleAuthProvider,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  signOut,
-  updateProfile,
-} from "firebase/auth";
 import { defineStore } from "pinia";
-// Import initialized firebase app
-import { app as firebaseApp } from "@/plugins/firebase";
 import { API_URL, buildAuthenticatedRequestConfig } from "@/utils/api";
 import { safeDisplayImageUrl } from "@/utils/images";
 import {
@@ -22,18 +8,8 @@ import {
   saveUserSettings,
 } from "@/utils/userSettings";
 import { useCartStore } from "./cart";
-
-const auth = getAuth(firebaseApp);
-const googleAuthProvider = new GoogleAuthProvider();
-googleAuthProvider.setCustomParameters({
-  prompt: "select_account",
-});
 const AUTH_REQUEST_TIMEOUT_MS = 20_000;
-const AUTH_REQUEST_RETRIES = 1;
-const AUTH_BOOT_TIMEOUT_MS = 6000;
 const PROFILE_IMAGE_CACHE_PREFIX = "mindstores.profile-image.";
-let backendSessionPromise = null;
-let backendSessionUid = null;
 function normalizeCountryCode(value) {
   if (typeof value !== "string") {
     return "";
@@ -42,44 +18,6 @@ function normalizeCountryCode(value) {
   return /^[A-Z]{2}$/.test(normalized) ? normalized : "";
 }
 
-function canSyncPictureToFirebase(picture) {
-  if (typeof picture !== "string") {
-    return false;
-  }
-  const normalized = picture.trim();
-  if (!normalized) {
-    return true;
-  }
-
-  // Firebase Auth photoURL is intended for regular URLs and rejects long data URLs.
-  if (normalized.startsWith("data:image/")) {
-    return false;
-  }
-
-  if (normalized.length > 2000) {
-    return false;
-  }
-
-  try {
-    const parsedUrl = new URL(normalized);
-    return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
-function mapFirebaseUser(firebaseUser) {
-  if (!firebaseUser) {
-    return null;
-  }
-  return {
-    uid: firebaseUser.uid || null,
-    name: firebaseUser.displayName || null,
-    email: firebaseUser.email || null,
-    picture: firebaseUser.photoURL || null,
-    photoURL: firebaseUser.photoURL || null,
-  };
-}
 
 function getProfileImageCacheKey(uid) {
   return uid ? `${PROFILE_IMAGE_CACHE_PREFIX}${uid}` : "";
@@ -117,15 +55,6 @@ function saveCachedProfilePicture(uid, picture) {
   }
 }
 
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-function isRetryableAuthError(error) {
-  const status = error?.response?.status;
-  if (status && status < 500 && status !== 429) {
-    return false;
-  }
-  return error?.code === "ECONNABORTED" || !error?.response || status >= 500 || status === 429;
-}
 
 function syncCurrencyPreferenceFromUser(user) {
   if (typeof window === "undefined" || !user) {
@@ -161,17 +90,19 @@ function syncCurrencyPreferenceFromUser(user) {
   });
 }
 
-function mergeBackendUser(firebaseProfile, backendUser = {}) {
+
+function mergeBackendUser(baseUser = {}, backendUser = {}) {
   const backendPictureKey = ["picture", "photo_url", "photoURL"].find((key) =>
     Object.prototype.hasOwnProperty.call(backendUser, key),
   );
   const picture = backendPictureKey
     ? backendUser[backendPictureKey] || null
-    : firebaseProfile.picture || firebaseProfile.photoURL || null;
+    : baseUser.picture || baseUser.photoURL || null;
 
   return {
-    ...firebaseProfile,
+    ...baseUser,
     ...backendUser,
+    uid: backendUser.uid || backendUser.user_id || baseUser.uid || baseUser.user_id || null,
     picture,
   };
 }
@@ -242,26 +173,7 @@ function buildProfileUpdatePayload({
     payload.save_delivery_details = saveDeliveryDetails;
   }
 
-  return { normalizedName, normalizedPicture, payload };
-}
-
-async function syncFirebaseProfile(firebaseUser, normalizedName, normalizedPicture, picture) {
-  if (!firebaseUser) {
-    return;
-  }
-
-  const firebaseUpdates = {};
-  if (normalizedName) {
-    firebaseUpdates.displayName = normalizedName;
-  }
-  if (typeof picture === "string" && canSyncPictureToFirebase(normalizedPicture)) {
-    firebaseUpdates.photoURL = normalizedPicture || null;
-  }
-
-  if (Object.keys(firebaseUpdates).length > 0) {
-    await updateProfile(firebaseUser, firebaseUpdates);
-    await firebaseUser.getIdToken(true);
-  }
+  return { payload, normalizedPicture };
 }
 
 export const useAppStore = defineStore("app", {
@@ -273,145 +185,57 @@ export const useAppStore = defineStore("app", {
   }),
 
   actions: {
-    async ensureBackendSession(firebaseUser = auth.currentUser) {
-      if (!firebaseUser) {
-        this.user = null;
-        this.isAuthenticated = false;
-        backendSessionPromise = null;
-        backendSessionUid = null;
-        return false;
+    async ensureBackendSession() {
+      if (this.isAuthenticated && this.user) {
+        return true;
       }
-
-      // Show user/avatar immediately while backend session is being validated.
-      const firebaseProfile = mapFirebaseUser(firebaseUser);
-      const cachedPicture = loadCachedProfilePicture(firebaseUser.uid);
-      this.user = {
-        ...firebaseProfile,
-        picture: firebaseProfile.picture || cachedPicture || null,
-        is_admin: false,
-      };
-      this.isAuthenticated = true;
-
-      if (backendSessionPromise && backendSessionUid === firebaseUser.uid) {
-        return await backendSessionPromise;
-      }
-
-      backendSessionUid = firebaseUser.uid;
-      const sessionRequest = (async () => {
-        const applyBackendUser = (backendUser = {}) => {
-          this.user = mergeBackendUser(
-            {
-              ...firebaseProfile,
-              picture: firebaseProfile.picture || cachedPicture || null,
-            },
-            backendUser,
-          );
-          saveCachedProfilePicture(firebaseUser.uid, this.user.picture);
-          syncCurrencyPreferenceFromUser(this.user);
-          this.isAuthenticated = true;
-          return true;
-        };
-
-        try {
-          const idToken = await firebaseUser.getIdToken();
-          let response = null;
-
-          for (let attempt = 0; attempt <= AUTH_REQUEST_RETRIES; attempt++) {
-            try {
-              response = await axios.post(
-                `${API_URL}/auth/firebase-login`,
-                {
-                  idToken,
-                },
-                {
-                  headers: {
-                    Authorization: `Bearer ${idToken}`,
-                  },
-                  timeout: AUTH_REQUEST_TIMEOUT_MS,
-                  withCredentials: true,
-                },
-              );
-              break;
-            } catch (error) {
-              const shouldRetry =
-                attempt < AUTH_REQUEST_RETRIES && isRetryableAuthError(error);
-              if (!shouldRetry) {
-                throw error;
-              }
-              await wait((attempt + 1) * 600);
-            }
-          }
-
-          const backendUser = response.data?.user || response.data || {};
-          return applyBackendUser(backendUser);
-        } catch (error) {
-          console.error("Backend session cookie authentication failed:", error);
-
-          try {
-            const response = await axios.get(
-              `${API_URL}/auth/me`,
-              await buildAuthenticatedRequestConfig(
-                { timeout: AUTH_REQUEST_TIMEOUT_MS },
-                { forceRefresh: true },
-              ),
-            );
-            const backendUser = response.data?.user || response.data || {};
-            console.warn("Using Firebase Bearer authentication for backend session.");
-            return applyBackendUser(backendUser);
-          } catch (fallbackError) {
-            console.error("Backend Bearer authentication failed:", fallbackError);
-            this.user = null;
-            this.isAuthenticated = false;
-            return false;
-          }
-        }
-      })();
-
-      backendSessionPromise = sessionRequest;
-
-      return await sessionRequest.finally(() => {
-        if (backendSessionPromise === sessionRequest) {
-          backendSessionPromise = null;
-          backendSessionUid = null;
-        }
-      });
+      return await this.refreshCurrentUser().catch(() => false);
     },
 
-    initAuthListener() {
+    async initAuthListener() {
       if (this.authListenerInitialized) {
         return;
       }
       this.authListenerInitialized = true;
+      this.loading = true;
 
-      const authBootTimer = setTimeout(() => {
-        if (this.loading) {
-          this.loading = false;
-        }
-      }, AUTH_BOOT_TIMEOUT_MS);
-
-      onAuthStateChanged(
-        auth,
-        async (firebaseUser) => {
-          clearTimeout(authBootTimer);
-          if (firebaseUser) {
-            const isReady = await this.ensureBackendSession(firebaseUser);
-            if (!isReady) {
-              await signOut(auth);
-            }
-          } else {
-            this.user = null;
-            this.isAuthenticated = false;
+      try {
+        const response = await axios.get(`${API_URL}/auth/me`, {
+          timeout: AUTH_REQUEST_TIMEOUT_MS,
+          withCredentials: true,
+        });
+        const backendUser = response.data?.user || response.data || {};
+        if (backendUser && (backendUser.uid || backendUser.user_id || backendUser.email)) {
+          this.user = mergeBackendUser({}, backendUser);
+          const cachedPic = loadCachedProfilePicture(this.user.uid || this.user.user_id);
+          if (!this.user.picture && cachedPic) {
+            this.user.picture = cachedPic;
           }
-          this.loading = false;
-        },
-        (error) => {
-          clearTimeout(authBootTimer);
-          console.error("Firebase auth listener failed:", error);
+          saveCachedProfilePicture(this.user.uid || this.user.user_id, this.user.picture);
+          syncCurrencyPreferenceFromUser(this.user);
+          this.isAuthenticated = true;
+        } else {
           this.user = null;
           this.isAuthenticated = false;
-          this.loading = false;
-        },
-      );
+        }
+      } catch {
+        this.user = null;
+        this.isAuthenticated = false;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    loginWithGoogle(returnTo = '/') {
+      const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : '';
+      const target = returnTo.startsWith('http')
+        ? returnTo
+        : `${origin}${returnTo.startsWith('/') ? returnTo : `/${returnTo}`}`;
+      window.location.href = `${API_URL}/auth/google?return_to=${encodeURIComponent(target)}`;
+    },
+
+    loginWithGooglePopup() {
+      return this.loginWithGoogle('/');
     },
 
     async loginWithEmail(email, password) {
@@ -419,31 +243,26 @@ export const useAppStore = defineStore("app", {
       try {
         const normalizedEmail = String(email || "").trim();
         const normalizedPassword = String(password || "");
-        const credential = await signInWithEmailAndPassword(auth, normalizedEmail, normalizedPassword);
-        const isReady = await this.ensureBackendSession(credential.user);
-        if (!isReady) {
-          await signOut(auth);
-          throw new Error("Unable to establish backend session");
-        }
+        const response = await axios.post(
+          `${API_URL}/auth/login`,
+          {
+            email: normalizedEmail,
+            password: normalizedPassword,
+          },
+          {
+            withCredentials: true,
+            timeout: AUTH_REQUEST_TIMEOUT_MS,
+          },
+        );
+
+        const backendUser = response.data?.user || response.data || {};
+        this.user = mergeBackendUser({}, backendUser);
+        saveCachedProfilePicture(this.user.uid || this.user.user_id, this.user.picture);
+        syncCurrencyPreferenceFromUser(this.user);
+        this.isAuthenticated = true;
+        return this.user;
       } catch (error) {
         console.error("Email login failed:", error);
-        throw error;
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    async loginWithGooglePopup() {
-      this.loading = true;
-      try {
-        const credential = await signInWithPopup(auth, googleAuthProvider);
-        const isReady = await this.ensureBackendSession(credential.user);
-        if (!isReady) {
-          await signOut(auth);
-          throw new Error("Unable to establish backend session");
-        }
-      } catch (error) {
-        console.error("Google popup login failed:", error);
         throw error;
       } finally {
         this.loading = false;
@@ -457,33 +276,27 @@ export const useAppStore = defineStore("app", {
         const normalizedEmail = String(email || "").trim();
         const normalizedPassword = String(password || "");
 
-        const credential = await createUserWithEmailAndPassword(
-          auth,
-          normalizedEmail,
-          normalizedPassword,
+        const response = await axios.post(
+          `${API_URL}/auth/register`,
+          {
+            name: normalizedName,
+            email: normalizedEmail,
+            password: normalizedPassword,
+          },
+          {
+            withCredentials: true,
+            timeout: AUTH_REQUEST_TIMEOUT_MS,
+          },
         );
 
-        if (normalizedName) {
-          await updateProfile(credential.user, { displayName: normalizedName });
-          await credential.user.reload();
-        }
-
-        await credential.user.getIdToken(true);
-        const activeUser = auth.currentUser || credential.user;
-        const isReady = await this.ensureBackendSession(activeUser);
-        if (!isReady) {
-          await signOut(auth);
-          throw new Error("Unable to establish backend session");
-        }
-
-        if (normalizedName) {
-          this.user = {
-            ...this.user,
-            name: normalizedName,
-          };
-        }
+        const backendUser = response.data?.user || response.data || {};
+        this.user = mergeBackendUser({}, backendUser);
+        saveCachedProfilePicture(this.user.uid || this.user.user_id, this.user.picture);
+        syncCurrencyPreferenceFromUser(this.user);
+        this.isAuthenticated = true;
+        return this.user;
       } catch (error) {
-        console.error("Email signup failed:", error);
+        console.error("Account creation failed:", error);
         throw error;
       } finally {
         this.loading = false;
@@ -497,9 +310,11 @@ export const useAppStore = defineStore("app", {
 
       if (typeof window !== "undefined") {
         try {
-          window.localStorage.removeItem('mindstore_profile_settings');
-          if (auth.currentUser?.uid) {
-            window.localStorage.removeItem(`mindstores.profile-image.${auth.currentUser.uid}`);
+          window.localStorage.removeItem("mindstore_profile_settings");
+          if (this.user?.uid || this.user?.user_id) {
+            window.localStorage.removeItem(
+              `mindstores.profile-image.${this.user.uid || this.user.user_id}`,
+            );
           }
         } catch (error) {
           console.warn("Failed to clear local storage", error);
@@ -507,15 +322,12 @@ export const useAppStore = defineStore("app", {
       }
 
       try {
-        await axios
-          .post(`${API_URL}/auth/logout`, {}, { withCredentials: true })
-          .catch((error) => {
-            console.warn("Backend logout failed, proceeding with Firebase logout.", error);
-          });
-        await signOut(auth);
+        await axios.post(`${API_URL}/auth/logout`, {}, { withCredentials: true });
       } catch (error) {
-        console.error("Firebase logout failed:", error);
+        console.warn("Backend logout failed:", error);
       } finally {
+        this.user = null;
+        this.isAuthenticated = false;
         this.loading = false;
       }
     },
@@ -527,9 +339,11 @@ export const useAppStore = defineStore("app", {
 
       if (typeof window !== "undefined") {
         try {
-          window.localStorage.removeItem('mindstore_profile_settings');
-          if (auth.currentUser?.uid) {
-            window.localStorage.removeItem(`mindstores.profile-image.${auth.currentUser.uid}`);
+          window.localStorage.removeItem("mindstore_profile_settings");
+          if (this.user?.uid || this.user?.user_id) {
+            window.localStorage.removeItem(
+              `mindstores.profile-image.${this.user.uid || this.user.user_id}`,
+            );
           }
         } catch (error) {
           console.warn("Failed to clear local storage", error);
@@ -539,19 +353,7 @@ export const useAppStore = defineStore("app", {
       try {
         await axios.delete(`${API_URL}/auth/account`, await buildAuthenticatedRequestConfig());
       } catch (error) {
-        console.warn("Backend account deletion failed or not found, proceeding.", error);
-      }
-
-      try {
-        if (auth.currentUser) {
-          await deleteUser(auth.currentUser);
-        }
-      } catch (error) {
-        console.error("Firebase user deletion failed:", error);
-        if (error?.code === 'auth/requires-recent-login') {
-           throw new Error("Please log out and log back in to verify your identity before deleting your account.");
-        }
-        throw error;
+        console.warn("Backend account deletion error:", error);
       } finally {
         this.loading = false;
         this.user = null;
@@ -560,40 +362,37 @@ export const useAppStore = defineStore("app", {
     },
 
     async refreshCurrentUser() {
-      if (!this.isAuthenticated) {
-        return null;
-      }
-
       try {
         const response = await axios.get(`${API_URL}/auth/me`, {
           timeout: AUTH_REQUEST_TIMEOUT_MS,
           ...(await buildAuthenticatedRequestConfig()),
         });
-        const backendUser = response.data || {};
-        this.user = mergeBackendUser(this.user || {}, backendUser);
-        saveCachedProfilePicture(this.user?.uid || auth.currentUser?.uid, this.user?.picture);
-        syncCurrencyPreferenceFromUser(this.user);
-        this.isAuthenticated = true;
-        return this.user;
+        const backendUser = response.data?.user || response.data || {};
+        if (backendUser && (backendUser.uid || backendUser.user_id || backendUser.email)) {
+          this.user = mergeBackendUser(this.user || {}, backendUser);
+          saveCachedProfilePicture(this.user.uid || this.user.user_id, this.user.picture);
+          syncCurrencyPreferenceFromUser(this.user);
+          this.isAuthenticated = true;
+          return this.user;
+        }
+        this.user = null;
+        this.isAuthenticated = false;
+        return null;
       } catch (error) {
-        console.error("Failed to refresh user profile:", error);
+        this.user = null;
+        this.isAuthenticated = false;
         throw error;
       }
     },
 
     async updateAccountProfile(profile) {
-      const { normalizedName, normalizedPicture, payload } = buildProfileUpdatePayload(profile);
+      const { normalizedPicture, payload } = buildProfileUpdatePayload(profile);
       this.loading = true;
       try {
-        await syncFirebaseProfile(auth.currentUser, normalizedName, normalizedPicture, profile.picture);
-
         const response = await axios.put(
           `${API_URL}/auth/profile`,
           payload,
-          await buildAuthenticatedRequestConfig(
-            { timeout: AUTH_REQUEST_TIMEOUT_MS },
-            { forceRefresh: Boolean(auth.currentUser) },
-          ),
+          await buildAuthenticatedRequestConfig({ timeout: AUTH_REQUEST_TIMEOUT_MS }),
         );
 
         const backendUser = response.data?.user || response.data || {};
@@ -607,7 +406,7 @@ export const useAppStore = defineStore("app", {
           },
           backendUser,
         );
-        saveCachedProfilePicture(this.user?.uid || auth.currentUser?.uid, this.user?.picture);
+        saveCachedProfilePicture(this.user?.uid || this.user?.user_id, this.user?.picture);
         syncCurrencyPreferenceFromUser(this.user);
         this.isAuthenticated = true;
         return this.user;
@@ -629,10 +428,7 @@ export const useAppStore = defineStore("app", {
             mobile_number: mobileNumber,
             pin,
           },
-          await buildAuthenticatedRequestConfig(
-            { timeout: AUTH_REQUEST_TIMEOUT_MS },
-            { forceRefresh: Boolean(auth.currentUser) },
-          ),
+          await buildAuthenticatedRequestConfig({ timeout: AUTH_REQUEST_TIMEOUT_MS }),
         );
 
         const backendUser = response.data?.user || response.data?.profile || {};
@@ -658,10 +454,7 @@ export const useAppStore = defineStore("app", {
             mobile_number: mobileNumber,
             pin,
           },
-          await buildAuthenticatedRequestConfig(
-            { timeout: AUTH_REQUEST_TIMEOUT_MS },
-            { forceRefresh: Boolean(auth.currentUser) },
-          ),
+          await buildAuthenticatedRequestConfig({ timeout: AUTH_REQUEST_TIMEOUT_MS }),
         );
 
         const backendUser = response.data?.user || response.data?.profile || {};

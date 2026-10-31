@@ -160,7 +160,7 @@ function renderStatusBadge(status, x, y) {
   const cleanStatus = String(status || 'Completed').toLowerCase()
   let bg = '#E6F4EA' // light green tint
   let text = '#137333' // dark green
-  let label = 'PAID'
+  let label
 
   switch (cleanStatus) {
     case 'completed':

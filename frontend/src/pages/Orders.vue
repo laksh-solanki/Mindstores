@@ -1,6 +1,6 @@
 <template>
   <div class="orders-page">
-    <v-container class="bespoke-profile-container" fluid>
+    <v-container class="site-container bespoke-profile-container" fluid>
       <!-- Topbar -->
       <section class="profile-topbar">
         <div>
@@ -1324,7 +1324,8 @@
 }
 
 .bespoke-profile-container {
-  padding: 40px max(16px, 4vw) 80px !important;
+  padding-top: 40px !important;
+  padding-bottom: 80px !important;
 }
 
 /* ════════════════════════════════ TOPBAR ══════ */
@@ -2508,6 +2509,19 @@
   }
   .dialog-actions-flat button {
     width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .order-id {
+    font-size: 13px;
+  }
+  .order-amount-display {
+    font-size: 15px;
+  }
+  .order-status-badge {
+    font-size: 10px;
+    padding: 2px 6px;
   }
 }
 </style>

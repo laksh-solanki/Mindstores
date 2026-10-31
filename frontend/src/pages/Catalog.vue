@@ -1,5 +1,5 @@
 <template>
-  <v-container class="py-6 px-max-md" fluid>
+  <v-container class="site-container catalog-page" fluid>
     <div v-if="catalogEntry" class="flat-breadcrumb-wrap mb-4">
       <v-breadcrumbs class="text-subtitle-2 px-0 py-0" :items="breadcrumbItems">
         <template #prepend>
@@ -203,13 +203,13 @@
             v-for="n in 8"
             :key="n"
             class="pa-0"
-            cols="12"
+            cols="6"
             lg="4"
             sm="6"
           >
             <v-skeleton-loader
               class="border rounded-0"
-              style="margin-right: -1px; margin-bottom: -1px"
+              style="margin-right: -1.5px; margin-bottom: -1.5px"
               type="image, article"
             />
           </v-col>
@@ -219,27 +219,25 @@
           <v-col
             v-for="product in products"
             :key="product.product_id"
-            cols="12"
+            cols="6"
             lg="4"
             sm="6"
           >
             <div
-              class="product-joint-card"
+              class="product-card-unified"
               role="button"
               tabindex="0"
               @click="openProduct(product.product_id)"
               @keydown.enter="openProduct(product.product_id)"
             >
-              <div class="product-image-wrap">
+              <div class="product-card-img-box">
                 <v-img
                   v-if="productImageUrl(product)"
                   :alt="product.name"
-                  aspect-ratio="1"
-                  class="product-grid-image"
-                  contain
+                  class="product-card-img"
                   :src="productImageUrl(product)"
                 />
-                <div v-else class="no-image-grid-placeholder">
+                <div v-else class="d-flex align-center justify-center fill-height">
                   <v-icon
                     color="grey-lighten-1"
                     size="36"
@@ -249,7 +247,7 @@
 
               <div class="product-card-body">
                 <div class="product-card-meta">
-                  <span class="product-grid-category">{{
+                  <span class="product-card-category">{{
                     getCompanyLabel(product)
                   }}</span>
                   <span
@@ -267,20 +265,20 @@
                   </span>
                 </div>
 
-                <h3 class="product-grid-name" :title="product.name">
+                <h3 class="product-card-title" :title="product.name">
                   {{ product.name }}
                 </h3>
-                <p class="product-grid-subcat">
+                <p class="product-card-subcat">
                   {{ product.subcategory || catalogEntry.category.label }}
                 </p>
 
-                <div class="product-grid-footer">
-                  <span class="product-grid-price">{{
+                <div class="product-card-footer">
+                  <span class="product-card-price">{{
                     formatAmount(product.price)
                   }}</span>
                   <button
                     :aria-label="`Add ${product.name} to cart`"
-                    class="product-grid-cart-btn"
+                    class="btn-store-icon"
                     :disabled="isProductSoldOut(product)"
                     @click.stop="quickAddToCart(product)"
                   >
@@ -775,10 +773,11 @@
 
 <style scoped>
 /* ════════════════════════════════ PAGE ROOT ═══ */
-.py-6 {
+.catalog-page {
   min-height: 100vh;
   background: #f8fafc;
-  padding: 40px max(16px, 4vw) 80px !important;
+  padding-top: 40px !important;
+  padding-bottom: 80px !important;
 }
 
 /* ════════════════════════════════ BREADCRUMBS ═ */
@@ -1240,6 +1239,60 @@
 @media (max-width: 959px) {
   .py-6 {
     padding: 24px 16px 60px !important;
+  }
+
+  .flat-breadcrumb-wrap {
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+}
+
+@media (max-width: 599px) {
+  .product-image-wrap {
+    padding: 12px;
+  }
+
+  .product-card-body {
+    padding: 10px;
+  }
+
+  .product-grid-name {
+    font-size: 13px;
+    margin-bottom: 2px;
+    line-height: 1.3;
+  }
+
+  .product-grid-subcat {
+    font-size: 10px;
+    margin-bottom: 8px;
+  }
+
+  .grid-badge-stock {
+    font-size: 9px;
+    padding: 2px 5px;
+    gap: 4px;
+  }
+
+  .product-grid-price {
+    font-size: 14px;
+  }
+
+  .product-grid-cart-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .results-text {
+    font-size: 13px;
+  }
+
+  .custom-pagination :deep(.v-btn) {
+    min-width: 32px !important;
+    height: 32px !important;
+    font-size: 12px !important;
+    padding: 0 4px !important;
   }
 }
 </style>

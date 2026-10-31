@@ -48,6 +48,24 @@ def get_origin(request: Request) -> str | None:
     return None
 
 
+SENSITIVE_PREFIXES = (
+    "/user-admin/pin",
+    "/auth/firebase-login",
+    "/auth/login",
+    "/auth/register",
+    "/checkout/place-order",
+)
+
+
+def is_sensitive_route(pathname: str, method: str) -> bool:
+    if method in MUTATING_METHODS:
+        if any(pathname == prefix or pathname.startswith(f"{prefix}/") for prefix in SENSITIVE_PREFIXES):
+            return True
+        if "/reviews" in pathname:
+            return True
+    return False
+
+
 def get_request_ip(request: Request) -> str:
     return (
         request.headers.get("cf-connecting-ip")
@@ -57,11 +75,13 @@ def get_request_ip(request: Request) -> str:
 
 
 def apply_security_headers(response: Response, pathname: str, use_secure_cookies: bool) -> None:
+    response.headers["Server"] = "Mindstores-Secure-Gate"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
-    response.headers["Referrer-Policy"] = "no-referrer"
-    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()"
     response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
+    response.headers["Cross-Origin-Resource-Policy"] = "same-site"
     response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
     if any(pathname == prefix or pathname.startswith(f"{prefix}/") for prefix in API_PREFIXES):
         response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
@@ -69,9 +89,9 @@ def apply_security_headers(response: Response, pathname: str, use_secure_cookies
         response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
 
 
-def check_rate_limit(ip: str, max_requests: int) -> tuple[bool, int]:
+def check_rate_limit(ip: str, tier: str, max_requests: int) -> tuple[bool, int]:
     now = time.time()
-    key = f"global:mutation:{ip}"
+    key = f"{tier}:{ip}"
     state = rate_limit_store.get(key)
     if not state or state["reset_at"] <= now:
         state = {"count": 0, "reset_at": now + 60}
@@ -113,6 +133,14 @@ async def security_and_contract_middleware(request: Request, call_next):
 
     is_api_route = any(pathname == prefix or pathname.startswith(f"{prefix}/") for prefix in API_PREFIXES)
     is_mutating = is_api_route and method in MUTATING_METHODS
+
+    # CSRF defense: Block cross-site fetch metadata on mutating requests
+    sec_fetch_site = (request.headers.get("sec-fetch-site") or "").strip().lower()
+    if is_mutating and sec_fetch_site == "cross-site":
+        response = error_response(403, "Cross-site request blocked")
+        apply_security_headers(response, pathname, config.use_secure_cookies)
+        return response
+
     if is_mutating and config.enforce_origin_check:
         if not origin and not config.allow_null_origin_on_mutations:
             response = error_response(403, "Missing origin")
@@ -123,16 +151,38 @@ async def security_and_contract_middleware(request: Request, call_next):
             apply_security_headers(response, pathname, config.use_secure_cookies)
             return response
 
-    if is_mutating:
-        limited, retry_after = check_rate_limit(get_request_ip(request), config.mutation_rate_limit_max)
-        if limited:
-            response = JSONResponse(
-                {"message": "Too many requests. Please try again later."},
-                status_code=429,
-                headers={"Retry-After": str(retry_after)},
-            )
-            apply_security_headers(response, pathname, config.use_secure_cookies)
-            return response
+    if is_api_route:
+        client_ip = get_request_ip(request)
+        if is_sensitive_route(pathname, method):
+            limited, retry_after = check_rate_limit(client_ip, "sensitive", config.sensitive_rate_limit_max)
+            if limited:
+                response = JSONResponse(
+                    {"message": "Too many requests to sensitive endpoint. Please try again later."},
+                    status_code=429,
+                    headers={"Retry-After": str(retry_after)},
+                )
+                apply_security_headers(response, pathname, config.use_secure_cookies)
+                return response
+        elif is_mutating:
+            limited, retry_after = check_rate_limit(client_ip, "mutation", config.mutation_rate_limit_max)
+            if limited:
+                response = JSONResponse(
+                    {"message": "Too many requests. Please try again later."},
+                    status_code=429,
+                    headers={"Retry-After": str(retry_after)},
+                )
+                apply_security_headers(response, pathname, config.use_secure_cookies)
+                return response
+        else:
+            limited, retry_after = check_rate_limit(client_ip, "read", config.read_rate_limit_max)
+            if limited:
+                response = JSONResponse(
+                    {"message": "Too many requests. Please slow down."},
+                    status_code=429,
+                    headers={"Retry-After": str(retry_after)},
+                )
+                apply_security_headers(response, pathname, config.use_secure_cookies)
+                return response
 
     response = await call_next(request)
     if origin and is_origin_allowed(origin, config.allowed_origins):
@@ -150,6 +200,8 @@ async def value_error_handler(request: Request, exc: ValueError):
         return error_response(413, "Request body too large")
     if message == "INVALID_JSON":
         return error_response(400, "Invalid JSON body")
+    if message == "INVALID_INPUT_KEY":
+        return error_response(400, "Invalid characters in request")
     return error_response(400, "Unable to parse request body")
 
 

@@ -1,6 +1,6 @@
 <template>
   <div class="profile-page">
-    <v-container class="bespoke-profile-container" fluid>
+    <v-container class="site-container bespoke-profile-container" fluid>
       <!-- Topbar -->
       <section class="profile-topbar">
         <div>
@@ -1852,7 +1852,8 @@
 }
 
 .bespoke-profile-container {
-  padding: 40px max(16px, 4vw) 80px !important;
+  padding-top: 40px !important;
+  padding-bottom: 80px !important;
 }
 
 /* ════════════════════════════════ TOPBAR ══════ */
@@ -3073,15 +3074,19 @@
     padding: 24px 16px 60px !important;
   }
 
-  .order-title-row-flat {
+  .topbar-actions {
+    display: flex;
     flex-direction: column;
-    align-items: flex-start;
     gap: 8px;
+    width: 100%;
   }
 
-  .order-summary-right {
+  .topbar-actions button {
     width: 100%;
-    justify-content: space-between;
+  }
+
+  .avatar-wrap {
+    margin: 0 auto;
   }
 
   .dialog-actions-flat {

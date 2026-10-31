@@ -10,7 +10,7 @@ from .admin_access import AdminAccessService
 from .auth import resolve_current_user
 from .config import AppConfig
 from .db import create_db
-from .utils import deep_serialize
+from .utils import deep_serialize, sanitize_nosql_payload
 
 
 @dataclass
@@ -83,10 +83,13 @@ async def read_json_body(request: Request, max_body_bytes: int) -> Any:
         if not body.strip():
             return {}
         try:
-            return await request.json()
+            raw_data = await request.json()
+            return sanitize_nosql_payload(raw_data)
+        except ValueError:
+            raise
         except Exception as exc:
             raise ValueError("INVALID_JSON") from exc
     if "application/x-www-form-urlencoded" in content_type:
         form = await request.form()
-        return dict(form)
+        return sanitize_nosql_payload(dict(form))
     return body.decode("utf-8", errors="replace")

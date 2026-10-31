@@ -1,5 +1,5 @@
 <template>
-  <v-container class="bespoke-payment-container" fluid>
+  <v-container class="site-container bespoke-payment-container" fluid>
     <!-- Secure Checkout Header -->
     <div class="payment-header-bar">
       <div>
@@ -308,12 +308,11 @@
             <!-- CTA Flat Buttons -->
             <v-btn
               block
-              class="action-btn-flat mt-5"
+              class="btn-store-primary mt-5"
               :disabled="selectedStockIssues.length > 0"
+              elevation="0"
               :loading="submitting"
               rounded="0"
-              size="large"
-              variant="flat"
               @click="submitPayment"
             >
               Confirm Demo Order {{ formatAmount(payableAmount) }}
@@ -321,10 +320,9 @@
 
             <v-btn
               block
-              class="action-btn-flat-outline mt-3"
+              class="btn-store-outline mt-3"
+              elevation="0"
               rounded="0"
-              size="large"
-              variant="outlined"
               @click="cancelPayment"
             >
               Cancel Checkout
@@ -344,11 +342,10 @@
             <p class="empty-subtitle mt-2">Go back to your cart and select products before checkout review.</p>
             <div class="mt-6">
               <v-btn
-                class="action-btn-flat"
+                class="btn-store-primary"
+                elevation="0"
                 rounded="0"
-                size="large"
                 to="/cart"
-                variant="flat"
               >
                 Back to Cart
               </v-btn>
@@ -662,7 +659,8 @@
 .bespoke-payment-container {
   min-height: 100vh;
   background: #f8fafc;
-  padding: 40px max(16px, 4vw) 80px !important;
+  padding-top: 40px !important;
+  padding-bottom: 80px !important;
 }
 
 /* ════════════════════════════════ HEADER BAR ══ */
@@ -845,11 +843,12 @@
 
 .card-number-display {
   font-family: 'Courier New', Courier, monospace;
-  font-size: 20px;
+  font-size: clamp(13px, 4.2vw, 19px);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: clamp(0.04em, 1.2vw, 0.1em);
   color: #f1f5f9;
-  word-spacing: 0.1em;
+  word-spacing: clamp(0.04em, 1.2vw, 0.1em);
+  white-space: nowrap;
 }
 
 .card-footer-row {
@@ -1073,5 +1072,44 @@
 
 .alert-content {
   flex-grow: 1;
+}
+
+/* ════════════════════════════════ RESPONSIVE ═════ */
+@media (max-width: 959px) {
+  .bespoke-payment-container {
+    padding: 24px 16px 60px !important;
+  }
+
+  .gallery-frame {
+    margin-top: 24px;
+  }
+}
+
+@media (max-width: 599px) {
+  .credit-card-mock {
+    padding: 16px;
+    border-radius: 0;
+  }
+
+  .card-chip-icon {
+    width: 30px;
+    height: 22px;
+  }
+
+  .summary-card-body {
+    padding: 16px;
+  }
+
+  .page-title {
+    font-size: clamp(1.8rem, 6vw, 2.4rem);
+  }
+
+  .total-row {
+    font-size: 16px;
+  }
+
+  .total-amount {
+    font-size: 18px;
+  }
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <v-container class="bespoke-success-container" fluid>
+  <v-container class="site-container bespoke-success-container" fluid>
     <v-row justify="center">
       <v-col cols="12" lg="7" md="9">
         <div class="gallery-frame success-frame-window">
@@ -45,19 +45,17 @@
             <!-- Action buttons -->
             <div class="d-flex flex-column flex-sm-row justify-center ga-3 mt-8">
               <v-btn
-                class="action-btn-flat px-8"
+                class="btn-store-primary px-8"
+                elevation="0"
                 rounded="0"
-                size="large"
-                variant="flat"
                 @click="$router.push('/orders')"
               >
                 View Demo Orders
               </v-btn>
               <v-btn
-                class="action-btn-flat-outline px-8"
+                class="btn-store-outline px-8"
+                elevation="0"
                 rounded="0"
-                size="large"
-                variant="outlined"
                 @click="$router.push('/')"
               >
                 Continue Shopping
@@ -96,7 +94,8 @@
 .bespoke-success-container {
   min-height: 100vh;
   background: #f8fafc;
-  padding: 80px max(16px, 4vw) 120px !important;
+  padding-top: 80px !important;
+  padding-bottom: 120px !important;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -263,5 +262,34 @@
 }
 .action-btn-flat-outline:hover {
   background: #f1f5f9 !important;
+}
+
+/* ════════════════════════════════ RESPONSIVE ═════ */
+@media (max-width: 599px) {
+  .bespoke-success-container {
+    padding: 32px 16px 60px !important;
+  }
+
+  .success-body {
+    padding: 24px 16px !important;
+  }
+
+  .success-title {
+    font-size: 26px;
+  }
+
+  .flat-step-timeline {
+    gap: 4px;
+  }
+
+  .step-label {
+    font-size: 11px;
+  }
+
+  .step-node {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
 }
 </style>

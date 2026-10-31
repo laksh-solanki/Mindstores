@@ -1,11 +1,7 @@
-import { getAuth } from 'firebase/auth'
-import { app as firebaseApp } from '@/plugins/firebase'
-
 const normalizeApiBaseUrl = (value) => String(value || '').trim().replace(/\/+$/, '')
 
 const LOCAL_API_BASE_URL = 'http://localhost:8000'
 const DEPLOYED_API_BASE_URL = '/api'
-const firebaseAuth = getAuth(firebaseApp)
 const configuredDevApiBaseUrl = import.meta.env.DEV
   ? normalizeApiBaseUrl(import.meta.env.VITE_API_URL)
   : ''
@@ -22,25 +18,10 @@ export function buildApiUrl(path) {
   return `${API_URL}${normalizedPath}`
 }
 
-export async function buildAuthenticatedRequestConfig(config = {}, options = {}) {
-  const headers = { ...config.headers }
-  const hasAuthorizationHeader = Object.keys(headers).some((key) => key.toLowerCase() === 'authorization')
-  const currentUser = firebaseAuth.currentUser
-
-  if (currentUser && !hasAuthorizationHeader) {
-    try {
-      const idToken = await currentUser.getIdToken(Boolean(options.forceRefresh))
-      if (idToken) {
-        headers.Authorization = `Bearer ${idToken}`
-      }
-    } catch (error) {
-      console.warn('Unable to attach Firebase auth token. Falling back to cookie session.', error)
-    }
-  }
-
+export async function buildAuthenticatedRequestConfig(config = {}) {
   return {
     ...config,
-    headers,
+    headers: { ...config.headers },
     withCredentials: config.withCredentials ?? true,
   }
 }

@@ -51,7 +51,7 @@ function copyRequestHeaders(req) {
   return headers
 }
 
-function copyResponseHeaders(response, res, backendApiUrl) {
+function copyResponseHeaders(response, res) {
   for (const [key, value] of response.headers) {
     if (HOP_BY_HOP_HEADERS.has(key.toLowerCase()) || key.toLowerCase() === 'set-cookie') {
       continue
@@ -70,8 +70,6 @@ function copyResponseHeaders(response, res, backendApiUrl) {
       res.setHeader('Set-Cookie', setCookie)
     }
   }
-
-  res.setHeader('X-Proxy-Target', backendApiUrl)
 }
 
 export default async function handler(req, res) {
@@ -88,7 +86,7 @@ export default async function handler(req, res) {
       redirect: 'manual',
     })
 
-    copyResponseHeaders(response, res, backendApiUrl)
+    copyResponseHeaders(response, res)
     res.statusCode = response.status
 
     if ([204, 205, 304].includes(response.status) || method === 'HEAD') {

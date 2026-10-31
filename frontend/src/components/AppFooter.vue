@@ -4,12 +4,13 @@
       <div class="footer-grid">
         <div class="footer-column brand-col">
           <div class="brand-header d-flex align-center mb-4">
-            <router-link aria-label="Mindstores home" class="footer-brand-logo" to="/">
+            <router-link aria-label="Mindstores home" class="footer-brand-logo d-flex align-center ga-2" to="/">
               <img
-                alt="Mindstores logo"
-                class="footer-brand-logo-img"
-                src="../assets/logo.svg"
+                alt="Mindstores icon"
+                class="footer-brand-icon"
+                src="../assets/icon.svg"
               >
+              <span class="footer-brand-text">MINDSTORE</span>
             </router-link>
           </div>
           <p class="footer-desc mb-6">
@@ -118,9 +119,9 @@
 }
 
 .footer-container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding-inline: 24px !important;
+  padding-inline: clamp(16px, 3.5vw, 32px) !important;
 }
 
 .footer-grid {
@@ -135,25 +136,23 @@
 }
 
 .footer-brand-logo {
-  position: relative;
-  display: block;
-  width: 185px;
-  height: 64px;
-  flex: 0 0 auto;
-  overflow: hidden;
   text-decoration: none;
+  color: #0f172a;
+  display: inline-flex;
+  align-items: center;
 }
 
-.footer-brand-logo-img {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 360px;
-  height: 64px;
-  max-width: none;
-  transform: matrix(1.25, 0, 0, 1.25, -148, -8);
-  transform-origin: top left;
-  pointer-events: none;
+.footer-brand-icon {
+  width: 36px;
+  height: 36px;
+  display: block;
+}
+
+.footer-brand-text {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #0f172a;
 }
 
 .footer-desc {

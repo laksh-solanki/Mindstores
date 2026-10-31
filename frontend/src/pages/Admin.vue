@@ -3758,10 +3758,9 @@
       try {
         await appStore.ensureBackendSession();
       } catch (sessionError) {
-        console.warn("Backend session refresh failed. Retrying with a fresh Firebase token.", sessionError);
+        console.warn("Backend session refresh failed.", sessionError);
       }
 
-      // Cross-origin product writes rely on the Firebase Bearer token, not the local cookie.
       return await requestFactory(true);
     }
   }

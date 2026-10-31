@@ -1,5 +1,5 @@
 <template>
-  <v-container class="bespoke-detail-container" fluid>
+  <v-container class="site-container bespoke-detail-container" fluid>
     <!-- LOADING STATE -->
     <v-row v-if="loading" dense>
       <v-col cols="12" md="5">
@@ -178,11 +178,10 @@
 
               <div class="action-buttons-group">
                 <v-btn
-                  class="action-btn-cart"
+                  class="btn-store-primary w-100"
                   :disabled="!stockReady"
+                  elevation="0"
                   rounded="0"
-                  size="large"
-                  variant="flat"
                   @click="addToCart"
                 >
                   <v-icon size="16" start>mdi-cart</v-icon>
@@ -190,11 +189,10 @@
                 </v-btn>
 
                 <v-btn
-                  class="action-btn-buy"
+                  class="btn-store-outline w-100"
                   :disabled="!stockReady"
+                  elevation="0"
                   rounded="0"
-                  size="large"
-                  variant="outlined"
                   @click="buyNow"
                 >
                   <v-icon size="16" start>mdi-lightning-bolt</v-icon>
@@ -367,6 +365,38 @@
           </div>
         </div>
       </div>
+      <!-- Mobile Sticky Purchase Bar -->
+      <div v-if="product" class="mobile-sticky-purchase-bar d-md-none">
+        <div class="sticky-inner d-flex align-center justify-space-between ga-2">
+          <div class="sticky-info min-width-0">
+            <div class="sticky-price text-truncate">{{ formattedPrice }}</div>
+            <div class="sticky-stock" :class="{ 'text-red': !stockReady }">{{ stockText }}</div>
+          </div>
+          <div class="sticky-actions d-flex ga-2">
+            <v-btn
+              class="sticky-btn-cart"
+              :disabled="!stockReady"
+              rounded="0"
+              size="small"
+              variant="flat"
+              @click="addToCart"
+            >
+              <v-icon size="14" start>mdi-cart</v-icon>
+              {{ stockReady ? 'Add to Cart' : 'Sold Out' }}
+            </v-btn>
+            <v-btn
+              class="sticky-btn-buy"
+              :disabled="!stockReady"
+              rounded="0"
+              size="small"
+              variant="outlined"
+              @click="buyNow"
+            >
+              Buy Now
+            </v-btn>
+          </div>
+        </div>
+      </div>
     </template>
 
     <div v-else class="product-not-found-card">
@@ -505,7 +535,7 @@
     } catch {
       const fallbackName = String(imageUrl || '').split('/').findLast((segment) => segment.length > 0)
       if (fallbackName) {
-        return fallbackName.split('?')[0]
+        return fallbackName.split('?', 1)[0]
       }
     }
 
@@ -823,7 +853,8 @@
 .bespoke-detail-container {
   min-height: 100vh;
   background: #f8fafc;
-  padding: 40px max(16px, 4vw) 80px !important;
+  padding-top: 40px !important;
+  padding-bottom: 80px !important;
 }
 
 /* ════════════════════════════════ HEADER BAR ══ */
@@ -1142,8 +1173,8 @@
   padding: 4px;
 }
 .qty-picker-btn {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1152,6 +1183,10 @@
   cursor: pointer;
   color: #0f172a;
   outline: none;
+  transition: background-color 0.15s ease;
+}
+.qty-picker-btn:hover:not(:disabled) {
+  background-color: #f1f5f9;
 }
 .qty-picker-btn:disabled {
   color: #cbd5e1;
@@ -1587,6 +1622,7 @@
   width: 100%;
   overflow-x: auto;
   scrollbar-width: none; /* Firefox */
+  -webkit-overflow-scrolling: touch;
 }
 .thumbnail-gallery::-webkit-scrollbar {
   display: none; /* Chrome, Safari */
@@ -1612,6 +1648,67 @@
   height: 100%;
   object-fit: cover;
   border: 1px solid #e2e8f0;
+}
+
+/* ── Mobile Sticky Purchase Bar ── */
+.mobile-sticky-purchase-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 99;
+  background: #ffffff;
+  border-top: 2px solid #0f172a;
+  padding: 10px 16px;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.sticky-price {
+  font-size: 16px;
+  font-weight: 900;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.sticky-stock {
+  font-size: 11px;
+  font-weight: 700;
+  color: #166534;
+}
+
+.sticky-btn-cart {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  font-size: 12px !important;
+  height: 38px !important;
+}
+
+.sticky-btn-buy {
+  border: 1.5px solid #0f172a !important;
+  color: #0f172a !important;
+  font-weight: 800 !important;
+  font-size: 12px !important;
+  height: 38px !important;
+}
+
+:deep(.v-theme--dark) .mobile-sticky-purchase-bar {
+  background: #121824;
+  border-top-color: #f8fafc;
+}
+
+:deep(.v-theme--dark) .sticky-price {
+  color: #f8fafc;
+}
+
+:deep(.v-theme--dark) .sticky-btn-cart {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+:deep(.v-theme--dark) .sticky-btn-buy {
+  border-color: #f8fafc !important;
+  color: #f8fafc !important;
 }
 
 :deep(.v-theme--dark) .thumbnail-active {

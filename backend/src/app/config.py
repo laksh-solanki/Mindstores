@@ -38,15 +38,21 @@ class AppConfig:
     allow_null_origin_on_mutations: bool
     max_body_bytes: int
     mutation_rate_limit_max: int
+    sensitive_rate_limit_max: int
+    read_rate_limit_max: int
     session_duration_days: int
     admin_emails: list[str]
     firebase_project_id: str
     firebase_web_api_key: str
-    db_name: str
-    mongo_url: str
-    mongo_data_api_url: str
-    mongo_data_api_key: str
-    mongo_data_source: str
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    google_redirect_uri: str = ""
+    frontend_url: str = ""
+    db_name: str = "mindstores"
+    mongo_url: str = ""
+    mongo_data_api_url: str = ""
+    mongo_data_api_key: str = ""
+    mongo_data_source: str = "Cluster0"
 
 
 def get_config() -> AppConfig:
@@ -67,17 +73,25 @@ def get_config() -> AppConfig:
         allowed_origins=[item.strip() for item in cors_raw.split(",") if item.strip()],
         use_secure_cookies=use_secure_cookies,
         cookie_samesite=cookie_samesite,
-        enforce_origin_check=parse_boolean_env(read_env("ENFORCE_ORIGIN_CHECK"), is_production),
+        enforce_origin_check=parse_boolean_env(read_env("ENFORCE_ORIGIN_CHECK"), True),
         allow_null_origin_on_mutations=parse_boolean_env(
             read_env("ALLOW_NULL_ORIGIN_ON_MUTATIONS"),
             False,
         ),
         max_body_bytes=parse_integer_env(read_env("REQUEST_BODY_LIMIT_BYTES"), 5_242_880),
-        mutation_rate_limit_max=parse_integer_env(read_env("MUTATION_RATE_LIMIT_MAX"), 120),
+        mutation_rate_limit_max=parse_integer_env(read_env("MUTATION_RATE_LIMIT_MAX"), 60),
+        sensitive_rate_limit_max=parse_integer_env(read_env("SENSITIVE_RATE_LIMIT_MAX"), 15),
+        read_rate_limit_max=parse_integer_env(read_env("READ_RATE_LIMIT_MAX"), 300),
         session_duration_days=parse_integer_env(read_env("SESSION_DURATION_DAYS"), 7),
         admin_emails=[item.strip() for item in (read_env("ADMIN_EMAILS") or "").split(",") if item.strip()],
         firebase_project_id=read_env("FIREBASE_PROJECT_ID", "") or "",
         firebase_web_api_key=read_env("FIREBASE_WEB_API_KEY", "") or read_env("FIREBASE_API_KEY", "") or "",
+        google_client_id=read_env("GOOGLE_CLIENT_ID", "") or "",
+        google_client_secret=read_env("GOOGLE_CLIENT_SECRET", "") or "",
+        google_redirect_uri=read_env("GOOGLE_REDIRECT_URI", "") or "",
+        frontend_url=(read_env("FRONTEND_URL", "") or (
+            "https://mindstores.vercel.app" if is_production else "http://localhost:3000"
+        )).rstrip("/"),
         db_name=read_env("DB_NAME", "mindstores") or "mindstores",
         mongo_url=read_env("MONGO_URL", "") or read_env("MONGODB_URI", "") or "",
         mongo_data_api_url=(read_env("MONGO_ATLAS_DATA_API_URL", "") or "").rstrip("/"),

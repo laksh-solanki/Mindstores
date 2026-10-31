@@ -76,6 +76,8 @@ def unique_users_by_email(users: list[dict[str, Any]], admin_entries: list[dict[
 def require_admin(ctx: RequestContext):
     if not ctx.user:
         return error_response(401, "Not authenticated")
+    if ctx.user.get("user_admin_blocked"):
+        return error_response(403, "Admin account has been blocked")
     if not ctx.user.get("is_admin"):
         return error_response(403, "Admin access required")
     return None

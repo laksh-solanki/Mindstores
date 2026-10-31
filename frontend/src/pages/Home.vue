@@ -23,26 +23,22 @@
 
           <div class="hero-button-group">
             <v-btn
-              class="action-btn-primary"
+              class="btn-store-primary"
               elevation="0"
               rounded="0"
-              size="large"
               to="/products"
-              variant="flat"
             >
               Explore Collection
               <v-icon end size="16">mdi-arrow-right</v-icon>
             </v-btn>
 
             <v-btn
-              class="action-btn-text"
+              class="btn-store-outline"
+              elevation="0"
               rounded="0"
-              size="large"
-              variant="text"
               @click="scrollToProducts"
             >
               Browse Catalog
-              <span class="underline-hover" />
             </v-btn>
           </div>
 
@@ -222,7 +218,7 @@
     <div ref="productsSection" class="products-anchor" />
 
     <!-- ░░ QUICK CATEGORY FILTER STRIP ░░ -->
-    <div v-if="quickCategories.length > 0" class="flat-cat-strip mt-6">
+    <div v-if="quickCategories.length > 0" class="site-container my-8">
       <div class="flat-cat-tags">
         <button v-for="cat in quickCategories" :key="cat.key" class="flat-cat-tag" @click="router.push(`/${cat.key}`)">
           <span class="cat-tag-emoji">{{ cat.emoji }}</span>
@@ -231,84 +227,85 @@
       </div>
     </div>
 
-    <v-row v-if="loading" class="mt-8" no-gutters>
-      <v-col
-        v-for="n in 8"
-        :key="n"
-        class="pa-0"
-        cols="12"
-        lg="3"
-        md="4"
-        sm="6"
-      >
-        <v-skeleton-loader
-          class="border rounded-0"
-          style="margin-right: -1px; margin-bottom: -1px;"
-          type="image, article"
-        />
-      </v-col>
-    </v-row>
-
-    <v-row v-else-if="products.length > 0" class="mt-8" no-gutters>
-      <v-col
-        v-for="product in products"
-        :key="product.product_id"
-        cols="12"
-        lg="3"
-        md="4"
-        sm="6"
-      >
-        <div
-          class="product-joint-card"
-          role="button"
-          tabindex="0"
-          @click="goToProduct(product.product_id)"
-          @keydown.enter="goToProduct(product.product_id)"
+    <!-- ░░ UNIFIED PRODUCT GRID ░░ -->
+    <div class="site-container mb-16">
+      <v-row v-if="loading" no-gutters>
+        <v-col
+          v-for="n in 8"
+          :key="n"
+          class="pa-0"
+          cols="6"
+          lg="3"
+          md="4"
+          sm="6"
         >
-          <div class="product-image-wrap">
-            <v-img
-              v-if="productImageUrl(product)"
-              :alt="product.name"
-              aspect-ratio="1"
-              class="product-grid-image"
-              contain
-              :src="productImageUrl(product)"
-            />
-            <div v-else class="no-image-grid-placeholder">
-              <v-icon color="grey-lighten-1" size="36">mdi-image-off-outline</v-icon>
+          <v-skeleton-loader
+            class="border rounded-0"
+            style="margin-right: -1.5px; margin-bottom: -1.5px;"
+            type="image, article"
+          />
+        </v-col>
+      </v-row>
+
+      <v-row v-else-if="products.length > 0" no-gutters>
+        <v-col
+          v-for="product in products"
+          :key="product.product_id"
+          cols="6"
+          lg="3"
+          md="4"
+          sm="6"
+        >
+          <div
+            class="product-card-unified"
+            role="button"
+            tabindex="0"
+            @click="goToProduct(product.product_id)"
+            @keydown.enter="goToProduct(product.product_id)"
+          >
+            <div class="product-card-img-box">
+              <v-img
+                v-if="productImageUrl(product)"
+                :alt="product.name"
+                class="product-card-img"
+                :src="productImageUrl(product)"
+              />
+              <div v-else class="d-flex align-center justify-center fill-height">
+                <v-icon color="grey-lighten-1" size="36">mdi-image-off-outline</v-icon>
+              </div>
+            </div>
+            <div class="product-card-body">
+              <div class="product-card-meta">
+                <span class="product-card-category">{{ normalizeCategory(product.category) }}</span>
+                <span class="grid-badge-stock" :class="{ 'grid-badge-stock--out': isProductSoldOut(product) }">
+                  <span class="status-dot" />
+                  {{ isProductSoldOut(product) ? 'Sold out' : `${Number(product.stock || 0)} left` }}
+                </span>
+              </div>
+
+              <h3 class="product-card-title" :title="product.name">{{ product.name }}</h3>
+
+              <div class="product-card-footer">
+                <span class="product-card-price">{{ formatAmount(product.price) }}</span>
+                <button
+                  :aria-label="`Add ${product.name} to cart`"
+                  class="btn-store-icon"
+                  :disabled="isProductSoldOut(product)"
+                  @click.stop="quickAddToCart(product)"
+                >
+                  <v-icon icon="mdi-cart-plus" size="18" />
+                </button>
+              </div>
             </div>
           </div>
-          <div class="product-card-body">
-            <div class="product-card-meta">
-              <span class="product-grid-category">{{ normalizeCategory(product.category) }}</span>
-              <span class="grid-badge-stock" :class="{ 'grid-badge-stock--out': isProductSoldOut(product) }">
-                <span class="status-dot" />
-                {{ isProductSoldOut(product) ? 'Sold out' : `${Number(product.stock || 0)} left` }}
-              </span>
-            </div>
+        </v-col>
+      </v-row>
 
-            <h3 class="product-grid-name" :title="product.name">{{ product.name }}</h3>
-
-            <div class="product-grid-footer">
-              <span class="product-grid-price">{{ formatAmount(product.price) }}</span>
-              <button
-                :aria-label="`Add ${product.name} to cart`"
-                class="product-grid-cart-btn"
-                :disabled="isProductSoldOut(product)"
-                @click.stop="quickAddToCart(product)"
-              >
-                <v-icon icon="mdi-cart-plus" size="18" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </v-col>
-    </v-row>
-
-    <div v-else class="flat-empty-products mt-8">
-      <v-icon class="mb-3" color="grey-lighten-1" size="48">mdi-package-search-outline</v-icon>
-      <h3 class="empty-title">No products found</h3>
-      <p class="empty-text">Refresh the catalog or check back later.</p>
+      <div v-else class="flat-empty-products">
+        <v-icon class="mb-3" color="grey-lighten-1" size="48">mdi-package-search-outline</v-icon>
+        <h3 class="empty-title">No products found</h3>
+        <p class="empty-text">Refresh the catalog or check back later.</p>
+      </div>
     </div>
 
     <BaseAlert
@@ -606,7 +603,7 @@
 .journey-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 36px auto 0;
   background: #0f172a;
   gap: 1px;
@@ -665,7 +662,7 @@
   display: flex;
   gap: 12px;
   align-items: flex-start;
-  max-width: 1200px;
+  max-width: 1280px;
   padding: 16px;
   margin: 20px auto 0;
   background: #ffffff;
@@ -733,7 +730,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6vw;
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -829,7 +826,7 @@
 .bespoke-hero-inner {
   position: relative;
   z-index: 1;
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
   width: 100%;
   display: grid;
@@ -988,7 +985,7 @@
   gap: 16px;
   width: 100%;
   max-width: 520px;
-  height: 400px;
+  height: clamp(260px, 48vw, 400px);
 }
 
 .gallery-collage-item {
@@ -1323,17 +1320,24 @@
 
 @media (max-width: 599px) {
   .bespoke-hero {
-    padding: 40px 16px 60px;
+    padding: 36px 16px 48px;
   }
 
   .hero-title {
-    font-size: 2rem;
+    font-size: clamp(1.8rem, 7vw, 2.4rem);
+    margin-bottom: 16px;
+  }
+
+  .hero-subtitle {
+    margin-bottom: 24px;
+    font-size: 14px;
   }
 
   .hero-button-group {
     flex-direction: column;
     gap: 12px;
-    align-items: center;
+    align-items: stretch;
+    margin-bottom: 32px;
   }
 
   .action-btn-primary {
@@ -1341,32 +1345,98 @@
     justify-content: center;
   }
 
+  .action-btn-text {
+    width: 100%;
+    text-align: center;
+    padding: 8px 0 !important;
+  }
+
   .value-props {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-    padding-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    padding-top: 16px;
+    justify-content: center;
   }
 
   .prop-item {
-    width: 100%;
-    justify-content: flex-start;
+    width: auto;
+  }
+
+  .product-image-wrap {
+    padding: 12px;
+  }
+
+  .product-card-body {
+    padding: 10px;
+  }
+
+  .product-grid-name {
+    font-size: 13px;
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+
+  .product-grid-category {
+    font-size: 9px;
+  }
+
+  .grid-badge-stock {
+    font-size: 9px;
+    padding: 2px 5px;
+    gap: 4px;
+  }
+
+  .product-grid-price {
+    font-size: 14px;
+  }
+
+  .product-grid-cart-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .editorial-section {
+    padding: 48px 16px;
+  }
+
+  .editorial-header {
+    margin-bottom: 32px;
+  }
+
+  .editorial-title {
+    font-size: 1.8rem;
+    margin-bottom: 16px;
+  }
+
+  .editorial-line {
+    margin-bottom: 16px;
   }
 
   .ed-image-wrap {
-    padding: 24px;
+    padding: 16px;
+    margin-bottom: 16px;
   }
 
   .editorial-gallery {
-    gap: 60px;
+    gap: 40px;
   }
 
   .editorial-side {
-    gap: 60px;
+    gap: 40px;
   }
 
   .flat-cat-strip {
-    padding: 24px 16px 0;
+    padding: 20px 12px 0;
+  }
+
+  .flat-cat-tags {
+    gap: 6px;
+  }
+
+  .flat-cat-tag {
+    padding: 6px 12px;
+    font-size: 12px;
   }
 }
 </style>

@@ -64,7 +64,7 @@ export function extractProductsMeta(payload) {
 }
 
 export async function fetchProductList(config = {}) {
-  let primaryResponse = null
+  let primaryResponse
 
   try {
     primaryResponse = await requestProductApi('/products', config)

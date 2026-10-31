@@ -139,9 +139,9 @@
 }
 
 .content-container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding-inline: max(16px, 4vw) !important;
+  padding-inline: clamp(16px, 3.5vw, 32px) !important;
 }
 
 .page-hero {

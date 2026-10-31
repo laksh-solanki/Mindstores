@@ -14,21 +14,19 @@
         </p>
         <div class="hero-actions">
           <v-btn
-            class="action-btn-primary"
+            class="btn-store-primary"
+            elevation="0"
             rounded="0"
-            size="large"
             to="/products"
-            variant="flat"
           >
             Explore Catalog
             <v-icon end size="16">mdi-arrow-right</v-icon>
           </v-btn>
           <v-btn
-            class="action-btn-outline"
+            class="btn-store-outline"
+            elevation="0"
             rounded="0"
-            size="large"
             to="/help"
-            variant="outlined"
           >
             Visit Help Center
           </v-btn>
@@ -118,7 +116,7 @@
     {
       number: '02',
       title: 'Authenticated workflows',
-      copy: 'Firebase-backed sign-in connects customers to protected cart, profile, and order actions.',
+      copy: 'Secure sign-in connects customers to protected cart, profile, and order actions.',
     },
     {
       number: '03',
@@ -136,9 +134,9 @@
 }
 
 .content-container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding-inline: max(16px, 4vw) !important;
+  padding-inline: clamp(16px, 3.5vw, 32px) !important;
 }
 
 .page-hero {

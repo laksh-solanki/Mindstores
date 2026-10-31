@@ -59,13 +59,12 @@
 
             <v-btn
               block
-              class="action-btn-auth mt-4"
+              class="btn-store-primary mt-4"
               :disabled="isSubmitDisabled"
+              elevation="0"
               :loading="appStore.loading"
               rounded="0"
-              size="large"
               type="submit"
-              variant="flat"
             >
               Access Account
             </v-btn>
@@ -79,13 +78,12 @@
 
           <v-btn
             block
-            class="google-btn-auth"
+            class="btn-store-outline"
             :disabled="appStore.loading"
+            elevation="0"
             :loading="appStore.loading"
             prepend-icon="mdi-google"
             rounded="0"
-            size="large"
-            variant="outlined"
             @click="submitGoogleLogin"
           >
             Continue with Google
@@ -105,7 +103,7 @@
 
 <script>
   import { computed, onMounted, ref, watch } from 'vue'
-  import { useRouter } from 'vue-router'
+  import { useRoute, useRouter } from 'vue-router'
   import BaseAlert from '@/components/BaseAlert.vue'
   import { useAppStore } from '@/stores/app'
   import { getAuthErrorMessage } from '@/utils/authErrors'
@@ -117,6 +115,7 @@
     },
     setup() {
       const appStore = useAppStore()
+      const route = useRoute()
       const router = useRouter()
       const email = ref('')
       const password = ref('')
@@ -135,6 +134,16 @@
 
       onMounted(() => {
         redirectIfAuthenticated()
+        if (route.query.oauth_error) {
+          const err = String(route.query.oauth_error)
+          if (err === 'oauth_not_configured') {
+            errorMessage.value = 'Google OAuth is not configured on the backend.'
+          } else if (err === 'invalid_state') {
+            errorMessage.value = 'Sign in was cancelled or expired. Please try again.'
+          } else {
+            errorMessage.value = 'Unable to complete Google sign-in. Please try again.'
+          }
+        }
       })
 
       watch(
@@ -155,12 +164,10 @@
         }
       }
 
-      const submitGoogleLogin = async () => {
+      const submitGoogleLogin = () => {
         errorMessage.value = ''
-
         try {
-          await appStore.loginWithGooglePopup()
-          router.replace('/')
+          appStore.loginWithGoogle('/')
         } catch (error) {
           errorMessage.value = getAuthErrorMessage(error)
         }

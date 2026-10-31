@@ -91,13 +91,12 @@
 
             <v-btn
               block
-              class="action-btn-auth mt-4"
+              class="btn-store-primary mt-4"
               :disabled="isSubmitDisabled"
+              elevation="0"
               :loading="appStore.loading"
               rounded="0"
-              size="large"
               type="submit"
-              variant="flat"
             >
               Create Account
             </v-btn>
@@ -111,13 +110,12 @@
 
           <v-btn
             block
-            class="google-btn-auth"
+            class="btn-store-outline"
             :disabled="appStore.loading"
+            elevation="0"
             :loading="appStore.loading"
             prepend-icon="mdi-google"
             rounded="0"
-            size="large"
-            variant="outlined"
             @click="submitGoogleSignup"
           >
             Continue with Google
@@ -211,12 +209,10 @@
         }
       }
 
-      const submitGoogleSignup = async () => {
+      const submitGoogleSignup = () => {
         errorMessage.value = ''
-
         try {
-          await appStore.loginWithGooglePopup()
-          router.replace('/')
+          appStore.loginWithGoogle('/')
         } catch (error) {
           errorMessage.value = getAuthErrorMessage(error)
         }

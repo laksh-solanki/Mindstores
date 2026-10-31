@@ -15,6 +15,7 @@ from ..utils import (
     parse_float_param,
     parse_int_param,
     random_compact_id,
+    sanitize_text,
 )
 
 router = APIRouter()
@@ -179,7 +180,13 @@ async def find_catalog_product(ctx: RequestContext, product_id: Any) -> tuple[di
     product = await ctx.db.collection("products").find_one(product_filter)
     if product:
         return product, "admin"
-    product = await ctx.db.collection("user_products").find_one(product_filter)
+    # User Admin products are private until their owner explicitly publishes them.
+    # This lookup is also used by cart and checkout flows, so applying the status
+    # constraint here prevents a draft or discontinued listing from being bought
+    # through a direct product URL.
+    product = await ctx.db.collection("user_products").find_one(
+        {"$and": [product_filter, {"status": "active"}]}
+    )
     if product:
         return product, "user_admin"
     return None, ""
@@ -534,7 +541,8 @@ async def get_products(ctx: RequestContext = Depends(get_context)):
     should_paginate = include_meta or page_size_input is not None or page_input is not None
     collection = ctx.db.collection("products")
     public_products = await collection.find(db_query).to_array()
-    public_user_products = await ctx.db.collection("user_products").find(db_query).to_array()
+    user_product_query = {"$and": [db_query, {"status": "active"}]} if db_query else {"status": "active"}
+    public_user_products = await ctx.db.collection("user_products").find(user_product_query).to_array()
     catalog_items = [
         *(serialize_product(item) for item in public_products),
         *(
@@ -589,7 +597,7 @@ async def get_product_categories(ctx: RequestContext = Depends(get_context)):
     for product in products:
         merge_category_record(records, product.get("category"), product.get("subcategory"))
     user_products = await ctx.db.collection("user_products").find(
-        {},
+        {"status": "active"},
         {"projection": {"_id": 0, "category": 1, "subcategory": 1}},
     ).to_array()
     for product in user_products:
@@ -666,14 +674,28 @@ async def create_product_review(product_id: str, request: Request, ctx: RequestC
     body = await read_json_body(request, ctx.config.max_body_bytes)
     data = body if isinstance(body, dict) else {}
     rating = normalize_review_rating(data.get("rating"))
-    comment = normalize_text(data.get("comment") or data.get("review") or data.get("body"), MAX_REVIEW_COMMENT_LENGTH)
+    raw_comment = data.get("comment") or data.get("review") or data.get("body")
+    comment = sanitize_text(raw_comment, MAX_REVIEW_COMMENT_LENGTH)
     if rating is None:
         return error_response(400, "Rating must be between 1 and 5")
     if not comment:
         return error_response(400, "Review is required")
 
     canonical_product_id = normalize_text(product.get("product_id") or product_id, 160)
+    reviewer_user_id = normalize_text(ctx.user.get("user_id"), 200)
     now = now_iso()
+
+    existing_review = await ctx.db.collection("product_reviews").find_one(
+        {"product_id": canonical_product_id, "reviewer_user_id": reviewer_user_id}
+    )
+    if existing_review:
+        await ctx.db.collection("product_reviews").update_one(
+            {"_id": existing_review["_id"]},
+            {"$set": {"rating": rating, "comment": comment, "updated_at": now}},
+        )
+        updated_review = {**existing_review, "rating": rating, "comment": comment, "updated_at": now}
+        return json_response(serialize_public_review(updated_review), 200, {"Cache-Control": "no-store"})
+
     image_urls = normalize_product_image_urls(product.get("image_urls"), product.get("image_url"))
     review = {
         "review_id": random_compact_id("review"),
@@ -685,7 +707,7 @@ async def create_product_review(product_id: str, request: Request, ctx: RequestC
         "product_owner_email": normalize_text(product.get("owner_email"), 320),
         "rating": rating,
         "comment": comment,
-        "reviewer_user_id": normalize_text(ctx.user.get("user_id"), 200),
+        "reviewer_user_id": reviewer_user_id,
         "reviewer_name": resolve_reviewer_name(ctx.user),
         "reviewer_email": normalize_text(ctx.user.get("email"), 320),
         "created_at": now,

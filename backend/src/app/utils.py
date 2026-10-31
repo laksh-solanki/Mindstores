@@ -9,11 +9,50 @@ from datetime import datetime, timezone
 from typing import Any
 
 
+HTML_TAG_PATTERN = re.compile(r"<[^>]*?>")
+CONTROL_CHAR_PATTERN = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
+
 def normalize_text(value: Any, max_length: int = 0) -> str:
     text = "" if value is None else str(value).strip()
     if not text:
         return ""
+    # Strip null bytes and non-printable control characters
+    text = CONTROL_CHAR_PATTERN.sub("", text).replace("\x00", "")
     return text[:max_length] if max_length > 0 and len(text) > max_length else text
+
+
+def sanitize_text(value: Any, max_length: int = 0, strip_html: bool = True) -> str:
+    if value is None:
+        return ""
+    text = str(value)
+    # Remove null bytes and dangerous control characters
+    text = CONTROL_CHAR_PATTERN.sub("", text).replace("\x00", "")
+    if strip_html:
+        text = HTML_TAG_PATTERN.sub("", text)
+    text = text.strip()
+    if max_length > 0 and len(text) > max_length:
+        return text[:max_length]
+    return text
+
+
+def sanitize_nosql_payload(data: Any) -> Any:
+    """Recursively validates input data to block NoSQL operator and dot injection.
+    Raises ValueError('INVALID_INPUT_KEY') if any dictionary key starts with '$' or contains '.' or null bytes.
+    """
+    if isinstance(data, dict):
+        cleaned: dict[str, Any] = {}
+        for key, value in data.items():
+            str_key = str(key)
+            if str_key.startswith("$") or "." in str_key or "\x00" in str_key:
+                raise ValueError("INVALID_INPUT_KEY")
+            cleaned[str_key] = sanitize_nosql_payload(value)
+        return cleaned
+    if isinstance(data, list):
+        return [sanitize_nosql_payload(item) for item in data]
+    if isinstance(data, str):
+        return data.replace("\x00", "")
+    return data
 
 
 def escape_regex(value: Any) -> str:

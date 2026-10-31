@@ -89,7 +89,13 @@ def user_admin_pin_unlock_until() -> str:
 def has_active_pin_access(user: dict[str, Any] | None) -> bool:
     if not has_user_admin_pin(user):
         return False
-    unlocked_until = normalize_text((user or {}).get("user_admin_pin_unlocked_until"), 48)
+    user = user or {}
+    if user.get("user_admin_blocked"):
+        return False
+    locked_until = normalize_text(user.get("user_admin_pin_locked_until"), 48)
+    if locked_until and locked_until > now_iso():
+        return False
+    unlocked_until = normalize_text(user.get("user_admin_pin_unlocked_until"), 48)
     return bool(unlocked_until and unlocked_until > now_iso())
 
 
@@ -99,6 +105,8 @@ def serialize_user_admin_profile(user: dict[str, Any] | None) -> dict[str, Any]:
     country_code = normalize_mobile_country_code(user.get("mobile_country_code"))
     mobile_number = normalize_mobile_number(user.get("mobile_number"))
     full_number = normalize_text(user.get("mobile_full_number"), 32) or build_mobile_display(country_code, mobile_number)
+    locked_until = normalize_text(user.get("user_admin_pin_locked_until"), 48)
+    is_locked = bool(locked_until and locked_until > now_iso())
     return {
         "email": user.get("email"),
         "name": user.get("name"),
@@ -107,11 +115,13 @@ def serialize_user_admin_profile(user: dict[str, Any] | None) -> dict[str, Any]:
         "mobile_full_number": full_number,
         "has_user_admin_pin": pin_created,
         "has_pin_access": has_active_pin_access(user),
+        "is_pin_locked": is_locked,
+        "pin_locked_until": locked_until if is_locked else None,
         "user_admin_pin_created_at": user.get("user_admin_pin_created_at") if pin_created else None,
         "user_admin_pin_verified_at": user.get("user_admin_pin_verified_at") if pin_created else None,
         "user_admin_pin_unlocked_until": user.get("user_admin_pin_unlocked_until") if pin_created else None,
         "user_admin_blocked": bool(user.get("user_admin_blocked", False)),
-        "user_admin_hidden": bool(user.get("user_admin_hidden", False))
+        "user_admin_hidden": bool(user.get("user_admin_hidden", False)),
     }
 
 
@@ -298,13 +308,32 @@ async def submit_user_admin_pin(request: Request, ctx: RequestContext = Depends(
     updates = {
         "user_admin_pin_verified_at": now,
         "user_admin_pin_unlocked_until": user_admin_pin_unlock_until(),
+        "user_admin_pin_failed_attempts": 0,
+        "user_admin_pin_locked_until": None,
         "updated_at": now,
     }
     message = "User Admin PIN verified"
 
     if user_has_pin:
+        locked_until = (ctx.user or {}).get("user_admin_pin_locked_until")
+        if locked_until and locked_until > now:
+            return error_response(429, "Account security lockout: Too many failed PIN attempts. Please try again later.")
+
         if not verify_user_admin_pin(pin, ctx.user):
-            return error_response(400, "Invalid User Admin PIN")
+            failed_attempts = int((ctx.user or {}).get("user_admin_pin_failed_attempts", 0)) + 1
+            if failed_attempts >= 5:
+                lock_until = (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat().replace("+00:00", "Z")
+                await ctx.db.collection("users").update_one(
+                    {"user_id": ctx.user.get("user_id")},
+                    {"$set": {"user_admin_pin_failed_attempts": failed_attempts, "user_admin_pin_locked_until": lock_until, "updated_at": now}},
+                )
+                return error_response(429, "Too many failed PIN attempts. Account locked for 15 minutes.")
+
+            await ctx.db.collection("users").update_one(
+                {"user_id": ctx.user.get("user_id")},
+                {"$set": {"user_admin_pin_failed_attempts": failed_attempts, "updated_at": now}},
+            )
+            return error_response(400, f"Invalid User Admin PIN. {5 - failed_attempts} attempt(s) remaining.")
     else:
         mobile_country_code = normalize_mobile_country_code(
             payload.get("mobile_country_code")
@@ -366,6 +395,11 @@ async def reset_user_admin_pin(request: Request, ctx: RequestContext = Depends(g
     )
     mobile_number = normalize_mobile_number(payload.get("mobile_number") or payload.get("mobileNumber"))
 
+    now = now_iso()
+    locked_until = (ctx.user or {}).get("user_admin_pin_locked_until")
+    if locked_until and locked_until > now:
+        return error_response(429, "Account security lockout: Too many failed PIN attempts. Please try again later.")
+
     if not has_user_admin_pin(ctx.user):
         return error_response(400, "Create a User Admin PIN first")
     if not mobile_country_code:
@@ -382,7 +416,6 @@ async def reset_user_admin_pin(request: Request, ctx: RequestContext = Depends(g
     if mobile_country_code != saved_country_code or mobile_number != saved_mobile_number:
         return error_response(400, "Mobile number does not match this account")
 
-    now = now_iso()
     salt, pin_hash = create_pin_secret(pin)
     await ctx.db.collection("users").update_one(
         {"user_id": ctx.user.get("user_id")},
@@ -390,6 +423,8 @@ async def reset_user_admin_pin(request: Request, ctx: RequestContext = Depends(g
             "$set": {
                 "user_admin_pin_hash": pin_hash,
                 "user_admin_pin_salt": salt,
+                "user_admin_pin_failed_attempts": 0,
+                "user_admin_pin_locked_until": None,
                 "user_admin_pin_created_at": now,
                 "user_admin_pin_verified_at": now,
                 "user_admin_pin_unlocked_until": user_admin_pin_unlock_until(),

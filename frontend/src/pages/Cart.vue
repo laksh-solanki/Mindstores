@@ -1,5 +1,5 @@
 <template>
-  <v-container class="bespoke-cart-container" fluid>
+  <v-container class="site-container bespoke-cart-container" fluid>
     <!-- Back Button Header -->
     <div class="cart-header-bar">
       <button class="back-btn" @click="$router.push('/')">
@@ -21,7 +21,7 @@
           <h1 class="empty-cart-title">Your cart is <span class="highlight-serif">empty</span></h1>
           <p class="empty-cart-subtitle">Explore our latest collection and add products you love.</p>
           <div class="mt-6">
-            <v-btn class="action-btn-flat" rounded="0" size="large" @click="$router.push('/')">
+            <v-btn class="btn-store-primary" elevation="0" rounded="0" @click="$router.push('/')">
               Continue Shopping
             </v-btn>
           </div>
@@ -240,11 +240,11 @@
             <!-- Checkout CTA -->
             <v-btn
               block
-              class="action-btn-flat mt-5"
+              class="btn-store-primary mt-5"
               :disabled="checkoutDisabled"
+              elevation="0"
               :loading="checkoutLoading"
               rounded="0"
-              size="large"
               @click="checkout"
             >
               Continue to Demo Checkout
@@ -643,7 +643,8 @@
 .bespoke-cart-container {
   min-height: 100vh;
   background: #f8fafc;
-  padding: 40px max(16px, 4vw) 80px !important;
+  padding-top: 40px !important;
+  padding-bottom: 80px !important;
 }
 
 /* ════════════════════════════════ HEADER BAR ══ */
@@ -1182,22 +1183,60 @@
     padding: 24px 16px 60px !important;
   }
   .flat-cart-item-card {
-    flex-direction: column;
-    gap: 16px;
-  }
-  .product-name-link {
-    white-space: normal;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
   }
   .cart-item-image-wrapper {
-    width: 100%;
-    height: 180px;
+    width: 88px;
+    height: 88px;
+    flex-shrink: 0;
   }
   .cart-item-img {
-    max-height: 160px;
+    max-height: 80px;
+    max-width: 80px;
+    object-fit: contain;
+  }
+  .product-name-link {
+    font-size: 13px;
+    white-space: normal;
+    line-height: 1.3;
+  }
+  .product-price-display {
+    font-size: 14px;
+  }
+  .cart-item-footer {
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px !important;
+  }
+  .quantity-control-group {
+    scale: 0.95;
+    transform-origin: left center;
   }
   .summary-frame {
     position: static;
-    margin-top: 32px;
+    margin-top: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .flat-cart-item-card {
+    position: relative;
+    padding: 10px;
+    gap: 10px;
+  }
+  .cart-item-image-wrapper {
+    width: 76px;
+    height: 76px;
+  }
+  .cart-item-img {
+    max-height: 70px;
+    max-width: 70px;
+  }
+  .summary-card-body {
+    padding: 16px;
   }
 }
 </style>
