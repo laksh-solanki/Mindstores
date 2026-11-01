@@ -1,9 +1,0 @@
-{
-  "name": "mindstores-root",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "build": "pnpm --filter frontend run build",
-    "dev": "pnpm --filter frontend run dev"
-  }
-}
