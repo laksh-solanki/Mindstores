@@ -4,11 +4,9 @@
 *.py[cod]
 *.log
 .venv/
-backend/.venv-workers/
 backend/python_modules/
 frontend/dist/
 backend/dist/
-backend/.wrangler/
 
 # Local env and secrets
 backend/.env

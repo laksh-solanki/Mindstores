@@ -3,8 +3,6 @@
 !.env.example
 service-account.json
 .venv/
-.venv-workers/
-.wrangler/
 python_modules/
 mindstores/
 __pycache__/
