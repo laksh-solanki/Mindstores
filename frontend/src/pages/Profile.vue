@@ -547,146 +547,8 @@
       :type="snackbarColor"
     />
 
-    <!-- User Admin PIN Verification Dialog -->
-    <v-dialog
-      v-model="userAdminDialog"
-      class="flat-dialog"
-      :fullscreen="xs"
-      :max-width="userAdminDialogMaxWidth"
-      scrollable
-      width="100%"
-    >
-      <div class="gallery-frame dialog-frame-flat h-100">
-        <button aria-label="Close dialog" class="dialog-close-btn" @click="userAdminDialog = false">
-          <v-icon>mdi-close</v-icon>
-        </button>
-
-        <div class="dialog-card-body d-flex flex-column pa-6">
-          <div class="brand-tagline">
-            <span class="tag-label">CONSOLE GATE</span>
-            <span class="tag-dot">•</span>
-            <span class="tag-label">PIN CONTROL</span>
-          </div>
-
-          <h2 class="dialog-title text-wrap">
-            User Admin <span class="highlight-serif">Access</span>
-          </h2>
-
-          <div class="custom-flat-alert info-alert mt-4">
-            <v-icon class="alert-icon" size="18">{{ userAdminPinIcon }}</v-icon>
-            <div class="alert-content">
-              {{ userAdminPinHelpText }}
-            </div>
-          </div>
-
-          <!-- Local User Admin Alerts -->
-          <div
-            v-if="userAdminAlert"
-            :class="[
-              'custom-flat-alert',
-              `${userAdminAlert.type}-alert`,
-              'mt-4',
-            ]"
-          >
-            <v-icon class="alert-icon" size="18">
-              {{
-                userAdminAlert.type === "success"
-                  ? "mdi-check-circle"
-                  : userAdminAlert.type === "warning"
-                    ? "mdi-alert"
-                    : "mdi-alert-circle"
-              }}
-            </v-icon>
-            <div class="alert-content">
-              {{ userAdminAlert.message }}
-            </div>
-            <button
-              aria-label="Dismiss alert"
-              class="alert-close-btn ml-2"
-              @click="userAdminAlert = null"
-            >
-              <v-icon size="16">mdi-close</v-icon>
-            </button>
-          </div>
-
-          <!-- Mobile Inputs (If required) -->
-          <v-row v-if="userAdminRequiresMobile" class="mt-4" dense>
-            <v-col cols="12" sm="5">
-              <v-select
-                v-model="userAdminPinForm.mobileCountryCode"
-                class="flat-text-field"
-                density="comfortable"
-                item-title="label"
-                item-value="code"
-                :items="mobileCountryOptions"
-                label="Country Code"
-                variant="outlined"
-              />
-            </v-col>
-            <v-col cols="12" sm="7">
-              <v-text-field
-                v-model="userAdminPinForm.mobileNumber"
-                class="flat-text-field"
-                density="comfortable"
-                label="Mobile Number"
-                maxlength="15"
-                variant="outlined"
-              />
-            </v-col>
-          </v-row>
-
-          <div v-if="canRecoverUserAdminMobile" class="d-flex justify-end mt-1">
-            <button
-              class="text-link-btn"
-              :disabled="userAdminPinSaving"
-              @click="recoverUserAdminMobile"
-            >
-              Forgot mobile number?
-            </button>
-          </div>
-
-          <!-- OTP PIN INPUT -->
-          <div class="otp-wrap-flat mt-4">
-            <v-otp-input
-              v-model="userAdminPinForm.pin"
-              class="flat-otp-input"
-              density="comfortable"
-              :disabled="userAdminPinSaving"
-              :length="userAdminPinLength"
-              type="number"
-              variant="outlined"
-              @finish="submitUserAdminPin"
-            />
-          </div>
-
-          <div v-if="canResetUserAdminPin" class="d-flex justify-end mt-2">
-            <button
-              class="text-link-btn"
-              :disabled="userAdminPinSaving"
-              @click="startUserAdminPinReset"
-            >
-              Forgot PIN?
-            </button>
-          </div>
-
-          <!-- Action buttons inside Dialog -->
-          <div class="dialog-actions-flat mt-6">
-            <button class="btn-flat-outline" @click="userAdminDialog = false">
-              Cancel
-            </button>
-            <button
-              class="btn-flat-solid"
-              :disabled="userAdminPinSaving"
-              @click="submitUserAdminPin"
-            >
-              {{
-                userAdminPinSaving ? "Verifying..." : userAdminPinActionLabel
-              }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </v-dialog>
+    <!-- User Admin Access Dialog (OTP) -->
+    <UserAdminAccessDialog v-model="userAdminDialog" />
   </div>
 </template>
 
@@ -696,6 +558,7 @@
   import { useRouter } from "vue-router";
   import { useDisplay } from "vuetify";
   import BaseAlert from "@/components/BaseAlert.vue";
+  import UserAdminAccessDialog from "@/components/UserAdminAccessDialog.vue";
   import { useAppStore } from "@/stores/app";
   import { useCartStore } from "@/stores/cart";
   import { API_URL, buildAuthenticatedRequestConfig } from "@/utils/api";
@@ -851,6 +714,7 @@
     name: "Profile",
     components: {
       BaseAlert,
+      UserAdminAccessDialog,
     },
     setup() {
       const router = useRouter();
@@ -1308,7 +1172,6 @@
           return;
         }
 
-        resetUserAdminAccessFlow();
         userAdminDialog.value = true;
       };
 

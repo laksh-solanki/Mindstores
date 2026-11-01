@@ -549,7 +549,7 @@
           return 'Fill all billing address fields'
         }
         if (tab.value === 'upi') {
-          const upiPattern = /^[a-zA-Z0-9._-]{2,}@[a-zA-Z]{2,}$/
+          const upiPattern = /^[\w.-]{2,}@[a-z]{2,}$/i
           if (!upiPattern.test(String(form.value.upiId || '').trim())) {
             return 'Enter a valid UPI ID'
           }

@@ -17,6 +17,8 @@ router = APIRouter()
 PRIVATE_USER_RESPONSE_FIELDS = {
     "user_admin_pin_hash",
     "user_admin_pin_salt",
+    "user_admin_otp_hash",
+    "user_admin_otp_salt",
     "password_hash",
     "password_salt",
 }

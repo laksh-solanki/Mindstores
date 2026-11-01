@@ -53,6 +53,13 @@ class AppConfig:
     mongo_data_api_url: str = ""
     mongo_data_api_key: str = ""
     mongo_data_source: str = "Cluster0"
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
+    smtp_tls: bool = True
+    smtp_ssl: bool = False
 
 
 def get_config() -> AppConfig:
@@ -97,4 +104,11 @@ def get_config() -> AppConfig:
         mongo_data_api_url=(read_env("MONGO_ATLAS_DATA_API_URL", "") or "").rstrip("/"),
         mongo_data_api_key=read_env("MONGO_ATLAS_DATA_API_KEY", "") or "",
         mongo_data_source=read_env("MONGO_ATLAS_DATA_SOURCE", "Cluster0") or "Cluster0",
+        smtp_host=read_env("SMTP_HOST", "") or "",
+        smtp_port=parse_integer_env(read_env("SMTP_PORT"), 587),
+        smtp_user=read_env("SMTP_USER", "") or "",
+        smtp_password=read_env("SMTP_PASSWORD", "") or "",
+        smtp_from=read_env("SMTP_FROM", "") or read_env("SMTP_FROM_EMAIL", "") or "",
+        smtp_tls=parse_boolean_env(read_env("SMTP_TLS"), True),
+        smtp_ssl=parse_boolean_env(read_env("SMTP_SSL"), False),
     )

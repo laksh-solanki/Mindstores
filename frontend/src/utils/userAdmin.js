@@ -84,6 +84,24 @@ export function parseMobileNumber(fullNumber) {
   }
 }
 
+export async function sendUserAdminOtp(email) {
+  const response = await axios.post(
+    `${API_URL}/user-admin/otp/send`,
+    { email },
+    await buildAuthenticatedRequestConfig()
+  )
+  return response.data
+}
+
+export async function verifyUserAdminOtp(email, otp) {
+  const response = await axios.post(
+    `${API_URL}/user-admin/otp/verify`,
+    { email, otp },
+    await buildAuthenticatedRequestConfig()
+  )
+  return response.data
+}
+
 export async function fetchUserAdminProfile() {
   const response = await axios.get(
     `${API_URL}/user-admin/profile`,

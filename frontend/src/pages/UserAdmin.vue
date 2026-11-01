@@ -13,7 +13,7 @@
             User <span class="highlight-serif">Admin</span>
           </h1>
           <p class="page-subtitle">
-            Manage your product drafts from your PIN-protected account.
+            Manage your product drafts from your OTP-verified account.
           </p>
         </div>
         <div class="topbar-actions">
@@ -80,10 +80,13 @@
       >
         <div class="d-flex flex-column flex-sm-row align-sm-center justify-space-between ga-3 w-100">
           <div class="d-flex align-center ga-2">
-            <v-icon icon="mdi-lock-outline" />
-            <span>Create or enter your User Admin PIN from Profile before using User Admin.</span>
+            <v-icon icon="mdi-shield-key-outline" />
+            <span>Verify your email with an OTP code before accessing User Admin.</span>
           </div>
-          <router-link class="btn-flat-solid text-decoration-none py-1 px-4 text-center" to="/profile">Open Profile</router-link>
+          <div class="d-flex align-center ga-2">
+            <button class="btn-flat-solid text-decoration-none py-1 px-4 text-center" @click="userAdminDialog = true">Verify with OTP</button>
+            <router-link class="btn-flat-outline text-decoration-none py-1 px-4 text-center" to="/profile">Profile</router-link>
+          </div>
         </div>
       </v-alert>
 
@@ -1137,6 +1140,9 @@
         </div>
       </div>
     </v-dialog>
+
+    <!-- User Admin Access Dialog (OTP) -->
+    <UserAdminAccessDialog v-model="userAdminDialog" @verified="loadConsole" />
   </div>
 </template>
 
@@ -1145,6 +1151,7 @@
   import { computed, onMounted, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import BaseAlert from '@/components/BaseAlert.vue'
+  import UserAdminAccessDialog from '@/components/UserAdminAccessDialog.vue'
   import { useAppStore } from '@/stores/app'
   import { API_URL, buildAuthenticatedRequestConfig } from '@/utils/api'
   import { safeDisplayImageUrl, safeDisplayImageUrls } from '@/utils/images'
@@ -1298,7 +1305,8 @@
   export default {
     name: 'UserAdmin',
     components: {
-      BaseAlert
+      BaseAlert,
+      UserAdminAccessDialog
     },
     setup() {
       const appStore = useAppStore()
@@ -1306,6 +1314,7 @@
       const loading = ref(false)
       const isBlocked = ref(false)
       const saving = ref(false)
+      const userAdminDialog = ref(false)
       const activePanel = ref('dashboard')
       const profile = ref({})
       const products = ref([])
@@ -2359,6 +2368,7 @@
         categoryOptions,
         availableSubcategories,
         hasPinAccess,
+        userAdminDialog,
         filteredProducts,
         filteredMessages,
         filteredDeliveries,

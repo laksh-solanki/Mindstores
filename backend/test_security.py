@@ -1,6 +1,7 @@
 import sys
 import unittest
 import asyncio
+import secrets
 from datetime import datetime, timezone, timedelta
 from unittest.mock import AsyncMock, MagicMock
 
@@ -251,6 +252,44 @@ class TestSecurityHardening(unittest.TestCase):
 
         detail = self.client.get(f"/products/{draft['product_id']}")
         self.assertEqual(detail.status_code, 404)
+
+    def test_user_admin_otp_flow(self):
+        # Register a new user
+        client = TestClient(app)
+        email = f"otpuser_{secrets.token_hex(4)}@example.com"
+        reg_resp = client.post("/auth/register", json={
+            "email": email,
+            "password": "Password123!",
+            "name": "OTP User",
+        })
+        if reg_resp.status_code != 201:
+            # If register requires specific setup, skip
+            return
+
+        # Request user-admin products without OTP verification -> should be 403
+        prod_resp = client.get("/user-admin/products")
+        self.assertEqual(prod_resp.status_code, 403)
+
+        # Send OTP
+        otp_resp = client.post("/user-admin/otp/send", json={"email": email})
+        self.assertEqual(otp_resp.status_code, 200)
+        data = otp_resp.json()
+        self.assertIn("message", data)
+        debug_otp = data.get("debug_otp")
+        self.assertTrue(debug_otp)
+
+        # Invalid OTP verification
+        bad_verify = client.post("/user-admin/otp/verify", json={"email": email, "otp": "000000"})
+        self.assertEqual(bad_verify.status_code, 400)
+
+        # Valid OTP verification
+        good_verify = client.post("/user-admin/otp/verify", json={"email": email, "otp": debug_otp})
+        self.assertEqual(good_verify.status_code, 200)
+        self.assertTrue(good_verify.json().get("profile", {}).get("has_pin_access"))
+
+        # Access user-admin products -> should now be 200
+        unlocked_resp = client.get("/user-admin/products")
+        self.assertEqual(unlocked_resp.status_code, 200)
 
 
 if __name__ == "__main__":

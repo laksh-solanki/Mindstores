@@ -19,6 +19,7 @@ from ..delivery import (
     find_delivery_item_index,
     transition_delivery_item,
 )
+from ..mailer import send_otp_email
 from ..utils import normalize_text, now_iso, random_compact_id
 from .products import normalize_price_currency, normalize_product_image_urls
 
@@ -26,6 +27,34 @@ router = APIRouter()
 USER_ADMIN_PIN_LENGTH = 6
 USER_ADMIN_PIN_HASH_ITERATIONS = 120_000
 USER_ADMIN_PIN_UNLOCK_HOURS = 12
+USER_ADMIN_OTP_LENGTH = 6
+USER_ADMIN_OTP_EXPIRE_MINUTES = 10
+USER_ADMIN_OTP_HASH_ITERATIONS = 100_000
+
+
+def normalize_otp(value: Any) -> str:
+    text = normalize_text(value, 16).replace(" ", "")
+    return text if re.fullmatch(rf"\d{{{USER_ADMIN_OTP_LENGTH}}}", text) else ""
+
+
+def build_otp_hash(otp: str, salt: str) -> str:
+    return hashlib.pbkdf2_hmac(
+        "sha256",
+        otp.encode("utf-8"),
+        salt.encode("utf-8"),
+        USER_ADMIN_OTP_HASH_ITERATIONS,
+    ).hex()
+
+
+def create_otp_secret(otp: str) -> tuple[str, str]:
+    salt = secrets.token_hex(16)
+    return salt, build_otp_hash(otp, salt)
+
+
+def verify_otp_secret(otp: str, salt: str, stored_hash: str) -> bool:
+    if not otp or not salt or not stored_hash:
+        return False
+    return hmac.compare_digest(build_otp_hash(otp, salt), stored_hash)
 
 
 def normalize_mobile_country_code(value: Any) -> str:
@@ -87,39 +116,50 @@ def user_admin_pin_unlock_until() -> str:
 
 
 def has_active_pin_access(user: dict[str, Any] | None) -> bool:
-    if not has_user_admin_pin(user):
-        return False
     user = user or {}
     if user.get("user_admin_blocked"):
         return False
     locked_until = normalize_text(user.get("user_admin_pin_locked_until"), 48)
     if locked_until and locked_until > now_iso():
         return False
-    unlocked_until = normalize_text(user.get("user_admin_pin_unlocked_until"), 48)
-    return bool(unlocked_until and unlocked_until > now_iso())
+    unlocked_until = normalize_text(
+        user.get("user_admin_unlocked_until") or user.get("user_admin_pin_unlocked_until"),
+        48,
+    )
+    if unlocked_until and unlocked_until > now_iso():
+        return True
+    return False
 
 
 def serialize_user_admin_profile(user: dict[str, Any] | None) -> dict[str, Any]:
     user = user or {}
-    pin_created = has_user_admin_pin(user)
     country_code = normalize_mobile_country_code(user.get("mobile_country_code"))
     mobile_number = normalize_mobile_number(user.get("mobile_number"))
     full_number = normalize_text(user.get("mobile_full_number"), 32) or build_mobile_display(country_code, mobile_number)
     locked_until = normalize_text(user.get("user_admin_pin_locked_until"), 48)
     is_locked = bool(locked_until and locked_until > now_iso())
+    has_access = has_active_pin_access(user)
+    unlocked_until = normalize_text(
+        user.get("user_admin_unlocked_until") or user.get("user_admin_pin_unlocked_until"),
+        48,
+    )
+    verified_at = user.get("user_admin_verified_at") or user.get("user_admin_pin_verified_at")
     return {
         "email": user.get("email"),
         "name": user.get("name"),
         "mobile_country_code": country_code,
         "mobile_number": mobile_number,
         "mobile_full_number": full_number,
-        "has_user_admin_pin": pin_created,
-        "has_pin_access": has_active_pin_access(user),
+        "has_user_admin_pin": True,
+        "has_pin_access": has_access,
+        "has_user_admin_access": has_access,
         "is_pin_locked": is_locked,
         "pin_locked_until": locked_until if is_locked else None,
-        "user_admin_pin_created_at": user.get("user_admin_pin_created_at") if pin_created else None,
-        "user_admin_pin_verified_at": user.get("user_admin_pin_verified_at") if pin_created else None,
-        "user_admin_pin_unlocked_until": user.get("user_admin_pin_unlocked_until") if pin_created else None,
+        "user_admin_pin_created_at": user.get("user_admin_pin_created_at"),
+        "user_admin_pin_verified_at": verified_at,
+        "user_admin_pin_unlocked_until": unlocked_until if has_access else None,
+        "user_admin_verified_at": verified_at,
+        "user_admin_unlocked_until": unlocked_until if has_access else None,
         "user_admin_blocked": bool(user.get("user_admin_blocked", False)),
         "user_admin_hidden": bool(user.get("user_admin_hidden", False)),
     }
@@ -278,8 +318,8 @@ def require_pin_access(ctx: RequestContext):
     profile = serialize_user_admin_profile(ctx.user)
     if profile.get("user_admin_blocked"):
         return error_response(403, "your user admin page block")
-    if not profile["has_pin_access"]:
-        return error_response(403, "User Admin PIN required")
+    if not profile["has_pin_access"] and not profile.get("has_user_admin_access"):
+        return error_response(403, "User Admin verification required")
     return None
 
 
@@ -289,6 +329,156 @@ async def get_user_admin_profile(ctx: RequestContext = Depends(get_context)):
     if denied:
         return denied
     return json_response(serialize_user_admin_profile(ctx.user), 200, {"Cache-Control": "no-store"})
+
+
+@router.post("/user-admin/otp/send")
+async def send_user_admin_otp(request: Request, ctx: RequestContext = Depends(get_context)):
+    denied = require_authenticated_user(ctx)
+    if denied:
+        return denied
+
+    if ctx.user.get("user_admin_blocked"):
+        return error_response(403, "your user admin page block")
+
+    data = await read_json_body(request, ctx.config.max_body_bytes)
+    payload = data if isinstance(data, dict) else {}
+    target_email = normalize_text(payload.get("email") or ctx.user.get("email"), 160).strip().lower()
+
+    if not target_email or not re.fullmatch(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", target_email):
+        return error_response(400, "Valid email address is required")
+
+    now = datetime.now(timezone.utc)
+    now_str = now.isoformat().replace("+00:00", "Z")
+
+    last_sent_at = ctx.user.get("user_admin_otp_sent_at")
+    if last_sent_at:
+        try:
+            last_dt = datetime.fromisoformat(last_sent_at.replace("Z", "+00:00"))
+            if (now - last_dt).total_seconds() < 20:
+                retry_in = int(20 - (now - last_dt).total_seconds())
+                return error_response(429, f"Please wait {retry_in}s before requesting a new OTP")
+        except Exception:
+            pass
+
+    otp_code = f"{secrets.randbelow(1_000_000):06d}"
+    salt, otp_hash = create_otp_secret(otp_code)
+    expires_at = (now + timedelta(minutes=USER_ADMIN_OTP_EXPIRE_MINUTES)).isoformat().replace("+00:00", "Z")
+
+    await ctx.db.collection("users").update_one(
+        {"user_id": ctx.user.get("user_id")},
+        {
+            "$set": {
+                "user_admin_otp_hash": otp_hash,
+                "user_admin_otp_salt": salt,
+                "user_admin_otp_email": target_email,
+                "user_admin_otp_expires_at": expires_at,
+                "user_admin_otp_sent_at": now_str,
+                "user_admin_otp_failed_attempts": 0,
+                "updated_at": now_str,
+            }
+        },
+    )
+
+    sent, detail = send_otp_email(target_email, otp_code, ctx.config, expires_minutes=USER_ADMIN_OTP_EXPIRE_MINUTES)
+    if not sent:
+        return error_response(500, detail or "Failed to send OTP email. Please check your SMTP configuration in .env.")
+
+    response_data = {
+        "message": f"Verification code sent to {target_email}",
+        "email": target_email,
+        "expires_at": expires_at,
+        "expires_in_seconds": USER_ADMIN_OTP_EXPIRE_MINUTES * 60,
+    }
+    if not ctx.config.is_production or not getattr(ctx.config, "smtp_host", None):
+        response_data["debug_otp"] = otp_code
+
+    return json_response(response_data, 200, {"Cache-Control": "no-store"})
+
+
+@router.post("/user-admin/otp/verify")
+async def verify_user_admin_otp(request: Request, ctx: RequestContext = Depends(get_context)):
+    denied = require_authenticated_user(ctx)
+    if denied:
+        return denied
+
+    if ctx.user.get("user_admin_blocked"):
+        return error_response(403, "your user admin page block")
+
+    data = await read_json_body(request, ctx.config.max_body_bytes)
+    payload = data if isinstance(data, dict) else {}
+    otp = normalize_otp(payload.get("otp") or payload.get("code") or payload.get("pin"))
+    if not otp:
+        return error_response(400, f"Enter the {USER_ADMIN_OTP_LENGTH}-digit OTP sent to your email")
+
+    user = await ctx.db.collection("users").find_one({"user_id": ctx.user.get("user_id")})
+    if not user:
+        return error_response(404, "User not found")
+
+    now = datetime.now(timezone.utc)
+    now_str = now.isoformat().replace("+00:00", "Z")
+
+    stored_salt = normalize_text(user.get("user_admin_otp_salt"), 128)
+    stored_hash = normalize_text(user.get("user_admin_otp_hash"), 256)
+    expires_at = normalize_text(user.get("user_admin_otp_expires_at"), 48)
+
+    if not stored_salt or not stored_hash or not expires_at:
+        return error_response(400, "No active OTP request found. Please click 'Send OTP' first.")
+
+    if expires_at < now_str:
+        return error_response(400, "OTP has expired. Please request a new OTP.")
+
+    if not verify_otp_secret(otp, stored_salt, stored_hash):
+        failed_attempts = int(user.get("user_admin_otp_failed_attempts", 0)) + 1
+        if failed_attempts >= 5:
+            await ctx.db.collection("users").update_one(
+                {"user_id": user.get("user_id")},
+                {
+                    "$set": {
+                        "user_admin_otp_hash": None,
+                        "user_admin_otp_salt": None,
+                        "user_admin_otp_expires_at": None,
+                        "user_admin_otp_failed_attempts": failed_attempts,
+                        "updated_at": now_str,
+                    }
+                },
+            )
+            return error_response(429, "Too many invalid attempts. Please request a new OTP.")
+
+        await ctx.db.collection("users").update_one(
+            {"user_id": user.get("user_id")},
+            {"$set": {"user_admin_otp_failed_attempts": failed_attempts, "updated_at": now_str}},
+        )
+        remaining = 5 - failed_attempts
+        return error_response(400, f"Invalid OTP code. {remaining} attempt(s) remaining.")
+
+    unlocked_until = (now + timedelta(hours=USER_ADMIN_PIN_UNLOCK_HOURS)).isoformat().replace("+00:00", "Z")
+    updates = {
+        "user_admin_unlocked_until": unlocked_until,
+        "user_admin_pin_unlocked_until": unlocked_until,
+        "user_admin_verified_at": now_str,
+        "user_admin_verified_email": user.get("user_admin_otp_email") or user.get("email"),
+        "user_admin_otp_hash": None,
+        "user_admin_otp_salt": None,
+        "user_admin_otp_expires_at": None,
+        "user_admin_otp_failed_attempts": 0,
+        "updated_at": now_str,
+    }
+    await ctx.db.collection("users").update_one(
+        {"user_id": user.get("user_id")},
+        {"$set": updates},
+    )
+
+    updated_user = await ctx.db.collection("users").find_one({"user_id": user.get("user_id")}, {"projection": {"_id": 0}})
+    profile = serialize_user_admin_profile(updated_user)
+    return json_response(
+        {
+            "message": "OTP verified successfully. Admin access granted.",
+            "profile": profile,
+            "user": profile,
+        },
+        200,
+        {"Cache-Control": "no-store"},
+    )
 
 
 @router.post("/user-admin/pin")

@@ -418,6 +418,45 @@ export const useAppStore = defineStore("app", {
       }
     },
 
+    async sendUserAdminOtp(email) {
+      this.loading = true;
+      try {
+        const response = await axios.post(
+          `${API_URL}/user-admin/otp/send`,
+          { email },
+          await buildAuthenticatedRequestConfig({ timeout: AUTH_REQUEST_TIMEOUT_MS }),
+        );
+        return response.data;
+      } catch (error) {
+        console.error("Failed to send User Admin OTP:", error);
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async verifyUserAdminOtp({ email, otp }) {
+      this.loading = true;
+      try {
+        const response = await axios.post(
+          `${API_URL}/user-admin/otp/verify`,
+          { email, otp },
+          await buildAuthenticatedRequestConfig({ timeout: AUTH_REQUEST_TIMEOUT_MS }),
+        );
+
+        const backendUser = response.data?.user || response.data?.profile || {};
+        this.user = mergeBackendUser(this.user || {}, backendUser);
+        syncCurrencyPreferenceFromUser(this.user);
+        this.isAuthenticated = true;
+        return response.data;
+      } catch (error) {
+        console.error("Failed to verify User Admin OTP:", error);
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
     async submitUserAdminPin({ mobileCountryCode, mobileNumber, pin }) {
       this.loading = true;
       try {
