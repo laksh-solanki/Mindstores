@@ -48,6 +48,14 @@ function copyRequestHeaders(req) {
       headers.set(key, String(value))
     }
   }
+
+  const host = req.headers['x-forwarded-host'] || req.headers.host
+  if (host) {
+    headers.set('x-forwarded-host', host)
+  }
+  const proto = req.headers['x-forwarded-proto'] || (req.headers.host && req.headers.host.includes('localhost') ? 'http' : 'https')
+  headers.set('x-forwarded-proto', proto)
+
   return headers
 }
 

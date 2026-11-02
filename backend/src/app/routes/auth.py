@@ -90,12 +90,17 @@ def resolve_country_code(decoded: dict[str, Any], body: dict[str, Any], locale: 
     )
 
 
+def get_request_base_url(request: Request) -> str:
+    forwarded_proto = request.headers.get("x-forwarded-proto") or request.url.scheme
+    forwarded_host = request.headers.get("x-forwarded-host") or request.headers.get("host") or request.url.netloc
+    return f"{forwarded_proto}://{forwarded_host}".rstrip("/")
+
+
 def resolve_google_redirect_uri(request: Request, ctx: RequestContext) -> str:
     if ctx.config.google_redirect_uri:
         return ctx.config.google_redirect_uri
-    forwarded_proto = request.headers.get("x-forwarded-proto") or request.url.scheme
-    forwarded_host = request.headers.get("x-forwarded-host") or request.headers.get("host") or request.url.netloc
-    return f"{forwarded_proto}://{forwarded_host}/auth/google/callback"
+    base = get_request_base_url(request)
+    return f"{base}/auth/google/callback"
 
 
 def now_iso_from_days(days: int) -> str:
@@ -107,19 +112,37 @@ def is_safe_redirect_target(target: str, allowed_origins: list[str]) -> bool:
         parsed = urllib.parse.urlparse(target)
         if not parsed.scheme and not parsed.netloc:
             return target.startswith("/") and not target.startswith("//")
-        origin = f"{parsed.scheme}://{parsed.netloc}"
-        return "*" in allowed_origins or origin in allowed_origins
+        origin = f"{parsed.scheme}://{parsed.netloc}".rstrip("/")
+        if "*" in allowed_origins or origin in allowed_origins:
+            return True
+        hostname = (parsed.hostname or "").lower()
+        if hostname in ("localhost", "127.0.0.1"):
+            return True
+        if hostname.endswith(".vercel.app") or hostname.endswith(".onrender.com"):
+            return True
+        return False
     except Exception:
         return False
 
 
-def resolve_frontend_target(raw_target: str, allowed_origins: list[str], default_base: str) -> str:
+def resolve_frontend_target(
+    raw_target: str,
+    allowed_origins: list[str],
+    default_base: str,
+    request: Request | None = None,
+) -> str:
     target = (raw_target or "").strip()
+    base = default_base.rstrip("/") if default_base else ""
+    if not base and request:
+        base = get_request_base_url(request)
+    if not base:
+        base = "http://localhost:3000"
+
     if target and is_safe_redirect_target(target, allowed_origins):
         if target.startswith("/"):
-            return f"{default_base}{target}"
+            return f"{base}{target}"
         return target
-    return f"{default_base}/"
+    return f"{base}/"
 
 
 @router.get("/auth/google")
@@ -128,8 +151,8 @@ async def google_oauth_start(
     return_to: str = "/",
     ctx: RequestContext = Depends(get_context),
 ):
-    frontend_base = (ctx.config.frontend_url or "http://localhost:3000").rstrip("/")
-    sanitized_target = resolve_frontend_target(return_to, ctx.config.allowed_origins, frontend_base)
+    frontend_base = (ctx.config.frontend_url or get_request_base_url(request)).rstrip("/")
+    sanitized_target = resolve_frontend_target(return_to, ctx.config.allowed_origins, frontend_base, request)
 
     if not ctx.config.google_client_id:
         accept = request.headers.get("accept", "")
@@ -178,7 +201,7 @@ async def google_oauth_callback(
     error: str | None = None,
     ctx: RequestContext = Depends(get_context),
 ):
-    frontend_base = (ctx.config.frontend_url or "http://localhost:3000").rstrip("/")
+    frontend_base = (ctx.config.frontend_url or get_request_base_url(request)).rstrip("/")
     cookie_state_data = request.cookies.get("oauth_state") or ""
 
     saved_state = ""
@@ -188,7 +211,7 @@ async def google_oauth_callback(
     else:
         saved_state = cookie_state_data
 
-    final_redirect_url = resolve_frontend_target(target_url, ctx.config.allowed_origins, frontend_base)
+    final_redirect_url = resolve_frontend_target(target_url, ctx.config.allowed_origins, frontend_base, request)
     parsed_final = urllib.parse.urlparse(final_redirect_url)
     target_origin = f"{parsed_final.scheme}://{parsed_final.netloc}" if parsed_final.scheme and parsed_final.netloc else frontend_base
 

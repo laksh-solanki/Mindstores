@@ -20,7 +20,11 @@ DEFAULT_CORS_ORIGINS = [
 ]
 
 if load_dotenv:
-    load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+    base_dir = Path(__file__).resolve().parents[2]
+    if (base_dir / ".env").exists():
+        load_dotenv(base_dir / ".env")
+    if (base_dir / ".env.local").exists():
+        load_dotenv(base_dir / ".env.local", override=True)
 
 
 def read_env(key: str, default: str | None = None) -> str | None:
@@ -96,9 +100,7 @@ def get_config() -> AppConfig:
         google_client_id=read_env("GOOGLE_CLIENT_ID", "") or "",
         google_client_secret=read_env("GOOGLE_CLIENT_SECRET", "") or "",
         google_redirect_uri=read_env("GOOGLE_REDIRECT_URI", "") or "",
-        frontend_url=(read_env("FRONTEND_URL", "") or (
-            "https://mindstores.vercel.app" if is_production else "http://localhost:3000"
-        )).rstrip("/"),
+        frontend_url=(read_env("FRONTEND_URL", "") or "").rstrip("/"),
         db_name=read_env("DB_NAME", "mindstores") or "mindstores",
         mongo_url=read_env("MONGO_URL", "") or read_env("MONGODB_URI", "") or "",
         mongo_data_api_url=(read_env("MONGO_ATLAS_DATA_API_URL", "") or "").rstrip("/"),

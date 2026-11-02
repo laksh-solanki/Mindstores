@@ -29,7 +29,19 @@ app = FastAPI(title="Mindstores Backend", version="3.0.0", lifespan=lifespan)
 def is_origin_allowed(origin: str | None, allowed_origins: list[str]) -> bool:
     if not origin:
         return True
-    return "*" in allowed_origins or origin in allowed_origins
+    if "*" in allowed_origins or origin in allowed_origins:
+        return True
+    try:
+        from urllib.parse import urlparse
+        parsed = urlparse(origin)
+        hostname = (parsed.hostname or "").lower()
+        if hostname in ("localhost", "127.0.0.1"):
+            return True
+        if hostname.endswith(".vercel.app") or hostname.endswith(".onrender.com"):
+            return True
+    except Exception:
+        pass
+    return False
 
 
 def get_origin(request: Request) -> str | None:

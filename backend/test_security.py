@@ -178,12 +178,13 @@ class TestSecurityHardening(unittest.TestCase):
 
     def test_register_and_login_flow(self):
         origin_header = {"Origin": "https://mindstores.vercel.app"}
+        test_email = f"test_{secrets.token_hex(6)}@example.com"
 
         # 1. Reject weak password
         weak_resp = self.client.post(
             "/auth/register",
             headers=origin_header,
-            json={"name": "Test User", "email": "testuser@example.com", "password": "123"},
+            json={"name": "Test User", "email": test_email, "password": "123"},
         )
         self.assertEqual(weak_resp.status_code, 400)
         self.assertIn("at least 6 characters", weak_resp.json().get("message", ""))
@@ -192,11 +193,11 @@ class TestSecurityHardening(unittest.TestCase):
         reg_resp = self.client.post(
             "/auth/register",
             headers=origin_header,
-            json={"name": "Test User", "email": "testuser@example.com", "password": "securepassword123"},
+            json={"name": "Test User", "email": test_email, "password": "securepassword123"},
         )
         self.assertEqual(reg_resp.status_code, 201)
         user_data = reg_resp.json().get("user", {})
-        self.assertEqual(user_data.get("email"), "testuser@example.com")
+        self.assertEqual(user_data.get("email"), test_email)
         self.assertEqual(user_data.get("name"), "Test User")
         # Ensure password_hash and password_salt are NEVER exposed
         self.assertNotIn("password_hash", user_data)
@@ -207,7 +208,7 @@ class TestSecurityHardening(unittest.TestCase):
         dup_resp = self.client.post(
             "/auth/register",
             headers=origin_header,
-            json={"name": "Test User 2", "email": "testuser@example.com", "password": "anotherpassword123"},
+            json={"name": "Test User 2", "email": test_email, "password": "anotherpassword123"},
         )
         self.assertEqual(dup_resp.status_code, 400)
         self.assertIn("already in use", dup_resp.json().get("message", ""))
@@ -216,7 +217,7 @@ class TestSecurityHardening(unittest.TestCase):
         fail_login = self.client.post(
             "/auth/login",
             headers=origin_header,
-            json={"email": "testuser@example.com", "password": "wrongpassword"},
+            json={"email": test_email, "password": "wrongpassword"},
         )
         self.assertEqual(fail_login.status_code, 401)
         self.assertIn("Invalid email or password", fail_login.json().get("message", ""))
@@ -225,11 +226,11 @@ class TestSecurityHardening(unittest.TestCase):
         success_login = self.client.post(
             "/auth/login",
             headers=origin_header,
-            json={"email": "testuser@example.com", "password": "securepassword123"},
+            json={"email": test_email, "password": "securepassword123"},
         )
         self.assertEqual(success_login.status_code, 200)
         login_user = success_login.json().get("user", {})
-        self.assertEqual(login_user.get("email"), "testuser@example.com")
+        self.assertEqual(login_user.get("email"), test_email)
         self.assertNotIn("password_hash", login_user)
         self.assertNotIn("password_salt", login_user)
         self.assertIn("session_token", success_login.cookies)
