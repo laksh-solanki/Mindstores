@@ -641,8 +641,9 @@ async def firebase_login(request: Request, ctx: RequestContext = Depends(get_con
 @router.get("/auth/me")
 async def auth_me(ctx: RequestContext = Depends(get_context)):
     if not ctx.user:
-        return error_response(401, "Not authenticated")
-    return json_response(await build_user_response(ctx.user, ctx), 200, {"Cache-Control": "no-store"})
+        return json_response({"user": None, "authenticated": False}, 200, {"Cache-Control": "no-store"})
+    user_payload = await build_user_response(ctx.user, ctx)
+    return json_response({"user": user_payload, "authenticated": True, **user_payload}, 200, {"Cache-Control": "no-store"})
 
 
 @router.put("/auth/profile")
